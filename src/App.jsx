@@ -1,25 +1,40 @@
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppProviders from "./providers/AppProviders";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Navigation from "./components/layout/Navigation";
-import { ROUTES } from "./utils/constants";
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import AppProviders from './providers/AppProviders';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import Navigation from './components/layout/Navigation';
+import { ROUTES } from './utils/constants';
 
 // Pages
-import Dashboard from "./pages/Dashboard";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import VerifyEmail from "./pages/auth/VerifyEmail";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
-import Chat from "./pages/Chat";
-import ChatContainer from "./components/chat/ChatContainer";
-import ChatDemo from "./pages/ChatDemo";
+import Dashboard from './pages/Dashboard';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import VerifyEmail from './pages/auth/VerifyEmail';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+import Home from './pages/Home';
+import ProductList from './pages/ProductList';
+import ProductDetail from './pages/ProductDetail';
+import Chat from './pages/Chat';
+import ChatContainer from './components/chat/ChatContainer';
+import ChatDemo from './pages/ChatDemo';
+
+// Component to handle scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 export default function App() {
   return (
     <AppProviders>
       <BrowserRouter>
+        <ScrollToTop />
         <div className="min-h-screen bg-gray-50">
           <Routes>
             {/* Public routes */}
@@ -37,7 +52,9 @@ export default function App() {
                   <Navigation />
                   <main>
                     <Routes>
-                      <Route path={ROUTES.HOME} element={<Dashboard />} />
+                      <Route path={ROUTES.HOME} element={<Home />} />
+                      <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
+                      <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetail />} />
                       <Route
                         path={ROUTES.DASHBOARD}
                         element={
