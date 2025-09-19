@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import LogoutModal from '../common/LogoutModal';
-import { ROUTES } from '../../utils/constants';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import LogoutModal from "../common/LogoutModal";
+import { ROUTES } from "../../utils/constants";
 
 const Navigation = () => {
   const { user, logout, loading } = useAuth();
@@ -16,7 +16,7 @@ const Navigation = () => {
       await logout();
       navigate(ROUTES.LOGIN);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       setLogoutLoading(false);
       setShowLogoutModal(false);
@@ -58,10 +58,23 @@ const Navigation = () => {
                   >
                     Dashboard
                   </Link>
-                  
+                  <Link
+                    to={ROUTES.CHAT}
+                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Messages
+                  </Link>
+                  <Link
+                    to={ROUTES.CHAT_DEMO}
+                    className="text-gray-500 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Chat Demo
+                  </Link>
+
                   <div className="flex items-center space-x-3">
                     <span className="text-gray-700 text-sm">
-                      Welcome, {user.profile?.firstName || user.email.split('@')[0]}
+                      Welcome,{" "}
+                      {user.profile?.firstName || user.email.split("@")[0]}
                     </span>
                     <button
                       onClick={() => setShowLogoutModal(true)}
