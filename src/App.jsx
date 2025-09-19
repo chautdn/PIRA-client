@@ -14,6 +14,7 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import Home from './pages/Home';
 import ProductList from './pages/ProductList';
+import ProductDetail from './pages/ProductDetail';
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -37,6 +38,7 @@ export default function App() {
             <Routes>
               <Route path={ROUTES.HOME} element={<Home />} />
               <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
+              <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetail />} />
               <Route path={ROUTES.LOGIN} element={<Login />} />
               <Route path={ROUTES.REGISTER} element={<Register />} />
               <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />

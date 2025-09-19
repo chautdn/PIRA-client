@@ -8,6 +8,7 @@ export const API_CONFIG = {
 export const ROUTES = {
   HOME: "/",
   PRODUCTS: "/products",
+  PRODUCT_DETAIL: "/product/:id",
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   DASHBOARD: "/dashboard",
