@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
-import auth from '../../services/auth';
-import { API_CONFIG } from '../../utils/constants'; 
+import React, { useEffect, useRef } from "react";
+import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import auth from "../../services/auth";
+import { API_CONFIG } from "../../utils/constants";
 
 const GoogleLogin = ({ onSuccess, onError }) => {
   const { saveSession } = useAuth();
@@ -12,29 +12,30 @@ const GoogleLogin = ({ onSuccess, onError }) => {
 
   useEffect(() => {
     const initializeGoogle = () => {
-      if (!window.google || !window.google.accounts || isInitialized.current) return;
+      if (!window.google || !window.google.accounts || isInitialized.current)
+        return;
 
       try {
         window.google.accounts.id.initialize({
           client_id: API_CONFIG.CLIENT_ID_GG,
           callback: handleGoogleResponse,
           auto_select: false,
-          cancel_on_tap_outside: true
+          cancel_on_tap_outside: true,
         });
 
         if (buttonRef.current) {
           window.google.accounts.id.renderButton(buttonRef.current, {
-            theme: 'outline',
-            size: 'large',
-            type: 'standard',
-            text: 'signin_with',
-            width: 300
+            theme: "outline",
+            size: "large",
+            type: "standard",
+            text: "signin_with",
+            width: 300,
           });
         }
         isInitialized.current = true;
       } catch (error) {
-        console.error('Google Sign-In initialization error:', error);
-        if (onError) onError('Failed to initialize Google Sign-In');
+        console.error("Google Sign-In initialization error:", error);
+        if (onError) onError("Failed to initialize Google Sign-In");
       }
     };
 
@@ -50,10 +51,11 @@ const GoogleLogin = ({ onSuccess, onError }) => {
       const result = await auth.googleLogin(response.credential);
       saveSession(result.data);
       if (onSuccess) onSuccess(result.data);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Google login error:', error);
-      const errorMsg = error.response?.data?.message || error.message || 'Google login failed';
+      console.error("Google login error:", error);
+      const errorMsg =
+        error.response?.data?.message || error.message || "Google login failed";
       if (onError) onError(errorMsg);
     }
   };

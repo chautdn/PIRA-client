@@ -13,14 +13,14 @@ export const ROUTES = {
   PRODUCT_DETAIL: "/product/:id",
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
-  DASHBOARD: "/dashboard",
   VERIFY_EMAIL: "/auth/verify-email",
   FORGOT_PASSWORD: "/auth/forgot-password",
   RESET_PASSWORD: "/auth/reset-password",
   // Chat routes
   CHAT: "/chat",
   CHAT_CONVERSATION: "/chat/:conversationId",
-  CHAT_DEMO: "/chat-demo",
+  // Product conversation route for direct messaging about products
+  CHAT_PRODUCT: "/chat/product/:productId/:ownerId",
 };
 
 export const STORAGE_KEYS = {

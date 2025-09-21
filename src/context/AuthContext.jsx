@@ -58,7 +58,6 @@ export const AuthProvider = ({ children }) => {
       // Call backend logout (clears httpOnly cookie)
       await auth.logout();
     } catch (error) {
-      console.error("Backend logout error:", error);
       // Continue with local logout even if backend fails
     } finally {
       // Clear local storage and state

@@ -2,27 +2,15 @@ import React from "react";
 import { useAuth } from "../../hooks/useAuth";
 import useChatSocket from "../../hooks/useChatSocket";
 
-const ChatHeader = ({ conversation }) => {
+const ChatHeader = ({ conversation, otherParticipant }) => {
   const { user } = useAuth();
   const { isUserOnline } = useChatSocket();
 
-  if (!conversation) {
+  // If no conversation or participant, show a simple header
+  if (!conversation || !otherParticipant) {
     return (
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="text-gray-500">Loading conversation...</div>
-      </div>
-    );
-  }
-
-  // Get the other participant (not the current user)
-  const otherParticipant = conversation.participants?.find(
-    (participant) => participant._id !== user?._id
-  );
-
-  if (!otherParticipant) {
-    return (
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="text-gray-500">Invalid conversation</div>
+        <div className="text-gray-500">Chat</div>
       </div>
     );
   }
@@ -115,4 +103,3 @@ const ChatHeader = ({ conversation }) => {
 };
 
 export default ChatHeader;
-

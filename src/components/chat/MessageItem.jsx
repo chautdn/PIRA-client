@@ -161,4 +161,3 @@ const MessageItem = ({ message, isCurrentUser, showAvatar }) => {
 };
 
 export default MessageItem;
-

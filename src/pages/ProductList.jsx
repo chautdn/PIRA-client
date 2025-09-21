@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { productService } from '../services/product';
 
 export default function ProductList() {
-  console.log('🚀 ProductList component loaded!'); // Debug log
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({});
@@ -45,11 +44,9 @@ export default function ProductList() {
   const loadCategories = async () => {
     try {
       const res = await productService.getCategories();
-      console.log('Categories response:', res.data); // Debug log
       
       if (res.data?.success) {
         const cats = res.data.data?.categories || [];
-        console.log('Categories from API:', cats); // Debug log
         if (cats.length > 0) {
           setCategories(cats);
           return; // Exit early if we got real categories
@@ -69,11 +66,10 @@ export default function ProductList() {
         }
       }
     } catch (e) {
-      console.error('Load categories failed', e);
+      // Handle load categories error
     }
-    
+
     // Only use fake categories if API completely failed
-    console.log('Using fallback categories'); // Debug log
     setCategories([
       { _id: 'cameras', name: 'Máy ảnh & Quay phim' },
       { _id: 'camping', name: 'Thiết bị cắm trại' },
@@ -98,7 +94,6 @@ export default function ProductList() {
         delete apiFilters.maxPrice;
       }
       
-      console.log('Loading products with filters:', apiFilters); // Debug log
       const res = await productService.list(apiFilters);
       
       if (res.data?.success) {
@@ -110,7 +105,6 @@ export default function ProductList() {
         setPagination(res.data?.pagination || { total: list.length, page: 1, pages: 1 });
       }
     } catch (e) {
-      console.error('Load products failed', e);
       setError('Không tải được danh sách sản phẩm');
       setProducts([]);
     } finally {
@@ -119,7 +113,6 @@ export default function ProductList() {
   };
 
   const updateFilters = (newFilters) => {
-    console.log('updateFilters called with:', newFilters); // Debug log
     setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
   };
 
@@ -132,7 +125,6 @@ export default function ProductList() {
       ...prev,
       [product._id]: (prev[product._id] || 0) + quantity
     }));
-    console.log(`Đã thêm ${quantity} ${product.title} vào giỏ hàng`);
   };
 
   const toggleFavorite = (productId) => {
@@ -221,7 +213,6 @@ export default function ProductList() {
                   <div className="space-y-2">
                     <button 
                       onClick={() => {
-                        console.log('All categories clicked'); // Debug log
                         updateFilters({ category: '' });
                       }}
                       className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
@@ -236,7 +227,6 @@ export default function ProductList() {
                       <button 
                         key={cat._id}
                         onClick={() => {
-                          console.log('Category clicked:', cat.name, cat._id); // Debug log
                           updateFilters({ category: cat._id });
                         }}
                         className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
@@ -283,7 +273,6 @@ export default function ProductList() {
                         <button
                           key={range.label}
                           onClick={() => {
-                            console.log('Price filter clicked:', range); // Debug log
                             updateFilters({ minPrice: range.min, maxPrice: range.max });
                           }}
                           className={`w-full px-3 py-2 text-sm rounded-lg transition-all text-left ${

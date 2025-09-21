@@ -37,7 +37,6 @@ const useChatSocket = () => {
     });
 
     socket.on("auth:error", (error) => {
-      toast.error("Chat connection failed");
       setConnected(false);
     });
 
@@ -75,17 +74,15 @@ const useChatSocket = () => {
 
     // Handle connection errors
     socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
       setConnected(false);
     });
 
     socket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
       setConnected(false);
     });
 
     socket.on("error", (error) => {
-      console.error("Socket error:", error);
+      // Handle socket error
     });
   }, [token, user]); // CRITICAL: Only primitive dependencies
 
@@ -97,7 +94,6 @@ const useChatSocket = () => {
 
     return () => {
       if (socketRef.current) {
-        console.log("Cleaning up socket connection");
         socketRef.current.disconnect();
         socketRef.current = null;
         setConnected(false);

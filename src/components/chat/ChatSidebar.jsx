@@ -65,16 +65,16 @@ const ChatSidebar = () => {
 
   if (conversationsLoading) {
     return (
-      <div className="w-80 bg-white border-r border-gray-200 flex items-center justify-center">
+      <div className="h-full bg-white border-r border-gray-200 flex items-center justify-center">
         <Loading />
       </div>
     );
   }
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+    <div className="h-full bg-white border-r border-gray-200 flex flex-col">
+      {/* Header - Fixed */}
+      <div className="p-4 border-b border-gray-200 flex-shrink-0 bg-white">
         <h2 className="text-xl font-semibold text-gray-800">Messages</h2>
         <p className="text-sm text-gray-600">
           {conversations.length} conversation
@@ -82,8 +82,8 @@ const ChatSidebar = () => {
         </p>
       </div>
 
-      {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Conversations List - Scrollable */}
+      <div className="flex-1 overflow-y-auto min-h-0">
         {conversations.length === 0 ? (
           <div className="p-6 text-center">
             <div className="text-gray-500 mb-2">No conversations yet</div>
@@ -200,4 +200,3 @@ const ChatSidebar = () => {
 };
 
 export default ChatSidebar;
-

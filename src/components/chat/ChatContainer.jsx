@@ -32,6 +32,11 @@ const ChatContainer = () => {
 
   const messageEndRef = useRef(null);
 
+  // Get other participant info
+  const otherParticipant = selectedConversation?.participants?.find(
+    (participant) => participant._id !== user?._id
+  );
+
   // CRITICAL: Load messages only once on mount
   useEffect(() => {
     if (conversationId) {
@@ -117,7 +122,10 @@ const ChatContainer = () => {
   if (messagesLoading) {
     return (
       <div className="flex-1 flex flex-col">
-        <ChatHeader conversation={selectedConversation} />
+        <ChatHeader
+          conversation={selectedConversation}
+          otherParticipant={otherParticipant}
+        />
         <div className="flex-1 flex items-center justify-center">
           <Loading />
         </div>
@@ -127,16 +135,28 @@ const ChatContainer = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      <ChatHeader conversation={selectedConversation} />
+    <div className="flex-1 flex flex-col bg-white h-full">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0">
+        <ChatHeader
+          conversation={selectedConversation}
+          otherParticipant={otherParticipant}
+        />
+      </div>
 
-      <MessageList
-        messages={messages}
-        currentUserId={user?._id}
-        messageEndRef={messageEndRef}
-      />
+      {/* Scrollable Messages Area */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <MessageList
+          messages={messages}
+          currentUserId={user?._id}
+          messageEndRef={messageEndRef}
+        />
+      </div>
 
-      <MessageInput conversationId={conversationId} />
+      {/* Fixed Input */}
+      <div className="flex-shrink-0">
+        <MessageInput conversationId={conversationId} />
+      </div>
     </div>
   );
 };

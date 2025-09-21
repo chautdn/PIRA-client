@@ -58,7 +58,7 @@ const chatService = {
     }
   },
 
-  // Create or get existing conversation
+  // Create or get existing conversation (always creates/returns conversation)
   createOrGetConversation: async (
     targetUserId,
     listingId = null,
@@ -69,15 +69,41 @@ const chatService = {
         throw new Error("Target user ID is required");
       }
 
-      const response = await api.post("/chat/conversations", {
+      const requestData = {
         targetUserId,
         listingId,
         bookingId,
-      });
+      };
+
+      const response = await api.post("/chat/conversations", requestData);
       return response.data;
     } catch (error) {
       throw new Error(
         error.response?.data?.message || "Failed to create conversation"
+      );
+    }
+  },
+
+  // Find existing conversation without creating (returns null if not found)
+  findExistingConversation: async (targetUserId, listingId = null) => {
+    try {
+      if (!targetUserId) {
+        throw new Error("Target user ID is required");
+      }
+
+      const params = new URLSearchParams();
+      params.append("targetUserId", targetUserId);
+      if (listingId) params.append("listingId", listingId);
+
+      const response = await api.get(`/chat/conversations/find?${params}`);
+      return response.data;
+    } catch (error) {
+      // Return null if not found instead of throwing error
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw new Error(
+        error.response?.data?.message || "Failed to find conversation"
       );
     }
   },
@@ -175,4 +201,3 @@ const chatService = {
 };
 
 export default chatService;
-

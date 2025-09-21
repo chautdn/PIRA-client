@@ -110,7 +110,7 @@ const useChat = (conversationId = null) => {
         };
       });
 
-      toast.success("Conversation created successfully");
+      // Don't show success toast - this is automatic
     },
     onError: (error) => {
       toast.error(error.message);
@@ -124,7 +124,7 @@ const useChat = (conversationId = null) => {
       queryClient.invalidateQueries(["conversations"]);
     },
     onError: (error) => {
-      console.error("Failed to mark as read:", error.message);
+      // Handle mark as read error
     },
   });
 
@@ -185,6 +185,21 @@ const useChat = (conversationId = null) => {
       });
     },
     [createConversationMutation]
+  );
+
+  const findExistingConversation = useCallback(
+    async (targetUserId, listingId = null) => {
+      try {
+        const conversation = await chatService.findExistingConversation(
+          targetUserId,
+          listingId
+        );
+        return conversation;
+      } catch (error) {
+        return null;
+      }
+    },
+    []
   );
 
   const markAsRead = useCallback(
@@ -289,6 +304,7 @@ const useChat = (conversationId = null) => {
     fetchUsers, // Manual fetch
     sendMessage,
     createConversation,
+    findExistingConversation,
     markAsRead,
     deleteMessage,
 

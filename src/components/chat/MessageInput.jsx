@@ -4,7 +4,12 @@ import useChatSocket from "../../hooks/useChatSocket";
 import chatService from "../../services/chat";
 import toast from "react-hot-toast";
 
-const MessageInput = ({ conversationId }) => {
+const MessageInput = ({
+  conversationId,
+  onSendMessage,
+  disabled = false,
+  placeholder = "Type a message...",
+}) => {
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
@@ -13,8 +18,12 @@ const MessageInput = ({ conversationId }) => {
   const fileInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const { sendMessage, sendingMessage } = useChat(conversationId);
+  // Use the hook-based approach if no onSendMessage prop is provided
+  const chatHook = useChat(conversationId);
   const { startTyping, stopTyping } = useChatSocket();
+
+  const sendMessage = onSendMessage || chatHook?.sendMessage;
+  const sendingMessage = chatHook?.sendingMessage || false;
 
   // Handle typing indicators
   const handleTypingStart = useCallback(() => {
@@ -117,7 +126,24 @@ const MessageInput = ({ conversationId }) => {
         };
       }
 
-      await sendMessage(messageData);
+      // Handle different sendMessage patterns
+      if (onSendMessage) {
+        // New pattern: function prop that accepts content and type
+        if (hasImageContent) {
+          await onSendMessage(
+            hasTextContent ? message.trim() : "📷 Image",
+            "IMAGE",
+            {
+              imageUrl: imagePreview,
+            }
+          );
+        } else {
+          await onSendMessage(message.trim(), "TEXT");
+        }
+      } else {
+        // Legacy pattern: object with full message data
+        await sendMessage(messageData);
+      }
 
       // Clear inputs
       setMessage("");
@@ -126,7 +152,6 @@ const MessageInput = ({ conversationId }) => {
         fileInputRef.current.value = "";
       }
     } catch (error) {
-      console.error("Failed to send message:", error);
       toast.error("Failed to send message");
     } finally {
       setUploadingImage(false);
@@ -140,7 +165,7 @@ const MessageInput = ({ conversationId }) => {
     }
   };
 
-  const isDisabled = sendingMessage || uploadingImage;
+  const isDisabled = disabled || sendingMessage || uploadingImage;
 
   return (
     <div className="bg-white border-t border-gray-200 p-4">
@@ -206,9 +231,7 @@ const MessageInput = ({ conversationId }) => {
             value={message}
             onChange={handleInputChange}
             onBlur={handleTypingStop}
-            placeholder={
-              imagePreview ? "Add a caption..." : "Type a message..."
-            }
+            placeholder={imagePreview ? "Add a caption..." : placeholder}
             className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isDisabled}
             maxLength={2000}
@@ -262,4 +285,3 @@ const MessageInput = ({ conversationId }) => {
 };
 
 export default MessageInput;
-

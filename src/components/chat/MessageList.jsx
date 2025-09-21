@@ -1,7 +1,12 @@
 import React from "react";
 import MessageItem from "./MessageItem";
 
-const MessageList = ({ messages, currentUserId, messageEndRef }) => {
+const MessageList = ({
+  messages,
+  currentUserId,
+  messageEndRef,
+  className = "",
+}) => {
   if (!messages || messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
@@ -16,7 +21,7 @@ const MessageList = ({ messages, currentUserId, messageEndRef }) => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+    <div className={`p-4 space-y-4 bg-gray-50 ${className}`}>
       {messages.map((message, index) => {
         const isCurrentUser =
           message.senderId?._id === currentUserId ||
@@ -41,4 +46,3 @@ const MessageList = ({ messages, currentUserId, messageEndRef }) => {
 };
 
 export default MessageList;
-
