@@ -1,33 +1,35 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import GoogleLogin from '../../components/auth/GoogleLogin';
-import { ROUTES } from '../../utils/constants';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import GoogleLogin from "../../components/auth/GoogleLogin";
+import { ROUTES } from "../../utils/constants";
 
 export default function Register() {
   const { register } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
-      setMessage('Passwords do not match');
+      setMessage("Passwords do not match");
       return;
     }
-    
+
     setLoading(true);
-    setMessage('');
-    
+    setMessage("");
+
     try {
       const resp = await register({ email, password });
-      setMessage(resp.data?.message || 'Registration successful! Check your email.');
+      setMessage(
+        resp.data?.message || "Registration successful! Check your email."
+      );
     } catch (err) {
       setMessage(err.response?.data?.message || err.message);
     } finally {
@@ -36,7 +38,7 @@ export default function Register() {
   };
 
   const handleGoogleSuccess = () => {
-    console.log('Google registration successful');
+    console.log("Google registration successful");
   };
 
   const handleGoogleError = (error) => {

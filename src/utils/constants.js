@@ -17,9 +17,13 @@ export const ROUTES = {
   SHIPPER_DASHBOARD: "/shipper/dashboard",
   ADMIN_DASHBOARD: "/admin/dashboard",
   PRODUCTS: "/products",
+  PRODUCT_DETAIL: "/product/:id",
   PROFILE: "/profile",
   VERIFY_EMAIL: "/auth/verify-email",
-  // ...other routes
+  CHAT: "/chat",
+  CHAT_CONVERSATION: "/chat/:conversationId",
+  // Product conversation route for direct messaging about products
+  CHAT_PRODUCT: "/chat/product/:productId/:ownerId",
 };
 
 export const STORAGE_KEYS = {
