@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import AppProviders from "./providers/AppProviders";
 import Navigation from "./components/layout/Navigation";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import { ROUTES } from "./utils/constants";
@@ -55,7 +56,7 @@ function ConditionalNavigation() {
 
 export default function App() {
   return (
-    <AuthProvider>
+    <AppProviders>
       <BrowserRouter>
         <ScrollToTop />
         <div className="min-h-screen bg-gray-50">
@@ -110,6 +111,6 @@ export default function App() {
           </main>
         </div>
       </BrowserRouter>
-    </AuthProvider>
+    </AppProviders>
   );
 }
