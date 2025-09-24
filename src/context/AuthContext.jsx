@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useState } from "react";
 import auth from "../services/auth";
 import api from "../services/api";
+import { getRedirectPath } from "../utils/navigation";
 
 export const AuthContext = createContext();
 
@@ -10,28 +11,23 @@ export const AuthProvider = ({ children }) => {
   );
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState(() => localStorage.getItem("accessToken"));
-
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`;
   }, []);
-
   const saveSession = (data) => {
     const u = data?.data?.user || data?.user || null;
     const accessToken = data?.data?.accessToken || data?.accessToken || null;
-
     if (accessToken) {
       localStorage.setItem("accessToken", accessToken);
       api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
       setToken(accessToken);
     }
-
     if (u) {
       localStorage.setItem("user", JSON.stringify(u));
       setUser(u);
     }
   };
-
   const login = async (credentials) => {
     setLoading(true);
     try {
@@ -43,6 +39,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Thêm method để get redirect path
+  const getLoginRedirectPath = () => {
+    return getRedirectPath(user?.role);
+  };
+
   const register = async (payload) => {
     setLoading(true);
     try {
@@ -51,7 +52,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
   const logout = async () => {
     setLoading(true);
     try {
@@ -69,7 +69,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
   const tryRefresh = async () => {
     try {
       const resp = await auth.refresh();
@@ -102,6 +101,7 @@ export const AuthProvider = ({ children }) => {
         register,
         saveSession,
         tryRefresh,
+        getLoginRedirectPath,
       }}
     >
       {children}
