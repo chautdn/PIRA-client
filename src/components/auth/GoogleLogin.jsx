@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import auth from '../../services/auth';
-import { API_CONFIG } from '../../utils/constants'; 
+import { API_CONFIG } from '../../utils/constants';
+import { navigateByRole } from '../../utils/navigation';
 
 const GoogleLogin = ({ onSuccess, onError }) => {
   const { saveSession } = useAuth();
@@ -48,9 +49,18 @@ const GoogleLogin = ({ onSuccess, onError }) => {
   const handleGoogleResponse = async (response) => {
     try {
       const result = await auth.googleLogin(response.credential);
+      console.log('Google login successful:', result);
+      
       saveSession(result.data);
-      if (onSuccess) onSuccess(result.data);
-      navigate('/dashboard');
+      
+      const user = result.data?.data?.user || result.data?.user;
+      
+      // Call success callback
+      if (onSuccess) onSuccess(user);
+      
+      // Navigate based on user role
+      navigateByRole(navigate, user);
+      
     } catch (error) {
       console.error('Google login error:', error);
       const errorMsg = error.response?.data?.message || error.message || 'Google login failed';
