@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import AppProviders from "./providers/AppProviders";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
 import Navigation from "./components/layout/Navigation";
+import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import { ROUTES } from "./utils/constants";
 
 // Pages
@@ -14,7 +14,11 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Home from "./pages/Home";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
+import Dashboard from "./pages/Dashboard";
+import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
+
+// Chat components
 import ChatContainer from "./components/chat/ChatContainer";
 import ProductChatContainer from "./components/chat/ProductChatContainer";
 
@@ -29,78 +33,83 @@ function ScrollToTop() {
   return null;
 }
 
+// Component to conditionally render Navigation
+function ConditionalNavigation() {
+  const location = useLocation();
+
+  const authRoutes = [
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    ROUTES.VERIFY_EMAIL,
+    ROUTES.FORGOT_PASSWORD,
+    ROUTES.RESET_PASSWORD,
+    ROUTES.PROFILE,
+  ];
+
+  if (authRoutes.includes(location.pathname)) {
+    return null;
+  }
+
+  return <Navigation />;
+}
+
 export default function App() {
   return (
-    <AppProviders>
+    <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
         <div className="min-h-screen bg-gray-50">
-          <Routes>
-            {/* Public routes */}
-            <Route path={ROUTES.LOGIN} element={<Login />} />
-            <Route path={ROUTES.REGISTER} element={<Register />} />
-            <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
-            <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
-            <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
+          <ConditionalNavigation />
+          <main>
+            <Routes>
+              {/* Public routes */}
+              <Route path={ROUTES.LOGIN} element={<Login />} />
+              <Route path={ROUTES.REGISTER} element={<Register />} />
+              <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
+              <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+              <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
+              <Route path={ROUTES.HOME} element={<Home />} />
+              <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
+              <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetail />} />
+              <Route path={ROUTES.PROFILE} element={<Profile />} />
 
-            {/* Routes with navigation */}
-            <Route
-              path="/*"
-              element={
-                <>
-                  <Navigation />
-                  <main>
-                    <Routes>
-                      <Route path={ROUTES.HOME} element={<Home />} />
-                      <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
-                      <Route
-                        path={ROUTES.PRODUCT_DETAIL}
-                        element={<ProductDetail />}
-                      />
-                    </Routes>
-                  </main>
-                </>
-              }
-            />
-
-            {/* Chat routes (with navigation) */}
-            <Route
-              path={ROUTES.CHAT}
-              element={
-                <>
-                  <Navigation />
-                  <main>
-                    <ProtectedRoute>
-                      <Chat />
-                    </ProtectedRoute>
-                  </main>
-                </>
-              }
-            >
-              {/* Default chat route */}
+              {/* Dashboard - chỉ OWNER được vào */}
               <Route
-                index
+                path={ROUTES.DASHBOARD}
                 element={
-                  <div className="flex-1 flex items-center justify-center bg-gray-50">
-                    <div className="text-center">
-                      <div className="text-gray-500 text-lg">
-                        Select a conversation to start chatting
-                      </div>
-                    </div>
-                  </div>
+                  <RoleProtectedRoute allowedRoles={["OWNER"]}>
+                    <Dashboard />
+                  </RoleProtectedRoute>
                 }
               />
-              {/* Specific conversation */}
-              <Route path=":conversationId" element={<ChatContainer />} />
-              {/* Product-specific conversation */}
-              <Route
-                path="product/:productId/:ownerId"
-                element={<ProductChatContainer />}
-              />
-            </Route>
-          </Routes>
+
+              {/* Chat routes */}
+              <Route path={ROUTES.CHAT} element={<Chat />}>
+                {/* Default chat route */}
+                <Route
+                  index
+                  element={
+                    <div className="flex-1 flex items-center justify-center bg-gray-50">
+                      <div className="text-center">
+                        <div className="text-gray-500 text-lg">
+                          Select a conversation to start chatting
+                        </div>
+                      </div>
+                    </div>
+                  }
+                />
+                {/* Specific conversation */}
+                <Route path=":conversationId" element={<ChatContainer />} />
+                {/* Product-specific conversation */}
+                <Route
+                  path="product/:productId/:ownerId"
+                  element={<ProductChatContainer />}
+                />
+              </Route>
+            </Routes>
+          </main>
         </div>
       </BrowserRouter>
-    </AppProviders>
+    </AuthProvider>
   );
 }

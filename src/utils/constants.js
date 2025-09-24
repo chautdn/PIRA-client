@@ -9,14 +9,17 @@ export const API_CONFIG = {
 
 export const ROUTES = {
   HOME: "/",
-  PRODUCTS: "/products",
-  PRODUCT_DETAIL: "/product/:id",
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
-  VERIFY_EMAIL: "/auth/verify-email",
   FORGOT_PASSWORD: "/auth/forgot-password",
-  RESET_PASSWORD: "/auth/reset-password",
-  // Chat routes
+  DASHBOARD: "/dashboard",
+  OWNER_DASHBOARD: "/owner/dashboard",
+  SHIPPER_DASHBOARD: "/shipper/dashboard",
+  ADMIN_DASHBOARD: "/admin/dashboard",
+  PRODUCTS: "/products",
+  PRODUCT_DETAIL: "/product/:id",
+  PROFILE: "/profile",
+  VERIFY_EMAIL: "/auth/verify-email",
   CHAT: "/chat",
   CHAT_CONVERSATION: "/chat/:conversationId",
   // Product conversation route for direct messaging about products

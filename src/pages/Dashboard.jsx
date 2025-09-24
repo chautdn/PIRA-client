@@ -4,6 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import LogoutModal from "../components/common/LogoutModal";
 import { ROUTES } from "../utils/constants";
 
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -29,6 +30,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {user ? (
             <div>
+              
               {/* Header */}
               <div className="bg-white shadow rounded-lg p-6 mb-8">
                 <div className="flex items-center justify-between">
