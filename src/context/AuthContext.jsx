@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useState } from 'react';
 import auth from '../services/auth';
 import api from '../services/api';
+import { getRedirectPath } from '../utils/navigation';
 
 export const AuthContext = createContext();
 
@@ -37,6 +38,11 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Thêm method để get redirect path
+  const getLoginRedirectPath = () => {
+    return getRedirectPath(user?.role);
   };
 
   const register = async (payload) => {
@@ -92,7 +98,8 @@ export const AuthProvider = ({ children }) => {
       logout, 
       register, 
       saveSession, 
-      tryRefresh 
+      tryRefresh,
+      getLoginRedirectPath
     }}>
       {children}
     </AuthContext.Provider>
