@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { WishlistProvider } from './context/WishlistContext';
 import Navigation from './components/layout/Navigation';
 import { ROUTES } from './utils/constants';
 import RoleProtectedRoute from './components/auth/RoleProtectedRoute';
@@ -15,6 +16,7 @@ import ResetPassword from './pages/auth/ResetPassword';
 import Home from './pages/Home';
 import ProductList from './pages/ProductList';
 import Profile from './components/auth/Profile';
+import ProductDetail from './pages/ProductDetail';
 
 
 // Component to handle scroll to top on route change
@@ -53,32 +55,35 @@ function ConditionalNavigation() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <div className="min-h-screen bg-gray-50">
-          <ConditionalNavigation />
-          <main>
-            <Routes>
-              <Route path={ROUTES.HOME} element={<Home />} />
-              <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
-              <Route path={ROUTES.LOGIN} element={<Login />} />
-              <Route path={ROUTES.REGISTER} element={<Register />} />
-              <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
-              <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
-              <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
-              <Route path={ROUTES.PROFILE} element={<Profile />} />
-              <Route
-                path={ROUTES.DASHBOARD}
-                element={
-                  <RoleProtectedRoute allowedRoles={['OWNER']}>
+      <WishlistProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <div className="min-h-screen bg-gray-50">
+            <ConditionalNavigation />
+            <main>
+              <Routes>
+                <Route path={ROUTES.HOME} element={<Home />} />
+                <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
+                <Route path={ROUTES.LOGIN} element={<Login />} />
+                <Route path={ROUTES.REGISTER} element={<Register />} />
+                <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
+                <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+                <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
+                <Route path={ROUTES.PROFILE} element={<Profile />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+                <Route
+                  path={ROUTES.DASHBOARD}
+                  element={
+                    <RoleProtectedRoute allowedRoles={['OWNER']}>
                       <Dashboard />
-                  </RoleProtectedRoute>
-                }
-              />
-            </Routes>
-          </main>
-        </div>
-      </BrowserRouter>
+                    </RoleProtectedRoute>
+                  }
+                />
+              </Routes>
+            </main>
+          </div>
+        </BrowserRouter>
+      </WishlistProvider>
     </AuthProvider>
   );
 }

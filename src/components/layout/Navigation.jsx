@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import WishlistPopup from '../common/WishlistPopup';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import LogoutModal from '../common/LogoutModal';
@@ -9,6 +10,23 @@ const Navigation = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchInput, setSearchInput] = useState('');
+  const [showWishlist, setShowWishlist] = useState(false);
+
+  // Search realtime: mỗi lần nhập sẽ tự động chuyển hướng
+  React.useEffect(() => {
+    const keyword = searchInput.trim();
+    const timer = setTimeout(() => {
+      if (window.location.pathname.startsWith('/products')) {
+        if (keyword) {
+          navigate(`/products?search=${encodeURIComponent(keyword)}`);
+        } else {
+          navigate('/products');
+        }
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [searchInput, navigate]);
 
   const handleLogout = async () => {
     setLogoutLoading(true);
@@ -59,9 +77,11 @@ const Navigation = () => {
             <div className="flex-1 max-w-xl ml-2">
               <div className="flex items-center w-full border border-gray-300 rounded-full px-3 py-2 text-sm bg-white">
                 <span className="mr-2">🔎</span>
-                <input 
-                  className="w-full outline-none placeholder:text-gray-400" 
-                  placeholder="Tìm kiếm thiết bị du lịch..." 
+                <input
+                  className="w-full outline-none placeholder:text-gray-400"
+                  placeholder="Tìm kiếm thiết bị du lịch..."
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
                 />
               </div>
             </div>
@@ -80,11 +100,12 @@ const Navigation = () => {
               >
                 🛒
               </button>
-              <button 
-                title="Yêu thích" 
-                className="text-gray-700 hover:text-primary-700"
+              <button
+                title="Wishlist"
+                className="text-red-500 hover:text-red-600 text-xl"
+                onClick={() => setShowWishlist(true)}
               >
-                ❤
+                <span role="img" aria-label="wishlist">❤</span>
               </button>
               <button 
                 title="Chat" 
@@ -160,6 +181,7 @@ const Navigation = () => {
         onCancel={() => setShowLogoutModal(false)}
         loading={logoutLoading}
       />
+      <WishlistPopup open={showWishlist} onClose={() => setShowWishlist(false)} />
     </>
   );
 };
