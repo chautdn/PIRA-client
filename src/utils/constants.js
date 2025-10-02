@@ -12,10 +12,11 @@ export const ROUTES = {
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   FORGOT_PASSWORD: "/auth/forgot-password",
+  RESET_PASSWORD: "/auth/reset-password",
   DASHBOARD: "/dashboard",
   OWNER_DASHBOARD: "/owner/dashboard",
   SHIPPER_DASHBOARD: "/shipper/dashboard",
-  ADMIN_DASHBOARD: "/admin/dashboard",
+  ADMIN_DASHBOARD: "/admin",
   PRODUCTS: "/products",
   PRODUCT_DETAIL: "/product/:id",
   PROFILE: "/profile",
@@ -24,6 +25,20 @@ export const ROUTES = {
   CHAT_CONVERSATION: "/chat/:conversationId",
   // Product conversation route for direct messaging about products
   CHAT_PRODUCT: "/chat/product/:productId/:ownerId",
+  
+  // Admin routes
+  ADMIN: {
+    DASHBOARD: "/admin",
+    USERS: "/admin/users",
+    USER_DETAIL: "/admin/users/:userId",
+    PRODUCTS: "/admin/products",
+    PRODUCT_DETAIL: "/admin/products/:productId",
+    CATEGORIES: "/admin/categories",
+    ORDERS: "/admin/orders",
+    REPORTS: "/admin/reports",
+    SETTINGS: "/admin/settings",
+    PROFILE: "/admin/profile",
+  },
 };
 
 export const STORAGE_KEYS = {
