@@ -246,7 +246,6 @@ const AdminDashboard = () => {
               <span className="text-blue-600">👥</span>
               <div>
                 <p className="font-medium">Quản lý Users</p>
-                <p className="text-sm text-gray-500">Xem và chỉnh sửa thông tin users</p>
               </div>
             </button>
             <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">

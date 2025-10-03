@@ -8,7 +8,6 @@ const UserDetail = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [editing, setEditing] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
   // Show notification function
@@ -19,58 +18,7 @@ const UserDetail = () => {
     }, 3000); // Auto hide after 3 seconds
   };
 
-  // Helper function to update user and form data
-  const updateUserData = (userData) => {
-    setUser(userData);
-    setFormData({
-      ...initialFormData,
-      email: userData.email || '',
-      phone: userData.phone || '',
-      role: userData.role || '',
-      status: userData.status || '',
-      profile: {
-        ...initialFormData.profile,
-        firstName: userData.profile?.firstName || '',
-        lastName: userData.profile?.lastName || '',
-        avatar: userData.profile?.avatar || '',
-        dateOfBirth: userData.profile?.dateOfBirth ? 
-          new Date(userData.profile.dateOfBirth).toISOString().split('T')[0] : '',
-        gender: userData.profile?.gender || ''
-      },
-      address: {
-        ...initialFormData.address,
-        streetAddress: userData.address?.streetAddress || '',
-        district: userData.address?.district || '',
-        city: userData.address?.city || '',
-        province: userData.address?.province || '',
-        country: userData.address?.country || 'VN'
-      }
-    });
-  };
 
-  // Initial empty form data
-  const initialFormData = {
-    email: '',
-    phone: '',
-    role: '',
-    status: '',
-    profile: {
-      firstName: '',
-      lastName: '',
-      avatar: '',
-      dateOfBirth: '',
-      gender: ''
-    },
-    address: {
-      streetAddress: '',
-      district: '',
-      city: '',
-      province: '',
-      country: 'VN'
-    }
-  };
-
-  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
     if (userId) {
@@ -91,7 +39,7 @@ const UserDetail = () => {
         return;
       }
       
-      updateUserData(userData);
+      setUser(userData);
     } catch (err) {
       console.error('Load user detail error:', err);
       setError('Không thể tải thông tin user. Vui lòng thử lại');
@@ -101,54 +49,12 @@ const UserDetail = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name.startsWith('profile.')) {
-      const profileField = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        profile: {
-          ...prev.profile,
-          [profileField]: value
-        }
-      }));
 
-    } else if (name.startsWith('address.')) {
-      const addressField = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        address: {
-          ...prev.address,
-          [addressField]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
-
-  const handleSaveChanges = async () => {
-    try {
-      await adminService.updateUser(userId, formData);
-      const refreshedUser = await adminService.getUserById(userId);
-      updateUserData(refreshedUser);
-      setEditing(false);
-      showNotification('Cập nhật thông tin thành công!', 'success');
-    } catch (err) {
-      console.error('Update user error:', err);
-      showNotification('Có lỗi xảy ra khi cập nhật thông tin!', 'error');
-    }
-  };
 
   const handleStatusChange = async (newStatus) => {
     try {
       await adminService.updateUserStatus(userId, newStatus);
       setUser(prev => ({ ...prev, status: newStatus }));
-      setFormData(prev => ({ ...prev, status: newStatus }));
       showNotification('Cập nhật trạng thái thành công!', 'success');
     } catch (err) {
       console.error('Update status error:', err);
@@ -160,7 +66,6 @@ const UserDetail = () => {
     try {
       await adminService.updateUserRole(userId, newRole);
       setUser(prev => ({ ...prev, role: newRole }));
-      setFormData(prev => ({ ...prev, role: newRole }));
       showNotification('Cập nhật vai trò thành công!', 'success');
     } catch (err) {
       console.error('Update role error:', err);
@@ -415,37 +320,9 @@ const UserDetail = () => {
             <h1 className="text-2xl font-bold text-gray-900">
               {user.profile?.firstName || ''} {user.profile?.lastName || ''}
             </h1>
-            <p className="text-gray-600">ID: {user._id}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {editing ? (
-            <>
-              <button
-                onClick={handleSaveChanges}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Lưu thay đổi
-              </button>
-              <button
-                onClick={() => {
-                  setEditing(false);
-                  loadUserDetail(); // Reset form
-                }}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Hủy
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Chỉnh sửa
-            </button>
-          )}
-        </div>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -475,106 +352,58 @@ const UserDetail = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tên</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="profile.firstName"
-                    value={formData.profile.firstName}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900">{user.profile?.firstName || 'Chưa có'}</p>
-                )}
+                <p className="text-gray-900">{user.profile?.firstName || 'Chưa có'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Họ</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="profile.lastName"
-                    value={formData.profile.lastName}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900">{user.profile?.lastName || 'Chưa có'}</p>
-                )}
+                <p className="text-gray-900">{user.profile?.lastName || 'Chưa có'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                {editing ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <div className="flex items-center">
-                    <span className="text-gray-900 mr-2">
-                      {user?.email || formData?.email || 'Chưa có email'}
-                    </span>
-                    
-                  </div>
-                )}
+                <p className="text-gray-900">{user.email || 'Chưa có email'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900">{user.phone || 'Chưa có'}</p>
-                )}
+                <p className="text-gray-900">{user.phone || 'Chưa có'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
-                {editing ? (
-                  <input
-                    type="date"
-                    name="profile.dateOfBirth"
-                    value={formData.profile.dateOfBirth}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900">
-                    {user.profile?.dateOfBirth 
-                      ? new Date(user.profile.dateOfBirth).toLocaleDateString('vi-VN')
-                      : 'Chưa có'
-                    }
-                  </p>
-                )}
+                <p className="text-gray-900">
+                  {user.profile?.dateOfBirth 
+                    ? new Date(user.profile.dateOfBirth).toLocaleDateString('vi-VN')
+                    : 'Chưa có'
+                  }
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
-                {editing ? (
-                  <select
-                    name="profile.gender"
-                    value={formData.profile.gender}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Chọn giới tính</option>
-                    <option value="MALE">Nam</option>
-                    <option value="FEMALE">Nữ</option>
-                    <option value="OTHER">Khác</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900">
-                    {(() => {
-                      const genderMap = { 'MALE': 'Nam', 'FEMALE': 'Nữ', 'OTHER': 'Khác' };
-                      return genderMap[user.profile?.gender] || 'Chưa có';
-                    })()}
-                  </p>
-                )}
+                <p className="text-gray-900">
+                  {(() => {
+                    const genderMap = { 'MALE': 'Nam', 'FEMALE': 'Nữ', 'OTHER': 'Khác' };
+                    return genderMap[user.profile?.gender] || 'Chưa có';
+                  })()}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Điểm tín dụng</label>
+                <div className="flex items-center gap-2">
+                  <p className="text-gray-900 font-semibold">{user.creditScore || 100}</p>
+                  <span className="text-sm text-gray-500">/1000</span>
+                  <div className={`px-2 py-1 text-xs rounded-full ${
+                    user.creditScore >= 800 ? 'bg-green-100 text-green-800' :
+                    user.creditScore >= 600 ? 'bg-yellow-100 text-yellow-800' :
+                    user.creditScore >= 400 ? 'bg-orange-100 text-orange-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {user.creditScore >= 800 ? 'Xuất sắc' :
+                     user.creditScore >= 600 ? 'Tốt' :
+                     user.creditScore >= 400 ? 'Trung bình' : 'Kém'}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ID User</label>
+                <p className="text-gray-900 font-mono text-sm">{user._id}</p>
               </div>
             </div>
           </div>
@@ -585,80 +414,25 @@ const UserDetail = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Đường/Số nhà</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="address.streetAddress"
-                    value={formData.address.streetAddress}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900">{user.address?.streetAddress || formData.address?.streetAddress || 'Chưa có'}</p>
-                )}
+                <p className="text-gray-900">{user.address?.streetAddress || 'Chưa có'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành phố</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="address.province"
-                    value={formData.address.province}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900">{user.address?.province || formData.address?.province || 'Chưa có'}</p>
-                )}
+                <p className="text-gray-900">{user.address?.province || 'Chưa có'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="address.district"
-                    value={formData.address.district}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900">{user.address?.district || formData.address?.district || 'Chưa có'}</p>
-                )}
+                <p className="text-gray-900">{user.address?.district || 'Chưa có'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Thành phố</label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="address.city"
-                    value={formData.address.city}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900">{user.address?.city || formData.address?.city || 'Chưa có'}</p>
-                )}
+                <p className="text-gray-900">{user.address?.city || 'Chưa có'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quốc gia</label>
-                {editing ? (
-                  <select
-                    name="address.country"
-                    value={formData.address.country}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="VN">Việt Nam</option>
-                    <option value="US">United States</option>
-                    <option value="JP">Japan</option>
-                    <option value="KR">Korea</option>
-                    <option value="CN">China</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900">
-                    {getCountryName(user.address?.country || formData.address?.country || 'VN')}
-                  </p>
-                )}
+                <p className="text-gray-900">
+                  {getCountryName(user.address?.country || 'VN')}
+                </p>
               </div>
 
             </div>
@@ -726,10 +500,7 @@ const UserDetail = () => {
                 <span className="text-gray-600">Đánh giá</span>
                 <span className="font-medium">0</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Điểm uy tín</span>
-                <span className="font-medium">100</span>
-              </div>
+              
             </div>
           </div>
 
