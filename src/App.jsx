@@ -24,6 +24,13 @@ import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
 import ChatContainer from "./components/chat/ChatContainer";
 import ProductChatContainer from "./components/chat/ProductChatContainer";
 
+// Admin components
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import UserDetail from "./pages/admin/UserDetail";
+import ProductManagement from "./pages/admin/ProductManagement";
+
 // Component to handle scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -48,7 +55,8 @@ function ConditionalNavigation() {
     ROUTES.PROFILE,
   ];
 
-  if (authRoutes.includes(location.pathname)) {
+  // Don't show navigation on auth routes or admin routes
+  if (authRoutes.includes(location.pathname) || location.pathname.startsWith('/admin')) {
     return null;
   }
 
@@ -118,6 +126,26 @@ export default function App() {
                   path="product/:productId/:ownerId"
                   element={<ProductChatContainer />}
                 />
+              </Route>
+
+              {/* Admin routes - chỉ ADMIN được vào */}
+              <Route
+                path="/admin"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN"]}>
+                    <AdminLayout />
+                  </RoleProtectedRoute>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="users/:userId" element={<UserDetail />} />
+                <Route path="products" element={<ProductManagement />} />
+                <Route path="categories" element={<div>Category Management - Coming Soon</div>} />
+                <Route path="orders" element={<div>Order Management - Coming Soon</div>} />
+                <Route path="reports" element={<div>Reports & Analytics - Coming Soon</div>} />
+                <Route path="settings" element={<div>System Settings - Coming Soon</div>} />
+                <Route path="profile" element={<Profile />} />
               </Route>
             </Routes>
           </main>

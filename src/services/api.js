@@ -74,4 +74,6 @@ api.interceptors.response.use(
   }
 );
 
+// Export both default and named export for compatibility
+export { api };
 export default api;
