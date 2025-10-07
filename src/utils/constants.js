@@ -24,6 +24,8 @@ export const ROUTES = {
   CHAT_CONVERSATION: "/chat/:conversationId",
   // Product conversation route for direct messaging about products
   CHAT_PRODUCT: "/chat/product/:productId/:ownerId",
+  OWNER_PRODUCTS: "/owner/products",
+  OWNER_CREATE_PRODUCT: "/owner/products/create",
 };
 
 export const STORAGE_KEYS = {

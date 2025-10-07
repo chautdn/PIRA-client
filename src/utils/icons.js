@@ -1,0 +1,128 @@
+import { AiOutlinePlusCircle } from "react-icons/ai";
+import { GrNext, GrChapterNext, GrLinkPrevious } from "react-icons/gr";
+import {
+  MdOutlineAddLocationAlt,
+  MdOutlineStarPurple500,
+  MdKeyboardArrowUp,
+  MdKeyboardArrowDown,
+  MdMessage,
+  MdPhone,
+  MdOutlineHouseSiding,
+  MdLocationCity,
+  MdOutlinePercent,
+} from "react-icons/md";
+import { FaRegMoneyBillAlt, FaSearchLocation } from "react-icons/fa";
+import { FaChartArea, FaDeleteLeft } from "react-icons/fa6";
+import {
+  BsBuildings,
+  BsChevronRight,
+  BsBookmarkStarFill,
+  BsCurrencyDollar,
+  BsShieldCheck,
+} from "react-icons/bs";
+import { IoIosHeart, IoIosHeartEmpty, IoMdClose } from "react-icons/io";
+import {
+  HiOutlineLocationMarker,
+  HiOutlineHome,
+  HiOutlinePhotograph,
+} from "react-icons/hi";
+import { TbReportMoney } from "react-icons/tb";
+import { RiCrop2Line } from "react-icons/ri";
+import {
+  FiSearch,
+  FiEdit3,
+  FiTrash2,
+  FiUpload,
+  FiImage,
+  FiMapPin,
+  FiStar,
+  FiCheck,
+  FiInfo,
+  FiAward,
+  FiShield,
+} from "react-icons/fi";
+import { GiTakeMyMoney } from "react-icons/gi";
+import {
+  BiCategory,
+  BiText,
+  BiMoney,
+  BiMap,
+  BiCamera,
+  BiCheckCircle,
+  BiInfoCircle,
+  BiAward,
+  BiShield,
+  BiSupport,
+} from "react-icons/bi";
+import {
+  HiSparkles,
+  HiLightBulb,
+  HiPhotograph,
+  HiCash,
+  HiCheckCircle,
+  HiExclamationCircle,
+} from "react-icons/hi";
+
+const icons = {
+  AiOutlinePlusCircle,
+  IoMdClose,
+  GrNext,
+  MdOutlineAddLocationAlt,
+  FaRegMoneyBillAlt,
+  FaChartArea,
+  FaDeleteLeft,
+  BsBuildings,
+  FaSearchLocation,
+  MdOutlineStarPurple500,
+  IoIosHeart,
+  BsBookmarkStarFill,
+  MdKeyboardArrowUp,
+  MdKeyboardArrowDown,
+  IoIosHeartEmpty,
+  GrChapterNext,
+  GrLinkPrevious,
+  BsChevronRight,
+  GiTakeMyMoney,
+  HiOutlineLocationMarker,
+  TbReportMoney,
+  RiCrop2Line,
+  MdOutlineHouseSiding,
+  FiSearch,
+  MdPhone,
+  MdMessage,
+  // New icons for create form
+  FiEdit3,
+  FiTrash2,
+  FiUpload,
+  FiImage,
+  FiMapPin,
+  FiStar,
+  FiCheck,
+  FiInfo,
+  FiAward,
+  FiShield,
+  BiCategory,
+  BiText,
+  BiMoney,
+  BiMap,
+  BiCamera,
+  BiCheckCircle,
+  BiInfoCircle,
+  BiAward,
+  BiShield,
+  BiSupport,
+  HiOutlinePhotograph,
+  HiOutlineHome,
+  BsCurrencyDollar,
+  BsShieldCheck,
+  MdLocationCity,
+  MdOutlinePercent,
+  HiSparkles,
+  HiLightBulb,
+  HiPhotograph,
+  HiCash,
+  HiCheckCircle,
+  HiExclamationCircle,
+};
+
+export default icons;

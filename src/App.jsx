@@ -18,6 +18,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
+import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
 
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
@@ -83,6 +84,17 @@ export default function App() {
                   </RoleProtectedRoute>
                 }
               />
+              <Route path={ROUTES.OWNER_PRODUCTS} element={
+                <RoleProtectedRoute allowedRoles={["OWNER"]}>
+                  <ProductList isOwnerView={true} />
+                </RoleProtectedRoute>
+              } />
+              <Route path={ROUTES.OWNER_CREATE_PRODUCT} element={
+                <RoleProtectedRoute allowedRoles={["OWNER","RENTER"]}>
+                  <OwnerCreateProduct />
+                </RoleProtectedRoute>
+              } />
+              
 
               {/* Chat routes */}
               <Route path={ROUTES.CHAT} element={<Chat />}>
