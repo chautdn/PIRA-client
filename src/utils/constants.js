@@ -19,6 +19,7 @@ export const ROUTES = {
   ADMIN_DASHBOARD: "/admin",
   PRODUCTS: "/products",
   PRODUCT_DETAIL: "/product/:id",
+  CART: "/cart",
   PROFILE: "/profile",
   VERIFY_EMAIL: "/auth/verify-email",
   CHAT: "/chat",
@@ -45,6 +46,7 @@ export const STORAGE_KEYS = {
   ACCESS_TOKEN: "accessToken",
   USER: "user",
   Theme: "theme",
+  CART: "cart",
 };
 
 export const USER_ROLES = {

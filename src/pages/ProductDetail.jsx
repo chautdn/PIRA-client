@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 import { productService } from "../services/product";
 import { useAuth } from "../hooks/useAuth";
+import { useCart } from "../context/CartContext";
 import { ROUTES } from "../utils/constants";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToCart, isInCart, getProductQuantity } = useCart();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -119,8 +122,49 @@ export default function ProductDetail() {
     }
   };
 
-  const handleAddToCart = () => {
-    // Add to cart functionality
+  const handleAddToCart = async () => {
+    if (!product) return;
+
+    // Validate: Phải chọn ngày thuê (giống Renrenzu)
+    if (selectedDates.length === 0) {
+      toast.error("Vui lòng chọn ngày thuê!", {
+        icon: "📅",
+        duration: 2000,
+      });
+      return;
+    }
+
+    // Sort dates and validate
+    const sortedDates = [...selectedDates].sort();
+    const startDate = sortedDates[0];
+    const endDate = sortedDates[sortedDates.length - 1];
+    
+    // Calculate duration in days
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // Create rental object
+    const rental = {
+      startDate: startDate,
+      endDate: endDate,
+      duration: duration,
+    };
+
+    // Add to cart
+    const result = await addToCart(product, quantity, rental);
+    
+    if (result.success) {
+      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng (${duration} ngày)!`, {
+        icon: "🛒",
+        duration: 2000,
+      });
+      // Reset selections
+      setSelectedDates([]);
+      setQuantity(1);
+    } else {
+      toast.error(result.error || "Không thể thêm vào giỏ hàng. Vui lòng thử lại!");
+    }
   };
 
   const handleRentNow = () => {

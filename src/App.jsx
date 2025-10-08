@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import AppProviders from "./providers/AppProviders";
 import Navigation from "./components/layout/Navigation";
 import Footer from "./components/layout/Footer";
+import CartDrawer from "./components/cart/CartDrawer";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import { ROUTES } from "./utils/constants";
 
@@ -16,6 +17,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Home from "./pages/Home";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
@@ -96,6 +98,7 @@ export default function App() {
         <ScrollToTop />
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <ConditionalNavigation />
+          <CartDrawer />
           <main className="flex-1">
             <Routes>
               {/* Public routes */}
@@ -107,6 +110,7 @@ export default function App() {
               <Route path={ROUTES.HOME} element={<Home />} />
               <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
               <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetail />} />
+              <Route path={ROUTES.CART} element={<Cart />} />
               <Route path={ROUTES.PROFILE} element={<Profile />} />
 
               {/* Dashboard - chỉ OWNER được vào */}

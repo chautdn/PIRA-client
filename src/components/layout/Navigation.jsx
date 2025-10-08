@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useCart } from "../../context/CartContext";
 import UserDropdown from "../common/UserDropdown";
 import useChatSocket from "../../hooks/useChatSocket";
 import useChat from "../../hooks/useChat";
@@ -8,6 +9,7 @@ import { ROUTES } from "../../utils/constants";
 
 const Navigation = () => {
   const { user } = useAuth();
+  const { cartCount, toggleCart } = useCart();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -135,9 +137,15 @@ const Navigation = () => {
             <div className="flex items-center gap-1">
               <button
                 title="Giỏ hàng"
-                className="p-2.5 text-gray-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all"
+                onClick={toggleCart}
+                className="relative p-2.5 text-gray-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all"
               >
                 <span className="text-xl">🛒</span>
+                {cartCount > 0 && (
+                  <span className="absolute top-1 right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
+                    {cartCount > 9 ? "9+" : cartCount}
+                  </span>
+                )}
               </button>
               <button
                 title="Yêu thích"

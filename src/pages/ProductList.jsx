@@ -9,7 +9,6 @@ export default function ProductList() {
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [cartItems, setCartItems] = useState({});
   const [favorites, setFavorites] = useState(new Set());
   const [filters, setFilters] = useState({
     page: 1,
@@ -105,6 +104,7 @@ export default function ProductList() {
         setPagination(res.data?.pagination || { total: list.length, page: 1, pages: 1 });
       }
     } catch (e) {
+      console.error('Error loading products:', e);
       setError('Không tải được danh sách sản phẩm');
       setProducts([]);
     } finally {
@@ -118,13 +118,6 @@ export default function ProductList() {
 
   const handlePageChange = (page) => {
     setFilters(prev => ({ ...prev, page }));
-  };
-
-  const addToCart = (product, quantity = 1) => {
-    setCartItems(prev => ({
-      ...prev,
-      [product._id]: (prev[product._id] || 0) + quantity
-    }));
   };
 
   const toggleFavorite = (productId) => {
@@ -381,47 +374,20 @@ export default function ProductList() {
                       {/* Spacer to push buttons to bottom */}
                       <div className="flex-1"></div>
 
-                      {/* Quantity & Add to Cart - Always at bottom */}
+                      {/* Action Buttons - Always at bottom */}
                       <div className="space-y-3 mt-auto">
-                        {/* Quantity Selector */}
-                        <div className="flex items-center justify-center border border-gray-200 rounded-lg overflow-hidden">
-                          <button 
-                            onClick={() => {
-                              if (cartItems[product._id] > 0) {
-                                setCartItems(prev => ({
-                                  ...prev,
-                                  [product._id]: prev[product._id] - 1
-                                }));
-                              }
-                            }}
-                            className="flex-1 py-2 hover:bg-gray-100 transition-colors font-bold text-lg"
-                            disabled={!cartItems[product._id]}
-                          >
-                            -
-                          </button>
-                          <div className="flex-1 py-2 text-center font-bold bg-gray-50 border-x border-gray-200">
-                            {cartItems[product._id] || 0}
-                          </div>
-                          <button 
-                            onClick={() => addToCart(product, 1)}
-                            className="flex-1 py-2 hover:bg-gray-100 transition-colors font-bold text-lg"
-                          >
-                            +
-                          </button>
-                        </div>
-                        
-                        {/* Add to Cart Button */}
-                        <button
-                          onClick={() => addToCart(product, 1)}
-                          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        {/* Rent Now Button - Nghiệp vụ Renrenzu: Phải vào detail để chọn ngày */}
+                        <Link 
+                          to={`/product/${product._id}`}
+                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                         >
-                          🛒 Thêm vào giỏ
-                        </button>
+                          📅 Thuê Ngay
+                        </Link>
 
                         {/* View Details */}
                         <Link 
                           to={`/product/${product._id}`} 
-                          className="block text-center text-green-600 hover:text-green-800 font-medium transition-colors py-2"
+                          className="block text-center text-green-600 hover:text-green-800 font-medium transition-colors py-2 hover:underline"
                         >
                           Xem chi tiết →
                         </Link>

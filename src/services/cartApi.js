@@ -1,0 +1,74 @@
+import api from "./api";
+
+/**
+ * Cart API Service - Handle backend cart API calls
+ */
+class CartApiService {
+  /**
+   * Get cart from backend
+   */
+  async getCart() {
+    const response = await api.get("/cart");
+    return response.data.data.items || [];
+  }
+
+  /**
+   * Add item to backend cart
+   */
+  async addToCart(productId, quantity = 1, rental = null) {
+    const response = await api.post("/cart", {
+      productId,
+      quantity,
+      rental: rental || {
+        startDate: null,
+        endDate: null,
+        duration: 1,
+      },
+    });
+    return response.data.data.items || [];
+  }
+
+  /**
+   * Update quantity in backend cart
+   */
+  async updateQuantity(productId, quantity) {
+    const response = await api.put(`/cart/${productId}`, { quantity });
+    return response.data.data.items || [];
+  }
+
+  /**
+   * Remove item from backend cart
+   */
+  async removeItem(productId) {
+    const response = await api.delete(`/cart/${productId}`);
+    return response.data.data.items || [];
+  }
+
+  /**
+   * Clear backend cart
+   */
+  async clearCart() {
+    await api.delete("/cart");
+    return [];
+  }
+
+  /**
+   * Sync localStorage cart to backend
+   */
+  async syncCart(items) {
+    const response = await api.post("/cart/sync", { items });
+    return response.data.data.items || [];
+  }
+
+  /**
+   * Validate cart before checkout
+   */
+  async validateCart() {
+    const response = await api.post("/cart/validate");
+    return response.data.data;
+  }
+}
+
+export const cartApiService = new CartApiService();
+export default cartApiService;
+
