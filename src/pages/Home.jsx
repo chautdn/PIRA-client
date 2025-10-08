@@ -108,149 +108,326 @@ export default function Home() {
   return (
     <div className="bg-gray-50">
       {/* Hero */}
-      <section className="relative isolate overflow-hidden">
-        {/* 1) Nền xanh cơ sở (đậm vừa) */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#CFE9DA] via-[#C6E2D3] to-[#B7D6C5]" />
+      <section className="relative isolate overflow-hidden min-h-[750px] flex items-center">
+        {/* Enhanced gradient background */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0A5C36] via-[#0D7A47] to-[#10956B]" />
+        
+        {/* Animated gradient overlay */}
+        <motion.div 
+          className="absolute inset-0 -z-10 opacity-30"
+          animate={{
+            background: [
+              "radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%)",
+              "radial-gradient(circle at 80% 50%, rgba(5, 150, 105, 0.3) 0%, transparent 50%)",
+              "radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%)",
+            ]
+          }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
 
-        {/* 2) Vignette xanh ở 2 góc để tạo phần "đậm" */}
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(900px_600px_at_-10%_-10%,rgba(0,108,54,0.22),transparent_60%)]" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(900px_600px_at_110%_110%,rgba(0,108,54,0.22),transparent_60%)]" />
+        {/* Decorative pattern */}
+        <div className="absolute inset-0 -z-10 opacity-5" 
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }}
+        />
 
-        {/* 3) Dải trắng mảnh ở góc trên-trái + dải xanh đậm kề sau */}
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(160deg,transparent_18%,rgba(255,255,255,0.70)_22%,transparent_26%)]" />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(160deg,transparent_26%,rgba(0,108,54,0.10)_30%,transparent_34%)]" />
+        {/* Floating equipment icons */}
+        <motion.div
+          className="absolute top-20 left-[10%] text-6xl opacity-20"
+          animate={{ 
+            y: [0, -20, 0],
+            rotate: [0, 5, 0]
+          }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          📷
+        </motion.div>
+        <motion.div
+          className="absolute top-32 right-[15%] text-5xl opacity-20"
+          animate={{ 
+            y: [0, 20, 0],
+            rotate: [0, -5, 0]
+          }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        >
+          🎒
+        </motion.div>
+        <motion.div
+          className="absolute bottom-32 left-[15%] text-5xl opacity-20"
+          animate={{ 
+            y: [0, -15, 0],
+            rotate: [0, 5, 0]
+          }}
+          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        >
+          ⛺
+        </motion.div>
+        <motion.div
+          className="absolute bottom-20 right-[12%] text-6xl opacity-20"
+          animate={{ 
+            y: [0, 18, 0],
+            rotate: [0, -5, 0]
+          }}
+          transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        >
+          🧳
+        </motion.div>
 
-        {/* 4) Dải trắng rộng ở giữa + dải xanh đậm kề sau */}
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(160deg,transparent_43%,rgba(255,255,255,0.92)_50%,transparent_57%)]" />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(160deg,transparent_57%,rgba(0,108,54,0.12)_61%,transparent_67%)]" />
-
-        {/* 5) Dải trắng mảnh ở góc dưới-phải + dải xanh đậm kề sau */}
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(160deg,transparent_74%,rgba(255,255,255,0.65)_78%,transparent_82%)]" />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(160deg,transparent_82%,rgba(0,108,54,0.10)_86%,transparent_90%)]" />
-
-        {/* Nội dung hero với animation */}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+        {/* Content */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 pb-32 sm:pb-40 w-full z-10">
           <motion.div
-            className="mx-auto text-center max-w-3xl"
+            className="mx-auto text-center max-w-4xl"
             variants={staggerContainer}
             initial="initial"
             animate="animate"
           >
+            {/* Badge */}
             <motion.div
-              className="inline-flex items-center rounded-full bg-white shadow px-3 py-1 text-xs text-gray-600 mb-6"
+              className="inline-flex items-center rounded-full bg-white/95 backdrop-blur-sm shadow-lg px-4 py-2 text-sm font-medium text-primary-700 mb-8"
               variants={fadeInUpStagger}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}
               transition={{ duration: 0.2 }}
             >
               <motion.span
-                className="inline-block h-2 w-2 rounded-full bg-primary-500 mr-2"
-                animate={{ scale: [1, 1.2, 1] }}
+                className="inline-block h-2.5 w-2.5 rounded-full bg-primary-500 mr-2.5"
+                animate={{ scale: [1, 1.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
               Được tin tưởng bởi 10,000+ du khách
             </motion.div>
 
+            {/* Main heading */}
             <motion.h1
-              className="text-3xl sm:text-5xl font-extrabold tracking-tight text-gray-900"
+              className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight pb-4"
               variants={fadeInUp}
             >
               Cuộc Phiêu Lưu Đang Chờ.
               <br />
               <motion.span
-                className="text-primary-700"
+                className="inline-block mt-2 pb-2"
                 animate={{
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                  textShadow: [
+                    "0 0 20px rgba(255,255,255,0.5)",
+                    "0 0 40px rgba(255,255,255,0.3)",
+                    "0 0 20px rgba(255,255,255,0.5)",
+                  ]
                 }}
                 transition={{ duration: 3, repeat: Infinity }}
                 style={{
-                  background:
-                    "linear-gradient(90deg, #006C36, #008B52, #006C36)",
+                  background: "linear-gradient(90deg, #FFFFFF, #D1FAE5, #FFFFFF)",
                   backgroundSize: "200% 100%",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
+                  lineHeight: "1.3",
                 }}
               >
-                Thuê Thiết Bị Ngay Hôm Nay!
+                Thuê Thiết Bị Du Lịch Ngay!
               </motion.span>
             </motion.h1>
 
+            {/* Description */}
             <motion.p
-              className="mt-6 text-gray-600 leading-7"
+              className="mt-8 text-lg sm:text-xl text-primary-50 leading-8 max-w-3xl mx-auto"
               variants={fadeInUpStagger}
             >
-              Khám phá. Ghi lại. Chia sẻ. Truy cập thiết bị du lịch cao cấp từ
-              những người địa phương đáng tin cậy.
+              🏔️ Khám phá. 📸 Ghi lại. 🌍 Chia sẻ. <br className="sm:hidden"/>
+              Truy cập thiết bị du lịch cao cấp từ những người địa phương đáng tin cậy.
             </motion.p>
 
+            {/* Equipment categories quick preview */}
             <motion.div
-              className="mt-8 flex items-center justify-center gap-3"
+              className="mt-8 flex flex-wrap items-center justify-center gap-3"
               variants={fadeInUpStagger}
             >
-              <motion.div {...scaleOnHover}>
+              {[
+                { icon: "📷", label: "Camera" },
+                { icon: "🎒", label: "Balo" },
+                { icon: "⛺", label: "Lều Trại" },
+                { icon: "🧳", label: "Vali" },
+                { icon: "🚁", label: "Flycam" },
+                { icon: "📍", label: "GPS" },
+              ].map((item, idx) => (
+                <motion.div
+                  key={idx}
+                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 text-white text-sm font-medium"
+                  whileHover={{ 
+                    scale: 1.1, 
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    borderColor: "rgba(255, 255, 255, 0.4)"
+                  }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span>{item.label}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* CTA Buttons */}
+            <motion.div
+              className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
+              variants={fadeInUpStagger}
+            >
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link
                   to={ROUTES.PRODUCTS}
-                  className="inline-flex items-center bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-md transition-colors"
+                  className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl transition-all"
                 >
                   <motion.span
-                    className="mr-2"
+                    className="mr-2 text-xl"
                     animate={{ rotate: [0, 10, -10, 0] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
                     🔎
                   </motion.span>
-                  Tìm Thiết Bị
+                  Tìm Thiết Bị Ngay
                 </Link>
               </motion.div>
-              <motion.div {...scaleOnHover}>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link
                   to={ROUTES.REGISTER}
-                  className="inline-flex items-center border border-gray-300 hover:bg-gray-100 text-gray-800 px-5 py-2.5 rounded-md transition-colors"
+                  className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all"
                 >
+                  <span className="mr-2">💼</span>
                   Cho Thuê Đồ
                 </Link>
               </motion.div>
             </motion.div>
 
+            {/* Trust indicators */}
             <motion.div
-              className="mt-6 flex items-center justify-center gap-6 text-xs text-gray-600"
+              className="mt-12 mb-8 flex flex-wrap items-center justify-center gap-8 text-sm text-white/90"
               variants={fadeInUpStagger}
             >
               <motion.div
-                whileHover={{ scale: 1.1 }}
+                className="flex items-center gap-2 py-2"
+                whileHover={{ scale: 1.1, color: "#ffffff" }}
                 transition={{ duration: 0.2 }}
               >
-                ⭐ 4.9/5 đánh giá
+                <span className="text-xl">⭐</span>
+                <span className="font-semibold">4.9/5 đánh giá</span>
               </motion.div>
               <motion.div
-                whileHover={{ scale: 1.1 }}
+                className="flex items-center gap-2 py-2"
+                whileHover={{ scale: 1.1, color: "#ffffff" }}
                 transition={{ duration: 0.2 }}
               >
-                🔒 Thanh toán an toàn
+                <span className="text-xl">🔒</span>
+                <span className="font-semibold">Thanh toán an toàn</span>
               </motion.div>
               <motion.div
-                whileHover={{ scale: 1.1 }}
+                className="flex items-center gap-2 py-2"
+                whileHover={{ scale: 1.1, color: "#ffffff" }}
                 transition={{ duration: 0.2 }}
               >
-                🕑 Hỗ trợ 24/7
+                <span className="text-xl">🕑</span>
+                <span className="font-semibold">Hỗ trợ 24/7</span>
               </motion.div>
             </motion.div>
           </motion.div>
         </div>
+
+        {/* Bottom wave decoration */}
+        <div className="absolute bottom-0 left-0 right-0 z-0 pointer-events-none">
+          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto" preserveAspectRatio="none">
+            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="#F9FAFB"/>
+          </svg>
+        </div>
       </section>
 
-      {/* Featured Grid */}
-      <section className="py-10 sm:py-12">
+      {/* Popular Categories */}
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
+            className="text-center mb-12"
           >
-            <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+              Khám Phá Theo Danh Mục
+            </h2>
+            <p className="text-gray-600 text-lg">
+              Tìm thiết bị phù hợp cho chuyến phiêu lưu của bạn
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {[
+              { icon: "📷", name: "Camera", color: "from-blue-500 to-blue-600", image: "/images/camera.png" },
+              { icon: "🎒", name: "Balo", color: "from-green-500 to-green-600", image: "/images/balo.png" },
+              { icon: "⛺", name: "Lều", color: "from-orange-500 to-orange-600", image: "/images/lều.png" },
+              { icon: "🧳", name: "Vali", color: "from-purple-500 to-purple-600", image: "/images/vali.png" },
+              { icon: "🚁", name: "Flycam", color: "from-red-500 to-red-600", image: "/images/flycam.png" },
+              { icon: "📍", name: "GPS", color: "from-teal-500 to-teal-600", image: "/images/gps.png" },
+            ].map((category, idx) => (
+              <motion.div
+                key={idx}
+                className="group cursor-pointer"
+                variants={fadeInUpStagger}
+                whileHover={{ y: -8 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => navigate(`${ROUTES.PRODUCTS}?category=${category.name}`)}
+              >
+                <div className={`relative bg-gradient-to-br ${category.color} rounded-2xl p-6 aspect-square flex flex-col items-center justify-center overflow-hidden shadow-lg hover:shadow-2xl transition-all`}>
+                  {/* Background pattern */}
+                  <div className="absolute inset-0 opacity-10" 
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Ccircle cx='13' cy='13' r='1'/%3E%3C/g%3E%3C/svg%3E")`
+                    }}
+                  />
+                  
+                  <motion.div
+                    className="text-5xl mb-3 relative z-10"
+                    whileHover={{ scale: 1.2, rotate: 10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {category.icon}
+                  </motion.div>
+                  <div className="text-white font-bold text-lg relative z-10">
+                    {category.name}
+                  </div>
+                  
+                  {/* Shine effect on hover */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20"
+                    initial={{ x: "-100%" }}
+                    whileHover={{ x: "100%" }}
+                    transition={{ duration: 0.6 }}
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Featured Grid */}
+      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <span className="text-lg">⭐</span>
+              <span>HOT DEALS</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
               Thiết Bị Nổi Bật
             </h2>
-            <p className="text-center text-gray-600 mt-2">
+            <p className="text-gray-600 text-lg">
               Khám phá những món đồ được yêu thích nhất từ cộng đồng PIRA
             </p>
           </motion.div>
@@ -271,9 +448,25 @@ export default function Home() {
                 Thử lại
               </button>
             </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="mt-8 text-center py-16">
+              <div className="text-6xl mb-4">📦</div>
+              <div className="text-gray-900 font-semibold text-xl mb-2">
+                Chưa có thiết bị nổi bật
+              </div>
+              <p className="text-gray-600 mb-6">
+                Hiện tại chưa có sản phẩm nổi bật. Hãy quay lại sau nhé!
+              </p>
+              <Link
+                to={ROUTES.PRODUCTS}
+                className="inline-flex items-center bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+              >
+                Xem Tất Cả Sản Phẩm
+              </Link>
+            </div>
           ) : (
             <motion.div
-              className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
               variants={staggerContainer}
               initial="initial"
               whileInView="animate"
@@ -282,12 +475,12 @@ export default function Home() {
               {featuredProducts.map((product, idx) => (
                 <motion.div
                   key={product._id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group cursor-pointer"
+                  className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden group cursor-pointer"
                   variants={fadeInUpStagger}
                   whileHover={{
-                    y: -8,
+                    y: -12,
                     boxShadow:
-                      "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                      "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
                   }}
                   transition={{ duration: 0.3 }}
                   onClick={() =>
@@ -295,7 +488,7 @@ export default function Home() {
                   }
                 >
                   <motion.div
-                    className="h-40 relative overflow-hidden"
+                    className="h-56 relative overflow-hidden bg-gray-100"
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.3 }}
                   >
@@ -308,74 +501,87 @@ export default function Home() {
                       loading="lazy"
                     />
                     <motion.div
-                      className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"
+                      className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/0 to-black/0 group-hover:from-black/30 transition-all"
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
                       transition={{ delay: idx * 0.1 }}
                     />
+                    
+                    {/* Featured Badge */}
                     <motion.div
-                      className={`absolute top-2 right-2 ${getPromotionTierColor(
+                      className={`absolute top-3 left-3 ${getPromotionTierColor(
                         product.featuredTier
-                      )} px-2 py-1 rounded-full text-xs font-medium`}
-                      initial={{ scale: 0 }}
-                      whileInView={{ scale: 1 }}
-                      transition={{ delay: idx * 0.1 + 0.5 }}
+                      )} px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm`}
+                      initial={{ scale: 0, rotate: -180 }}
+                      whileInView={{ scale: 1, rotate: 0 }}
+                      transition={{ delay: idx * 0.1 + 0.3, type: "spring" }}
                     >
-                      {getPromotionTierName(product.featuredTier)}
+                      ⭐ {getPromotionTierName(product.featuredTier)}
+                    </motion.div>
+
+                    {/* Quick view button */}
+                    <motion.div
+                      className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <span className="text-lg">👁️</span>
                     </motion.div>
                   </motion.div>
-                  <div className="p-4">
+
+                  <div className="p-5">
                     <motion.div
-                      className="text-sm text-gray-500"
-                      whileHover={{ x: 5 }}
+                      className="flex items-center gap-1 text-sm text-gray-500 mb-2"
+                      whileHover={{ x: 3 }}
                       transition={{ duration: 0.2 }}
                     >
-                      📍 {product.location?.address?.city || "N/A"}
+                      <span className="text-base">📍</span>
+                      <span className="font-medium">{product.location?.address?.city || "N/A"}</span>
                     </motion.div>
-                    <h3 className="mt-1 font-semibold text-gray-900 group-hover:text-primary-700 transition-colors">
+                    
+                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-700 transition-colors line-clamp-2 mb-3">
                       {product.title}
                     </h3>
-                    <motion.div
-                      className="mt-2 text-primary-700 font-semibold"
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {formatPrice(product.pricing?.dailyRate)}/ngày
-                    </motion.div>
-                    <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                    
+                    <div className="flex items-baseline justify-between mb-4">
                       <motion.div
-                        whileHover={{ scale: 1.1 }}
+                        className="text-2xl font-bold text-primary-600"
+                        whileHover={{ scale: 1.05 }}
                         transition={{ duration: 0.2 }}
                       >
-                        ⭐ {product.metrics?.averageRating?.toFixed(1) || "5.0"}
+                        {formatPrice(product.pricing?.dailyRate)}
+                        <span className="text-sm font-normal text-gray-500">/ngày</span>
                       </motion.div>
+                      
                       <motion.div
-                        whileHover={{ x: 5 }}
+                        className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full"
+                        whileHover={{ scale: 1.05 }}
                         transition={{ duration: 0.2 }}
-                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Link
-                          to={`${ROUTES.PRODUCT_DETAIL.replace(
-                            ":id",
-                            product._id
-                          )}`}
-                          className="inline-flex items-center text-gray-700 hover:text-primary-700"
-                        >
-                          <motion.span
-                            className="mr-1"
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              delay: idx * 0.3,
-                            }}
-                          >
-                            👁️
-                          </motion.span>
-                          Xem Chi Tiết
-                        </Link>
+                        <span className="text-yellow-500 text-sm">⭐</span>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {product.metrics?.averageRating?.toFixed(1) || "5.0"}
+                        </span>
                       </motion.div>
                     </div>
+
+                    <motion.button
+                      className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(ROUTES.PRODUCT_DETAIL.replace(":id", product._id));
+                      }}
+                    >
+                      <span>Xem Chi Tiết</span>
+                      <motion.span
+                        animate={{ x: [0, 3, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        →
+                      </motion.span>
+                    </motion.button>
                   </div>
                 </motion.div>
               ))}
@@ -385,112 +591,116 @@ export default function Home() {
       </section>
 
       {/* Why Choose */}
-      <section className="py-10 sm:py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="rounded-2xl border border-primary-200 bg-primary-50 p-6 sm:p-10"
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
-              <h3 className="text-center text-2xl font-bold text-gray-900">
-                Tại Sao Chọn PIRA?
-              </h3>
-              <p className="text-center text-gray-700 mt-2">
-                Tham gia cùng hàng nghìn du khách tin tưởng PIRA cho nhu cầu
-                thuê thiết bị
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6"
-              variants={staggerContainer}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-            >
-              {[
-                {
-                  icon: "🔎",
-                  title: "Lựa Chọn Đa Dạng",
-                  desc: "Từ máy ảnh, đồ cắm trại đến thiết bị chuyên dụng, tất cả đều sẵn trong khu vực của bạn.",
-                },
-                {
-                  icon: "🛡️",
-                  title: "Giao Dịch An Toàn",
-                  desc: "Thanh toán bảo mật, xác minh và bảo hiểm toàn diện đảm bảo sự yên tâm.",
-                },
-                {
-                  icon: "👥",
-                  title: "Cộng Đồng Tin Cậy",
-                  desc: "Đánh giá đã xác minh, xếp hạng người dùng và cộng đồng hỗ trợ.",
-                },
-              ].map((item, idx) => (
-                <motion.div
-                  key={idx}
-                  className="bg-white rounded-xl p-6 shadow-sm group cursor-pointer"
-                  variants={fadeInUpStagger}
-                  whileHover={{
-                    y: -5,
-                    boxShadow:
-                      "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <motion.div
-                    className="text-2xl"
-                    whileHover={{ scale: 1.2, rotate: 10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {item.icon}
-                  </motion.div>
-                  <motion.h4
-                    className="mt-3 font-semibold group-hover:text-primary-700 transition-colors"
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {item.title}
-                  </motion.h4>
-                  <motion.p
-                    className="mt-2 text-gray-600 text-sm"
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {item.desc}
-                  </motion.p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-10 sm:py-12">
+      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
+            className="text-center mb-12"
           >
-            <h3 className="text-center text-2xl font-bold text-gray-900">
+            <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+              Tại Sao Chọn PIRA?
+            </h3>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Tham gia cùng hàng nghìn du khách tin tưởng PIRA cho nhu cầu thuê thiết bị
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {[
+              {
+                icon: "🔎",
+                title: "Lựa Chọn Đa Dạng",
+                desc: "Từ máy ảnh, đồ cắm trại đến thiết bị chuyên dụng, tất cả đều sẵn trong khu vực của bạn.",
+                color: "from-blue-500 to-blue-600",
+              },
+              {
+                icon: "🛡️",
+                title: "Giao Dịch An Toàn",
+                desc: "Thanh toán bảo mật, xác minh và bảo hiểm toàn diện đảm bảo sự yên tâm.",
+                color: "from-green-500 to-green-600",
+              },
+              {
+                icon: "👥",
+                title: "Cộng Đồng Tin Cậy",
+                desc: "Đánh giá đã xác minh, xếp hạng người dùng và cộng đồng hỗ trợ.",
+                color: "from-purple-500 to-purple-600",
+              },
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                className="relative bg-white rounded-2xl p-8 shadow-lg border border-gray-200 overflow-hidden group cursor-pointer"
+                variants={fadeInUpStagger}
+                whileHover={{
+                  y: -8,
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                {/* Gradient accent on top */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${item.color}`} />
+                
+                {/* Icon with gradient background */}
+                <motion.div
+                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} text-3xl mb-5 shadow-lg`}
+                  whileHover={{ scale: 1.15, rotate: 10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {item.icon}
+                </motion.div>
+                
+                <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-700 transition-colors">
+                  {item.title}
+                </h4>
+                
+                <p className="text-gray-600 leading-relaxed">
+                  {item.desc}
+                </p>
+
+                {/* Decorative element */}
+                <motion.div
+                  className={`absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-br ${item.color} rounded-full opacity-5 group-hover:opacity-10 transition-opacity`}
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: idx * 0.3 }}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <div className="inline-flex items-center gap-2 bg-yellow-50 text-yellow-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <span className="text-lg">💬</span>
+              <span>REVIEWS</span>
+            </div>
+            <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
               Được Tin Tưởng Bởi Du Khách Toàn Cầu
             </h3>
-            <p className="text-center text-gray-600 mt-2">
+            <p className="text-gray-600 text-lg">
               Xem cộng đồng của chúng tôi nói gì về trải nghiệm PIRA
             </p>
           </motion.div>
 
           <motion.div
-            className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
             variants={staggerContainer}
             initial="initial"
             whileInView="animate"
@@ -500,32 +710,40 @@ export default function Home() {
               {
                 name: "Mai Hoàng",
                 location: "Hồ Chí Minh",
+                avatar: "👩",
                 text: "PIRA đã làm cho chuyến du lịch của tôi trở nên tuyệt vời! Thuê dễ, chủ sở hữu hỗ trợ.",
               },
               {
                 name: "Nguyễn Văn A",
                 location: "Hà Nội",
+                avatar: "👨",
                 text: "Dịch vụ tuyệt vời, thiết bị chất lượng cao. Sẽ quay lại sử dụng PIRA.",
               },
               {
                 name: "Trần Thị B",
                 location: "Đà Nẵng",
+                avatar: "👩‍💼",
                 text: "Giao diện dễ sử dụng, thanh toán an toàn. Rất hài lòng với trải nghiệm.",
               },
             ].map((testimonial, i) => (
               <motion.div
                 key={i}
-                className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 group cursor-pointer"
+                className="relative bg-gradient-to-br from-white to-gray-50 rounded-2xl p-8 shadow-lg border border-gray-200 group cursor-pointer overflow-hidden"
                 variants={fadeInUpStagger}
                 whileHover={{
-                  y: -5,
-                  boxShadow:
-                    "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                  y: -8,
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
                 }}
                 transition={{ duration: 0.3 }}
               >
+                {/* Quote icon */}
+                <div className="absolute top-4 right-4 text-6xl text-primary-100 opacity-50">
+                  "
+                </div>
+
+                {/* Stars */}
                 <motion.div
-                  className="text-yellow-500 flex"
+                  className="text-yellow-400 flex gap-1 mb-4"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   transition={{ delay: i * 0.2 + 0.5 }}
@@ -533,6 +751,7 @@ export default function Home() {
                   {[...Array(5)].map((_, starIdx) => (
                     <motion.span
                       key={starIdx}
+                      className="text-xl"
                       initial={{ scale: 0, rotate: -180 }}
                       whileInView={{ scale: 1, rotate: 0 }}
                       transition={{
@@ -545,20 +764,28 @@ export default function Home() {
                     </motion.span>
                   ))}
                 </motion.div>
-                <motion.p
-                  className="mt-3 text-gray-700 text-sm group-hover:text-gray-900 transition-colors"
-                  whileHover={{ x: 5 }}
-                  transition={{ duration: 0.2 }}
-                >
+
+                {/* Testimonial text */}
+                <p className="text-gray-700 leading-relaxed mb-6 relative z-10">
                   "{testimonial.text}"
-                </motion.p>
-                <motion.div
-                  className="mt-4 text-sm text-gray-600"
-                  whileHover={{ x: 5 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  • {testimonial.name} — {testimonial.location}
-                </motion.div>
+                </p>
+
+                {/* User info */}
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-2xl shadow-md">
+                    {testimonial.avatar}
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900">{testimonial.name}</div>
+                    <div className="text-sm text-gray-500 flex items-center gap-1">
+                      <span>📍</span>
+                      {testimonial.location}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Decorative gradient */}
+                <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full opacity-20 blur-2xl" />
               </motion.div>
             ))}
           </motion.div>
@@ -566,90 +793,152 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="py-12">
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="bg-primary-700 rounded-2xl px-6 sm:px-10 py-10 text-center text-white relative overflow-hidden"
+            className="relative bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 rounded-3xl px-8 sm:px-12 py-16 text-center text-white overflow-hidden shadow-2xl"
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
+            {/* Animated background pattern */}
+            <div className="absolute inset-0 opacity-10" 
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+              }}
+            />
+
             {/* Floating background elements */}
             <motion.div
-              className="absolute top-4 left-4 text-4xl opacity-20"
+              className="absolute top-8 left-12 text-5xl opacity-20"
               animate={floating}
               transition={{ duration: 3, repeat: Infinity, delay: 0 }}
             >
               ✈️
             </motion.div>
             <motion.div
-              className="absolute top-8 right-8 text-3xl opacity-20"
+              className="absolute top-12 right-16 text-4xl opacity-20"
               animate={floating}
               transition={{ duration: 4, repeat: Infinity, delay: 1 }}
             >
               🎒
             </motion.div>
             <motion.div
-              className="absolute bottom-6 left-8 text-3xl opacity-20"
+              className="absolute bottom-10 left-16 text-4xl opacity-20"
               animate={floating}
               transition={{ duration: 3.5, repeat: Infinity, delay: 2 }}
             >
               📷
             </motion.div>
             <motion.div
-              className="absolute bottom-4 right-6 text-4xl opacity-20"
+              className="absolute bottom-8 right-12 text-5xl opacity-20"
               animate={floating}
               transition={{ duration: 4.5, repeat: Infinity, delay: 0.5 }}
             >
               🏔️
             </motion.div>
 
+            {/* Content */}
             <motion.div
+              className="relative z-10"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-2xl font-bold">
+              <motion.div
+                className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-6"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <span className="text-lg">🚀</span>
+                <span>BẮT ĐẦU NGAY HÔM NAY</span>
+              </motion.div>
+
+              <h3 className="text-3xl sm:text-5xl font-extrabold mb-4">
                 Sẵn Sàng Bắt Đầu Cuộc Phiêu Lưu?
               </h3>
-              <p className="mt-2 text-primary-100">
-                Tham gia PIRA ngay hôm nay và khám phá thế giới khả năng du
-                lịch.
+              <p className="text-lg sm:text-xl text-primary-100 max-w-2xl mx-auto leading-relaxed">
+                Tham gia PIRA ngay hôm nay và khám phá thế giới khả năng du lịch với hàng ngàn thiết bị chất lượng cao.
               </p>
             </motion.div>
 
+            {/* CTA Buttons */}
             <motion.div
-              className="mt-6 flex items-center justify-center gap-3"
+              className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
               viewport={{ once: true }}
             >
-              <motion.div {...scaleOnHover}>
+              <motion.div 
+                whileHover={{ scale: 1.05 }} 
+                whileTap={{ scale: 0.95 }}
+              >
                 <Link
-                  to={ROUTES.HOME}
-                  className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-5 py-2.5 rounded-md transition-colors"
+                  to={ROUTES.PRODUCTS}
+                  className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-bold text-lg shadow-2xl transition-all"
                 >
                   <motion.span
-                    className="mr-2"
+                    className="mr-2 text-xl"
                     animate={{ rotate: [0, 10, -10, 0] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
                     🔎
                   </motion.span>
-                  Tìm Thiết Bị
+                  Tìm Thiết Bị Ngay
+                  <motion.span
+                    className="ml-2"
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    →
+                  </motion.span>
                 </Link>
               </motion.div>
-              <motion.div {...scaleOnHover}>
+              
+              <motion.div 
+                whileHover={{ scale: 1.05 }} 
+                whileTap={{ scale: 0.95 }}
+              >
                 <Link
                   to={ROUTES.REGISTER}
-                  className="inline-flex items-center border border-white hover:bg-white/10 px-5 py-2.5 rounded-md transition-colors"
+                  className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 backdrop-blur-sm px-8 py-4 rounded-xl font-bold text-lg transition-all"
                 >
+                  <span className="mr-2">💼</span>
                   Cho Thuê Đồ
                 </Link>
               </motion.div>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              className="mt-12 grid grid-cols-3 gap-8 max-w-3xl mx-auto relative z-10"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              viewport={{ once: true }}
+            >
+              {[
+                { number: "10,000+", label: "Du Khách" },
+                { number: "5,000+", label: "Thiết Bị" },
+                { number: "4.9★", label: "Đánh Giá" },
+              ].map((stat, idx) => (
+                <motion.div
+                  key={idx}
+                  className="text-center"
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">
+                    {stat.number}
+                  </div>
+                  <div className="text-sm text-primary-100">
+                    {stat.label}
+                  </div>
+                </motion.div>
+              ))}
             </motion.div>
           </motion.div>
         </div>

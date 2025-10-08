@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import AppProviders from "./providers/AppProviders";
 import Navigation from "./components/layout/Navigation";
+import Footer from "./components/layout/Footer";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import { ROUTES } from "./utils/constants";
 
@@ -63,14 +64,39 @@ function ConditionalNavigation() {
   return <Navigation />;
 }
 
+// Component to conditionally render Footer
+function ConditionalFooter() {
+  const location = useLocation();
+
+  const authRoutes = [
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    ROUTES.VERIFY_EMAIL,
+    ROUTES.FORGOT_PASSWORD,
+    ROUTES.RESET_PASSWORD,
+    ROUTES.PROFILE,
+  ];
+
+  // Don't show footer on auth routes, admin routes, or chat
+  if (
+    authRoutes.includes(location.pathname) || 
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith(ROUTES.CHAT)
+  ) {
+    return null;
+  }
+
+  return <Footer />;
+}
+
 export default function App() {
   return (
     <AppProviders>
       <BrowserRouter>
         <ScrollToTop />
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
           <ConditionalNavigation />
-          <main>
+          <main className="flex-1">
             <Routes>
               {/* Public routes */}
               <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -149,6 +175,7 @@ export default function App() {
               </Route>
             </Routes>
           </main>
+          <ConditionalFooter />
         </div>
       </BrowserRouter>
     </AppProviders>
