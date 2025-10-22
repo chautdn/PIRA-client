@@ -27,8 +27,12 @@ class CartApiService {
       },
     });
 
-    // Backend returns: { success, data: cart } where cart = { user, items }
-    return response.data.data?.items || [];
+    // Backend returns: { success, data: cart } where cart = { user, items, availabilityWarning? }
+    const cart = response.data.data;
+    return {
+      items: cart?.items || [],
+      warning: cart?.availabilityWarning || null
+    };
   }
 
   /**
@@ -68,6 +72,14 @@ class CartApiService {
    */
   async validateCart() {
     const response = await api.post("/cart/validate");
+    return response.data.data;
+  }
+
+  /**
+   * Get month availability for product
+   */
+  async getMonthAvailability(productId, year, month) {
+    const response = await api.get(`/cart/month-availability/${productId}/${year}/${month}`);
     return response.data.data;
   }
 }

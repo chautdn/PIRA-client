@@ -4,6 +4,41 @@ import { motion } from "framer-motion";
 import { ROUTES } from "../utils/constants";
 import { productService } from "../services/product";
 import Loading from "../components/common/Loading";
+import { 
+  BiCamera, 
+  BiCheckCircle, 
+  BiShield,
+  BiSupport,
+  BiAward,
+  BiInfoCircle
+} from "react-icons/bi";
+import { 
+  HiLocationMarker,
+  HiStar,
+  HiShieldCheck,
+  HiClock
+} from "react-icons/hi";
+import { 
+  FiMapPin,
+  FiSearch
+} from "react-icons/fi";
+import { 
+  MdBackpack,
+  MdCameraAlt,
+  MdLocationOn,
+  MdLuggage,
+  MdAirplanemodeActive,
+  MdGpsFixed,
+  MdFlightTakeoff
+} from "react-icons/md";
+import { 
+  FaCampground,
+  FaShieldAlt,
+  FaUsers,
+  FaSearch,
+  FaUserShield,
+  FaQuoteLeft
+} from "react-icons/fa";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -241,24 +276,25 @@ export default function Home() {
               variants={fadeInUpStagger}
             >
               {[
-                { icon: "📷", label: "Camera" },
-                { icon: "🎒", label: "Balo" },
-                { icon: "⛺", label: "Lều Trại" },
-                { icon: "🧳", label: "Vali" },
-                { icon: "🚁", label: "Flycam" },
-                { icon: "📍", label: "GPS" },
+                { Icon: MdCameraAlt, label: "Camera" },
+                { Icon: MdBackpack, label: "Balo" },
+                { Icon: FaCampground, label: "Lều Trại" },
+                { Icon: MdLuggage, label: "Vali" },
+                { Icon: MdFlightTakeoff, label: "Flycam" },
+                { Icon: MdGpsFixed, label: "GPS" },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
-                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 text-white text-sm font-medium"
+                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 text-white text-sm font-medium shadow-lg"
                   whileHover={{ 
                     scale: 1.1, 
-                    backgroundColor: "rgba(255, 255, 255, 0.2)",
-                    borderColor: "rgba(255, 255, 255, 0.4)"
+                    backgroundColor: "rgba(255, 255, 255, 0.25)",
+                    borderColor: "rgba(255, 255, 255, 0.5)",
+                    boxShadow: "0 10px 20px rgba(0,0,0,0.2)"
                   }}
                   transition={{ duration: 0.2 }}
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  <item.Icon className="text-xl" />
                   <span>{item.label}</span>
                 </motion.div>
               ))}
@@ -274,13 +310,7 @@ export default function Home() {
                   to={ROUTES.PRODUCTS}
                   className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl transition-all"
                 >
-                  <motion.span
-                    className="mr-2 text-xl"
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    🔎
-                  </motion.span>
+                  <FaSearch className="mr-2 text-xl" />
                   Tìm Thiết Bị Ngay
                 </Link>
               </motion.div>
@@ -289,7 +319,7 @@ export default function Home() {
                   to={ROUTES.REGISTER}
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all"
                 >
-                  <span className="mr-2">💼</span>
+                  <MdAirplanemodeActive className="mr-2 text-xl" />
                   Cho Thuê Đồ
                 </Link>
               </motion.div>
@@ -305,7 +335,7 @@ export default function Home() {
                 whileHover={{ scale: 1.1, color: "#ffffff" }}
                 transition={{ duration: 0.2 }}
               >
-                <span className="text-xl">⭐</span>
+                <HiStar className="text-2xl text-yellow-300" />
                 <span className="font-semibold">4.9/5 đánh giá</span>
               </motion.div>
               <motion.div
@@ -313,7 +343,7 @@ export default function Home() {
                 whileHover={{ scale: 1.1, color: "#ffffff" }}
                 transition={{ duration: 0.2 }}
               >
-                <span className="text-xl">🔒</span>
+                <HiShieldCheck className="text-2xl text-green-300" />
                 <span className="font-semibold">Thanh toán an toàn</span>
               </motion.div>
               <motion.div
@@ -321,7 +351,7 @@ export default function Home() {
                 whileHover={{ scale: 1.1, color: "#ffffff" }}
                 transition={{ duration: 0.2 }}
               >
-                <span className="text-xl">🕑</span>
+                <HiClock className="text-2xl text-blue-300" />
                 <span className="font-semibold">Hỗ trợ 24/7</span>
               </motion.div>
             </motion.div>
@@ -362,12 +392,12 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {[
-              { icon: "📷", name: "Camera", color: "from-blue-500 to-blue-600", image: "/images/camera.png" },
-              { icon: "🎒", name: "Balo", color: "from-green-500 to-green-600", image: "/images/balo.png" },
-              { icon: "⛺", name: "Lều", color: "from-orange-500 to-orange-600", image: "/images/lều.png" },
-              { icon: "🧳", name: "Vali", color: "from-purple-500 to-purple-600", image: "/images/vali.png" },
-              { icon: "🚁", name: "Flycam", color: "from-red-500 to-red-600", image: "/images/flycam.png" },
-              { icon: "📍", name: "GPS", color: "from-teal-500 to-teal-600", image: "/images/gps.png" },
+              { icon: MdCameraAlt, name: "Camera", color: "from-blue-500 to-blue-600" },
+              { icon: MdBackpack, name: "Balo", color: "from-green-500 to-green-600" },
+              { icon: FaCampground, name: "Lều", color: "from-orange-500 to-orange-600" },
+              { icon: MdLuggage, name: "Vali", color: "from-purple-500 to-purple-600" },
+              { icon: MdFlightTakeoff, name: "Flycam", color: "from-red-500 to-red-600" },
+              { icon: MdGpsFixed, name: "GPS", color: "from-teal-500 to-teal-600" },
             ].map((category, idx) => (
               <motion.div
                 key={idx}
@@ -377,7 +407,7 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
                 onClick={() => navigate(`${ROUTES.PRODUCTS}?category=${category.name}`)}
               >
-                <div className={`relative bg-gradient-to-br ${category.color} rounded-2xl p-6 aspect-square flex flex-col items-center justify-center overflow-hidden shadow-lg hover:shadow-2xl transition-all`}>
+                <div className={`relative bg-gradient-to-br ${category.color} rounded-2xl p-6 aspect-square flex flex-col items-center justify-center overflow-hidden shadow-xl hover:shadow-2xl transition-all`}>
                   {/* Background pattern */}
                   <div className="absolute inset-0 opacity-10" 
                     style={{
@@ -385,20 +415,22 @@ export default function Home() {
                     }}
                   />
                   
+                  {/* White circle background for icon */}
                   <motion.div
-                    className="text-5xl mb-3 relative z-10"
-                    whileHover={{ scale: 1.2, rotate: 10 }}
+                    className="relative z-10 mb-3 bg-white/20 backdrop-blur-sm rounded-full p-4 shadow-lg"
+                    whileHover={{ scale: 1.15, rotate: 10 }}
                     transition={{ duration: 0.3 }}
                   >
-                    {category.icon}
+                    <category.icon className="text-5xl text-white drop-shadow-lg" />
                   </motion.div>
-                  <div className="text-white font-bold text-lg relative z-10">
+                  
+                  <div className="text-white font-bold text-lg relative z-10 drop-shadow-md">
                     {category.name}
                   </div>
                   
                   {/* Shine effect on hover */}
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20"
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30"
                     initial={{ x: "-100%" }}
                     whileHover={{ x: "100%" }}
                     transition={{ duration: 0.6 }}
@@ -535,7 +567,7 @@ export default function Home() {
                       whileHover={{ x: 3 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <span className="text-base">📍</span>
+                      <HiLocationMarker className="text-primary-500 text-base" />
                       <span className="font-medium">{product.location?.address?.city || "N/A"}</span>
                     </motion.div>
                     
@@ -558,30 +590,12 @@ export default function Home() {
                         whileHover={{ scale: 1.05 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <span className="text-yellow-500 text-sm">⭐</span>
+                        <HiStar className="text-yellow-500 text-base" />
                         <span className="text-sm font-semibold text-gray-900">
                           {product.metrics?.averageRating?.toFixed(1) || "5.0"}
                         </span>
                       </motion.div>
                     </div>
-
-                    <motion.button
-                      className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(ROUTES.PRODUCT_DETAIL.replace(":id", product._id));
-                      }}
-                    >
-                      <span>Xem Chi Tiết</span>
-                      <motion.span
-                        animate={{ x: [0, 3, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        →
-                      </motion.span>
-                    </motion.button>
                   </div>
                 </motion.div>
               ))}
@@ -617,19 +631,19 @@ export default function Home() {
           >
             {[
               {
-                icon: "🔎",
+                Icon: FiSearch,
                 title: "Lựa Chọn Đa Dạng",
                 desc: "Từ máy ảnh, đồ cắm trại đến thiết bị chuyên dụng, tất cả đều sẵn trong khu vực của bạn.",
                 color: "from-blue-500 to-blue-600",
               },
               {
-                icon: "🛡️",
+                Icon: FaShieldAlt,
                 title: "Giao Dịch An Toàn",
                 desc: "Thanh toán bảo mật, xác minh và bảo hiểm toàn diện đảm bảo sự yên tâm.",
                 color: "from-green-500 to-green-600",
               },
               {
-                icon: "👥",
+                Icon: FaUsers,
                 title: "Cộng Đồng Tin Cậy",
                 desc: "Đánh giá đã xác minh, xếp hạng người dùng và cộng đồng hỗ trợ.",
                 color: "from-purple-500 to-purple-600",
@@ -650,11 +664,11 @@ export default function Home() {
                 
                 {/* Icon with gradient background */}
                 <motion.div
-                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} text-3xl mb-5 shadow-lg`}
+                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} mb-5 shadow-lg`}
                   whileHover={{ scale: 1.15, rotate: 10 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {item.icon}
+                  <item.Icon className="text-3xl text-white" />
                 </motion.div>
                 
                 <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-700 transition-colors">
@@ -710,19 +724,16 @@ export default function Home() {
               {
                 name: "Mai Hoàng",
                 location: "Hồ Chí Minh",
-                avatar: "👩",
                 text: "PIRA đã làm cho chuyến du lịch của tôi trở nên tuyệt vời! Thuê dễ, chủ sở hữu hỗ trợ.",
               },
               {
                 name: "Nguyễn Văn A",
                 location: "Hà Nội",
-                avatar: "👨",
                 text: "Dịch vụ tuyệt vời, thiết bị chất lượng cao. Sẽ quay lại sử dụng PIRA.",
               },
               {
                 name: "Trần Thị B",
                 location: "Đà Nẵng",
-                avatar: "👩‍💼",
                 text: "Giao diện dễ sử dụng, thanh toán an toàn. Rất hài lòng với trải nghiệm.",
               },
             ].map((testimonial, i) => (
@@ -737,8 +748,8 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
               >
                 {/* Quote icon */}
-                <div className="absolute top-4 right-4 text-6xl text-primary-100 opacity-50">
-                  "
+                <div className="absolute top-4 right-4 opacity-20">
+                  <FaQuoteLeft className="text-6xl text-primary-500" />
                 </div>
 
                 {/* Stars */}
@@ -751,7 +762,6 @@ export default function Home() {
                   {[...Array(5)].map((_, starIdx) => (
                     <motion.span
                       key={starIdx}
-                      className="text-xl"
                       initial={{ scale: 0, rotate: -180 }}
                       whileInView={{ scale: 1, rotate: 0 }}
                       transition={{
@@ -760,7 +770,7 @@ export default function Home() {
                         stiffness: 200,
                       }}
                     >
-                      ★
+                      <HiStar />
                     </motion.span>
                   ))}
                 </motion.div>
@@ -772,13 +782,13 @@ export default function Home() {
 
                 {/* User info */}
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-2xl shadow-md">
-                    {testimonial.avatar}
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-md">
+                    <FaUserShield className="text-white text-2xl" />
                   </div>
                   <div>
                     <div className="font-bold text-gray-900">{testimonial.name}</div>
                     <div className="text-sm text-gray-500 flex items-center gap-1">
-                      <span>📍</span>
+                      <MdLocationOn className="text-primary-500" />
                       {testimonial.location}
                     </div>
                   </div>
@@ -880,13 +890,7 @@ export default function Home() {
                   to={ROUTES.PRODUCTS}
                   className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-bold text-lg shadow-2xl transition-all"
                 >
-                  <motion.span
-                    className="mr-2 text-xl"
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    🔎
-                  </motion.span>
+                  <FaSearch className="mr-2 text-xl" />
                   Tìm Thiết Bị Ngay
                   <motion.span
                     className="ml-2"
@@ -906,7 +910,7 @@ export default function Home() {
                   to={ROUTES.REGISTER}
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 backdrop-blur-sm px-8 py-4 rounded-xl font-bold text-lg transition-all"
                 >
-                  <span className="mr-2">💼</span>
+                  <MdAirplanemodeActive className="mr-2 text-xl" />
                   Cho Thuê Đồ
                 </Link>
               </motion.div>

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { productService } from '../services/product';
 
 export default function ProductList() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({});
@@ -302,11 +303,12 @@ export default function ProductList() {
                 {products.map((product) => (
                   <motion.div 
                     key={product._id}
-                    className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group flex flex-col h-full"
+                    className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group flex flex-col h-full cursor-pointer"
                     whileHover={{ y: -5, scale: 1.02 }}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
+                    onClick={() => navigate(`/product/${product._id}`)}
                   >
                     {/* Product Image */}
                     <div className="relative h-56 overflow-hidden">
@@ -323,7 +325,10 @@ export default function ProductList() {
 
                       {/* Favorite Button */}
                       <button 
-                        onClick={() => toggleFavorite(product._id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(product._id);
+                        }}
                         className={`absolute top-3 right-3 w-10 h-10 rounded-full backdrop-blur-sm border border-gray-200 shadow-lg flex items-center justify-center transition-all transform hover:scale-110 ${
                           favorites.has(product._id) 
                             ? 'bg-red-50 text-red-500 border-red-200' 
@@ -374,22 +379,15 @@ export default function ProductList() {
                       {/* Spacer to push buttons to bottom */}
                       <div className="flex-1"></div>
 
-                      {/* Action Buttons - Always at bottom */}
-                      <div className="space-y-3 mt-auto">
-                        {/* Rent Now Button - Nghiệp vụ Renrenzu: Phải vào detail để chọn ngày */}
+                      {/* Action Button - Always at bottom */}
+                      <div className="mt-auto">
+                        {/* Rent Now Button - Navigate to detail to select dates */}
                         <Link 
                           to={`/product/${product._id}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                         >
                           📅 Thuê Ngay
-                        </Link>
-
-                        {/* View Details */}
-                        <Link 
-                          to={`/product/${product._id}`} 
-                          className="block text-center text-green-600 hover:text-green-800 font-medium transition-colors py-2 hover:underline"
-                        >
-                          Xem chi tiết →
                         </Link>
                       </div>
                     </div>

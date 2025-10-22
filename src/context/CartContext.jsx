@@ -132,11 +132,14 @@ export const CartProvider = ({ children }) => {
       }
 
       let cartItems = [];
+      let warning = null;
 
       if (isAuthenticated()) {
         try {
           // Add to backend
-          cartItems = await cartApiService.addToCart(product._id, quantity, rental);
+          const result = await cartApiService.addToCart(product._id, quantity, rental);
+          cartItems = result.items || result; // Handle both new and old format
+          warning = result.warning;
         } catch (error) {
           console.error("Backend error:", error);
           return { success: false, error: error.response?.data?.message || "Không thể thêm vào giỏ hàng" };
@@ -149,7 +152,7 @@ export const CartProvider = ({ children }) => {
       setCart(cartItems);
       updateCartStats(cartItems);
       setIsCartOpen(true);
-      return { success: true };
+      return { success: true, warning: warning };
     } catch (error) {
       console.error("Add to cart error:", error);
       return { success: false, error: error.message };
