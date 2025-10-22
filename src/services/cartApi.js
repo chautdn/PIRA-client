@@ -9,7 +9,8 @@ class CartApiService {
    */
   async getCart() {
     const response = await api.get("/cart");
-    return response.data.data.items || [];
+    // Backend returns: { success, data: { user, items } }
+    return response.data.data?.items || [];
   }
 
   /**
@@ -25,7 +26,9 @@ class CartApiService {
         duration: 1,
       },
     });
-    return response.data.data.items || [];
+
+    // Backend returns: { success, data: cart } where cart = { user, items }
+    return response.data.data?.items || [];
   }
 
   /**
@@ -33,7 +36,7 @@ class CartApiService {
    */
   async updateQuantity(productId, quantity) {
     const response = await api.put(`/cart/${productId}`, { quantity });
-    return response.data.data.items || [];
+    return response.data.data?.items || [];
   }
 
   /**
@@ -41,7 +44,7 @@ class CartApiService {
    */
   async removeItem(productId) {
     const response = await api.delete(`/cart/${productId}`);
-    return response.data.data.items || [];
+    return response.data.data?.items || [];
   }
 
   /**

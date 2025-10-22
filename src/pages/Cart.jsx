@@ -15,6 +15,23 @@ const Cart = () => {
     }).format(price);
   };
 
+  // Tính phí nền tảng (5-10% tùy loại sản phẩm)
+  const calculatePlatformFee = () => {
+    return cart.reduce((total, item) => {
+      const { product, quantity, rental } = item;
+      const dailyRate = product.pricing?.dailyRate || 0;
+      const days = rental?.duration || 1;
+      const itemTotal = dailyRate * days * quantity;
+      
+      // Phí nền tảng: 5% cho sản phẩm thông thường, 10% cho sản phẩm cao cấp
+      const feeRate = product.pricing?.dailyRate > 500000 ? 0.10 : 0.05;
+      return total + (itemTotal * feeRate);
+    }, 0);
+  };
+
+  const platformFee = calculatePlatformFee();
+  const finalTotal = cartTotal + platformFee;
+
   const handleCheckout = () => {
     // TODO: Implement checkout logic
     alert("Chức năng thanh toán đang được phát triển!");
@@ -124,43 +141,62 @@ const Cart = () => {
                         </Link>
 
                         <div className="text-gray-600 mb-4">
-                          <div className="text-lg font-semibold">
-                            {formatPrice(dailyRate)}/ngày
+                          <div className="text-lg font-semibold text-gray-900">
+                            {formatPrice(dailyRate)}<span className="text-sm font-normal text-gray-500">/ngày</span>
                           </div>
-                          {days > 0 && (
-                            <div className="text-sm text-gray-500">
-                              Thời gian thuê: {days} ngày
+                          {rental && (
+                            <div className="text-sm text-gray-600 mt-2 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-blue-500">📅</span>
+                                <span>Thuê: <strong>{days} ngày</strong></span>
+                              </div>
+                              {rental.startDate && (
+                                <div className="text-xs text-gray-500">
+                                  {new Date(rental.startDate).toLocaleDateString('vi-VN')} 
+                                  {' → '}
+                                  {new Date(rental.endDate).toLocaleDateString('vi-VN')}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
 
                         {/* Quantity Controls */}
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center border-2 border-gray-300 rounded-lg overflow-hidden">
+                          <div className="flex items-center bg-gray-50 rounded-lg overflow-hidden border-2 border-gray-200">
                             <button
-                              onClick={() =>
-                                updateQuantity(product._id, quantity - 1)
-                              }
-                              className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-lg"
+                              onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))}
+                              disabled={quantity <= 1}
+                              className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-xl disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Giảm số lượng"
                             >
                               −
                             </button>
-                            <span className="px-6 py-2 bg-white text-center min-w-[60px] border-x-2 border-gray-300 font-bold">
+                            <span className="px-6 py-2 bg-white text-center min-w-[60px] font-bold text-lg">
                               {quantity}
                             </span>
                             <button
-                              onClick={() =>
-                                updateQuantity(product._id, quantity + 1)
-                              }
-                              className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-lg"
+                              onClick={() => {
+                                const maxQty = product.availability?.quantity || 1;
+                                if (quantity < maxQty) {
+                                  updateQuantity(product._id, quantity + 1);
+                                }
+                              }}
+                              disabled={quantity >= (product.availability?.quantity || 1)}
+                              className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-xl disabled:opacity-30 disabled:cursor-not-allowed"
+                              title={`Tăng số lượng (tối đa: ${product.availability?.quantity || 1})`}
                             >
                               +
                             </button>
                           </div>
 
+                          <div className="text-xs text-gray-500">
+                            Tối đa: {product.availability?.quantity || 1} cái
+                          </div>
+
                           <button
                             onClick={() => removeFromCart(product._id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all ml-auto"
                             title="Xóa sản phẩm"
                           >
                             <svg
@@ -206,12 +242,15 @@ const Cart = () => {
                   <span className="font-semibold">{formatPrice(cartTotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Phí dịch vụ</span>
-                  <span className="text-sm">Tính khi thanh toán</span>
+                  <span>Phí nền tảng</span>
+                  <span className="font-semibold text-orange-600">{formatPrice(platformFee)}</span>
+                </div>
+                <div className="text-xs text-gray-500 ml-4">
+                  (5% cho sản phẩm thường, 10% cho sản phẩm cao cấp)
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Giảm giá</span>
-                  <span className="text-primary-600 font-semibold">-0₫</span>
+                  <span className="text-green-600 font-semibold">-0₫</span>
                 </div>
               </div>
 
@@ -220,24 +259,24 @@ const Cart = () => {
                   <span className="text-lg font-semibold text-gray-900">
                     Tổng cộng
                   </span>
-                  <span className="text-3xl font-bold text-primary-600">
-                    {formatPrice(cartTotal)}
+                  <span className="text-3xl font-bold text-green-600">
+                    {formatPrice(finalTotal)}
                   </span>
                 </div>
               </div>
 
               <button
                 onClick={handleCheckout}
-                className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-4"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-4"
               >
-                Tiến Hành Thanh Toán
+                🚀 Tiến Hành Thanh Toán
               </button>
 
               <Link
                 to={ROUTES.PRODUCTS}
-                className="block w-full text-center border-2 border-gray-300 hover:border-primary-600 text-gray-700 hover:text-primary-600 py-3 rounded-xl font-semibold transition-all"
+                className="block w-full text-center border-2 border-green-500 hover:border-green-600 text-green-600 hover:text-green-700 hover:bg-green-50 py-3 rounded-xl font-semibold transition-all"
               >
-                Tiếp Tục Mua Sắm
+                ← Tiếp Tục Mua Sắm
               </Link>
 
               {/* Security Info */}
