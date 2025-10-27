@@ -3,8 +3,12 @@ import { useWishlist } from '../context/WishlistContext';
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { productService } from "../services/product";
+import { reviewService } from '../services/review';
 import { useAuth } from "../hooks/useAuth";
 import { ROUTES } from "../utils/constants";
+import ReviewForm from '../components/review/ReviewForm';
+import ReviewList from '../components/review/ReviewList';
+import ToastContainer, { toast } from '../components/common/Toast';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -17,6 +21,13 @@ export default function ProductDetail() {
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [activeTab, setActiveTab] = useState("description");
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState('PRODUCT');
+  const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
+  const [pendingCreatedReview, setPendingCreatedReview] = useState(null);
+  const [reviewCount, setReviewCount] = useState(null);
+  const [averageRating, setAverageRating] = useState(null);
+  const [selectedReviewTarget, setSelectedReviewTarget] = useState('PRODUCT');
   const [quantity, setQuantity] = useState(1);
   const [selectedDates, setSelectedDates] = useState([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -27,6 +38,11 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
+  // refresh review stats when reviews change (created/edited/deleted)
+  useEffect(() => {
+    if (product && product._id) fetchReviewStats(product._id);
+  }, [reviewsRefreshKey]);
+
   const fetchProduct = async () => {
     try {
       setLoading(true);
@@ -36,6 +52,9 @@ export default function ProductDetail() {
   // response.data = { data: { ...product } }
   const productData = response.data.data;
   setProduct(productData);
+  // fetch review stats for this product (default selected target)
+  const revieweeId = selectedReviewTarget === 'OWNER' ? productData.owner?._id : (selectedReviewTarget === 'SHIPPER' ? productData.shipper?._id : undefined);
+  fetchReviewStats(productData._id, selectedReviewTarget, revieweeId);
     } catch (error) {
       setError("Không thể tải thông tin sản phẩm");
     } finally {
@@ -112,6 +131,28 @@ export default function ProductDetail() {
     }
   };
 
+  // Fetch simple review stats (count and average) for this product
+  const fetchReviewStats = async (productId, target = selectedReviewTarget, revieweeId) => {
+    try {
+      // request a large page size to get all reviews for computing stats client-side
+      const params = { page: 1, limit: 1000 };
+      if (target) params.target = target;
+      if (revieweeId) params.reviewee = revieweeId;
+      const resp = await reviewService.listByProduct(productId, params);
+      const items = resp.data.data || [];
+      const count = items.length;
+      const avg = count ? (items.reduce((s, r) => s + (Number(r.rating) || 0), 0) / count) : 0;
+      setReviewCount(count);
+      // round to one decimal like 4.8
+      setAverageRating(Math.round(avg * 10) / 10);
+    } catch (err) {
+      console.error('fetchReviewStats error', err);
+      // fallback to product metrics if available
+      setReviewCount(product?.metrics?.reviewCount || 0);
+      setAverageRating(product?.metrics?.averageRating || 0);
+    }
+  };
+
   const getTotalPrice = () => {
     const basePrice = getRentalPrice();
     if (rentalType === "hour") {
@@ -159,6 +200,10 @@ export default function ProductDetail() {
 
   // Check if current user is the product owner
   const isOwner = user && product?.owner?._id === user._id;
+
+  // Display values for ratings (use fetched state when available, otherwise fallback to product.metrics)
+  const displayAvg = averageRating !== null ? averageRating : (product?.metrics?.averageRating || 4.8);
+  const displayCount = reviewCount !== null ? reviewCount : (product?.metrics?.reviewCount || 0);
 
   const monthNames = [
     "Tháng 1",
@@ -227,7 +272,7 @@ export default function ProductDetail() {
   // Wishlist heart icon logic
   const isWished = wishlist.includes(id);
   const handleToggleWishlist = async () => {
-    if (!user?._id) return alert('Bạn cần đăng nhập để sử dụng wishlist!');
+    if (!user?._id) return toast.error('Bạn cần đăng nhập để sử dụng wishlist!');
     if (isWished) {
       await removeFromWishlist(id);
     } else {
@@ -237,6 +282,7 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
+      <ToastContainer />
       {/* Breadcrumb */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -274,12 +320,12 @@ export default function ProductDetail() {
                 {product.title}
               </h1>
               <div className="flex flex-wrap items-center gap-6 text-gray-600">
-                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                   <span className="text-yellow-500">⭐</span>
                   <span className="font-semibold">
-                    {product.metrics?.averageRating || 4.8}
+                    {averageRating !== null ? averageRating : (product.metrics?.averageRating || 4.8)}
                   </span>
-                  <span>({product.metrics?.reviewCount || 0} đánh giá)</span>
+                  <span>({reviewCount !== null ? reviewCount : (product.metrics?.reviewCount || 0)} đánh giá)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>👁️</span>
@@ -518,6 +564,7 @@ export default function ProductDetail() {
                             </div>
                           </div>
                         </div>
+                        {/* Reviews list (moved to Reviews tab) */}
 
                         <div className="space-y-4">
                           <div className="bg-gradient-to-r from-green-50 to-teal-50 p-4 rounded-xl">
@@ -540,7 +587,7 @@ export default function ProductDetail() {
                                   ★
                                 </span>
                                 <span className="font-bold text-gray-900 ml-1">
-                                  {product.metrics?.averageRating || 4.8}
+                                  {averageRating !== null ? averageRating : (product.metrics?.averageRating || 4.8)}
                                 </span>
                               </div>
                             </div>
@@ -609,19 +656,14 @@ export default function ProductDetail() {
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-4xl font-bold text-gray-900">
-                              {product.metrics?.averageRating || 4.8}
+                              {displayAvg}
                             </div>
                             <div className="flex items-center mt-2">
                               {[...Array(5)].map((_, i) => (
                                 <span
                                   key={i}
                                   className={`text-2xl ${
-                                    i <
-                                    Math.floor(
-                                      product.metrics?.averageRating || 4.8
-                                    )
-                                      ? "text-yellow-400"
-                                      : "text-gray-300"
+                                    i < Math.floor(displayAvg) ? "text-yellow-400" : "text-gray-300"
                                   }`}
                                 >
                                   ★
@@ -629,9 +671,61 @@ export default function ProductDetail() {
                               ))}
                             </div>
                             <div className="text-gray-600 mt-1">
-                              {product.metrics?.reviewCount || 0} đánh giá
+                              {displayCount} đánh giá
                             </div>
                           </div>
+                        </div>
+                        {/* Review action buttons */}
+                                <div className="mt-6 flex flex-wrap gap-3 items-center">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => { setSelectedReviewTarget('PRODUCT'); setReviewsRefreshKey(k => k + 1); }}
+                                      className={`px-4 py-2 rounded-lg ${selectedReviewTarget === 'PRODUCT' ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-800'}`}
+                                    >
+                                      Đánh giá Sản phẩm
+                                    </button>
+                                    <button
+                                      onClick={() => { setSelectedReviewTarget('OWNER'); setReviewsRefreshKey(k => k + 1); }}
+                                      className={`px-4 py-2 rounded-lg ${selectedReviewTarget === 'OWNER' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'}`}
+                                    >
+                                      Đánh giá Chủ sở hữu
+                                    </button>
+                                    <button
+                                      onClick={() => { setSelectedReviewTarget('SHIPPER'); setReviewsRefreshKey(k => k + 1); }}
+                                      className={`px-4 py-2 rounded-lg ${selectedReviewTarget === 'SHIPPER' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-800'}`}
+                                    >
+                                      Đánh giá Shipper
+                                    </button>
+                                  </div>
+
+                                  <div className="ml-auto">
+                                    <button
+                                      onClick={() => { setReviewTarget(selectedReviewTarget); setShowReviewModal(true); }}
+                                      className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:brightness-95"
+                                    >
+                                      Viết đánh giá ({selectedReviewTarget})
+                                    </button>
+                                  </div>
+                                </div>
+                        {/* modal moved outside so it can open from any button */}
+
+                        {/* Reviews list */}
+                        <div className="mt-8">
+                          <ReviewList
+                            productId={product._id}
+                            refreshKey={reviewsRefreshKey}
+                            onReviewsChanged={(stats) => {
+                              // if stats provided, update header immediately
+                              if (stats && typeof stats.count === 'number') {
+                                setReviewCount(stats.count);
+                                setAverageRating(Math.round((stats.average || 0) * 10) / 10);
+                              }
+                            }}
+                            filterTarget={selectedReviewTarget}
+                            filterReviewee={selectedReviewTarget === 'OWNER' ? product.owner?._id : (selectedReviewTarget === 'SHIPPER' ? product.shipper?._id : undefined)}
+                            pendingCreatedReview={pendingCreatedReview}
+                            onConsumePending={() => setPendingCreatedReview(null)}
+                          />
                         </div>
                       </div>
                     </motion.div>
@@ -1015,6 +1109,57 @@ export default function ProductDetail() {
             </motion.div>
           </div>
         </div>
+        {/* Persistent review buttons (always visible) */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="bg-white/80 border border-gray-200 rounded-2xl p-4 flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => { setReviewTarget('PRODUCT'); setShowReviewModal(true); }}
+              className="px-4 py-3 rounded-lg bg-yellow-500 text-white font-semibold hover:brightness-95"
+            >
+              Đánh giá Sản phẩm
+            </button>
+            <button
+              onClick={() => { setReviewTarget('OWNER'); setShowReviewModal(true); }}
+              className="px-4 py-3 rounded-lg bg-green-500 text-white font-semibold hover:brightness-95"
+            >
+              Đánh giá Chủ sở hữu
+            </button>
+            <button
+              onClick={() => { setReviewTarget('SHIPPER'); setShowReviewModal(true); }}
+              className={`px-4 py-3 rounded-lg ${product?.shipper?._id ? 'bg-blue-500 text-white' : 'bg-blue-200 text-blue-500'} font-semibold hover:brightness-95`}
+            >
+              Đánh giá Shipper
+            </button>
+          </div>
+        </div>
+        {/* Global review modal - rendered outside tabs so any button can open it */}
+        {showReviewModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Tạo đánh giá - {reviewTarget}</h3>
+                <button onClick={() => setShowReviewModal(false)} className="text-gray-500">Đóng</button>
+              </div>
+              <div>
+                <ReviewForm
+                  productId={product._id}
+                  orderId={null}
+                  target={reviewTarget}
+                  // Correct mapping: OWNER -> product.owner, SHIPPER -> product.shipper, PRODUCT -> no reviewee
+                  reviewee={
+                    reviewTarget === 'OWNER'
+                      ? product.owner?._id
+                      : reviewTarget === 'SHIPPER'
+                      ? product.shipper?._id
+                      : undefined
+                  }
+                  onSaved={(created) => { setShowReviewModal(false); setReviewsRefreshKey(k => k + 1); if (created) setPendingCreatedReview(created); }}
+                  onCancel={() => setShowReviewModal(false)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
