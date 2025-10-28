@@ -7,7 +7,7 @@ import Footer from "./components/layout/Footer";
 import CartDrawer from "./components/cart/CartDrawer";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import { ROUTES } from "./utils/constants";
-
+import { WishlistProvider } from './context/WishlistContext';
 // Pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -94,6 +94,7 @@ function ConditionalFooter() {
 export default function App() {
   return (
     <AppProviders>
+      <WishlistProvider>
       <BrowserRouter>
         <ScrollToTop />
         <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -182,6 +183,7 @@ export default function App() {
           <ConditionalFooter />
         </div>
       </BrowserRouter>
+      </WishlistProvider>
     </AppProviders>
   );
 }

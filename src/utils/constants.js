@@ -39,6 +39,7 @@ export const ROUTES = {
     REPORTS: "/admin/reports",
     SETTINGS: "/admin/settings",
     PROFILE: "/admin/profile",
+    
   },
 };
 

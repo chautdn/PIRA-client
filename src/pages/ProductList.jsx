@@ -12,8 +12,7 @@ export default function ProductList() {
   const { user } = useAuth();
   const location = useLocation();
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [pagination, setPagination] = useState({});
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
@@ -36,17 +35,6 @@ export default function ProductList() {
   // Scroll lên đầu khi reload lần đầu
   useEffect(() => {
     window.scrollTo(0, 0);
-    loadCategories();
-    loadProducts();
-    
-    // Set default categories immediately while API loads
-    setCategories([
-      { _id: 'cameras', name: 'Máy ảnh & Quay phim' },
-      { _id: 'camping', name: 'Thiết bị cắm trại' },
-      { _id: 'luggage', name: 'Vali & Túi xách' },
-      { _id: 'sports', name: 'Thiết bị thể thao' },
-      { _id: 'accessories', name: 'Phụ kiện du lịch' }
-    ]);
   }, []);
 
   // Realtime search: cập nhật URL khi nhập
@@ -135,11 +123,6 @@ export default function ProductList() {
               <option>Giá giảm dần</option>
               <option>Đánh giá cao nhất</option>
             </select>
-            
-            {/* Results count */}
-            <div className="text-gray-600 font-medium bg-green-50 px-4 py-2 rounded-lg">
-              Tìm thấy <span className="text-green-600 font-bold">{pagination.total || 0}</span> sản phẩm
-            </div>
           </div>
         </div>
 
@@ -262,61 +245,18 @@ export default function ProductList() {
                       <span>📍 {p.location?.address?.city || '—'}</span>
                       <span>👁️ {p.metrics?.viewCount ?? 0}</span>
                     </div>
-
-                    {/* Product Info */}
-                    <div className="p-6 flex-1 flex flex-col">
-                      {/* Location & Views */}
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                        <span>📍 {product.location?.address?.city || 'Đà Nẵng'}</span>
-                        <span>👁️ {product.metrics?.viewCount || 0}</span>
-                      </div>
-
-                      {/* Title - Fixed height */}
-                      <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-green-600 transition-colors line-clamp-2 h-14">
-                        {product.title}
-                      </h3>
-
-                      {/* Rating */}
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <span key={i} className={`text-sm ${i < 4 ? 'text-yellow-400' : 'text-gray-300'}`}>
-                              ⭐
-                            </span>
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-600">
-                          {product.metrics?.averageRating || 4.8} ({product.metrics?.reviewCount || 0} đánh giá)
-                        </span>
-                      </div>
-
-                      {/* Price */}
-                      <div className="mb-4">
-                        <div className="text-2xl font-bold text-green-600">
-                          {formatPrice(product.pricing?.dailyRate || 0)}đ
-                          <span className="text-sm text-gray-500 font-normal">/ngày</span>
-                        </div>
-                      </div>
-
-                      {/* Spacer to push buttons to bottom */}
-                      <div className="flex-1"></div>
-
-                      {/* Action Button - Always at bottom */}
-                      <div className="mt-auto">
-                        {/* Rent Now Button - Navigate to detail to select dates */}
-                        <Link 
-                          to={`/product/${product._id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                        >
-                          📅 Thuê Ngay
-                        </Link>
-                      </div>
+                    <h3 className="mt-1 font-semibold text-gray-900">{p.title}</h3>
+                    <div className="mt-1 text-xs text-gray-500">Chủ sở hữu: {p.owner?.email || '—'}</div>
+                    <div className="mt-2 flex items-center text-xs">
+                      <span className="text-yellow-500">★ {p.metrics?.averageRating ?? 4.8}</span>
+                      <span className="ml-1 text-gray-500">({p.metrics?.reviewCount ?? 0})</span>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
+                    <div className="mt-2 font-semibold text-primary-700">{(p.pricing?.dailyRate || 0).toLocaleString('vi-VN')}đ/ngày</div>
+                    <Link to={`/product/${p._id || ''}`} className="mt-3 w-full inline-flex justify-center items-center bg-primary-600 hover:bg-primary-700 text-white text-sm px-4 py-2 rounded-md">Xem Chi Tiết</Link>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
             {/* Pagination */}
             {/* Pagination động */}
@@ -360,8 +300,3 @@ export default function ProductList() {
     </div>
   );
 }
-
-
-
-
-

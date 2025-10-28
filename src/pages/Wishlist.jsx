@@ -7,7 +7,7 @@ export default function Wishlist() {
   const { user } = useAuth();
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  
   useEffect(() => {
     if (!user?._id) return;
     wishlistService.list(user._id)

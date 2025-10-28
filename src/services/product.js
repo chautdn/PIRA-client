@@ -6,7 +6,7 @@ export const productService = {
 
   // Get product by ID
   getById: (id) => api.get(`/products/${id}`),
-
+  
   // Get all categories for filtering
   getCategories: () => api.get("/products/categories"),
 
