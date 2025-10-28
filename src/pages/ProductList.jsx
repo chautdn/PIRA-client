@@ -1,297 +1,438 @@
-
-import React, { useEffect, useState, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { productService } from '../services/product';
-import { useWishlist } from '../context/WishlistContext';
-import { useAuth } from '../hooks/useAuth';
 
 export default function ProductList() {
-  // Lưu page trước đó để xác định hướng chuyển trang
-  const prevPageRef = useRef();
-  const { user } = useAuth();
-  const location = useLocation();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [total, setTotal] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
-  // Lấy search param từ URL
-  const searchParams = new URLSearchParams(location.search);
-  const search = searchParams.get('search') || '';
-  const [searchInput, setSearchInput] = useState(search);
-  const [filter, setFilter] = useState({
-    name: '',
+  const [favorites, setFavorites] = useState(new Set());
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 12,
+    search: '',
     category: '',
-    district: '',
-    minPrice: '',
-    maxPrice: '',
-    condition: '',
-    status: '',
-    inStock: false,
+    minPrice: 0,
+    maxPrice: 10000000,
+    sort: 'createdAt',
+    order: 'desc'
   });
 
-
-  // Scroll lên đầu khi reload lần đầu
   useEffect(() => {
     window.scrollTo(0, 0);
+    loadCategories();
+    loadProducts();
+    
+    // Set default categories immediately while API loads
+    setCategories([
+      { _id: 'cameras', name: 'Máy ảnh & Quay phim' },
+      { _id: 'camping', name: 'Thiết bị cắm trại' },
+      { _id: 'luggage', name: 'Vali & Túi xách' },
+      { _id: 'sports', name: 'Thiết bị thể thao' },
+      { _id: 'accessories', name: 'Phụ kiện du lịch' }
+    ]);
   }, []);
 
-  // Realtime search: cập nhật URL khi nhập
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      const params = new URLSearchParams(location.search);
-      if (searchInput) {
-        params.set('search', searchInput);
-      } else {
-        params.delete('search');
-      }
-      window.history.replaceState(null, '', `/products?${params}`);
-    }, 400);
-    return () => clearTimeout(delayDebounce);
-  }, [searchInput, location.search]);
+    loadProducts();
+  }, [filters]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        // Lấy page hiện tại từ URL
-        const searchParams = new URLSearchParams(location.search);
-        const page = Number(searchParams.get('page')) || 1;
-        let params = { page, limit: 12 };
-        if (search) params.search = search;
-  if (filter.name) params.name = filter.name;
-  if (filter.category) params.category = filter.category;
-  if (filter.district) params.district = filter.district;
-  if (filter.minPrice) params.minPrice = filter.minPrice;
-  if (filter.maxPrice) params.maxPrice = filter.maxPrice;
-  if (filter.condition) params.condition = filter.condition;
-  if (filter.status) params.status = filter.status;
-  if (filter.inStock) params.inStock = true;
-        const res = await productService.list(params);
-        const list = res.data?.data || [];
-        setProducts(list);
-        setTotal(res.data?.pagination?.total || list.length);
-
-        // Scroll lên đầu nếu chuyển trang tiến hoặc reload, không scroll khi back
-        const prevPage = prevPageRef.current;
-        if (prevPage !== undefined) {
-          if (page > prevPage) {
-            window.scrollTo(0, 0);
-          }
-        }
-        prevPageRef.current = page;
-      } catch (e) {
-        console.error('Load products failed', e);
-        setError('Không tải được danh sách sản phẩm');
-      } finally {
-        setLoading(false);
-      }
-    })();
-    // eslint-disable-next-line
-  }, [search, filter, location.search]);
-
-  // Wishlist logic now uses context
-  const handleToggleWishlist = async (productId) => {
-    if (!user?._id) return alert('Bạn cần đăng nhập để sử dụng wishlist!');
-    const isWished = wishlist.includes(productId);
+  const loadCategories = async () => {
     try {
-      if (isWished) {
-        await removeFromWishlist(productId);
-      } else {
-        await addToWishlist(productId);
+      const res = await productService.getCategories();
+      
+      if (res.data?.success) {
+        const cats = res.data.data?.categories || [];
+        if (cats.length > 0) {
+          setCategories(cats);
+          return; // Exit early if we got real categories
+        }
+      } else if (res.data?.categories) {
+        // Fallback for different API format
+        const cats = res.data.categories;
+        if (cats.length > 0) {
+          setCategories(cats);
+          return;
+        }
+      } else if (Array.isArray(res.data)) {
+        // Direct array response
+        if (res.data.length > 0) {
+          setCategories(res.data);
+          return;
+        }
       }
     } catch (e) {
-      alert('Có lỗi khi cập nhật wishlist!');
+      // Handle load categories error
+    }
+
+    // Only use fake categories if API completely failed
+    setCategories([
+      { _id: 'cameras', name: 'Máy ảnh & Quay phim' },
+      { _id: 'camping', name: 'Thiết bị cắm trại' },
+      { _id: 'luggage', name: 'Vali & Túi xách' },
+      { _id: 'sports', name: 'Thiết bị thể thao' },
+      { _id: 'accessories', name: 'Phụ kiện du lịch' }
+    ]);
+  };
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      
+      // Map frontend filter names to backend API names
+      const apiFilters = { ...filters };
+      if ('minPrice' in apiFilters && apiFilters.minPrice) {
+        apiFilters.priceMin = apiFilters.minPrice;
+        delete apiFilters.minPrice;
+      }
+      if ('maxPrice' in apiFilters && apiFilters.maxPrice) {
+        apiFilters.priceMax = apiFilters.maxPrice;
+        delete apiFilters.maxPrice;
+      }
+      
+      const res = await productService.list(apiFilters);
+      
+      if (res.data?.success) {
+        setProducts(res.data.data.products || []);
+        setPagination(res.data.data.pagination || {});
+      } else {
+        const list = res.data?.data || [];
+        setProducts(list);
+        setPagination(res.data?.pagination || { total: list.length, page: 1, pages: 1 });
+      }
+    } catch (e) {
+      console.error('Error loading products:', e);
+      setError('Không tải được danh sách sản phẩm');
+      setProducts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fadeIn = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } };
+  const updateFilters = (newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
+  };
+
+  const handlePageChange = (page) => {
+    setFilters(prev => ({ ...prev, page }));
+  };
+
+  const toggleFavorite = (productId) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(productId)) {
+        newFavorites.delete(productId);
+      } else {
+        newFavorites.add(productId);
+      }
+      return newFavorites;
+    });
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN').format(price);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Tìm thấy {total} sản phẩm</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <select className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-              <option>Mới nhất</option>
-              <option>Giá tăng dần</option>
-              <option>Giá giảm dần</option>
-              <option>Đánh giá cao nhất</option>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Header */}
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
+            Khám Phá Thiết Bị Du Lịch
+          </h1>
+          <p className="text-xl text-gray-600">
+            Thuê những thiết bị tốt nhất cho chuyến đi của bạn
+          </p>
+        </div>
+
+        {/* Search & Filter Bar */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+          <div className="flex flex-col lg:flex-row gap-4 items-center">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm thiết bị du lịch..."
+                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                value={filters.search}
+                onChange={(e) => updateFilters({ search: e.target.value })}
+              />
+              <svg className="absolute left-4 top-5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            
+            {/* Sort */}
+            <select 
+              className="border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              value={`${filters.sort}-${filters.order}`}
+              onChange={(e) => {
+                const [sort, order] = e.target.value.split('-');
+                updateFilters({ sort, order });
+              }}
+            >
+              <option value="createdAt-desc">Mới nhất</option>
+              <option value="price-asc">Giá thấp đến cao</option>
+              <option value="price-desc">Giá cao đến thấp</option>
+              <option value="rating-desc">Đánh giá cao nhất</option>
             </select>
+            
+            {/* Results count */}
+            <div className="text-gray-600 font-medium bg-green-50 px-4 py-2 rounded-lg">
+              Tìm thấy <span className="text-green-600 font-bold">{pagination.total || 0}</span> sản phẩm
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Sidebar filters hiện đại */}
-          <aside className="md:col-span-1 space-y-6">
-            {/* Danh mục */}
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="px-4 py-3 border-b text-sm font-semibold">Danh mục</div>
-              <div className="p-2 space-y-2">
-                {['', 'Máy ảnh & Quay phim', 'Thiết bị cắm trại', 'Vali & Túi xách', 'Thiết bị thể thao', 'Đồ điện tử', 'Phụ kiện du lịch'].map((cat, i) => (
-                  <button
-                    key={cat || 'all'}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm ${filter.category === cat ? 'bg-primary-600 text-white' : 'hover:bg-gray-100'}`}
-                    onClick={() => setFilter(f => ({ ...f, category: cat }))}
-                  >{cat || 'Tất cả'}</button>
-                ))}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar Filters */}
+          <aside className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                <h3 className="text-white font-semibold text-lg">
+                  🔍 Bộ Lọc
+                </h3>
               </div>
-            </div>
-
-            {/* Quận Đà Nẵng */}
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="px-4 py-3 border-b text-sm font-semibold">Quận Đà Nẵng</div>
-              <div className="p-4">
-                <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={filter.district} onChange={e => setFilter(f => ({ ...f, district: e.target.value }))}>
-                  <option value="">Tất cả</option>
-                  <option value="Hải Châu">Hải Châu</option>
-                  <option value="Thanh Khê">Thanh Khê</option>
-                  <option value="Sơn Trà">Sơn Trà</option>
-                  <option value="Ngũ Hành Sơn">Ngũ Hành Sơn</option>
-                  <option value="Liên Chiểu">Liên Chiểu</option>
-                  <option value="Cẩm Lệ">Cẩm Lệ</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Khoảng giá/ngày */}
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="px-4 py-3 border-b text-sm font-semibold">Khoảng giá/ngày</div>
-              <div className="p-4 flex flex-col gap-2">
-                <div className="flex gap-2 items-center">
-                  <input type="number" min="0" max="1000000" className="w-1/2 border rounded px-2 py-1" placeholder="Từ" value={filter.minPrice} onChange={e => setFilter(f => ({ ...f, minPrice: e.target.value }))} />
-                  <span>-</span>
-                  <input type="number" min="0" max="1000000" className="w-1/2 border rounded px-2 py-1" placeholder="Đến" value={filter.maxPrice} onChange={e => setFilter(f => ({ ...f, maxPrice: e.target.value }))} />
+              
+              <div className="p-6 space-y-6">
+                {/* Category Filter */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">📂 Danh Mục</h4>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => {
+                        updateFilters({ category: '' });
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
+                        !filters.category 
+                          ? 'bg-green-500 text-white shadow-lg' 
+                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      Tất cả danh mục
+                    </button>
+                    {categories.map((cat) => (
+                      <button 
+                        key={cat._id}
+                        onClick={() => {
+                          updateFilters({ category: cat._id });
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
+                          filters.category === cat._id 
+                            ? 'bg-green-500 text-white shadow-lg' 
+                            : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">(đơn vị: đ/ngày)</div>
-              </div>
-            </div>
 
-            {/* Tình trạng sản phẩm */}
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="px-4 py-3 border-b text-sm font-semibold">Tình trạng sản phẩm</div>
-              <div className="p-4">
-                <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={filter.condition} onChange={e => setFilter(f => ({ ...f, condition: e.target.value }))}>
-                  <option value="">Tất cả</option>
-                  <option value="NEW">Mới</option>
-                  <option value="LIKE_NEW">Như mới</option>
-                  <option value="GOOD">Tốt</option>
-                  <option value="FAIR">Trung bình</option>
-                  <option value="POOR">Kém</option>
-                </select>
+                {/* Price Filter */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">💰 Khoảng Giá</h4>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        placeholder="Tối thiểu"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                        value={filters.minPrice || ''}
+                        onChange={(e) => updateFilters({ minPrice: parseInt(e.target.value) || 0 })}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Tối đa"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                        value={filters.maxPrice || ''}
+                        onChange={(e) => updateFilters({ maxPrice: parseInt(e.target.value) || 10000000 })}
+                      />
+                    </div>
+                    
+                    {/* Quick price filters */}
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { label: 'Dưới 100k', min: 0, max: 100000 },
+                        { label: '100k - 500k', min: 100000, max: 500000 },
+                        { label: '500k - 1tr', min: 500000, max: 1000000 },
+                        { label: 'Trên 1tr', min: 1000000, max: 10000000 }
+                      ].map((range) => (
+                        <button
+                          key={range.label}
+                          onClick={() => {
+                            updateFilters({ minPrice: range.min, maxPrice: range.max });
+                          }}
+                          className={`w-full px-3 py-2 text-sm rounded-lg transition-all text-left ${
+                            filters.minPrice === range.min && filters.maxPrice === range.max
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-50 hover:bg-green-50 hover:text-green-600'
+                          }`}
+                        >
+                          {range.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            {/* Trạng thái sản phẩm */}
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="px-4 py-3 border-b text-sm font-semibold">Trạng thái sản phẩm</div>
-              <div className="p-4">
-                <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={filter.status} onChange={e => setFilter(f => ({ ...f, status: e.target.value }))}>
-                  <option value="">Tất cả</option>
-                  <option value="ACTIVE">Đang hoạt động</option>
-                  <option value="RENTED">Đã thuê</option>
-                  <option value="INACTIVE">Ngừng hoạt động</option>
-                  <option value="DRAFT">Nháp</option>
-                  <option value="SUSPENDED">Bị khóa</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Chỉ hiện sản phẩm còn hàng */}
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="px-4 py-3 border-b text-sm font-semibold">Khác</div>
-              <div className="p-4 flex items-center gap-2">
-                <input type="checkbox" id="inStock" checked={filter.inStock} onChange={e => setFilter(f => ({ ...f, inStock: e.target.checked }))} />
-                <label htmlFor="inStock" className="text-sm">Chỉ hiện sản phẩm còn hàng</label>
-              </div>
-            </div>
-
-            {/* Nút xóa lọc */}
-            <div className="flex justify-end">
-              <button className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-sm" onClick={() => setFilter({ name: '', category: '', district: '', minPrice: '', maxPrice: '', condition: '', status: '', inStock: false })}>Xóa lọc</button>
             </div>
           </aside>
 
-          {/* Product grid */}
-          <section className="md:col-span-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {loading && (
-                <div className="col-span-full text-center text-sm text-gray-500">Đang tải sản phẩm...</div>
-              )}
-              {error && (
-                <div className="col-span-full text-center text-sm text-red-600">{error}</div>
-              )}
-              {!loading && !error && products.map((p, idx) => (
-                <motion.div key={p._id || idx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" initial="initial" whileInView="animate" viewport={{ once: true }} transition={{ duration: 0.4, delay: idx * 0.05 }} variants={fadeIn}>
-                  <div className="relative h-44 overflow-hidden">
-                    <img src={(p.images && p.images[0]?.url) || '/images/camera.png'} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
-                    <button
-                      className={`absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 border border-gray-300 shadow flex items-center justify-center ${wishlist.includes(p._id) ? 'text-red-500' : 'text-gray-600'} hover:text-red-500`}
-                      title={wishlist.includes(p._id) ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích'}
-                      onClick={() => handleToggleWishlist(p._id)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={wishlist.includes(p._id) ? '#ef4444' : 'none'} stroke="#ef4444" strokeWidth="1.8" className="w-4 h-4">
-                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>📍 {p.location?.address?.city || '—'}</span>
-                      <span>👁️ {p.metrics?.viewCount ?? 0}</span>
+          {/* Products Grid */}
+          <section className="lg:col-span-3">
+            {loading && (
+              <div className="text-center py-20">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+                <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
+              </div>
+            )}
+            
+            {error && (
+              <div className="text-center py-20 text-red-600">{error}</div>
+            )}
+            
+            {!loading && !error && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <motion.div 
+                    key={product._id}
+                    className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group flex flex-col h-full cursor-pointer"
+                    whileHover={{ y: -5, scale: 1.02 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    onClick={() => navigate(`/product/${product._id}`)}
+                  >
+                    {/* Product Image */}
+                    <div className="relative h-56 overflow-hidden">
+                      <img 
+                        src={(product.images && product.images[0]?.url) || '/images/camera.png'} 
+                        alt={product.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                      />
+                      
+                      {/* Stock Badge */}
+                      <div className="absolute top-3 left-3 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+                        Còn {product.inventory?.quantity || 5} cái
+                      </div>
+
+                      {/* Favorite Button */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(product._id);
+                        }}
+                        className={`absolute top-3 right-3 w-10 h-10 rounded-full backdrop-blur-sm border border-gray-200 shadow-lg flex items-center justify-center transition-all transform hover:scale-110 ${
+                          favorites.has(product._id) 
+                            ? 'bg-red-50 text-red-500 border-red-200' 
+                            : 'bg-white/95 text-gray-600 hover:text-red-500'
+                        }`}
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                      </button>
                     </div>
-                    <h3 className="mt-1 font-semibold text-gray-900">{p.title}</h3>
-                    <div className="mt-1 text-xs text-gray-500">Chủ sở hữu: {p.owner?.email || '—'}</div>
-                    <div className="mt-2 flex items-center text-xs">
-                      <span className="text-yellow-500">★ {p.metrics?.averageRating ?? 4.8}</span>
-                      <span className="ml-1 text-gray-500">({p.metrics?.reviewCount ?? 0})</span>
+
+                    {/* Product Info */}
+                    <div className="p-6 flex-1 flex flex-col">
+                      {/* Location & Views */}
+                      <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                        <span>📍 {product.location?.address?.city || 'Đà Nẵng'}</span>
+                        <span>👁️ {product.metrics?.viewCount || 0}</span>
+                      </div>
+
+                      {/* Title - Fixed height */}
+                      <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-green-600 transition-colors line-clamp-2 h-14">
+                        {product.title}
+                      </h3>
+
+                      {/* Rating */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={`text-sm ${i < 4 ? 'text-yellow-400' : 'text-gray-300'}`}>
+                              ⭐
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {product.metrics?.averageRating || 4.8} ({product.metrics?.reviewCount || 0} đánh giá)
+                        </span>
+                      </div>
+
+                      {/* Price */}
+                      <div className="mb-4">
+                        <div className="text-2xl font-bold text-green-600">
+                          {formatPrice(product.pricing?.dailyRate || 0)}đ
+                          <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                        </div>
+                      </div>
+
+                      {/* Spacer to push buttons to bottom */}
+                      <div className="flex-1"></div>
+
+                      {/* Action Button - Always at bottom */}
+                      <div className="mt-auto">
+                        {/* Rent Now Button - Navigate to detail to select dates */}
+                        <Link 
+                          to={`/product/${product._id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        >
+                          📅 Thuê Ngay
+                        </Link>
+                      </div>
                     </div>
-                    <div className="mt-2 font-semibold text-primary-700">{(p.pricing?.dailyRate || 0).toLocaleString('vi-VN')}đ/ngày</div>
-                    <Link to={`/product/${p._id || ''}`} className="mt-3 w-full inline-flex justify-center items-center bg-primary-600 hover:bg-primary-700 text-white text-sm px-4 py-2 rounded-md">Xem Chi Tiết</Link>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
 
             {/* Pagination */}
-            {/* Pagination động */}
-            {total > 12 && (
-              <div className="mt-8 flex items-center justify-center gap-2">
-                {(() => {
-                  const limit = 12;
-                  const pageCount = Math.ceil(total / limit);
-                  const searchParams = new URLSearchParams(location.search);
-                  const currentPage = Number(searchParams.get('page')) || 1;
-                  const pageArr = [];
-                  for (let i = 1; i <= pageCount; i++) pageArr.push(i);
-                  return [
-                    <button key="prev" disabled={currentPage === 1} onClick={() => {
-                      searchParams.set('page', Math.max(1, currentPage - 1));
-                      window.history.replaceState(null, '', `/products?${searchParams}`);
-                      // Không scroll khi back
-                      window.dispatchEvent(new Event('popstate'));
-                    }} className="px-3 py-1.5 rounded border text-sm border-gray-300 hover:bg-gray-50 disabled:opacity-50">Trước</button>,
-                    ...pageArr.map(i => (
-                      <button key={i} onClick={() => {
-                        searchParams.set('page', i);
-                        window.history.replaceState(null, '', `/products?${searchParams}`);
-                        // Scroll lên đầu nếu chọn số lớn hơn
-                        window.dispatchEvent(new Event('popstate'));
-                      }} className={`px-3 py-1.5 rounded border text-sm ${i===currentPage ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 hover:bg-gray-50'}`}>{i}</button>
-                    )),
-                    <button key="next" disabled={currentPage === pageCount} onClick={() => {
-                      searchParams.set('page', Math.min(pageCount, currentPage + 1));
-                      window.history.replaceState(null, '', `/products?${searchParams}`);
-                      // Scroll lên đầu khi next
-                      window.dispatchEvent(new Event('popstate'));
-                    }} className="px-3 py-1.5 rounded border text-sm border-gray-300 hover:bg-gray-50 disabled:opacity-50">Sau</button>
-                  ];
-                })()}
+            {pagination.pages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-2">
+                {pagination.page > 1 && (
+                  <button 
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
+                  >
+                    ← Trước
+                  </button>
+                )}
+                
+                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-4 py-2 rounded-xl border transition-all ${
+                        page === pagination.page 
+                          ? 'bg-green-500 text-white border-green-500 shadow-lg' 
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                
+                {pagination.page < pagination.pages && (
+                  <button 
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
+                  >
+                    Sau →
+                  </button>
+                )}
               </div>
             )}
           </section>
