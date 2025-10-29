@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import UserDropdown from "../common/UserDropdown";
+import WalletBalance from "../wallet/WalletBalance";
 import useChatSocket from "../../hooks/useChatSocket";
 import useChat from "../../hooks/useChat";
 import { ROUTES } from "../../utils/constants";
@@ -71,7 +72,7 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-16 gap-4">
           {/* 1) Brand */}
@@ -144,6 +145,9 @@ const Navigation = () => {
                 </span>
               )}
             </button>
+
+            {/* Wallet Balance - show only for authenticated users */}
+            {user && <WalletBalance />}
 
             {!user ? (
               <>

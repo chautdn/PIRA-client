@@ -4,9 +4,11 @@ import { motion } from "framer-motion";
 import { ROUTES } from "../utils/constants";
 import { productService } from "../services/product";
 import Loading from "../components/common/Loading";
+import { useWallet } from "../context/WalletContext";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { fetchBalance } = useWallet();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,7 +16,9 @@ export default function Home() {
   // Scroll to top on component mount (page reload/refresh)
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    // Force refresh wallet balance when returning to home
+    fetchBalance();
+  }, [fetchBalance]);
 
   // Fetch featured products
   useEffect(() => {

@@ -20,6 +20,10 @@ import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
 import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
 
+// Wallet pages
+import TopUpSuccess from "./pages/wallet/TopUpSuccess";
+import TopUpCancel from "./pages/wallet/TopUpCancel";
+
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
 import ProductChatContainer from "./components/chat/ProductChatContainer";
@@ -68,7 +72,10 @@ export default function App() {
               <Route path={ROUTES.LOGIN} element={<Login />} />
               <Route path={ROUTES.REGISTER} element={<Register />} />
               <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
-              <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+              <Route
+                path={ROUTES.FORGOT_PASSWORD}
+                element={<ForgotPassword />}
+              />
               <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
               <Route path={ROUTES.HOME} element={<Home />} />
               <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
@@ -84,17 +91,22 @@ export default function App() {
                   </RoleProtectedRoute>
                 }
               />
-              <Route path={ROUTES.OWNER_PRODUCTS} element={
-                <RoleProtectedRoute allowedRoles={["OWNER"]}>
-                  <ProductList isOwnerView={true} />
-                </RoleProtectedRoute>
-              } />
-              <Route path={ROUTES.OWNER_CREATE_PRODUCT} element={
-                <RoleProtectedRoute allowedRoles={["OWNER","RENTER"]}>
-                  <OwnerCreateProduct />
-                </RoleProtectedRoute>
-              } />
-              
+              <Route
+                path={ROUTES.OWNER_PRODUCTS}
+                element={
+                  <RoleProtectedRoute allowedRoles={["OWNER"]}>
+                    <ProductList isOwnerView={true} />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path={ROUTES.OWNER_CREATE_PRODUCT}
+                element={
+                  <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                    <OwnerCreateProduct />
+                  </RoleProtectedRoute>
+                }
+              />
 
               {/* Chat routes */}
               <Route path={ROUTES.CHAT} element={<Chat />}>
@@ -119,6 +131,10 @@ export default function App() {
                   element={<ProductChatContainer />}
                 />
               </Route>
+
+              {/* Wallet routes */}
+              <Route path="/wallet/topup-success" element={<TopUpSuccess />} />
+              <Route path="/wallet/topup-cancel" element={<TopUpCancel />} />
             </Routes>
           </main>
         </div>
