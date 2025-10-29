@@ -3,9 +3,11 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import AppProviders from "./providers/AppProviders";
 import Navigation from "./components/layout/Navigation";
+import Footer from "./components/layout/Footer";
+import CartDrawer from "./components/cart/CartDrawer";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import { ROUTES } from "./utils/constants";
-
+import { WishlistProvider } from './context/WishlistContext';
 // Pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -15,6 +17,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Home from "./pages/Home";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
@@ -27,6 +30,13 @@ import TopUpCancel from "./pages/wallet/TopUpCancel";
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
 import ProductChatContainer from "./components/chat/ProductChatContainer";
+
+// Admin components
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import UserDetail from "./pages/admin/UserDetail";
+import ProductManagement from "./pages/admin/ProductManagement";
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -52,21 +62,49 @@ function ConditionalNavigation() {
     ROUTES.PROFILE,
   ];
 
-  if (authRoutes.includes(location.pathname)) {
+  // Don't show navigation on auth routes or admin routes
+  if (authRoutes.includes(location.pathname) || location.pathname.startsWith('/admin')) {
     return null;
   }
 
   return <Navigation />;
 }
 
+// Component to conditionally render Footer
+function ConditionalFooter() {
+  const location = useLocation();
+
+  const authRoutes = [
+    ROUTES.LOGIN,
+    ROUTES.REGISTER,
+    ROUTES.VERIFY_EMAIL,
+    ROUTES.FORGOT_PASSWORD,
+    ROUTES.RESET_PASSWORD,
+    ROUTES.PROFILE,
+  ];
+
+  // Don't show footer on auth routes, admin routes, or chat
+  if (
+    authRoutes.includes(location.pathname) || 
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith(ROUTES.CHAT)
+  ) {
+    return null;
+  }
+
+  return <Footer />;
+}
+
 export default function App() {
   return (
     <AppProviders>
+      <WishlistProvider>
       <BrowserRouter>
         <ScrollToTop />
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
           <ConditionalNavigation />
-          <main>
+          <CartDrawer />
+          <main className="flex-1">
             <Routes>
               {/* Public routes */}
               <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -80,6 +118,7 @@ export default function App() {
               <Route path={ROUTES.HOME} element={<Home />} />
               <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
               <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetail />} />
+              <Route path={ROUTES.CART} element={<Cart />} />
               <Route path={ROUTES.PROFILE} element={<Profile />} />
 
               {/* Dashboard - chỉ OWNER được vào */}
@@ -135,10 +174,33 @@ export default function App() {
               {/* Wallet routes */}
               <Route path="/wallet/topup-success" element={<TopUpSuccess />} />
               <Route path="/wallet/topup-cancel" element={<TopUpCancel />} />
+              
+              {/* Admin routes - chỉ ADMIN được vào */}
+              <Route
+                path="/admin"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN"]}>
+                    <AdminLayout />
+                  </RoleProtectedRoute>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="users/:userId" element={<UserDetail />} />
+                <Route path="products" element={<ProductManagement />} />
+                <Route path="categories" element={<div>Category Management - Coming Soon</div>} />
+                <Route path="orders" element={<div>Order Management - Coming Soon</div>} />
+                <Route path="reports" element={<div>Reports & Analytics - Coming Soon</div>} />
+                <Route path="settings" element={<div>System Settings - Coming Soon</div>} />
+                <Route path="profile" element={<Profile />} />
+              </Route>
             </Routes>
           </main>
+          <ConditionalFooter />
         </div>
       </BrowserRouter>
+      </WishlistProvider>
     </AppProviders>
   );
 }
+

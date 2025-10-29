@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "../context/AuthContext";
 import { WalletProvider } from "../context/WalletContext";
+import { CartProvider } from "../context/CartContext";
 
 // Create a client with proper configuration for chat
 const queryClient = new QueryClient({
@@ -24,9 +25,11 @@ const AppProviders = ({ children }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <WalletProvider>{children}</WalletProvider>
-        {/* Toast notifications */}
-        <Toaster
+        <WalletProvider>
+          <CartProvider>
+            {children}
+            {/* Toast notifications */}
+            <Toaster
           position="top-right"
           reverseOrder={false}
           gutter={8}
@@ -55,6 +58,8 @@ const AppProviders = ({ children }) => {
             },
           }}
         />
+          </CartProvider>
+        </WalletProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

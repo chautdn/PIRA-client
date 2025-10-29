@@ -12,12 +12,14 @@ export const ROUTES = {
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   FORGOT_PASSWORD: "/auth/forgot-password",
+  RESET_PASSWORD: "/auth/reset-password",
   DASHBOARD: "/dashboard",
   OWNER_DASHBOARD: "/owner/dashboard",
   SHIPPER_DASHBOARD: "/shipper/dashboard",
-  ADMIN_DASHBOARD: "/admin/dashboard",
+  ADMIN_DASHBOARD: "/admin",
   PRODUCTS: "/products",
   PRODUCT_DETAIL: "/product/:id",
+  CART: "/cart",
   PROFILE: "/profile",
   VERIFY_EMAIL: "/auth/verify-email",
   CHAT: "/chat",
@@ -26,12 +28,26 @@ export const ROUTES = {
   CHAT_PRODUCT: "/chat/product/:productId/:ownerId",
   OWNER_PRODUCTS: "/owner/products",
   OWNER_CREATE_PRODUCT: "/owner/products/create",
+  ADMIN: {
+    DASHBOARD: "/admin",
+    USERS: "/admin/users",
+    USER_DETAIL: "/admin/users/:userId",
+    PRODUCTS: "/admin/products",
+    PRODUCT_DETAIL: "/admin/products/:productId",
+    CATEGORIES: "/admin/categories",
+    ORDERS: "/admin/orders",
+    REPORTS: "/admin/reports",
+    SETTINGS: "/admin/settings",
+    PROFILE: "/admin/profile",
+    
+  },
 };
 
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: "accessToken",
   USER: "user",
   Theme: "theme",
+  CART: "cart",
 };
 
 export const USER_ROLES = {
