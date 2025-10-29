@@ -30,34 +30,34 @@ const AppProviders = ({ children }) => {
             {children}
             {/* Toast notifications */}
             <Toaster
-          position="top-right"
-          reverseOrder={false}
-          gutter={8}
-          containerClassName=""
-          containerStyle={{}}
-          toastOptions={{
-            // Styling
-            className: "",
-            duration: 4000,
-            style: {
-              background: "#363636",
-              color: "#fff",
-            },
-            // Custom styles for different types
-            success: {
-              duration: 3000,
-              style: {
-                background: "#10B981",
-              },
-            },
-            error: {
-              duration: 5000,
-              style: {
-                background: "#EF4444",
-              },
-            },
-          }}
-        />
+              position="top-right"
+              reverseOrder={false}
+              gutter={8}
+              containerClassName=""
+              containerStyle={{}}
+              toastOptions={{
+                // Styling
+                className: "",
+                duration: 4000,
+                style: {
+                  background: "#363636",
+                  color: "#fff",
+                },
+                // Custom styles for different types
+                success: {
+                  duration: 3000,
+                  style: {
+                    background: "#10B981",
+                  },
+                },
+                error: {
+                  duration: 5000,
+                  style: {
+                    background: "#EF4444",
+                  },
+                },
+              }}
+            />
           </CartProvider>
         </WalletProvider>
       </AuthProvider>

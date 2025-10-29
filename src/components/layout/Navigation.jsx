@@ -23,8 +23,12 @@ const Navigation = () => {
   const [logoutLoading, setLogoutLoading] = useState(false);
 
   // Chat hooks (chỉ khi user đăng nhập)
-  const chatHook = user ? useChat() : { conversations: [], fetchConversations: () => {} };
-  const socketHook = user ? useChatSocket() : { connected: false, onNewMessage: () => {}, onNotification: () => {} };
+  const chatHook = user
+    ? useChat()
+    : { conversations: [], fetchConversations: () => {} };
+  const socketHook = user
+    ? useChatSocket()
+    : { connected: false, onNewMessage: () => {}, onNotification: () => {} };
 
   const { conversations, fetchConversations } = chatHook;
   const { connected, onNewMessage, onNotification } = socketHook;
@@ -32,7 +36,10 @@ const Navigation = () => {
   // Tính tổng tin nhắn chưa đọc
   useEffect(() => {
     if (conversations && conversations.length > 0) {
-      const total = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+      const total = conversations.reduce(
+        (sum, conv) => sum + (conv.unreadCount || 0),
+        0
+      );
       setUnreadCount(total);
     } else {
       setUnreadCount(0);
@@ -243,7 +250,10 @@ const Navigation = () => {
       </nav>
 
       {/* Modals & Popups */}
-      <WishlistPopup open={showWishlist} onClose={() => setShowWishlist(false)} />
+      <WishlistPopup
+        open={showWishlist}
+        onClose={() => setShowWishlist(false)}
+      />
       <LogoutModal
         isOpen={showLogoutModal}
         onConfirm={handleLogout}
