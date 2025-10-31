@@ -18,7 +18,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
   const [dailyTotal, setDailyTotal] = useState(0);
   const [errors, setErrors] = useState({});
 
-  const balance = user?.wallet?.balance || 0;
+  const balance = user?.wallet?.balance?.available || 0;
   const remainingDaily = LIMITS.DAILY - dailyTotal;
 
   useEffect(() => {
@@ -67,7 +67,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
     }
 
     const validation = validateAmount(numAmount, balance, dailyTotal);
-    if (!validation.isValid) {
+    if (!validation.valid) {
       newErrors.amount = validation.error;
       setErrors(newErrors);
       return false;
