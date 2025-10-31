@@ -36,7 +36,7 @@ const WalletBalance = () => {
             <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
               <Wallet className="w-4 h-4 text-white" />
             </div>
-            
+
             <div className="flex flex-col items-start">
               <span className="text-[10px] text-gray-500 font-medium leading-tight">
                 Balance
@@ -53,9 +53,9 @@ const WalletBalance = () => {
               </div>
             </div>
 
-            <ChevronDown 
+            <ChevronDown
               className={`w-3 h-3 text-gray-400 transition-transform ${
-                isDropdownOpen ? 'rotate-180' : ''
+                isDropdownOpen ? "rotate-180" : ""
               }`}
             />
           </button>
@@ -74,7 +74,9 @@ const WalletBalance = () => {
                 <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-gray-600 font-medium mb-1">Current Balance</p>
+                      <p className="text-xs text-gray-600 font-medium mb-1">
+                        Current Balance
+                      </p>
                       {loading ? (
                         <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
                       ) : (
@@ -115,8 +117,12 @@ const WalletBalance = () => {
                       <History className="w-4 h-4 text-gray-600" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold">Transaction History</p>
-                      <p className="text-xs text-gray-500">View all transactions</p>
+                      <p className="text-sm font-semibold">
+                        Transaction History
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        View all transactions
+                      </p>
                     </div>
                   </button>
                 </div>
@@ -148,5 +154,3 @@ const WalletBalance = () => {
 };
 
 export default WalletBalance;
-
-

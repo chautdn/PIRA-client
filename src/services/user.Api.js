@@ -13,6 +13,13 @@ const userService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
+
+  // Bank account management
+  getBankAccount: () => api.get("/users/bank-account"),
+  addBankAccount: (data) => api.post("/users/bank-account", data),
+  updateBankAccount: (data) => api.put("/users/bank-account", data),
+  removeBankAccount: () => api.delete("/users/bank-account"),
+  getVietnameseBanks: () => api.get("/users/banks"), // Public endpoint
 };
 
 export default userService;
