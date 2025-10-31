@@ -1099,143 +1099,198 @@ const CreateForm = () => {
           {currentStep === 6 && (
             <motion.div className="space-y-8" {...fadeInUp}>
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center justify-center mb-2">
-                  <icons.HiSparkles className="w-6 h-6 mr-3 text-primary-600" />
+                <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-full font-bold text-sm mb-4 shadow-lg">
+                  🚀 TĂNG TỐC BÁN HÀNG
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">
                   Quảng Cáo Sản Phẩm
                 </h2>
-                <p className="text-gray-600">
-                  Tăng độ hiển thị và xuất hiện đầu trang (Không bắt buộc)
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  Xuất hiện đầu trang, tăng 300% lượt xem và gấp 5 lần cơ hội
+                  được thuê
                 </p>
               </div>
 
-              {/* Enable/Disable Promotion Toggle */}
-              <div className="bg-gradient-to-r from-primary-50 to-blue-50 border-2 border-primary-200 rounded-2xl p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
-                      <icons.HiSparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-1">
-                        Kích hoạt quảng cáo
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Làm nổi bật sản phẩm của bạn và tăng cơ hội cho thuê
-                      </p>
-                    </div>
+              {/* Benefits Highlight */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center border-2 border-blue-200">
+                  <div className="text-3xl mb-2">⚡</div>
+                  <div className="font-bold text-gray-900 mb-1">
+                    Hiển thị đầu tiên
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.promotion.enabled}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          promotion: {
-                            ...prev.promotion,
-                            enabled: e.target.checked,
-                            tier: e.target.checked
-                              ? prev.promotion.tier || 3
-                              : null,
-                          },
-                        }));
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-600"></div>
-                  </label>
+                  <div className="text-sm text-gray-600">
+                    Xuất hiện trên cùng kết quả tìm kiếm
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center border-2 border-purple-200">
+                  <div className="text-3xl mb-2">👑</div>
+                  <div className="font-bold text-gray-900 mb-1">
+                    Huy hiệu đặc biệt
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Badge nổi bật thu hút khách hàng
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center border-2 border-green-200">
+                  <div className="text-3xl mb-2">📈</div>
+                  <div className="font-bold text-gray-900 mb-1">
+                    Tăng lượt xem
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Nhiều người xem hơn 300%
+                  </div>
                 </div>
               </div>
 
-              {formData.promotion.enabled && (
-                <>
-                  {/* Tier Selection */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                      <icons.BiCrown className="w-5 h-5 mr-2 text-yellow-500" />
-                      Chọn Gói Quảng Cáo
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                      {Object.entries(promotionService.TIER_CONFIG).map(
-                        ([tier, config]) => (
-                          <motion.button
-                            key={tier}
-                            type="button"
-                            onClick={() => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                promotion: {
-                                  ...prev.promotion,
-                                  tier: parseInt(tier),
-                                },
-                              }));
-                            }}
-                            className={`relative p-6 rounded-2xl border-2 transition-all ${
-                              formData.promotion.tier === parseInt(tier)
-                                ? `${config.borderColor} bg-gradient-to-br ${config.color} text-white shadow-lg`
-                                : "border-gray-200 hover:border-primary-300 bg-white"
-                            }`}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <div className="text-center">
-                              <div className="text-3xl mb-2">{config.icon}</div>
-                              <h4
-                                className={`font-bold mb-1 ${
-                                  formData.promotion.tier === parseInt(tier)
-                                    ? "text-white"
-                                    : "text-gray-900"
-                                }`}
-                              >
-                                {config.name}
-                              </h4>
-                              <div
-                                className={`text-sm mb-3 ${
-                                  formData.promotion.tier === parseInt(tier)
-                                    ? "text-white/90"
-                                    : "text-gray-600"
-                                }`}
-                              >
-                                {promotionService.formatCurrency(
-                                  promotionService.TIER_PRICES[tier]
-                                )}
-                                <span className="text-xs">/ngày</span>
-                              </div>
-                              <div
-                                className={`text-xs space-y-1 ${
-                                  formData.promotion.tier === parseInt(tier)
-                                    ? "text-white/80"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                {config.features
-                                  .slice(0, 2)
-                                  .map((feature, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center justify-center gap-1"
-                                    >
-                                      <icons.FiCheck className="w-3 h-3" />
-                                      <span>{feature}</span>
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                            {formData.promotion.tier === parseInt(tier) && (
-                              <motion.div
-                                className="absolute top-2 right-2 bg-white text-primary-600 rounded-full p-1"
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                              >
-                                <icons.FiCheck className="w-4 h-4" />
-                              </motion.div>
-                            )}
-                          </motion.button>
-                        )
-                      )}
-                    </div>
+              {/* "No Thanks" Option - Shown First */}
+              <div className="space-y-4">
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      promotion: {
+                        ...prev.promotion,
+                        enabled: false,
+                        tier: null,
+                      },
+                    }));
+                  }}
+                  className={`w-full p-5 rounded-2xl border-2 transition-all text-center ${
+                    !formData.promotion.enabled
+                      ? "border-gray-400 bg-gray-50 shadow-md"
+                      : "border-gray-200 hover:border-gray-300 bg-white"
+                  }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex items-center justify-center gap-3">
+                    {formData.promotion.enabled ? (
+                      <div className="w-5 h-5 border-2 border-gray-300 rounded"></div>
+                    ) : (
+                      <div className="w-5 h-5 bg-primary-600 rounded flex items-center justify-center">
+                        <icons.FiCheck className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                    <span className="font-semibold text-gray-700">
+                      Không, tôi sẽ đăng bình thường (Miễn phí)
+                    </span>
                   </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Sản phẩm sẽ xuất hiện theo thứ tự mặc định
+                  </p>
+                </motion.button>
+              </div>
 
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t-2 border-dashed border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-white px-4 text-sm font-bold text-gray-500 uppercase">
+                    Hoặc chọn gói quảng cáo
+                  </span>
+                </div>
+              </div>
+
+              {/* Tier Selection - Always Visible */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center justify-center mb-6">
+                  <icons.BiCrown className="w-6 h-6 mr-2 text-yellow-500" />
+                  Chọn Gói Quảng Cáo Phù Hợp
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {Object.entries(promotionService.TIER_CONFIG).map(
+                    ([tier, config]) => (
+                      <motion.button
+                        key={tier}
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            promotion: {
+                              ...prev.promotion,
+                              enabled: true,
+                              tier: parseInt(tier),
+                            },
+                          }));
+                        }}
+                        className={`relative p-6 rounded-2xl border-2 transition-all ${
+                          formData.promotion.enabled &&
+                          formData.promotion.tier === parseInt(tier)
+                            ? `${config.borderColor} bg-gradient-to-br ${config.color} text-white shadow-lg transform scale-105`
+                            : "border-gray-200 hover:border-primary-300 bg-white hover:shadow-md"
+                        }`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {tier === "1" && (
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                            <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                              PHỔ BIẾN NHẤT
+                            </span>
+                          </div>
+                        )}
+                        <div className="text-center">
+                          <div className="text-4xl mb-3">{config.icon}</div>
+                          <h4
+                            className={`font-bold text-lg mb-1 ${
+                              formData.promotion.enabled &&
+                              formData.promotion.tier === parseInt(tier)
+                                ? "text-white"
+                                : "text-gray-900"
+                            }`}
+                          >
+                            {config.name}
+                          </h4>
+                          <div
+                            className={`text-xl font-bold mb-2 ${
+                              formData.promotion.enabled &&
+                              formData.promotion.tier === parseInt(tier)
+                                ? "text-white"
+                                : "text-primary-600"
+                            }`}
+                          >
+                            {promotionService.formatCurrency(
+                              promotionService.TIER_PRICES[tier]
+                            )}
+                            <span className="text-sm font-normal">/ngày</span>
+                          </div>
+                          <div
+                            className={`text-xs space-y-1 text-left ${
+                              formData.promotion.enabled &&
+                              formData.promotion.tier === parseInt(tier)
+                                ? "text-white/90"
+                                : "text-gray-600"
+                            }`}
+                          >
+                            {config.features.map((feature, idx) => (
+                              <div key={idx} className="flex items-start gap-2">
+                                <icons.FiCheck className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-left">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {formData.promotion.enabled &&
+                          formData.promotion.tier === parseInt(tier) && (
+                            <motion.div
+                              className="absolute top-2 right-2 bg-white text-primary-600 rounded-full p-1.5 shadow-lg"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                            >
+                              <icons.FiCheck className="w-5 h-5" />
+                            </motion.div>
+                          )}
+                      </motion.button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Show Duration and Payment only when a tier is selected */}
+              {formData.promotion.enabled && formData.promotion.tier && (
+                <>
                   {/* Duration Selection */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -1541,36 +1596,6 @@ const CreateForm = () => {
                       </div>
                     )}
                 </>
-              )}
-
-              {/* Skip Promotion Info */}
-              {!formData.promotion.enabled && (
-                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <icons.HiInformationCircle className="w-6 h-6 text-gray-600" />
-                    <h4 className="font-bold text-gray-900">
-                      Bỏ qua quảng cáo
-                    </h4>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Bạn có thể quảng cáo sản phẩm sau khi tạo. Quảng cáo giúp
-                    sản phẩm của bạn:
-                  </p>
-                  <ul className="space-y-2 text-sm text-gray-600">
-                    <li className="flex items-center gap-2">
-                      <icons.FiCheck className="w-4 h-4 text-primary-600" />
-                      Xuất hiện đầu tiên trong danh sách
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <icons.FiCheck className="w-4 h-4 text-primary-600" />
-                      Có huy hiệu và hiệu ứng nổi bật
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <icons.FiCheck className="w-4 h-4 text-primary-600" />
-                      Tăng cơ hội được thuê nhanh hơn
-                    </li>
-                  </ul>
-                </div>
               )}
             </motion.div>
           )}
