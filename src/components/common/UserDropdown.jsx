@@ -50,11 +50,11 @@ const UserDropdown = () => {
       {/* User Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 text-gray-700 hover:text-primary-700 transition-colors"
+        className="flex items-center space-x-3 text-gray-700 hover:text-primary-700 transition-colors group"
         disabled={loading}
       >
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+        <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center ring-2 ring-gray-200 group-hover:ring-primary-400 transition-all shadow-sm">
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -66,18 +66,18 @@ const UserDropdown = () => {
               }}
             />
           ) : null}
-          <span className="text-white font-semibold text-sm">
+          <span className="text-white font-bold text-lg">
             {displayName.charAt(0).toUpperCase()}
           </span>
         </div>
 
         {/* Name and Arrow */}
-        <div className="flex items-center space-x-1">
-          <span className="text-sm font-medium hidden sm:block">
+        <div className="flex items-center space-x-2">
+          <span className="text-base font-semibold hidden sm:block max-w-[120px] truncate">
             {displayName}
           </span>
           <svg
-            className={`w-4 h-4 transition-transform ${
+            className={`w-5 h-5 transition-transform ${
               isOpen ? "rotate-180" : ""
             }`}
             fill="none"
@@ -96,71 +96,88 @@ const UserDropdown = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+        <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           {/* User Info */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <div className="text-sm font-medium text-gray-900">
-              {displayName}
+          <div className="px-4 py-4 border-b border-gray-100">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white font-bold text-xl">
+                    {displayName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-gray-900 truncate">
+                  {displayName}
+                </div>
+                <div className="text-xs text-gray-500 truncate">{user.email}</div>
+              </div>
             </div>
-            <div className="text-sm text-gray-500 truncate">{user.email}</div>
           </div>
 
           {/* Menu Items */}
-          <div className="py-1">
+          <div className="py-2">
             <Link
               to="/profile"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3">👤</span>
+              <span className="mr-3 text-lg">👤</span>
               Profile
             </Link>
 
             <Link
               to="/my-products"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3">📦</span>
+              <span className="mr-3 text-lg">📦</span>
               My Products
             </Link>
 
             <Link
               to="/bookings"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3">📋</span>
+              <span className="mr-3 text-lg">📋</span>
               My Bookings
             </Link>
 
             <Link
               to="/withdrawals"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3">💰</span>
+              <span className="mr-3 text-lg">💰</span>
               Withdrawals
             </Link>
 
             <Link
               to="/settings"
-              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3">⚙️</span>
+              <span className="mr-3 text-lg">⚙️</span>
               Settings
             </Link>
           </div>
 
           {/* Logout */}
-          <div className="border-t border-gray-100 py-1">
+          <div className="border-t border-gray-100 py-2">
             <button
               onClick={handleLogout}
               disabled={logoutLoading}
-              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+              className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
             >
-              <span className="mr-3">🚪</span>
+              <span className="mr-3 text-lg">🚪</span>
               {logoutLoading ? "Logging out..." : "Logout"}
             </button>
           </div>

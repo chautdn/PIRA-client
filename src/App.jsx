@@ -129,15 +129,7 @@ export default function App() {
                 <Route path={ROUTES.CART} element={<Cart />} />
                 <Route path={ROUTES.PROFILE} element={<Profile />} />
 
-                {/* Dashboard - chỉ OWNER được vào */}
-                <Route
-                  path={ROUTES.DASHBOARD}
-                  element={
-                    <RoleProtectedRoute allowedRoles={["OWNER"]}>
-                      <Dashboard />
-                    </RoleProtectedRoute>
-                  }
-                />
+                {/* Owner routes - accessible through navigation menu */}
                 <Route
                   path={ROUTES.OWNER_PRODUCTS}
                   element={
