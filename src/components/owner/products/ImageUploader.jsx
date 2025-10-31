@@ -1,18 +1,24 @@
-import React, { useRef } from 'react';
-import { toast } from 'react-hot-toast';
+import React, { useRef } from "react";
+import { toast } from "react-hot-toast";
 
 const ImageUploader = ({ images, setImages, error }) => {
   const fileInputRef = useRef(null);
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
-    
+
     // Validate files
     const validFiles = [];
     const maxSize = 10 * 1024 * 1024; // 10MB
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
 
-    files.forEach(file => {
+    files.forEach((file) => {
       if (!allowedTypes.includes(file.type)) {
         toast.error(`${file.name}: Only image files are allowed`);
         return;
@@ -28,7 +34,7 @@ const ImageUploader = ({ images, setImages, error }) => {
 
     // Check total images limit
     if (images.length + validFiles.length > 10) {
-      toast.error('Maximum 10 images allowed');
+      toast.error("Maximum 10 images allowed");
       return;
     }
 
@@ -37,45 +43,47 @@ const ImageUploader = ({ images, setImages, error }) => {
       id: Date.now() + index,
       file,
       preview: URL.createObjectURL(file),
-      isMain: images.length === 0 && index === 0 // First image is main
+      isMain: images.length === 0 && index === 0, // First image is main
     }));
 
-    setImages(prev => [...prev, ...newImages]);
-    
+    setImages((prev) => [...prev, ...newImages]);
+
     // Reset file input
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
   const removeImage = (imageId) => {
-    setImages(prev => {
-      const filtered = prev.filter(img => img.id !== imageId);
-      
+    setImages((prev) => {
+      const filtered = prev.filter((img) => img.id !== imageId);
+
       // If we removed the main image, make the first remaining image main
-      if (filtered.length > 0 && !filtered.some(img => img.isMain)) {
+      if (filtered.length > 0 && !filtered.some((img) => img.isMain)) {
         filtered[0].isMain = true;
       }
-      
+
       return filtered;
     });
   };
 
   const setMainImage = (imageId) => {
-    setImages(prev => prev.map(img => ({
-      ...img,
-      isMain: img.id === imageId
-    })));
+    setImages((prev) =>
+      prev.map((img) => ({
+        ...img,
+        isMain: img.id === imageId,
+      }))
+    );
   };
 
   const reorderImages = (dragIndex, hoverIndex) => {
-    setImages(prev => {
+    setImages((prev) => {
       const newImages = [...prev];
       const draggedImage = newImages[dragIndex];
-      
+
       newImages.splice(dragIndex, 1);
       newImages.splice(hoverIndex, 0, draggedImage);
-      
+
       return newImages;
     });
   };
@@ -84,17 +92,42 @@ const ImageUploader = ({ images, setImages, error }) => {
     <div className="space-y-4">
       {/* Upload Button */}
       <div className="flex items-center justify-center w-full">
-        <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 ${
-          error ? 'border-red-500' : 'border-gray-300'
-        }`}>
+        <label
+          className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-2xl cursor-pointer hover:bg-gray-50 transition-all duration-200 ${
+            error
+              ? "border-red-500 bg-red-50 animate-shake"
+              : "border-gray-300 hover:border-primary-400"
+          }`}
+        >
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            <svg className="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            <svg
+              className={`w-12 h-12 mb-3 ${
+                error ? "text-red-400" : "text-gray-400"
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
             </svg>
-            <p className="mb-2 text-sm text-gray-500">
-              <span className="font-semibold">Click to upload</span> or drag and drop
+            <p
+              className={`mb-2 text-sm ${
+                error ? "text-red-600" : "text-gray-500"
+              }`}
+            >
+              <span className="font-semibold">Nhấp để tải lên</span> hoặc kéo
+              thả
             </p>
-            <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB (Max 10 images)</p>
+            <p
+              className={`text-xs ${error ? "text-red-500" : "text-gray-500"}`}
+            >
+              PNG, JPG, GIF tối đa 10MB (Tối đa 10 ảnh)
+            </p>
           </div>
           <input
             ref={fileInputRef}
@@ -107,6 +140,24 @@ const ImageUploader = ({ images, setImages, error }) => {
         </label>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <p className="text-red-600 text-sm flex items-center font-medium bg-red-50 px-3 py-2 rounded-lg">
+          <svg
+            className="w-4 h-4 mr-1.5 flex-shrink-0"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {error}
+        </p>
+      )}
+
       {/* Image Previews */}
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -114,7 +165,7 @@ const ImageUploader = ({ images, setImages, error }) => {
             <div
               key={image.id}
               className={`relative group border-2 rounded-lg overflow-hidden ${
-                image.isMain ? 'border-blue-500' : 'border-gray-200'
+                image.isMain ? "border-blue-500" : "border-gray-200"
               }`}
             >
               {/* Main Badge */}
@@ -143,7 +194,7 @@ const ImageUploader = ({ images, setImages, error }) => {
                     Main
                   </button>
                 )}
-                
+
                 <button
                   type="button"
                   onClick={() => removeImage(image.id)}
@@ -169,7 +220,8 @@ const ImageUploader = ({ images, setImages, error }) => {
           {images.length} / 10 images uploaded
           {images.length > 0 && (
             <span className="ml-2">
-              • {images.filter(img => img.isMain).length > 0 ? '✅' : '⚠️'} Main image selected
+              • {images.filter((img) => img.isMain).length > 0 ? "✅" : "⚠️"}{" "}
+              Main image selected
             </span>
           )}
         </div>
@@ -177,7 +229,9 @@ const ImageUploader = ({ images, setImages, error }) => {
 
       {/* AI Validation Notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <h4 className="text-sm font-medium text-blue-800 mb-1">🤖 AI Image Validation</h4>
+        <h4 className="text-sm font-medium text-blue-800 mb-1">
+          🤖 AI Image Validation
+        </h4>
         <p className="text-xs text-blue-700">
           Your images will be automatically validated to ensure they:
         </p>

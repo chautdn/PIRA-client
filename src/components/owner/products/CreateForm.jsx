@@ -1,46 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ownerProductApi } from '../../../services/ownerProduct.Api';
-import { categoryApi } from '../../../services/category.Api';
-import ImageUploader from './ImageUploader';
-import LocationSelector from './LocationSelector';
-import PricingForm from './PricingForm';
-import { toast } from 'react-hot-toast';
-import icons from '../../../utils/icons';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { ownerProductApi } from "../../../services/ownerProduct.Api";
+import { categoryApi } from "../../../services/category.Api";
+import ImageUploader from "./ImageUploader";
+import LocationSelector from "./LocationSelector";
+import PricingForm from "./PricingForm";
+import { toast } from "react-hot-toast";
+import icons from "../../../utils/icons";
+import promotionService from "../../../services/promotion";
+import { useWallet } from "../../../context/WalletContext";
 
 const CreateForm = () => {
   const navigate = useNavigate();
+  const { balance: walletBalance, loading: walletLoading } = useWallet();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [currentStep, setCurrentStep] = useState(1);
-  
+
+  // Debug wallet balance
+  useEffect(() => {
+    console.log("CreateForm - Wallet Balance:", walletBalance);
+    console.log("CreateForm - Wallet Loading:", walletLoading);
+  }, [walletBalance, walletLoading]);
+
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    condition: 'LIKE_NEW',
-    category: '',
-    subCategory: '',
+    title: "",
+    description: "",
+    condition: "LIKE_NEW",
+    category: "",
+    subCategory: "",
     pricing: {
-      dailyRate: '',
+      dailyRate: "",
       deposit: {
-        amount: '',
-        type: 'FIXED'
-      }
+        amount: "",
+        type: "FIXED",
+      },
     },
     location: {
       address: {
-        streetAddress: ''
+        streetAddress: "",
       },
-      city: 'Đà Nẵng',
-      district: '',
-      ward: ''
-    }
+      city: "Đà Nẵng",
+      district: "",
+      ward: "",
+    },
+    promotion: {
+      enabled: false,
+      tier: null,
+      duration: 1,
+      paymentMethod: "wallet",
+    },
   });
-  
+
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
+  const [promotionCost, setPromotionCost] = useState(null);
+  const [calculatingCost, setCalculatingCost] = useState(false);
 
   // Load categories on component mount
   useEffect(() => {
@@ -53,9 +70,39 @@ const CreateForm = () => {
       loadSubCategories(formData.category);
     } else {
       setSubCategories([]);
-      setFormData(prev => ({ ...prev, subCategory: '' }));
+      setFormData((prev) => ({ ...prev, subCategory: "" }));
     }
   }, [formData.category]);
+
+  // Calculate promotion cost when tier or duration changes
+  useEffect(() => {
+    if (formData.promotion.enabled && formData.promotion.tier) {
+      const calculateCost = async () => {
+        try {
+          setCalculatingCost(true);
+          const pricing = await promotionService.calculatePricing(
+            formData.promotion.tier,
+            formData.promotion.duration
+          );
+          setPromotionCost(pricing);
+        } catch (error) {
+          console.error("Failed to calculate promotion cost:", error);
+          setPromotionCost(null);
+          toast.error("Không thể tính chi phí quảng cáo. Vui lòng thử lại.");
+        } finally {
+          setCalculatingCost(false);
+        }
+      };
+      calculateCost();
+    } else {
+      setPromotionCost(null);
+      setCalculatingCost(false);
+    }
+  }, [
+    formData.promotion.tier,
+    formData.promotion.duration,
+    formData.promotion.enabled,
+  ]);
 
   const loadCategories = async () => {
     try {
@@ -64,8 +111,8 @@ const CreateForm = () => {
         setCategories(response.data || []);
       }
     } catch (error) {
-      console.error('Failed to load categories:', error);
-      toast.error('Không thể tải danh mục. Vui lòng tải lại trang.');
+      console.error("Failed to load categories:", error);
+      toast.error("Không thể tải danh mục. Vui lòng tải lại trang.");
     }
   };
 
@@ -76,35 +123,35 @@ const CreateForm = () => {
         setSubCategories(category.data.subcategories || []);
       }
     } catch (error) {
-      console.error('Failed to load subcategories:', error);
+      console.error("Failed to load subcategories:", error);
       setSubCategories([]);
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name.includes('.')) {
+
+    if (name.includes(".")) {
       // Handle nested object updates (pricing, location)
-      const keys = name.split('.');
-      setFormData(prev => {
+      const keys = name.split(".");
+      setFormData((prev) => {
         const updated = { ...prev };
         let current = updated;
-        
+
         for (let i = 0; i < keys.length - 1; i++) {
           current = current[keys[i]];
         }
         current[keys[keys.length - 1]] = value;
-        
+
         return updated;
       });
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
 
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -113,53 +160,59 @@ const CreateForm = () => {
 
     // Required fields validation
     if (!formData.title.trim()) {
-      newErrors.title = 'Tên sản phẩm là bắt buộc';
+      newErrors.title = "Tên sản phẩm là bắt buộc";
     } else if (formData.title.length < 5) {
-      newErrors.title = 'Tên sản phẩm phải có ít nhất 5 ký tự';
+      newErrors.title = "Tên sản phẩm phải có ít nhất 5 ký tự";
     } else if (formData.title.length > 100) {
-      newErrors.title = 'Tên sản phẩm phải ít hơn 100 ký tự';
+      newErrors.title = "Tên sản phẩm phải ít hơn 100 ký tự";
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'Mô tả sản phẩm là bắt buộc';
+      newErrors.description = "Mô tả sản phẩm là bắt buộc";
     } else if (formData.description.length < 20) {
-      newErrors.description = 'Mô tả phải có ít nhất 20 ký tự';
+      newErrors.description = "Mô tả phải có ít nhất 20 ký tự";
     } else if (formData.description.length > 1000) {
-      newErrors.description = 'Mô tả phải ít hơn 1000 ký tự';
+      newErrors.description = "Mô tả phải ít hơn 1000 ký tự";
     }
 
     if (!formData.category) {
-      newErrors.category = 'Danh mục là bắt buộc';
+      newErrors.category = "Danh mục là bắt buộc";
     }
 
-    if (!formData.pricing.dailyRate || parseFloat(formData.pricing.dailyRate) <= 0) {
-      newErrors.dailyRate = 'Giá thuê hàng ngày phải lớn hơn 0';
+    if (
+      !formData.pricing.dailyRate ||
+      parseFloat(formData.pricing.dailyRate) <= 0
+    ) {
+      newErrors.dailyRate = "Giá thuê hàng ngày phải lớn hơn 0";
     } else if (parseFloat(formData.pricing.dailyRate) > 10000000) {
-      newErrors.dailyRate = 'Giá thuê hàng ngày có vẻ quá cao';
+      newErrors.dailyRate = "Giá thuê hàng ngày có vẻ quá cao";
     }
 
-    if (!formData.pricing.deposit.amount || parseFloat(formData.pricing.deposit.amount) <= 0) {
-      newErrors.depositAmount = 'Số tiền đặt cọc phải lớn hơn 0';
+    if (
+      !formData.pricing.deposit.amount ||
+      parseFloat(formData.pricing.deposit.amount) <= 0
+    ) {
+      newErrors.depositAmount = "Số tiền đặt cọc phải lớn hơn 0";
     } else if (parseFloat(formData.pricing.deposit.amount) > 100000000) {
-      newErrors.depositAmount = 'Số tiền đặt cọc có vẻ quá cao';
+      newErrors.depositAmount = "Số tiền đặt cọc có vẻ quá cao";
     }
 
     if (!formData.location.address.streetAddress.trim()) {
-      newErrors.streetAddress = 'Địa chỉ đường phố là bắt buộc';
+      newErrors.streetAddress = "Địa chỉ đường phố là bắt buộc";
     }
 
     if (!formData.location.district.trim()) {
-      newErrors.district = 'Quận/huyện là bắt buộc';
+      newErrors.district = "Quận/huyện là bắt buộc";
     }
 
     if (!formData.location.ward.trim()) {
-      newErrors.ward = 'Phường/xã là bắt buộc';
+      newErrors.ward = "Phường/xã là bắt buộc";
     }
 
     if (images.length === 0) {
-      newErrors.images = 'Cần ít nhất một hình ảnh';
+      newErrors.images = "Cần ít nhất một hình ảnh";
     } else if (images.length > 10) {
-      newErrors.images = 'Tối đa 10 hình ảnh được phép';
+      newErrors.images = "Tối đa 10 hình ảnh được phép";
     }
 
     setErrors(newErrors);
@@ -168,191 +221,466 @@ const CreateForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('FormData before submit:', formData);
+    console.log("FormData before submit:", formData);
     if (!validateForm()) {
-      toast.error('Vui lòng sửa các lỗi bên dưới');
+      // Show detailed error messages for each field
+      const errorFields = Object.keys(errors);
+      const errorCount = errorFields.length;
+
+      // Main error toast
+      toast.error(`❌ ${errorCount} lỗi cần sửa`, {
+        duration: 4000,
+      });
+
+      // Show specific field errors with delay for readability
+      setTimeout(() => {
+        errorFields.forEach((field, index) => {
+          const fieldLabels = {
+            title: "📝 Tên sản phẩm",
+            description: "📄 Mô tả",
+            category: "📂 Danh mục",
+            dailyRate: "💰 Giá thuê hàng ngày",
+            depositAmount: "🔒 Tiền đặt cọc",
+            streetAddress: "🏠 Địa chỉ đường phố",
+            district: "🌍 Quận/Huyện",
+            ward: "📍 Phường/Xã",
+            images: "📷 Hình ảnh",
+          };
+
+          const label = fieldLabels[field] || field;
+
+          setTimeout(() => {
+            toast.error(`${label}: ${errors[field]}`, {
+              duration: 5000,
+              id: `error-${field}`, // Prevent duplicate toasts
+            });
+          }, (index + 1) * 300); // Stagger the error messages
+        });
+      }, 500);
+
       // Scroll to first error
-      const firstErrorElement = document.querySelector('.border-red-500');
+      const firstErrorElement = document.querySelector(
+        ".border-red-500, .border-red-400"
+      );
       if (firstErrorElement) {
-        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstErrorElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
       return;
     }
 
+    // Pre-check wallet balance for promotion (if wallet payment selected)
+    if (
+      formData.promotion.enabled &&
+      formData.promotion.tier &&
+      formData.promotion.paymentMethod === "wallet" &&
+      promotionCost
+    ) {
+      if (walletBalance < promotionCost.totalCost) {
+        toast.error(
+          "❌ Số dư ví không đủ để thanh toán quảng cáo. Vui lòng nạp thêm hoặc chọn PayOS.",
+          { duration: 5000 }
+        );
+        return;
+      }
+    }
+
     setLoading(true);
-    
+
+    // Show loading toast outside try block so we can dismiss it in catch
+    let loadingToast;
+
     try {
-      // Show loading toast
-      const loadingToast = toast.loading('Đang tạo sản phẩm và xác thực hình ảnh...');
+      loadingToast = toast.loading("Đang tạo sản phẩm và xác thực hình ảnh...");
 
       // Create FormData for multipart/form-data
       const formDataToSend = new FormData();
-      
+
       // Add text fields
-      formDataToSend.append('title', formData.title.trim());
-      formDataToSend.append('description', formData.description.trim());
-      formDataToSend.append('condition', formData.condition);
-      formDataToSend.append('category', formData.category);
-      
+      formDataToSend.append("title", formData.title.trim());
+      formDataToSend.append("description", formData.description.trim());
+      formDataToSend.append("condition", formData.condition);
+      formDataToSend.append("category", formData.category);
+
       if (formData.subCategory) {
-        formDataToSend.append('subCategory', formData.subCategory);
+        formDataToSend.append("subCategory", formData.subCategory);
       }
 
       // Fix: Gửi pricing fields trực tiếp thay vì JSON string
-      formDataToSend.append('pricing.dailyRate', formData.pricing.dailyRate);
-      formDataToSend.append('pricing.deposit.amount', formData.pricing.deposit.amount);
-      formDataToSend.append('pricing.deposit.type', formData.pricing.deposit.type);
-      
-      formDataToSend.append('location', JSON.stringify(formData.location));
+      formDataToSend.append("pricing.dailyRate", formData.pricing.dailyRate);
+      formDataToSend.append(
+        "pricing.deposit.amount",
+        formData.pricing.deposit.amount
+      );
+      formDataToSend.append(
+        "pricing.deposit.type",
+        formData.pricing.deposit.type
+      );
+
+      formDataToSend.append("location", JSON.stringify(formData.location));
 
       // Add images
       images.forEach((image) => {
-        formDataToSend.append('images', image.file);
+        formDataToSend.append("images", image.file);
       });
 
-      
       // Create product
       const response = await ownerProductApi.createOwnerProduct(formDataToSend);
-      
 
       // Dismiss loading toast
       toast.dismiss(loadingToast);
 
       if (response.success) {
-        toast.success('🎉 Tạo sản phẩm thành công!');
-        
+        const createdProduct = response.data;
+        toast.success("🎉 Tạo sản phẩm thành công!");
+
         // Show AI validation results if available
         if (response.imageValidation) {
           const { summary } = response.imageValidation;
-          
+
           if (summary.allImagesRelevant && summary.allImagesSafe) {
-            toast.success('✅ Tất cả hình ảnh đã qua xác thực AI!');
+            toast.success("✅ Tất cả hình ảnh đã qua xác thực AI!");
           } else {
-            toast.info('ℹ️ Hình ảnh được xác thực với độ tin cậy khác nhau');
+            toast("ℹ️ Hình ảnh được xác thực với độ tin cậy khác nhau", {
+              icon: "ℹ️",
+              style: {
+                background: "#3B82F6",
+                color: "#fff",
+              },
+            });
           }
         }
 
-        // Navigate to product details or products list
-        setTimeout(() => {
-          navigate(`/products`, {
-            state: { newProduct: true }
-          });
-        }, 2000);
+        // Create promotion if enabled
+        if (formData.promotion.enabled && formData.promotion.tier) {
+          try {
+            toast.loading("Đang tạo quảng cáo...", { id: "promotion-loading" });
+
+            const promotionData = {
+              productId: createdProduct._id,
+              tier: formData.promotion.tier,
+              duration: formData.promotion.duration,
+              paymentMethod: formData.promotion.paymentMethod,
+            };
+
+            const promotionResponse = await promotionService.createPromotion(
+              promotionData
+            );
+            toast.dismiss("promotion-loading");
+
+            if (formData.promotion.paymentMethod === "wallet") {
+              toast.success("✨ Quảng cáo đã được kích hoạt!");
+              // Navigate after short delay for wallet payment
+              setTimeout(() => {
+                navigate(`/products`, {
+                  state: { newProduct: true },
+                });
+              }, 2000);
+            } else {
+              // PayOS: Redirect to payment page
+              if (promotionResponse.paymentUrl) {
+                toast.success("🔄 Chuyển đến trang thanh toán...", {
+                  duration: 2000,
+                });
+                toast(
+                  "⚠️ Sản phẩm sẽ được xuất bản sau khi thanh toán thành công",
+                  {
+                    duration: 4000,
+                    icon: "⚠️",
+                    style: {
+                      background: "#3B82F6",
+                      color: "#fff",
+                    },
+                  }
+                );
+                setTimeout(() => {
+                  window.location.href = promotionResponse.paymentUrl;
+                }, 2000);
+                return; // Don't navigate away, let PayOS redirect handle it
+              }
+            }
+          } catch (error) {
+            toast.dismiss("promotion-loading");
+            console.error("Promotion creation error:", error);
+            toast.error(
+              `⚠️ Sản phẩm đã tạo nhưng quảng cáo thất bại: ${error.message}`,
+              { duration: 5000 }
+            );
+            // Still navigate to products for error case
+            setTimeout(() => {
+              navigate(`/products`, {
+                state: { newProduct: true },
+              });
+            }, 2000);
+          }
+        } else {
+          // No promotion: Navigate immediately
+          setTimeout(() => {
+            navigate(`/products`, {
+              state: { newProduct: true },
+            });
+          }, 2000);
+        }
       }
     } catch (error) {
-      console.error('Create product error:', error);
-      
+      console.error("Create product error:", error);
+
+      // Dismiss loading toast if it exists
+      if (loadingToast) {
+        toast.dismiss(loadingToast);
+      }
+
+      // Handle KYC/Bank Account requirement errors FIRST
+      if (error.kycRequired) {
+        const requirements = error.missingRequirements || {};
+
+        if (!requirements.cccdVerified) {
+          toast.error("❌ Cần xác thực CCCD trước khi đăng sản phẩm!", {
+            duration: 5000,
+          });
+          setTimeout(() => {
+            toast(
+              (t) => (
+                <div className="flex flex-col gap-3">
+                  <p className="font-semibold text-gray-800">
+                    🔐 Xác thực danh tính
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Vui lòng hoàn thành xác thực CCCD để đăng sản phẩm.
+                  </p>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => {
+                        toast.dismiss(t.id);
+                        navigate("/profile");
+                      }}
+                      className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
+                    >
+                      Đi tới xác thực
+                    </button>
+                    <button
+                      onClick={() => toast.dismiss(t.id)}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Đóng
+                    </button>
+                  </div>
+                </div>
+              ),
+              { duration: Infinity }
+            );
+          }, 1000);
+          return;
+        }
+
+        if (!requirements.bankAccountAdded) {
+          toast.error(
+            "❌ Cần thêm tài khoản ngân hàng trước khi đăng sản phẩm!",
+            {
+              duration: 5000,
+            }
+          );
+          setTimeout(() => {
+            toast(
+              (t) => (
+                <div className="flex flex-col gap-3">
+                  <p className="font-semibold text-gray-800">
+                    🏦 Tài khoản ngân hàng
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Vui lòng thêm tài khoản ngân hàng để nhận thanh toán.
+                  </p>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => {
+                        toast.dismiss(t.id);
+                        navigate("/wallet");
+                      }}
+                      className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
+                    >
+                      Đi tới ví
+                    </button>
+                    <button
+                      onClick={() => toast.dismiss(t.id)}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Đóng
+                    </button>
+                  </div>
+                </div>
+              ),
+              { duration: Infinity }
+            );
+          }, 1000);
+          return;
+        }
+      }
+
       // Handle specific error types with detailed breakdown
-      if (error.errorType === 'NSFW_VIOLATION') {
-        toast.error('🔞 Hình ảnh bị từ chối: Phát hiện nội dung không phù hợp', {
-          duration: 6000
-        });
-        
+      if (error.errorType === "NSFW_VIOLATION") {
+        toast.error(
+          "🔞 Hình ảnh bị từ chối: Phát hiện nội dung không phù hợp",
+          {
+            duration: 6000,
+          }
+        );
+
         // Show which specific images failed NSFW check
         if (error.errorBreakdown?.details) {
           const nsfwImages = error.errorBreakdown.details
-            .filter(e => e.type === 'NSFW_VIOLATION')
-            .map(e => e.fileName);
-          
+            .filter((e) => e.type === "NSFW_VIOLATION")
+            .map((e) => e.fileName);
+
           if (nsfwImages.length > 0) {
             setTimeout(() => {
-              toast.error(`Nội dung không phù hợp được tìm thấy trong:\n• ${nsfwImages.join('\n• ')}`, {
-                duration: 8000
-              });
+              toast.error(
+                `Nội dung không phù hợp được tìm thấy trong:\n• ${nsfwImages.join(
+                  "\n• "
+                )}`,
+                {
+                  duration: 8000,
+                }
+              );
             }, 1000);
           }
         }
-        
+
         setTimeout(() => {
-          toast.info('💡 Mẹo: Vui lòng chỉ tải lên hình ảnh phù hợp với gia đình', {
-            duration: 5000
+          toast("💡 Mẹo: Vui lòng chỉ tải lên hình ảnh phù hợp với gia đình", {
+            duration: 5000,
+            icon: "💡",
+            style: {
+              background: "#3B82F6",
+              color: "#fff",
+            },
           });
         }, 2000);
-        
-      } else if (error.errorType === 'CATEGORY_MISMATCH') {
-        toast.error('📂 Hình ảnh không khớp với danh mục', {
-          duration: 6000
+      } else if (error.errorType === "CATEGORY_MISMATCH") {
+        toast.error("📂 Hình ảnh không khớp với danh mục", {
+          duration: 6000,
         });
-        
+
         // Show which specific images failed category check
         if (error.errorBreakdown?.details) {
           const mismatchImages = error.errorBreakdown.details
-            .filter(e => e.type === 'CATEGORY_MISMATCH')
-            .map(e => e.fileName);
-          
+            .filter((e) => e.type === "CATEGORY_MISMATCH")
+            .map((e) => e.fileName);
+
           if (mismatchImages.length > 0) {
             setTimeout(() => {
-              toast.warning(`Không khớp danh mục được tìm thấy trong:\n• ${mismatchImages.join('\n• ')}`, {
-                duration: 8000
-              });
+              toast.warning(
+                `Không khớp danh mục được tìm thấy trong:\n• ${mismatchImages.join(
+                  "\n• "
+                )}`,
+                {
+                  duration: 8000,
+                }
+              );
             }, 1000);
           }
         }
-        
+
         setTimeout(() => {
-          toast.info('💡 Mẹo: Tải lên hình ảnh liên quan đến danh mục đã chọn hoặc chọn danh mục khác', {
-            duration: 6000
-          });
+          toast(
+            "💡 Mẹo: Tải lên hình ảnh liên quan đến danh mục đã chọn hoặc chọn danh mục khác",
+            {
+              duration: 6000,
+              icon: "💡",
+              style: {
+                background: "#3B82F6",
+                color: "#fff",
+              },
+            }
+          );
         }, 2000);
-        
-      } else if (error.errorType === 'MIXED_VALIDATION_ERROR') {
+      } else if (error.errorType === "MIXED_VALIDATION_ERROR") {
         const breakdown = error.errorBreakdown;
-        toast.error(`⚠️ Phát hiện nhiều vấn đề: ${breakdown.total} hình ảnh không đạt xác thực`, {
-          duration: 6000
-        });
-        
+        toast.error(
+          `⚠️ Phát hiện nhiều vấn đề: ${breakdown.total} hình ảnh không đạt xác thực`,
+          {
+            duration: 6000,
+          }
+        );
+
         // Show breakdown of issues
         if (breakdown.nsfw > 0) {
           setTimeout(() => {
             const nsfwImages = breakdown.details
-              .filter(e => e.type === 'NSFW_VIOLATION')
-              .map(e => e.fileName);
-            toast.error(`🔞 Nội dung không phù hợp (${breakdown.nsfw}):\n• ${nsfwImages.join('\n• ')}`, {
-              duration: 8000
-            });
+              .filter((e) => e.type === "NSFW_VIOLATION")
+              .map((e) => e.fileName);
+            toast.error(
+              `🔞 Nội dung không phù hợp (${
+                breakdown.nsfw
+              }):\n• ${nsfwImages.join("\n• ")}`,
+              {
+                duration: 8000,
+              }
+            );
           }, 1000);
         }
-        
+
         if (breakdown.category > 0) {
           setTimeout(() => {
             const categoryImages = breakdown.details
-              .filter(e => e.type === 'CATEGORY_MISMATCH')
-              .map(e => e.fileName);
-            toast.warning(`📂 Không khớp danh mục (${breakdown.category}):\n• ${categoryImages.join('\n• ')}`, {
-              duration: 8000
-            });
+              .filter((e) => e.type === "CATEGORY_MISMATCH")
+              .map((e) => e.fileName);
+            toast.warning(
+              `📂 Không khớp danh mục (${
+                breakdown.category
+              }):\n• ${categoryImages.join("\n• ")}`,
+              {
+                duration: 8000,
+              }
+            );
           }, 2000);
         }
-        
+
         setTimeout(() => {
-          toast.info('💡 Vui lòng sửa tất cả vấn đề trước khi tải lên', {
-            duration: 5000
+          toast("💡 Vui lòng sửa tất cả vấn đề trước khi tải lên", {
+            duration: 5000,
+            icon: "💡",
+            style: {
+              background: "#3B82F6",
+              color: "#fff",
+            },
           });
         }, 3000);
-        
-      } else if (error.errorType === 'IMAGE_VALIDATION_ERROR') {
-        toast.error('🤖 Xác thực hình ảnh thất bại: ' + (error.details?.reason || 'Vui lòng kiểm tra hình ảnh và thử lại.'));
-        
+      } else if (error.errorType === "IMAGE_VALIDATION_ERROR") {
+        toast.error(
+          "🤖 Xác thực hình ảnh thất bại: " +
+            (error.details?.reason || "Vui lòng kiểm tra hình ảnh và thử lại.")
+        );
+
         // Show detailed breakdown if available
         if (error.errorBreakdown?.details) {
-          const failedImages = error.errorBreakdown.details.map(e => e.fileName);
+          const failedImages = error.errorBreakdown.details.map(
+            (e) => e.fileName
+          );
           setTimeout(() => {
-            toast.info(`Hình ảnh thất bại:\n• ${failedImages.join('\n• ')}`, {
-              duration: 6000
+            toast(`Hình ảnh thất bại:\n• ${failedImages.join("\n• ")}`, {
+              duration: 6000,
+              icon: "ℹ️",
+              style: {
+                background: "#3B82F6",
+                color: "#fff",
+              },
             });
           }, 1000);
         }
-        
       } else if (error.errors) {
         // Handle validation errors from backend
         const backendErrors = {};
-        error.errors.forEach(err => {
+        error.errors.forEach((err) => {
           backendErrors[err.path || err.param] = err.msg || err.message;
         });
         setErrors(backendErrors);
-        toast.error('Vui lòng sửa các lỗi xác thực');
+        toast.error("Vui lòng sửa các lỗi xác thực");
       } else {
-        toast.error(error.message || 'Không thể tạo sản phẩm. Vui lòng thử lại.');
+        toast.error(
+          error.message || "Không thể tạo sản phẩm. Vui lòng thử lại."
+        );
       }
     } finally {
       setLoading(false);
@@ -360,25 +688,81 @@ const CreateForm = () => {
   };
 
   const conditionOptions = [
-    { value: 'NEW', label: 'Hoàn toàn mới', icon: icons.FiStar, color: 'text-yellow-500' },
-    { value: 'LIKE_NEW', label: 'Như mới', icon: icons.HiCheckCircle, color: 'text-green-500' },
-    { value: 'GOOD', label: 'Tình trạng tốt', icon: icons.FiCheck, color: 'text-blue-500' },
-    { value: 'FAIR', label: 'Tình trạng khá', icon: icons.BiInfoCircle, color: 'text-orange-500' },
-    { value: 'POOR', label: 'Tình trạng kém', icon: icons.HiExclamationCircle, color: 'text-red-500' }
+    {
+      value: "NEW",
+      label: "Hoàn toàn mới",
+      icon: icons.FiStar,
+      color: "text-yellow-500",
+    },
+    {
+      value: "LIKE_NEW",
+      label: "Như mới",
+      icon: icons.HiCheckCircle,
+      color: "text-green-500",
+    },
+    {
+      value: "GOOD",
+      label: "Tình trạng tốt",
+      icon: icons.FiCheck,
+      color: "text-blue-500",
+    },
+    {
+      value: "FAIR",
+      label: "Tình trạng khá",
+      icon: icons.BiInfoCircle,
+      color: "text-orange-500",
+    },
+    {
+      value: "POOR",
+      label: "Tình trạng kém",
+      icon: icons.HiExclamationCircle,
+      color: "text-red-500",
+    },
   ];
 
   const steps = [
-    { id: 1, title: 'Thông tin cơ bản', icon: icons.BiText, description: 'Tên, mô tả và danh mục' },
-    { id: 2, title: 'Danh mục sản phẩm', icon: icons.BiCategory, description: 'Phân loại sản phẩm' },
-    { id: 3, title: 'Hình ảnh', icon: icons.BiCamera, description: 'Tải lên ảnh chất lượng cao' },
-    { id: 4, title: 'Giá cả', icon: icons.BiMoney, description: 'Thiết lập giá thuê' },
-    { id: 5, title: 'Địa điểm', icon: icons.FiMapPin, description: 'Vị trí giao nhận' }
+    {
+      id: 1,
+      title: "Thông tin cơ bản",
+      icon: icons.BiText,
+      description: "Tên, mô tả và danh mục",
+    },
+    {
+      id: 2,
+      title: "Danh mục sản phẩm",
+      icon: icons.BiCategory,
+      description: "Phân loại sản phẩm",
+    },
+    {
+      id: 3,
+      title: "Hình ảnh",
+      icon: icons.BiCamera,
+      description: "Tải lên ảnh chất lượng cao",
+    },
+    {
+      id: 4,
+      title: "Giá cả",
+      icon: icons.BiMoney,
+      description: "Thiết lập giá thuê",
+    },
+    {
+      id: 5,
+      title: "Địa điểm",
+      icon: icons.FiMapPin,
+      description: "Vị trí giao nhận",
+    },
+    {
+      id: 6,
+      title: "Quảng cáo",
+      icon: icons.HiSparkles,
+      description: "Tăng độ hiển thị (không bắt buộc)",
+    },
   ];
 
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+    transition: { duration: 0.6 },
   };
 
   return (
@@ -394,35 +778,43 @@ const CreateForm = () => {
           <div className="flex items-center justify-between max-w-4xl mx-auto">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
-                <motion.div 
+                <motion.div
                   className="flex flex-col items-center text-center"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all duration-300 ${
-                    currentStep >= step.id 
-                      ? 'bg-white text-primary-600 shadow-lg' 
-                      : 'bg-primary-500 text-white'
-                  }`}>
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all duration-300 ${
+                      currentStep >= step.id
+                        ? "bg-white text-primary-600 shadow-lg"
+                        : "bg-primary-500 text-white"
+                    }`}
+                  >
                     {currentStep > step.id ? (
                       <icons.FiCheck className="w-5 h-5" />
                     ) : (
                       <step.icon className="w-5 h-5" />
                     )}
                   </div>
-                  <div className={`mt-3 transition-colors ${
-                    currentStep >= step.id ? 'text-white' : 'text-primary-200'
-                  }`}>
+                  <div
+                    className={`mt-3 transition-colors ${
+                      currentStep >= step.id ? "text-white" : "text-primary-200"
+                    }`}
+                  >
                     <div className="font-semibold text-sm">{step.title}</div>
-                    <div className="text-xs opacity-75 hidden sm:block">{step.description}</div>
+                    <div className="text-xs opacity-75 hidden sm:block">
+                      {step.description}
+                    </div>
                   </div>
                 </motion.div>
-                
+
                 {index < steps.length - 1 && (
-                  <div className={`w-12 h-0.5 mx-4 transition-colors ${
-                    currentStep > step.id ? 'bg-white' : 'bg-primary-400'
-                  }`}></div>
+                  <div
+                    className={`w-12 h-0.5 mx-4 transition-colors ${
+                      currentStep > step.id ? "bg-white" : "bg-primary-400"
+                    }`}
+                  ></div>
                 )}
               </div>
             ))}
@@ -438,7 +830,9 @@ const CreateForm = () => {
                   <icons.BiText className="w-6 h-6 mr-3 text-primary-600" />
                   Thông Tin Cơ Bản
                 </h2>
-                <p className="text-gray-600">Điền thông tin chi tiết về sản phẩm của bạn</p>
+                <p className="text-gray-600">
+                  Điền thông tin chi tiết về sản phẩm của bạn
+                </p>
               </div>
 
               {/* Product Title */}
@@ -453,21 +847,27 @@ const CreateForm = () => {
                   value={formData.title}
                   onChange={handleInputChange}
                   maxLength="100"
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all duration-200 ${
-                    errors.title 
-                      ? 'border-red-400 bg-red-50' 
-                      : 'border-gray-300 hover:border-primary-400 focus:border-primary-500'
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 ${
+                    errors.title
+                      ? "border-red-500 bg-red-50 focus:ring-red-200 focus:border-red-500 animate-shake"
+                      : "border-gray-300 hover:border-primary-400 focus:border-primary-500 focus:ring-primary-200"
                   }`}
                   placeholder="Ví dụ: iPhone 14 Pro Max 256GB"
                 />
                 <div className="flex justify-between items-center">
                   {errors.title && (
-                    <p className="text-red-600 text-sm flex items-center">
-                      <icons.BiInfoCircle className="w-4 h-4 mr-1" />
+                    <p className="text-red-600 text-sm flex items-center font-medium bg-red-50 px-3 py-1.5 rounded-lg">
+                      <icons.BiInfoCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
                       {errors.title}
                     </p>
                   )}
-                  <p className="text-gray-400 text-sm ml-auto">{formData.title.length}/100</p>
+                  <p
+                    className={`text-sm ml-auto ${
+                      errors.title ? "text-red-400" : "text-gray-400"
+                    }`}
+                  >
+                    {formData.title.length}/100
+                  </p>
                 </div>
               </div>
 
@@ -483,21 +883,27 @@ const CreateForm = () => {
                   onChange={handleInputChange}
                   rows={5}
                   maxLength="1000"
-                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all duration-200 resize-none ${
-                    errors.description 
-                      ? 'border-red-400 bg-red-50' 
-                      : 'border-gray-300 hover:border-primary-400 focus:border-primary-500'
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 resize-none ${
+                    errors.description
+                      ? "border-red-500 bg-red-50 focus:ring-red-200 focus:border-red-500 animate-shake"
+                      : "border-gray-300 hover:border-primary-400 focus:border-primary-500 focus:ring-primary-200"
                   }`}
                   placeholder="Mô tả chi tiết về sản phẩm, tình trạng, phụ kiện đi kèm..."
                 />
                 <div className="flex justify-between items-center">
                   {errors.description && (
-                    <p className="text-red-600 text-sm flex items-center">
-                      <icons.BiInfoCircle className="w-4 h-4 mr-1" />
+                    <p className="text-red-600 text-sm flex items-center font-medium bg-red-50 px-3 py-1.5 rounded-lg">
+                      <icons.BiInfoCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
                       {errors.description}
                     </p>
                   )}
-                  <p className="text-gray-400 text-sm ml-auto">{formData.description.length}/1000</p>
+                  <p
+                    className={`text-sm ml-auto ${
+                      errors.description ? "text-red-400" : "text-gray-400"
+                    }`}
+                  >
+                    {formData.description.length}/1000
+                  </p>
                 </div>
               </div>
 
@@ -508,13 +914,13 @@ const CreateForm = () => {
                   Tình Trạng Sản Phẩm *
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {conditionOptions.map(option => (
+                  {conditionOptions.map((option) => (
                     <label
                       key={option.value}
                       className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
                         formData.condition === option.value
-                          ? 'border-primary-500 bg-primary-50 text-primary-700'
-                          : 'border-gray-200 hover:border-primary-300'
+                          ? "border-primary-500 bg-primary-50 text-primary-700"
+                          : "border-gray-200 hover:border-primary-300"
                       }`}
                     >
                       <input
@@ -526,7 +932,9 @@ const CreateForm = () => {
                         className="sr-only"
                       />
                       <option.icon className={`w-6 h-6 mb-2 ${option.color}`} />
-                      <span className="text-sm font-medium text-center">{option.label}</span>
+                      <span className="text-sm font-medium text-center">
+                        {option.label}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -542,7 +950,9 @@ const CreateForm = () => {
                   <icons.BiCategory className="w-6 h-6 mr-3 text-primary-600" />
                   Danh Mục Sản Phẩm
                 </h2>
-                <p className="text-gray-600">Chọn danh mục phù hợp để người thuê dễ tìm thấy</p>
+                <p className="text-gray-600">
+                  Chọn danh mục phù hợp để người thuê dễ tìm thấy
+                </p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -556,22 +966,22 @@ const CreateForm = () => {
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all duration-200 appearance-none ${
-                      errors.category 
-                        ? 'border-red-400 bg-red-50' 
-                        : 'border-gray-300 hover:border-primary-400 focus:border-primary-500'
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 appearance-none ${
+                      errors.category
+                        ? "border-red-500 bg-red-50 focus:ring-red-200 focus:border-red-500 animate-shake"
+                        : "border-gray-300 hover:border-primary-400 focus:border-primary-500 focus:ring-primary-200"
                     }`}
                   >
                     <option value="">Chọn danh mục</option>
-                    {categories.map(category => (
+                    {categories.map((category) => (
                       <option key={category._id} value={category._id}>
                         {category.name}
                       </option>
                     ))}
                   </select>
                   {errors.category && (
-                    <p className="text-red-600 text-sm flex items-center">
-                      <icons.BiInfoCircle className="w-4 h-4 mr-1" />
+                    <p className="text-red-600 text-sm flex items-center font-medium bg-red-50 px-3 py-1.5 rounded-lg">
+                      <icons.BiInfoCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
                       {errors.category}
                     </p>
                   )}
@@ -588,14 +998,14 @@ const CreateForm = () => {
                     value={formData.subCategory}
                     onChange={handleInputChange}
                     disabled={!formData.category || subCategories.length === 0}
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all duration-200 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed ${
-                      'border-gray-300 hover:border-primary-400 focus:border-primary-500'
-                    }`}
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all duration-200 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed ${"border-gray-300 hover:border-primary-400 focus:border-primary-500"}`}
                   >
                     <option value="">
-                      {!formData.category ? 'Chọn danh mục trước' : 'Chọn danh mục con (không bắt buộc)'}
+                      {!formData.category
+                        ? "Chọn danh mục trước"
+                        : "Chọn danh mục con (không bắt buộc)"}
                     </option>
-                    {subCategories.map(subCategory => (
+                    {subCategories.map((subCategory) => (
                       <option key={subCategory._id} value={subCategory._id}>
                         {subCategory.name}
                       </option>
@@ -608,10 +1018,14 @@ const CreateForm = () => {
                 <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
                   <div className="flex items-center mb-2">
                     <icons.HiLightBulb className="w-5 h-5 text-blue-600 mr-2" />
-                    <h4 className="font-semibold text-blue-800">Mẹo chọn danh mục</h4>
+                    <h4 className="font-semibold text-blue-800">
+                      Mẹo chọn danh mục
+                    </h4>
                   </div>
                   <p className="text-sm text-blue-700">
-                    Chọn danh mục cụ thể nhất cho sản phẩm của bạn. Điều này giúp hệ thống AI xác thực tốt hơn và người thuê dễ tìm thấy sản phẩm.
+                    Chọn danh mục cụ thể nhất cho sản phẩm của bạn. Điều này
+                    giúp hệ thống AI xác thực tốt hơn và người thuê dễ tìm thấy
+                    sản phẩm.
                   </p>
                 </div>
               )}
@@ -626,12 +1040,14 @@ const CreateForm = () => {
                   <icons.BiCamera className="w-6 h-6 mr-3 text-primary-600" />
                   Hình Ảnh Sản Phẩm
                 </h2>
-                <p className="text-gray-600">Tải lên những hình ảnh chất lượng cao nhất</p>
+                <p className="text-gray-600">
+                  Tải lên những hình ảnh chất lượng cao nhất
+                </p>
               </div>
 
-              <ImageUploader 
-                images={images} 
-                setImages={setImages} 
+              <ImageUploader
+                images={images}
+                setImages={setImages}
                 error={errors.images}
               />
             </motion.div>
@@ -645,10 +1061,12 @@ const CreateForm = () => {
                   <icons.BiMoney className="w-6 h-6 mr-3 text-primary-600" />
                   Thông Tin Giá Cả
                 </h2>
-                <p className="text-gray-600">Thiết lập giá thuê cạnh tranh và hấp dẫn</p>
+                <p className="text-gray-600">
+                  Thiết lập giá thuê cạnh tranh và hấp dẫn
+                </p>
               </div>
 
-              <PricingForm 
+              <PricingForm
                 pricing={formData.pricing}
                 onChange={handleInputChange}
                 errors={errors}
@@ -664,7 +1082,9 @@ const CreateForm = () => {
                   <icons.FiMapPin className="w-6 h-6 mr-3 text-primary-600" />
                   Địa Điểm Giao Nhận
                 </h2>
-                <p className="text-gray-600">Chọn vị trí thuận tiện cho việc giao nhận</p>
+                <p className="text-gray-600">
+                  Chọn vị trí thuận tiện cho việc giao nhận
+                </p>
               </div>
 
               <LocationSelector
@@ -675,13 +1095,493 @@ const CreateForm = () => {
             </motion.div>
           )}
 
+          {/* Step 6: Promotion */}
+          {currentStep === 6 && (
+            <motion.div className="space-y-8" {...fadeInUp}>
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center justify-center mb-2">
+                  <icons.HiSparkles className="w-6 h-6 mr-3 text-primary-600" />
+                  Quảng Cáo Sản Phẩm
+                </h2>
+                <p className="text-gray-600">
+                  Tăng độ hiển thị và xuất hiện đầu trang (Không bắt buộc)
+                </p>
+              </div>
+
+              {/* Enable/Disable Promotion Toggle */}
+              <div className="bg-gradient-to-r from-primary-50 to-blue-50 border-2 border-primary-200 rounded-2xl p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
+                      <icons.HiSparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-1">
+                        Kích hoạt quảng cáo
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Làm nổi bật sản phẩm của bạn và tăng cơ hội cho thuê
+                      </p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.promotion.enabled}
+                      onChange={(e) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          promotion: {
+                            ...prev.promotion,
+                            enabled: e.target.checked,
+                            tier: e.target.checked
+                              ? prev.promotion.tier || 3
+                              : null,
+                          },
+                        }));
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {formData.promotion.enabled && (
+                <>
+                  {/* Tier Selection */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <icons.BiCrown className="w-5 h-5 mr-2 text-yellow-500" />
+                      Chọn Gói Quảng Cáo
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                      {Object.entries(promotionService.TIER_CONFIG).map(
+                        ([tier, config]) => (
+                          <motion.button
+                            key={tier}
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                promotion: {
+                                  ...prev.promotion,
+                                  tier: parseInt(tier),
+                                },
+                              }));
+                            }}
+                            className={`relative p-6 rounded-2xl border-2 transition-all ${
+                              formData.promotion.tier === parseInt(tier)
+                                ? `${config.borderColor} bg-gradient-to-br ${config.color} text-white shadow-lg`
+                                : "border-gray-200 hover:border-primary-300 bg-white"
+                            }`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <div className="text-center">
+                              <div className="text-3xl mb-2">{config.icon}</div>
+                              <h4
+                                className={`font-bold mb-1 ${
+                                  formData.promotion.tier === parseInt(tier)
+                                    ? "text-white"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                {config.name}
+                              </h4>
+                              <div
+                                className={`text-sm mb-3 ${
+                                  formData.promotion.tier === parseInt(tier)
+                                    ? "text-white/90"
+                                    : "text-gray-600"
+                                }`}
+                              >
+                                {promotionService.formatCurrency(
+                                  promotionService.TIER_PRICES[tier]
+                                )}
+                                <span className="text-xs">/ngày</span>
+                              </div>
+                              <div
+                                className={`text-xs space-y-1 ${
+                                  formData.promotion.tier === parseInt(tier)
+                                    ? "text-white/80"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {config.features
+                                  .slice(0, 2)
+                                  .map((feature, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center justify-center gap-1"
+                                    >
+                                      <icons.FiCheck className="w-3 h-3" />
+                                      <span>{feature}</span>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                            {formData.promotion.tier === parseInt(tier) && (
+                              <motion.div
+                                className="absolute top-2 right-2 bg-white text-primary-600 rounded-full p-1"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                              >
+                                <icons.FiCheck className="w-4 h-4" />
+                              </motion.div>
+                            )}
+                          </motion.button>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Duration Selection */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <icons.BiCalendar className="w-5 h-5 mr-2 text-primary-600" />
+                      Thời Gian Quảng Cáo
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min="1"
+                        max="30"
+                        value={formData.promotion.duration}
+                        onChange={(e) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            promotion: {
+                              ...prev.promotion,
+                              duration: parseInt(e.target.value),
+                            },
+                          }));
+                        }}
+                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                      />
+                      <div className="flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-xl border border-primary-200 min-w-[120px]">
+                        <icons.BiCalendar className="w-5 h-5 text-primary-600" />
+                        <span className="font-bold text-primary-700">
+                          {formData.promotion.duration} ngày
+                        </span>
+                      </div>
+                    </div>
+                    {formData.promotion.duration >= 3 && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+                        <icons.BiCheckCircle className="w-5 h-5 text-green-600" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-green-800">
+                            🎉 Giảm giá 10% cho quảng cáo từ 3 ngày trở lên!
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Price Preview - Always visible when tier is selected */}
+                  {formData.promotion.tier && (
+                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-2xl p-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                        <icons.BiCalculator className="w-5 h-5 mr-2 text-yellow-600" />
+                        Chi Phí Ước Tính
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-700">Gói đã chọn:</span>
+                          <span className="font-bold text-gray-900">
+                            {
+                              promotionService.TIER_CONFIG[
+                                formData.promotion.tier
+                              ]?.name
+                            }
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-700">Giá mỗi ngày:</span>
+                          <span className="font-semibold text-gray-900">
+                            {promotionService.formatCurrency(
+                              promotionService.TIER_PRICES[
+                                formData.promotion.tier
+                              ]
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-700">Thời gian:</span>
+                          <span className="font-semibold text-gray-900">
+                            {formData.promotion.duration} ngày
+                          </span>
+                        </div>
+                        <div className="border-t-2 border-yellow-300 pt-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-700">
+                              Tổng trước giảm:
+                            </span>
+                            <span className="font-semibold text-gray-900">
+                              {promotionService.formatCurrency(
+                                promotionService.TIER_PRICES[
+                                  formData.promotion.tier
+                                ] * formData.promotion.duration
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        {formData.promotion.duration >= 3 && (
+                          <div className="flex justify-between items-center text-green-700">
+                            <span className="font-semibold">
+                              Giảm giá (10%):
+                            </span>
+                            <span className="font-bold">
+                              -
+                              {promotionService.formatCurrency(
+                                promotionService.TIER_PRICES[
+                                  formData.promotion.tier
+                                ] *
+                                  formData.promotion.duration *
+                                  0.1
+                              )}
+                            </span>
+                          </div>
+                        )}
+                        <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-xl p-4 mt-3">
+                          <div className="flex justify-between items-center text-white">
+                            <span className="text-lg font-bold">
+                              Tổng thanh toán:
+                            </span>
+                            <span className="text-2xl font-extrabold">
+                              {promotionService.formatCurrency(
+                                formData.promotion.duration >= 3
+                                  ? promotionService.TIER_PRICES[
+                                      formData.promotion.tier
+                                    ] *
+                                      formData.promotion.duration *
+                                      0.9
+                                  : promotionService.TIER_PRICES[
+                                      formData.promotion.tier
+                                    ] * formData.promotion.duration
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Prompt to select tier */}
+                  {!formData.promotion.tier && (
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 text-center">
+                      <icons.BiInfoCircle className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+                      <p className="text-blue-800 font-semibold">
+                        👆 Vui lòng chọn gói quảng cáo ở trên để xem chi tiết
+                        thanh toán
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Payment Method - Only show when tier is selected */}
+                  {formData.promotion.tier && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <icons.HiCash className="w-5 h-5 mr-2 text-primary-600" />
+                        Phương Thức Thanh Toán
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Wallet Payment */}
+                        <motion.button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              promotion: {
+                                ...prev.promotion,
+                                paymentMethod: "wallet",
+                              },
+                            }));
+                          }}
+                          className={`p-6 rounded-xl border-2 transition-all ${
+                            formData.promotion.paymentMethod === "wallet"
+                              ? "border-primary-500 bg-primary-50"
+                              : "border-gray-200 hover:border-primary-300"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
+                              <icons.HiCash className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="flex-1 text-left">
+                              <h4 className="font-bold text-gray-900 mb-1">
+                                Ví PIRA
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {walletLoading ? (
+                                  "Đang tải..."
+                                ) : (
+                                  <>
+                                    Số dư:{" "}
+                                    {promotionService.formatCurrency(
+                                      walletBalance || 0
+                                    )}
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                            {formData.promotion.paymentMethod === "wallet" && (
+                              <icons.FiCheck className="w-6 h-6 text-primary-600" />
+                            )}
+                          </div>
+                        </motion.button>
+
+                        {/* PayOS Payment */}
+                        <motion.button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              promotion: {
+                                ...prev.promotion,
+                                paymentMethod: "payos",
+                              },
+                            }));
+                          }}
+                          className={`p-6 rounded-xl border-2 transition-all ${
+                            formData.promotion.paymentMethod === "payos"
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-blue-300"
+                          }`}
+                          whileHover={{ scale: 1.02 }}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                              <icons.BiCreditCard className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="flex-1 text-left">
+                              <h4 className="font-bold text-gray-900 mb-1">
+                                PayOS
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                Thanh toán ngân hàng
+                              </p>
+                            </div>
+                            {formData.promotion.paymentMethod === "payos" && (
+                              <icons.FiCheck className="w-6 h-6 text-blue-600" />
+                            )}
+                          </div>
+                        </motion.button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cost Summary Loading */}
+                  {formData.promotion.tier && calculatingCost && (
+                    <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 text-white">
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                        <span className="text-lg font-semibold">
+                          Đang tính chi phí...
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cost Summary */}
+                  {formData.promotion.tier &&
+                    !calculatingCost &&
+                    promotionCost &&
+                    promotionCost.totalCost && (
+                      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 text-white">
+                        <h3 className="text-lg font-bold mb-4 flex items-center">
+                          <icons.BiCalculator className="w-5 h-5 mr-2" />
+                          Chi Tiết Chi Phí
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-primary-100">Giá gốc:</span>
+                            <span className="font-semibold">
+                              {promotionService.formatCurrency(
+                                promotionCost.basePrice
+                              )}
+                            </span>
+                          </div>
+                          {promotionCost.discount > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-primary-100">
+                                Giảm giá (10%):
+                              </span>
+                              <span className="font-semibold text-yellow-300">
+                                -
+                                {promotionService.formatCurrency(
+                                  promotionCost.discount
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          <div className="border-t border-primary-400 pt-3 flex justify-between">
+                            <span className="text-lg font-bold">
+                              Tổng cộng:
+                            </span>
+                            <span className="text-2xl font-bold text-yellow-300">
+                              {promotionService.formatCurrency(
+                                promotionCost.totalCost
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        {formData.promotion.paymentMethod === "wallet" &&
+                          walletBalance < promotionCost.totalCost && (
+                            <div className="mt-4 bg-red-500 rounded-xl p-4 flex items-center gap-3">
+                              <icons.BiErrorCircle className="w-5 h-5" />
+                              <p className="text-sm">
+                                Số dư ví không đủ. Vui lòng nạp thêm hoặc chọn
+                                PayOS.
+                              </p>
+                            </div>
+                          )}
+                      </div>
+                    )}
+                </>
+              )}
+
+              {/* Skip Promotion Info */}
+              {!formData.promotion.enabled && (
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <icons.HiInformationCircle className="w-6 h-6 text-gray-600" />
+                    <h4 className="font-bold text-gray-900">
+                      Bỏ qua quảng cáo
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Bạn có thể quảng cáo sản phẩm sau khi tạo. Quảng cáo giúp
+                    sản phẩm của bạn:
+                  </p>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <icons.FiCheck className="w-4 h-4 text-primary-600" />
+                      Xuất hiện đầu tiên trong danh sách
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <icons.FiCheck className="w-4 h-4 text-primary-600" />
+                      Có huy hiệu và hiệu ứng nổi bật
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <icons.FiCheck className="w-4 h-4 text-primary-600" />
+                      Tăng cơ hội được thuê nhanh hơn
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </motion.div>
+          )}
+
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between pt-8 mt-8 border-t border-gray-200">
             <motion.button
               type="button"
               onClick={() => {
                 if (currentStep === 1) {
-                  navigate('/owner/products');
+                  navigate("/owner/products");
                 } else {
                   setCurrentStep(currentStep - 1);
                 }
@@ -690,11 +1590,11 @@ const CreateForm = () => {
               whileHover={{ scale: 1.05 }}
             >
               <icons.GrLinkPrevious className="w-4 h-4 mr-2" />
-              {currentStep === 1 ? 'Hủy bỏ' : 'Quay lại'}
+              {currentStep === 1 ? "Hủy bỏ" : "Quay lại"}
             </motion.button>
 
             <div className="flex space-x-4">
-              {currentStep < 5 && (
+              {currentStep < 6 && (
                 <motion.button
                   type="button"
                   onClick={() => setCurrentStep(currentStep + 1)}
@@ -706,7 +1606,7 @@ const CreateForm = () => {
                 </motion.button>
               )}
 
-              {currentStep === 5 && (
+              {currentStep === 6 && (
                 <motion.button
                   type="submit"
                   disabled={loading}

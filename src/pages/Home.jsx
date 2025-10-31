@@ -1,44 +1,43 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ROUTES } from "../utils/constants";
 import { productService } from "../services/product";
 import Loading from "../components/common/Loading";
 import { useWallet } from "../context/WalletContext";
-import { 
-  BiCamera, 
-  BiCheckCircle, 
+import {
+  BiCamera,
+  BiCheckCircle,
   BiShield,
   BiSupport,
   BiAward,
-  BiInfoCircle
+  BiInfoCircle,
 } from "react-icons/bi";
-import { 
+import {
   HiLocationMarker,
   HiStar,
   HiShieldCheck,
-  HiClock
+  HiClock,
+  HiChevronLeft,
+  HiChevronRight,
 } from "react-icons/hi";
-import { 
-  FiMapPin,
-  FiSearch
-} from "react-icons/fi";
-import { 
+import { FiMapPin, FiSearch } from "react-icons/fi";
+import {
   MdBackpack,
   MdCameraAlt,
   MdLocationOn,
   MdLuggage,
   MdAirplanemodeActive,
   MdGpsFixed,
-  MdFlightTakeoff
+  MdFlightTakeoff,
 } from "react-icons/md";
-import { 
+import {
   FaCampground,
   FaShieldAlt,
   FaUsers,
   FaSearch,
   FaUserShield,
-  FaQuoteLeft
+  FaQuoteLeft,
 } from "react-icons/fa";
 
 export default function Home() {
@@ -47,6 +46,7 @@ export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const carouselRef = useRef(null);
 
   // Scroll to top on component mount (page reload/refresh)
   useEffect(() => {
@@ -55,14 +55,28 @@ export default function Home() {
     fetchBalance();
   }, [fetchBalance]);
 
-  // Fetch featured products
+  // Fetch top 10 promoted products (highest tier first)
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
-        const response = await productService.getFeatured(6);
-        setFeaturedProducts(response.data.data || []);
+        // Fetch products sorted by promotion (promoted first, then by tier)
+        const response = await productService.list({
+          limit: 10,
+          sort: "createdAt",
+          order: "desc",
+        });
+
+        // Get promoted products and sort by tier (1 = highest)
+        const allProducts =
+          response.data?.data?.products || response.data?.products || [];
+        const promotedProducts = allProducts
+          .filter((p) => p.isPromoted && p.promotionTier)
+          .sort((a, b) => a.promotionTier - b.promotionTier); // Lower tier number = higher priority
+
+        setFeaturedProducts(promotedProducts.slice(0, 10));
       } catch (err) {
+        console.error("Error fetching featured products:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -150,33 +164,34 @@ export default function Home() {
       <section className="relative isolate overflow-hidden min-h-[750px] flex items-center">
         {/* Enhanced gradient background */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0A5C36] via-[#0D7A47] to-[#10956B]" />
-        
+
         {/* Animated gradient overlay */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 -z-10 opacity-30"
           animate={{
             background: [
               "radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%)",
               "radial-gradient(circle at 80% 50%, rgba(5, 150, 105, 0.3) 0%, transparent 50%)",
               "radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%)",
-            ]
+            ],
           }}
           transition={{ duration: 8, repeat: Infinity }}
         />
 
         {/* Decorative pattern */}
-        <div className="absolute inset-0 -z-10 opacity-5" 
+        <div
+          className="absolute inset-0 -z-10 opacity-5"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           }}
         />
 
         {/* Floating equipment icons */}
         <motion.div
           className="absolute top-20 left-[10%] text-6xl opacity-20"
-          animate={{ 
+          animate={{
             y: [0, -20, 0],
-            rotate: [0, 5, 0]
+            rotate: [0, 5, 0],
           }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         >
@@ -184,31 +199,46 @@ export default function Home() {
         </motion.div>
         <motion.div
           className="absolute top-32 right-[15%] text-5xl opacity-20"
-          animate={{ 
+          animate={{
             y: [0, 20, 0],
-            rotate: [0, -5, 0]
+            rotate: [0, -5, 0],
           }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
         >
           🎒
         </motion.div>
         <motion.div
           className="absolute bottom-32 left-[15%] text-5xl opacity-20"
-          animate={{ 
+          animate={{
             y: [0, -15, 0],
-            rotate: [0, 5, 0]
+            rotate: [0, 5, 0],
           }}
-          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          transition={{
+            duration: 5.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2,
+          }}
         >
           ⛺
         </motion.div>
         <motion.div
           className="absolute bottom-20 right-[12%] text-6xl opacity-20"
-          animate={{ 
+          animate={{
             y: [0, 18, 0],
-            rotate: [0, -5, 0]
+            rotate: [0, -5, 0],
           }}
-          transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          transition={{
+            duration: 6.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
+          }}
         >
           🧳
         </motion.div>
@@ -225,7 +255,10 @@ export default function Home() {
             <motion.div
               className="inline-flex items-center rounded-full bg-white/95 backdrop-blur-sm shadow-lg px-4 py-2 text-sm font-medium text-primary-700 mb-8"
               variants={fadeInUpStagger}
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}
+              whileHover={{
+                scale: 1.05,
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+              }}
               transition={{ duration: 0.2 }}
             >
               <motion.span
@@ -250,11 +283,12 @@ export default function Home() {
                     "0 0 20px rgba(255,255,255,0.5)",
                     "0 0 40px rgba(255,255,255,0.3)",
                     "0 0 20px rgba(255,255,255,0.5)",
-                  ]
+                  ],
                 }}
                 transition={{ duration: 3, repeat: Infinity }}
                 style={{
-                  background: "linear-gradient(90deg, #FFFFFF, #D1FAE5, #FFFFFF)",
+                  background:
+                    "linear-gradient(90deg, #FFFFFF, #D1FAE5, #FFFFFF)",
                   backgroundSize: "200% 100%",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -270,8 +304,9 @@ export default function Home() {
               className="mt-8 text-lg sm:text-xl text-primary-50 leading-8 max-w-3xl mx-auto"
               variants={fadeInUpStagger}
             >
-              🏔️ Khám phá. 📸 Ghi lại. 🌍 Chia sẻ. <br className="sm:hidden"/>
-              Truy cập thiết bị du lịch cao cấp từ những người địa phương đáng tin cậy.
+              🏔️ Khám phá. 📸 Ghi lại. 🌍 Chia sẻ. <br className="sm:hidden" />
+              Truy cập thiết bị du lịch cao cấp từ những người địa phương đáng
+              tin cậy.
             </motion.p>
 
             {/* Equipment categories quick preview */}
@@ -290,11 +325,11 @@ export default function Home() {
                 <motion.div
                   key={idx}
                   className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 text-white text-sm font-medium shadow-lg"
-                  whileHover={{ 
-                    scale: 1.1, 
+                  whileHover={{
+                    scale: 1.1,
                     backgroundColor: "rgba(255, 255, 255, 0.25)",
                     borderColor: "rgba(255, 255, 255, 0.5)",
-                    boxShadow: "0 10px 20px rgba(0,0,0,0.2)"
+                    boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
                   }}
                   transition={{ duration: 0.2 }}
                 >
@@ -309,7 +344,10 @@ export default function Home() {
               className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
               variants={fadeInUpStagger}
             >
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <Link
                   to={ROUTES.PRODUCTS}
                   className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl transition-all"
@@ -318,7 +356,10 @@ export default function Home() {
                   Tìm Thiết Bị Ngay
                 </Link>
               </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <Link
                   to={ROUTES.REGISTER}
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all"
@@ -364,8 +405,17 @@ export default function Home() {
 
         {/* Bottom wave decoration */}
         <div className="absolute bottom-0 left-0 right-0 z-0 pointer-events-none">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto" preserveAspectRatio="none">
-            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="#F9FAFB"/>
+          <svg
+            viewBox="0 0 1440 120"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full h-auto"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
+              fill="#F9FAFB"
+            />
           </svg>
         </div>
       </section>
@@ -396,12 +446,36 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {[
-              { icon: MdCameraAlt, name: "Camera", color: "from-blue-500 to-blue-600" },
-              { icon: MdBackpack, name: "Balo", color: "from-green-500 to-green-600" },
-              { icon: FaCampground, name: "Lều", color: "from-orange-500 to-orange-600" },
-              { icon: MdLuggage, name: "Vali", color: "from-purple-500 to-purple-600" },
-              { icon: MdFlightTakeoff, name: "Flycam", color: "from-red-500 to-red-600" },
-              { icon: MdGpsFixed, name: "GPS", color: "from-teal-500 to-teal-600" },
+              {
+                icon: MdCameraAlt,
+                name: "Camera",
+                color: "from-blue-500 to-blue-600",
+              },
+              {
+                icon: MdBackpack,
+                name: "Balo",
+                color: "from-green-500 to-green-600",
+              },
+              {
+                icon: FaCampground,
+                name: "Lều",
+                color: "from-orange-500 to-orange-600",
+              },
+              {
+                icon: MdLuggage,
+                name: "Vali",
+                color: "from-purple-500 to-purple-600",
+              },
+              {
+                icon: MdFlightTakeoff,
+                name: "Flycam",
+                color: "from-red-500 to-red-600",
+              },
+              {
+                icon: MdGpsFixed,
+                name: "GPS",
+                color: "from-teal-500 to-teal-600",
+              },
             ].map((category, idx) => (
               <motion.div
                 key={idx}
@@ -409,16 +483,21 @@ export default function Home() {
                 variants={fadeInUpStagger}
                 whileHover={{ y: -8 }}
                 transition={{ duration: 0.3 }}
-                onClick={() => navigate(`${ROUTES.PRODUCTS}?category=${category.name}`)}
+                onClick={() =>
+                  navigate(`${ROUTES.PRODUCTS}?category=${category.name}`)
+                }
               >
-                <div className={`relative bg-gradient-to-br ${category.color} rounded-2xl p-6 aspect-square flex flex-col items-center justify-center overflow-hidden shadow-xl hover:shadow-2xl transition-all`}>
+                <div
+                  className={`relative bg-gradient-to-br ${category.color} rounded-2xl p-6 aspect-square flex flex-col items-center justify-center overflow-hidden shadow-xl hover:shadow-2xl transition-all`}
+                >
                   {/* Background pattern */}
-                  <div className="absolute inset-0 opacity-10" 
+                  <div
+                    className="absolute inset-0 opacity-10"
                     style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Ccircle cx='13' cy='13' r='1'/%3E%3C/g%3E%3C/svg%3E")`
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Ccircle cx='13' cy='13' r='1'/%3E%3C/g%3E%3C/svg%3E")`,
                     }}
                   />
-                  
+
                   {/* White circle background for icon */}
                   <motion.div
                     className="relative z-10 mb-3 bg-white/20 backdrop-blur-sm rounded-full p-4 shadow-lg"
@@ -427,11 +506,11 @@ export default function Home() {
                   >
                     <category.icon className="text-5xl text-white drop-shadow-lg" />
                   </motion.div>
-                  
+
                   <div className="text-white font-bold text-lg relative z-10 drop-shadow-md">
                     {category.name}
                   </div>
-                  
+
                   {/* Shine effect on hover */}
                   <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30"
@@ -456,15 +535,16 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <span className="text-lg">⭐</span>
-              <span>HOT DEALS</span>
+              <span>TOP PROMOTED</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
               Thiết Bị Nổi Bật
             </h2>
             <p className="text-gray-600 text-lg">
-              Khám phá những món đồ được yêu thích nhất từ cộng đồng PIRA
+              Top 10 thiết bị được quảng bá cao nhất - Chất lượng đã được xác
+              nhận
             </p>
           </motion.div>
 
@@ -491,7 +571,7 @@ export default function Home() {
                 Chưa có thiết bị nổi bật
               </div>
               <p className="text-gray-600 mb-6">
-                Hiện tại chưa có sản phẩm nổi bật. Hãy quay lại sau nhé!
+                Hiện tại chưa có sản phẩm được quảng bá. Hãy quay lại sau nhé!
               </p>
               <Link
                 to={ROUTES.PRODUCTS}
@@ -501,109 +581,165 @@ export default function Home() {
               </Link>
             </div>
           ) : (
-            <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
-              variants={staggerContainer}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-            >
-              {featuredProducts.map((product, idx) => (
-                <motion.div
-                  key={product._id}
-                  className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden group cursor-pointer"
-                  variants={fadeInUpStagger}
-                  whileHover={{
-                    y: -12,
-                    boxShadow:
-                      "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
-                  }}
-                  transition={{ duration: 0.3 }}
-                  onClick={() =>
-                    navigate(ROUTES.PRODUCT_DETAIL.replace(":id", product._id))
+            <div className="relative px-12">
+              {/* Navigation Buttons */}
+              <motion.button
+                onClick={() => {
+                  if (carouselRef.current) {
+                    carouselRef.current.scrollBy({
+                      left: -400,
+                      behavior: "smooth",
+                    });
                   }
+                }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-50 shadow-lg rounded-full p-3 transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <HiChevronLeft className="text-2xl text-gray-700" />
+              </motion.button>
+
+              <motion.button
+                onClick={() => {
+                  if (carouselRef.current) {
+                    carouselRef.current.scrollBy({
+                      left: 400,
+                      behavior: "smooth",
+                    });
+                  }
+                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-50 shadow-lg rounded-full p-3 transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <HiChevronRight className="text-2xl text-gray-700" />
+              </motion.button>
+
+              {/* Carousel Container */}
+              <div
+                ref={carouselRef}
+                className="overflow-x-auto scrollbar-hide scroll-smooth"
+                style={{
+                  scrollSnapType: "x mandatory",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
+                <motion.div
+                  className="flex gap-6 pb-4"
+                  initial="initial"
+                  whileInView="animate"
+                  viewport={{ once: true }}
+                  variants={staggerContainer}
                 >
-                  <motion.div
-                    className="h-56 relative overflow-hidden bg-gray-100"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <img
-                      src={
-                        product.images?.[0]?.url || "/images/placeholder.jpg"
+                  {featuredProducts.map((product, idx) => (
+                    <motion.div
+                      key={product._id}
+                      className="flex-shrink-0 w-80 bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden group cursor-pointer snap-center"
+                      variants={fadeInUpStagger}
+                      whileHover={{
+                        y: -12,
+                        scale: 1.03,
+                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                      }}
+                      transition={{ duration: 0.3 }}
+                      onClick={() =>
+                        navigate(
+                          ROUTES.PRODUCT_DETAIL.replace(":id", product._id)
+                        )
                       }
-                      alt={product.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/0 to-black/0 group-hover:from-black/30 transition-all"
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      transition={{ delay: idx * 0.1 }}
-                    />
-                    
-                    {/* Featured Badge */}
-                    <motion.div
-                      className={`absolute top-3 left-3 ${getPromotionTierColor(
-                        product.featuredTier
-                      )} px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm`}
-                      initial={{ scale: 0, rotate: -180 }}
-                      whileInView={{ scale: 1, rotate: 0 }}
-                      transition={{ delay: idx * 0.1 + 0.3, type: "spring" }}
                     >
-                      ⭐ {getPromotionTierName(product.featuredTier)}
-                    </motion.div>
-
-                    {/* Quick view button */}
-                    <motion.div
-                      className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <span className="text-lg">👁️</span>
-                    </motion.div>
-                  </motion.div>
-
-                  <div className="p-5">
-                    <motion.div
-                      className="flex items-center gap-1 text-sm text-gray-500 mb-2"
-                      whileHover={{ x: 3 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <HiLocationMarker className="text-primary-500 text-base" />
-                      <span className="font-medium">{product.location?.address?.city || "N/A"}</span>
-                    </motion.div>
-                    
-                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-700 transition-colors line-clamp-2 mb-3">
-                      {product.title}
-                    </h3>
-                    
-                    <div className="flex items-baseline justify-between mb-4">
                       <motion.div
-                        className="text-2xl font-bold text-primary-600"
+                        className="h-56 relative overflow-hidden bg-gray-100"
                         whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        {formatPrice(product.pricing?.dailyRate)}
-                        <span className="text-sm font-normal text-gray-500">/ngày</span>
+                        <img
+                          src={
+                            product.images?.[0]?.url ||
+                            "/images/placeholder.jpg"
+                          }
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/0 to-black/0 group-hover:from-black/30 transition-all"
+                          initial={{ opacity: 0 }}
+                          whileInView={{ opacity: 1 }}
+                          transition={{ delay: idx * 0.05 }}
+                        />
+
+                        {/* Promotion Badge with Tier */}
+                        <motion.div
+                          className={`absolute top-3 left-3 ${getPromotionTierColor(
+                            product.promotionTier
+                          )} px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm`}
+                          initial={{ scale: 0, rotate: -180 }}
+                          whileInView={{ scale: 1, rotate: 0 }}
+                          transition={{
+                            delay: idx * 0.05 + 0.2,
+                            type: "spring",
+                          }}
+                        >
+                          ⭐ {getPromotionTierName(product.promotionTier)}
+                        </motion.div>
+
+                        {/* Position indicator */}
+                        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                          #{idx + 1}
+                        </div>
                       </motion.div>
-                      
-                      <motion.div
-                        className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <HiStar className="text-yellow-500 text-base" />
-                        <span className="text-sm font-semibold text-gray-900">
-                          {product.metrics?.averageRating?.toFixed(1) || "5.0"}
-                        </span>
-                      </motion.div>
-                    </div>
-                  </div>
+
+                      <div className="p-5">
+                        <motion.div
+                          className="flex items-center gap-1 text-sm text-gray-500 mb-2"
+                          whileHover={{ x: 3 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <HiLocationMarker className="text-primary-500 text-base" />
+                          <span className="font-medium">
+                            {product.location?.address?.city || "N/A"}
+                          </span>
+                        </motion.div>
+
+                        <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-700 transition-colors line-clamp-2 mb-3 h-14">
+                          {product.title}
+                        </h3>
+
+                        <div className="flex items-baseline justify-between mb-2">
+                          <motion.div
+                            className="text-2xl font-bold text-primary-600"
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {formatPrice(product.pricing?.dailyRate)}
+                            <span className="text-sm font-normal text-gray-500">
+                              /ngày
+                            </span>
+                          </motion.div>
+
+                          <motion.div
+                            className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full"
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <HiStar className="text-yellow-500 text-base" />
+                            <span className="text-sm font-semibold text-gray-900">
+                              {product.metrics?.averageRating?.toFixed(1) ||
+                                "5.0"}
+                            </span>
+                          </motion.div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
+              </div>
+
+              {/* Scroll gradient overlays */}
+              <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
+              <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
+            </div>
           )}
         </div>
       </section>
@@ -622,7 +758,8 @@ export default function Home() {
               Tại Sao Chọn PIRA?
             </h3>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Tham gia cùng hàng nghìn du khách tin tưởng PIRA cho nhu cầu thuê thiết bị
+              Tham gia cùng hàng nghìn du khách tin tưởng PIRA cho nhu cầu thuê
+              thiết bị
             </p>
           </motion.div>
 
@@ -664,8 +801,10 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
               >
                 {/* Gradient accent on top */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${item.color}`} />
-                
+                <div
+                  className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${item.color}`}
+                />
+
                 {/* Icon with gradient background */}
                 <motion.div
                   className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} mb-5 shadow-lg`}
@@ -674,20 +813,22 @@ export default function Home() {
                 >
                   <item.Icon className="text-3xl text-white" />
                 </motion.div>
-                
+
                 <h4 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-700 transition-colors">
                   {item.title}
                 </h4>
-                
-                <p className="text-gray-600 leading-relaxed">
-                  {item.desc}
-                </p>
+
+                <p className="text-gray-600 leading-relaxed">{item.desc}</p>
 
                 {/* Decorative element */}
                 <motion.div
                   className={`absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-br ${item.color} rounded-full opacity-5 group-hover:opacity-10 transition-opacity`}
                   animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, delay: idx * 0.3 }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    delay: idx * 0.3,
+                  }}
                 />
               </motion.div>
             ))}
@@ -790,7 +931,9 @@ export default function Home() {
                     <FaUserShield className="text-white text-2xl" />
                   </div>
                   <div>
-                    <div className="font-bold text-gray-900">{testimonial.name}</div>
+                    <div className="font-bold text-gray-900">
+                      {testimonial.name}
+                    </div>
                     <div className="text-sm text-gray-500 flex items-center gap-1">
                       <MdLocationOn className="text-primary-500" />
                       {testimonial.location}
@@ -817,9 +960,10 @@ export default function Home() {
             viewport={{ once: true }}
           >
             {/* Animated background pattern */}
-            <div className="absolute inset-0 opacity-10" 
+            <div
+              className="absolute inset-0 opacity-10"
               style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
               }}
             />
 
@@ -874,7 +1018,8 @@ export default function Home() {
                 Sẵn Sàng Bắt Đầu Cuộc Phiêu Lưu?
               </h3>
               <p className="text-lg sm:text-xl text-primary-100 max-w-2xl mx-auto leading-relaxed">
-                Tham gia PIRA ngay hôm nay và khám phá thế giới khả năng du lịch với hàng ngàn thiết bị chất lượng cao.
+                Tham gia PIRA ngay hôm nay và khám phá thế giới khả năng du lịch
+                với hàng ngàn thiết bị chất lượng cao.
               </p>
             </motion.div>
 
@@ -886,8 +1031,8 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.4 }}
               viewport={{ once: true }}
             >
-              <motion.div 
-                whileHover={{ scale: 1.05 }} 
+              <motion.div
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <Link
@@ -905,9 +1050,9 @@ export default function Home() {
                   </motion.span>
                 </Link>
               </motion.div>
-              
-              <motion.div 
-                whileHover={{ scale: 1.05 }} 
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <Link
@@ -942,9 +1087,7 @@ export default function Home() {
                   <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">
                     {stat.number}
                   </div>
-                  <div className="text-sm text-primary-100">
-                    {stat.label}
-                  </div>
+                  <div className="text-sm text-primary-100">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>

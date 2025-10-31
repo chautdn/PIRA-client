@@ -22,6 +22,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
 import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
+import PromotionSuccess from "./pages/owner/PromotionSuccess";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
@@ -143,6 +144,14 @@ export default function App() {
                   element={
                     <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                       <OwnerCreateProduct />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/owner/promotion-success"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <PromotionSuccess />
                     </RoleProtectedRoute>
                   }
                 />

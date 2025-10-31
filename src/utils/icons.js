@@ -53,6 +53,12 @@ import {
   BiAward,
   BiShield,
   BiSupport,
+  BiRefresh,
+  BiCrown,
+  BiCalendar,
+  BiCalculator,
+  BiErrorCircle,
+  BiCreditCard,
 } from "react-icons/bi";
 import {
   HiSparkles,
@@ -61,6 +67,7 @@ import {
   HiCash,
   HiCheckCircle,
   HiExclamationCircle,
+  HiInformationCircle,
 } from "react-icons/hi";
 
 const icons = {
@@ -111,6 +118,7 @@ const icons = {
   BiAward,
   BiShield,
   BiSupport,
+  BiRefresh,
   HiOutlinePhotograph,
   HiOutlineHome,
   BsCurrencyDollar,
@@ -123,6 +131,12 @@ const icons = {
   HiCash,
   HiCheckCircle,
   HiExclamationCircle,
+  HiInformationCircle,
+  BiCrown,
+  BiCalendar,
+  BiCalculator,
+  BiErrorCircle,
+  BiCreditCard,
 };
 
 export default icons;

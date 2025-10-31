@@ -11,7 +11,7 @@ import useChat from "../../hooks/useChat";
 import { ROUTES } from "../../utils/constants";
 
 // Owner Menu Dropdown Component
-const OwnerMenuDropdown = () => {
+const OwnerMenuDropdown = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -42,6 +42,7 @@ const OwnerMenuDropdown = () => {
       label: "Đăng Sản Phẩm Mới",
       description: "Tạo sản phẩm cho thuê",
       route: ROUTES.OWNER_CREATE_PRODUCT,
+      requiresVerification: true,
     },
     {
       icon: "",
@@ -51,11 +52,29 @@ const OwnerMenuDropdown = () => {
     },
   ];
 
-  const handleItemClick = (route) => {
-    if (route !== "#") {
-      navigate(route);
-    }
+  const handleItemClick = (route, requiresVerification = false) => {
     setIsOpen(false);
+
+    if (route === "#") {
+      return;
+    }
+
+    // If this is the create product route, we'll let the page handle verification
+    // But we can show a quick info toast if not verified
+    if (requiresVerification && route === ROUTES.OWNER_CREATE_PRODUCT) {
+      const cccdVerified = user?.cccd?.isVerified || false;
+      const bankAccountAdded = !!(
+        user?.bankAccount?.accountNumber && user?.bankAccount?.bankCode
+      );
+
+      if (!cccdVerified || !bankAccountAdded) {
+        // Still navigate, but the page will show verification screen
+        navigate(route);
+        return;
+      }
+    }
+
+    navigate(route);
   };
 
   return (
@@ -67,27 +86,40 @@ const OwnerMenuDropdown = () => {
         <span className="text-base">🏠</span>
         <span>Cho Thuê</span>
         <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`w-4 h-4 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-bold text-gray-900">Quản Lý Cho Thuê</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Tất cả tính năng dành cho chủ sản phẩm</p>
+            <h3 className="text-sm font-bold text-gray-900">
+              Quản Lý Cho Thuê
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Tất cả tính năng dành cho chủ sản phẩm
+            </p>
           </div>
 
           <div className="py-1">
             {menuItems.map((item, index) => (
               <button
                 key={index}
-                onClick={() => handleItemClick(item.route)}
+                onClick={() =>
+                  handleItemClick(item.route, item.requiresVerification)
+                }
                 disabled={item.route === "#"}
                 className={`w-full px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left ${
                   item.route === "#" ? "opacity-50 cursor-not-allowed" : ""
@@ -103,7 +135,9 @@ const OwnerMenuDropdown = () => {
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {item.description}
+                  </div>
                 </div>
               </button>
             ))}
@@ -112,7 +146,9 @@ const OwnerMenuDropdown = () => {
           <div className="px-4 py-3 border-t border-gray-100 bg-gradient-to-r from-primary-50 to-primary-100">
             <div className="flex items-center gap-2 text-xs text-primary-800">
               <span>💡</span>
-              <span className="font-medium">Mẹo: Đăng nhiều sản phẩm để tăng thu nhập!</span>
+              <span className="font-medium">
+                Mẹo: Đăng nhiều sản phẩm để tăng thu nhập!
+              </span>
             </div>
           </div>
         </div>
@@ -249,10 +285,10 @@ const Navigation = () => {
                 >
                   Đơn Hàng
                 </Link>
-                
+
                 {/* Owner Menu Dropdown - Only show for OWNER role */}
                 {user && user.role === "OWNER" && (
-                  <OwnerMenuDropdown />
+                  <OwnerMenuDropdown user={user} />
                 )}
               </div>
             </div>
@@ -265,7 +301,9 @@ const Navigation = () => {
                   className="flex items-center justify-center w-full border-2 border-gray-200 hover:border-primary-400 focus:border-primary-500 rounded-xl px-5 py-3 bg-gray-50 hover:bg-white transition-all shadow-sm group cursor-pointer"
                   onClick={handleSearch}
                 >
-                  <span className="text-xl text-gray-400 group-hover:text-primary-600 transition-colors">🔎</span>
+                  <span className="text-xl text-gray-400 group-hover:text-primary-600 transition-colors">
+                    🔎
+                  </span>
                   <input
                     className="w-full outline-none bg-transparent text-gray-700 placeholder:text-gray-400 font-medium text-base ml-4 cursor-pointer"
                     placeholder="Tìm kiếm thiết bị du lịch..."
@@ -273,7 +311,7 @@ const Navigation = () => {
                     onChange={(e) => setSearchInput(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         handleSearch(e);
                       }
                     }}
