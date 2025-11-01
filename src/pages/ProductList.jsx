@@ -19,7 +19,10 @@ export default function ProductList() {
     minPrice: 0,
     maxPrice: 10000000,
     sort: 'createdAt',
-    order: 'desc'
+    order: 'desc',
+    district: '',
+    condition: '',
+    status: ''
   });
 
   useEffect(() => {
@@ -153,40 +156,44 @@ export default function ProductList() {
 
         {/* Search & Filter Bar */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Search */}
-            <div className="flex-1 relative">
+            <div className="relative">
               <input
                 type="text"
                 placeholder="Tìm kiếm thiết bị du lịch..."
-                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
                 value={filters.search}
                 onChange={(e) => updateFilters({ search: e.target.value })}
               />
-              <svg className="absolute left-4 top-5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-4 top-4 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             
-            {/* Sort */}
-            <select 
-              className="border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-              value={`${filters.sort}-${filters.order}`}
-              onChange={(e) => {
-                const [sort, order] = e.target.value.split('-');
-                updateFilters({ sort, order });
-              }}
-            >
-              <option value="createdAt-desc">Mới nhất</option>
-              <option value="price-asc">Giá thấp đến cao</option>
-              <option value="price-desc">Giá cao đến thấp</option>
-              <option value="rating-desc">Đánh giá cao nhất</option>
-            </select>
+            {/* (Removed rental duration select as requested) */}
             
-            {/* Results count */}
-            <div className="text-gray-600 font-medium bg-green-50 px-4 py-2 rounded-lg">
-              Tìm thấy <span className="text-green-600 font-bold">{pagination.total || 0}</span> sản phẩm
+            {/* (Sort moved to sidebar) */}
+          </div>
+
+          {/* Results count */}
+          <div className="mt-4 flex justify-between items-center text-sm">
+            <div className="text-gray-600">
+              Tìm thấy <span className="font-medium text-green-600">{pagination.total || 0}</span> sản phẩm
             </div>
+            <button 
+              onClick={() => updateFilters({
+                search: '',
+                category: '',
+                minPrice: 0,
+                maxPrice: 10000000,
+                sort: 'createdAt',
+                order: 'desc'
+              })}
+              className="text-green-600 hover:text-green-700 font-medium"
+            >
+              Xóa bộ lọc
+            </button>
           </div>
         </div>
 
@@ -200,88 +207,158 @@ export default function ProductList() {
                 </h3>
               </div>
               
-              <div className="p-6 space-y-6">
+              <div className="p-6 space-y-8">
                 {/* Category Filter */}
                 <div>
                   <h4 className="font-semibold text-gray-800 mb-4">📂 Danh Mục</h4>
-                  <div className="space-y-2">
-                    <button 
-                      onClick={() => {
-                        updateFilters({ category: '' });
-                      }}
-                      className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
-                        !filters.category 
-                          ? 'bg-green-500 text-white shadow-lg' 
-                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      Tất cả danh mục
-                    </button>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={!filters.category}
+                        onChange={() => updateFilters({ category: '' })}
+                        className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="text-gray-700">Tất cả danh mục</span>
+                    </label>
                     {categories.map((cat) => (
-                      <button 
-                        key={cat._id}
-                        onClick={() => {
-                          updateFilters({ category: cat._id });
-                        }}
-                        className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
-                          filters.category === cat._id 
-                            ? 'bg-green-500 text-white shadow-lg' 
-                            : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {cat.name}
-                      </button>
+                      <label key={cat._id} className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={filters.category === cat._id}
+                          onChange={() => updateFilters({ category: filters.category === cat._id ? '' : cat._id })}
+                          className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-gray-700">{cat.name}</span>
+                      </label>
                     ))}
                   </div>
                 </div>
 
                 {/* Price Filter */}
                 <div>
-                  <h4 className="font-semibold text-gray-800 mb-4">💰 Khoảng Giá</h4>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        placeholder="Tối thiểu"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                        value={filters.minPrice || ''}
-                        onChange={(e) => updateFilters({ minPrice: parseInt(e.target.value) || 0 })}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Tối đa"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                        value={filters.maxPrice || ''}
-                        onChange={(e) => updateFilters({ maxPrice: parseInt(e.target.value) || 10000000 })}
-                      />
-                    </div>
-                    
-                    {/* Quick price filters */}
-                    <div className="grid grid-cols-1 gap-2">
-                      {[
-                        { label: 'Dưới 100k', min: 0, max: 100000 },
-                        { label: '100k - 500k', min: 100000, max: 500000 },
-                        { label: '500k - 1tr', min: 500000, max: 1000000 },
-                        { label: 'Trên 1tr', min: 1000000, max: 10000000 }
-                      ].map((range) => (
-                        <button
-                          key={range.label}
-                          onClick={() => {
-                            updateFilters({ minPrice: range.min, maxPrice: range.max });
-                          }}
-                          className={`w-full px-3 py-2 text-sm rounded-lg transition-all text-left ${
-                            filters.minPrice === range.min && filters.maxPrice === range.max
-                              ? 'bg-green-500 text-white'
-                              : 'bg-gray-50 hover:bg-green-50 hover:text-green-600'
-                          }`}
-                        >
-                          {range.label}
-                        </button>
-                      ))}
-                    </div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Khoảng Giá</h4>
+                  <div className="space-y-3">
+                    {[
+                      { label: 'Dưới 100k', min: 0, max: 100000 },
+                      { label: '100k - 500k', min: 100000, max: 500000 },
+                      { label: '500k - 1tr', min: 500000, max: 1000000 },
+                      { label: 'Trên 1tr', min: 1000000, max: 10000000 }
+                    ].map((range) => (
+                      <label key={range.label} className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          name="price-range"
+                          checked={filters.minPrice === range.min && filters.maxPrice === range.max}
+                          onChange={() => updateFilters({ minPrice: range.min, maxPrice: range.max })}
+                          className="w-5 h-5 border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-gray-700">{range.label}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
-              </div>
+
+                {/* District Filter */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Quận/Huyện</h4>
+                  <select
+                    value={filters.district}
+                    onChange={(e) => updateFilters({ district: e.target.value })}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="hai-chau">Hải Châu</option>
+                    <option value="thanh-khe">Thanh Khê</option>
+                    <option value="son-tra">Sơn Trà</option>
+                    <option value="ngu-hanh-son">Ngũ Hành Sơn</option>
+                    <option value="lien-chieu">Liên Chiểu</option>
+                    <option value="cam-le">Cẩm Lệ</option>
+                  </select>
+                </div>
+
+                {/* Product Condition Filter (moved to select) */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Tình trạng sản phẩm</h4>
+                  <select
+                    value={filters.condition}
+                    onChange={(e) => updateFilters({ condition: e.target.value })}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="new">Mới</option>
+                    <option value="like-new">Như mới</option>
+                  </select>
+                </div>
+
+                {/* Product Status Filter */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Trạng thái sản phẩm</h4>
+                  <div className="space-y-3">
+                    {[
+                      { value: '', label: 'Tất cả' },
+                      { value: 'active', label: 'Đang hoạt động' }
+                    ].map((status) => (
+                      <label key={status.value} className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          name="status"
+                          checked={filters.status === status.value}
+                          onChange={() => updateFilters({ status: status.value })}
+                          className="w-5 h-5 border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-gray-700">{status.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                </div>
+
+                {/* Sort Filter (moved from top bar) */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Sắp xếp</h4>
+                  <select
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                    value={`${filters.sort}-${filters.order}`}
+                    onChange={(e) => {
+                      const [sort, order] = e.target.value.split('-');
+                      updateFilters({ sort, order });
+                    }}
+                  >
+                    <option value="createdAt-desc">Mới nhất</option>
+                    <option value="price-asc">Giá thấp đến cao</option>
+                    <option value="price-desc">Giá cao đến thấp</option>
+                    <option value="rating-desc">Đánh giá cao nhất</option>
+                  </select>
+                </div>
+
+                {/* Clear Filters Button (moved below Sort) */}
+                <div className="pt-4">
+                  <button
+                    onClick={() => {
+                      setFilters({
+                        page: 1,
+                        limit: 12,
+                        search: '',
+                        category: '',
+                        minPrice: 0,
+                        maxPrice: 10000000,
+                        sort: 'createdAt',
+                        order: 'desc',
+                        district: '',
+                        condition: '',
+                        status: ''
+                      });
+                    }}
+                    className="w-full py-3 bg-red-50 text-red-600 font-medium rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Xóa tất cả bộ lọc
+                  </button>
+                </div>
             </div>
           </aside>
 
