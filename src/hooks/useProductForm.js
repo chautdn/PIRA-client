@@ -5,6 +5,7 @@ import { categoryApi } from "../services/category.Api";
 import { ownerProductApi } from "../services/ownerProduct.Api";
 import promotionService from "../services/promotion";
 import { useWallet } from "../context/WalletContext";
+import { useAuth } from "./useAuth";
 import { ROUTES } from "../utils/constants";
 
 const INITIAL_FORM_DATA = {
@@ -46,6 +47,7 @@ const TOTAL_STEPS = 6;
 export const useProductForm = () => {
   const navigate = useNavigate();
   const { balance: walletBalance, loading: walletLoading } = useWallet();
+  const { refreshUser } = useAuth();
 
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [currentStep, setCurrentStep] = useState(1);
@@ -326,6 +328,15 @@ export const useProductForm = () => {
       // Add location as JSON string
       formDataToSend.append("location", JSON.stringify(formData.location));
 
+      // Add promotion intention flag (for PayOS payment that needs to be completed)
+      if (
+        formData.promotion.enabled &&
+        formData.promotion.tier &&
+        formData.promotion.paymentMethod === "payos"
+      ) {
+        formDataToSend.append("promotionIntended", "true");
+      }
+
       // Add images (assuming formData.images is an array of file objects)
       if (formData.images && formData.images.length > 0) {
         formData.images.forEach((image) => {
@@ -342,6 +353,15 @@ export const useProductForm = () => {
       if (response.success) {
         const createdProduct = response.data;
         toast.success("🎉 Tạo sản phẩm thành công!");
+
+        // Refresh user data to get updated role (RENTER -> OWNER)
+        try {
+          await refreshUser();
+          console.log("✅ User role refreshed");
+        } catch (error) {
+          console.warn("Could not refresh user role:", error);
+          // Non-critical error, continue
+        }
 
         // Show AI validation results if available
         if (response.imageValidation) {
@@ -381,28 +401,45 @@ export const useProductForm = () => {
             toast.dismiss(loadingToastId);
 
             if (formData.promotion.paymentMethod === "wallet") {
-              toast.success("✨ Quảng cáo đã được kích hoạt!");
+              toast.success("✨ Sản phẩm đã được xuất bản và quảng cáo kích hoạt!", {
+                duration: 3000,
+              });
               setTimeout(() => {
                 navigate(ROUTES.OWNER_PRODUCTS, {
                   state: { newProduct: true },
                 });
               }, 2000);
             } else {
-              // PayOS: Redirect to payment page
+              // PayOS: Show info and redirect to payment page
               if (promotionResponse.paymentUrl) {
-                toast.success("🔄 Chuyển đến trang thanh toán...", {
+                toast.success("✅ Sản phẩm đã được tạo!", {
                   duration: 2000,
                 });
-                toast(
-                  "⚠️ Sản phẩm sẽ được xuất bản sau khi thanh toán thành công",
-                  {
-                    duration: 4000,
-                    icon: "⚠️",
-                  }
-                );
+                
+                setTimeout(() => {
+                  toast.loading("🔄 Chuyển đến trang thanh toán...", {
+                    duration: 2000,
+                  });
+                }, 500);
+
+                setTimeout(() => {
+                  toast(
+                    "⚠️ Sản phẩm sẽ được xuất bản SAU KHI thanh toán thành công",
+                    {
+                      duration: 4000,
+                      icon: "⚠️",
+                      style: {
+                        background: "#F59E0B",
+                        color: "#fff",
+                        fontWeight: "600",
+                      },
+                    }
+                  );
+                }, 1000);
+
                 setTimeout(() => {
                   window.location.href = promotionResponse.paymentUrl;
-                }, 2000);
+                }, 3000);
                 return; // Don't navigate away
               }
             }
@@ -423,6 +460,9 @@ export const useProductForm = () => {
           }
         } else {
           // No promotion: Navigate immediately
+          toast.success("✅ Sản phẩm đã được xuất bản thành công!", {
+            duration: 2000,
+          });
           setTimeout(() => {
             navigate(ROUTES.OWNER_PRODUCTS, {
               state: { newProduct: true },

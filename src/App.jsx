@@ -134,7 +134,7 @@ export default function App() {
                 <Route
                   path={ROUTES.OWNER_PRODUCTS}
                   element={
-                    <RoleProtectedRoute allowedRoles={["OWNER"]}>
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                       <ProductList isOwnerView={true} />
                     </RoleProtectedRoute>
                   }

@@ -54,7 +54,7 @@ const PromotionSuccess = () => {
 
           // Show success toast
           toast.success(
-            `✨ Promotion activated! Your product is now featured`,
+            `✨ Quảng cáo đã được kích hoạt! Sản phẩm đã xuất bản`,
             { duration: 4000, icon: "🎉" }
           );
 
@@ -226,37 +226,37 @@ const PromotionSuccess = () => {
         {isSuccess ? (
           <>
             <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              Payment Successful! 🎉
+              Thanh toán thành công! 🎉
             </h1>
             <p className="text-gray-600 mb-6">
-              Your product has been published and promoted successfully! It will
-              now appear at the top of search results with enhanced visibility.
+              Sản phẩm của bạn đã được xuất bản và quảng cáo đã được kích hoạt! 
+              Sản phẩm sẽ xuất hiện ở đầu kết quả tìm kiếm với độ ưu tiên cao.
             </p>
           </>
         ) : isFailed ? (
           <>
             <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              Promotion Failed ❌
+              Quảng cáo thất bại ❌
             </h1>
             <p className="text-gray-600 mb-6">
               {result?.message ||
-                "The promotion payment was not completed or was cancelled. Your product was created but not promoted."}
+                "Thanh toán quảng cáo chưa hoàn tất hoặc đã bị hủy. Sản phẩm đã được tạo nhưng chưa được xuất bản."}
             </p>
           </>
         ) : (
           <>
             <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              Waiting for Payment... ⏳
+              Đang chờ xác nhận thanh toán... ⏳
             </h1>
             <p className="text-gray-600 mb-2">
-              Your promotion is waiting for payment confirmation.
+              Hệ thống đang chờ xác nhận thanh toán từ PayOS.
             </p>
             <p className="text-sm text-orange-600 font-medium mb-4">
-              ⚠️ If you haven't completed the payment yet, please complete it
-              first. Otherwise, the promotion will remain inactive.
+              ⚠️ Nếu bạn chưa hoàn tất thanh toán, vui lòng hoàn tất trước. 
+              Sản phẩm sẽ KHÔNG được xuất bản cho đến khi thanh toán thành công.
             </p>
             <p className="text-xs text-gray-500 mb-6">
-              Payment typically processes within 5-10 seconds after completion.
+              Thanh toán thường được xử lý trong vòng 5-10 giây sau khi hoàn tất.
             </p>
           </>
         )}
