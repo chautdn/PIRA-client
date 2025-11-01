@@ -8,6 +8,7 @@ import CartDrawer from "./components/cart/CartDrawer";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import { ROUTES } from "./utils/constants";
 import { WishlistProvider } from './context/WishlistContext';
+import { CartProvider } from './context/CartContext';
 // Pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -22,6 +23,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
 import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
+import NotFound from "./pages/NotFound";
 
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
@@ -58,8 +60,25 @@ function ConditionalNavigation() {
     ROUTES.PROFILE,
   ];
 
-  // Don't show navigation on auth routes or admin routes
-  if (authRoutes.includes(location.pathname) || location.pathname.startsWith('/admin')) {
+  // List of valid routes (excluding catch-all)
+  const validRoutes = [
+    ROUTES.HOME,
+    ROUTES.PRODUCTS,
+    ROUTES.CART,
+    ROUTES.DASHBOARD,
+    ROUTES.OWNER_PRODUCTS,
+    ROUTES.OWNER_CREATE_PRODUCT,
+  ];
+
+  const isValidRoute = validRoutes.includes(location.pathname) || 
+                       location.pathname.startsWith('/product/') ||
+                       location.pathname.startsWith('/products/') ||
+                       location.pathname.startsWith('/chat');
+
+  // Don't show navigation on auth routes, admin routes, or 404 pages
+  if (authRoutes.includes(location.pathname) || 
+      location.pathname.startsWith('/admin') ||
+      !isValidRoute) {
     return null;
   }
 
@@ -79,11 +98,26 @@ function ConditionalFooter() {
     ROUTES.PROFILE,
   ];
 
-  // Don't show footer on auth routes, admin routes, or chat
+  // List of valid routes (excluding catch-all)
+  const validRoutes = [
+    ROUTES.HOME,
+    ROUTES.PRODUCTS,
+    ROUTES.CART,
+    ROUTES.DASHBOARD,
+    ROUTES.OWNER_PRODUCTS,
+    ROUTES.OWNER_CREATE_PRODUCT,
+  ];
+
+  const isValidRoute = validRoutes.includes(location.pathname) || 
+                       location.pathname.startsWith('/product/') ||
+                       location.pathname.startsWith('/products/');
+
+  // Don't show footer on auth routes, admin routes, chat, or 404 pages
   if (
     authRoutes.includes(location.pathname) || 
     location.pathname.startsWith('/admin') ||
-    location.pathname.startsWith(ROUTES.CHAT)
+    location.pathname.startsWith(ROUTES.CHAT) ||
+    !isValidRoute
   ) {
     return null;
   }
@@ -94,13 +128,14 @@ function ConditionalFooter() {
 export default function App() {
   return (
     <AppProviders>
-      <WishlistProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <ConditionalNavigation />
-          <CartDrawer />
-          <main className="flex-1">
+      <CartProvider>
+        <WishlistProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <div className="min-h-screen bg-gray-50 flex flex-col">
+              <ConditionalNavigation />
+              <CartDrawer />
+              <main className="flex-1">
             <Routes>
               {/* Public routes */}
               <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -178,12 +213,16 @@ export default function App() {
                 <Route path="settings" element={<div>System Settings - Coming Soon</div>} />
                 <Route path="profile" element={<Profile />} />
               </Route>
+
+              {/* 404 Not Found - must be last */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
-          </main>
-          <ConditionalFooter />
-        </div>
-      </BrowserRouter>
-      </WishlistProvider>
+              </main>
+              <ConditionalFooter />
+            </div>
+          </BrowserRouter>
+        </WishlistProvider>
+      </CartProvider>
     </AppProviders>
   );
 }
