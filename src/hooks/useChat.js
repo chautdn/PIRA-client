@@ -150,7 +150,7 @@ const useChat = (conversationId = null) => {
   // CRITICAL: Stable callback functions
   const fetchConversations = useCallback(() => {
     refetchConversations();
-  }, [refetchConversations]);
+  }, []); // React Query refetch functions are stable
 
   const fetchMessages = useCallback(
     (convId) => {
@@ -158,12 +158,12 @@ const useChat = (conversationId = null) => {
         refetchMessages();
       }
     },
-    [refetchMessages]
+    [] // React Query refetch functions are stable
   );
 
   const fetchUsers = useCallback(() => {
     refetchUsers();
-  }, [refetchUsers]);
+  }, []); // React Query refetch functions are stable
 
   const sendMessage = useCallback(
     (messageData) => {

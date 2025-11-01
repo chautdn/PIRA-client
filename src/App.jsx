@@ -6,6 +6,7 @@ import Navigation from "./components/layout/Navigation";
 import Footer from "./components/layout/Footer";
 import CartDrawer from "./components/cart/CartDrawer";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import { ROUTES } from "./utils/constants";
 import { WishlistProvider } from "./context/WishlistContext";
 // Pages
@@ -23,6 +24,7 @@ import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
 import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
+import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
@@ -39,6 +41,15 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
+
+// Rental system pages
+import RentalOrdersPage from "./pages/RentalOrders";
+import RentalOrderDetailPage from "./pages/RentalOrderDetail";
+import RentalOrderForm from './components/rental/RentalOrderForm';
+import RentalOrderFormTest from "./components/rental/RentalOrderFormTest";
+import OrderConfirmation from "./components/rental/OrderConfirmation";
+import ContractSigning from "./components/rental/ContractSigning";
+import { RentalOrderProvider } from "./context/RentalOrderContext";
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -102,7 +113,8 @@ export default function App() {
   return (
     <AppProviders>
       <WishlistProvider>
-        <BrowserRouter>
+        <RentalOrderProvider>
+          <BrowserRouter>
           <ScrollToTop />
           <div className="min-h-screen bg-gray-50 flex flex-col">
             <ConditionalNavigation />
@@ -155,6 +167,14 @@ export default function App() {
                     </RoleProtectedRoute>
                   }
                 />
+                <Route
+                  path="/owner/rental-requests"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <OwnerRentalRequests />
+                    </RoleProtectedRoute>
+                  }
+                />
 
                 {/* Chat routes */}
                 <Route path={ROUTES.CHAT} element={<Chat />}>
@@ -187,6 +207,51 @@ export default function App() {
                 />
                 <Route path="/wallet/topup-cancel" element={<TopUpCancel />} />
                 <Route path="/withdrawals" element={<Withdrawals />} />
+
+                
+                {/* Rental Order routes */}
+                <Route 
+                  path="/rental-orders" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <RentalOrdersPage />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/:id" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <RentalOrderDetailPage />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/create" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["RENTER"]}>
+                      <ErrorBoundary>
+                        <RentalOrderForm />
+                      </ErrorBoundary>
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/confirmation/:id" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <OrderConfirmation />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/contracts" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <ContractSigning />
+                    </RoleProtectedRoute>
+                  } 
+                />
 
                 {/* Admin routes - chỉ ADMIN được vào */}
                 <Route
@@ -223,7 +288,8 @@ export default function App() {
             </main>
             <ConditionalFooter />
           </div>
-        </BrowserRouter>
+          </BrowserRouter>
+        </RentalOrderProvider>
       </WishlistProvider>
     </AppProviders>
   );

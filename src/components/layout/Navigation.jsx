@@ -45,6 +45,12 @@ const OwnerMenuDropdown = ({ user }) => {
       requiresVerification: true,
     },
     {
+      icon: "📋",
+      label: "Yêu Cầu Thuê",
+      description: "Quản lý yêu cầu thuê sản phẩm",
+      route: "/owner/rental-requests",
+    },
+    {
       icon: "",
       label: "Thống Kê",
       description: "Xem doanh thu và báo cáo",
@@ -198,7 +204,7 @@ const Navigation = () => {
     if (user && connected) {
       fetchConversations();
     }
-  }, [user, connected, fetchConversations]);
+  }, [user, connected]); // Removed fetchConversations to prevent infinite loop
 
   // Lắng nghe tin nhắn mới qua socket
   useEffect(() => {
@@ -218,7 +224,7 @@ const Navigation = () => {
       unsubscribeMessage?.();
       unsubscribeNotification?.();
     };
-  }, [connected, onNewMessage, onNotification, fetchConversations, user]);
+  }, [connected, onNewMessage, onNotification, user]); // Removed fetchConversations to prevent infinite loop
 
   // Handle search submission
   const handleSearch = (e) => {
@@ -279,12 +285,21 @@ const Navigation = () => {
                 >
                   Trang Chủ
                 </Link>
-                <Link
-                  to="#"
-                  className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
-                >
-                  Đơn Hàng
-                </Link>
+                {user ? (
+                  <Link
+                    to="/rental-orders"
+                    className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                  >
+                    Đơn Thuê
+                  </Link>
+                ) : (
+                  <Link
+                    to={ROUTES.LOGIN}
+                    className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                  >
+                    Đơn Thuê
+                  </Link>
+                )}
 
                 {/* Owner Menu Dropdown - Show for authenticated users who can become owners */}
                 {user && (user.role === "OWNER" || user.role === "RENTER") && (
