@@ -401,9 +401,12 @@ export const useProductForm = () => {
             toast.dismiss(loadingToastId);
 
             if (formData.promotion.paymentMethod === "wallet") {
-              toast.success("✨ Sản phẩm đã được xuất bản và quảng cáo kích hoạt!", {
-                duration: 3000,
-              });
+              toast.success(
+                "✨ Sản phẩm đã được xuất bản và quảng cáo kích hoạt!",
+                {
+                  duration: 3000,
+                }
+              );
               setTimeout(() => {
                 navigate(ROUTES.OWNER_PRODUCTS, {
                   state: { newProduct: true },
@@ -415,7 +418,7 @@ export const useProductForm = () => {
                 toast.success("✅ Sản phẩm đã được tạo!", {
                   duration: 2000,
                 });
-                
+
                 setTimeout(() => {
                   toast.loading("🔄 Chuyển đến trang thanh toán...", {
                     duration: 2000,

@@ -229,7 +229,7 @@ const PromotionSuccess = () => {
               Thanh toán thành công! 🎉
             </h1>
             <p className="text-gray-600 mb-6">
-              Sản phẩm của bạn đã được xuất bản và quảng cáo đã được kích hoạt! 
+              Sản phẩm của bạn đã được xuất bản và quảng cáo đã được kích hoạt!
               Sản phẩm sẽ xuất hiện ở đầu kết quả tìm kiếm với độ ưu tiên cao.
             </p>
           </>
@@ -252,11 +252,12 @@ const PromotionSuccess = () => {
               Hệ thống đang chờ xác nhận thanh toán từ PayOS.
             </p>
             <p className="text-sm text-orange-600 font-medium mb-4">
-              ⚠️ Nếu bạn chưa hoàn tất thanh toán, vui lòng hoàn tất trước. 
-              Sản phẩm sẽ KHÔNG được xuất bản cho đến khi thanh toán thành công.
+              ⚠️ Nếu bạn chưa hoàn tất thanh toán, vui lòng hoàn tất trước. Sản
+              phẩm sẽ KHÔNG được xuất bản cho đến khi thanh toán thành công.
             </p>
             <p className="text-xs text-gray-500 mb-6">
-              Thanh toán thường được xử lý trong vòng 5-10 giây sau khi hoàn tất.
+              Thanh toán thường được xử lý trong vòng 5-10 giây sau khi hoàn
+              tất.
             </p>
           </>
         )}
