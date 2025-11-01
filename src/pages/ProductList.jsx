@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { productService } from "../services/product";
+import { ownerProductApi } from "../services/ownerProduct.Api";
 import ProductCard from "../components/common/ProductCard";
 
-export default function ProductList() {
+export default function ProductList({ isOwnerView = false }) {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -21,6 +22,7 @@ export default function ProductList() {
     maxPrice: 10000000,
     sort: "createdAt",
     order: "desc",
+    status: "", // For owner view
   });
 
   useEffect(() => {
@@ -95,11 +97,15 @@ export default function ProductList() {
         delete apiFilters.maxPrice;
       }
 
-      const res = await productService.list(apiFilters);
+      // Use different API based on isOwnerView prop
+      const res = isOwnerView
+        ? await ownerProductApi.getOwnerProducts(apiFilters)
+        : await productService.list(apiFilters);
 
-      if (res.data?.success) {
-        setProducts(res.data.data.products || []);
-        setPagination(res.data.data.pagination || {});
+      if (res.success || res.data?.success) {
+        const data = res.data || res;
+        setProducts(data.data?.products || data.products || []);
+        setPagination(data.data?.pagination || data.pagination || {});
       } else {
         const list = res.data?.data || [];
         setProducts(list);
@@ -109,7 +115,11 @@ export default function ProductList() {
       }
     } catch (e) {
       console.error("Error loading products:", e);
-      setError("Không tải được danh sách sản phẩm");
+      setError(
+        isOwnerView
+          ? "Không tải được sản phẩm của bạn"
+          : "Không tải được danh sách sản phẩm"
+      );
       setProducts([]);
     } finally {
       setLoading(false);
@@ -145,64 +155,109 @@ export default function ProductList() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
-            Khám Phá Thiết Bị Du Lịch
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              {isOwnerView ? "Sản Phẩm Của Tôi" : "Khám Phá Thiết Bị Du Lịch"}
+            </h1>
+            {isOwnerView && (
+              <button
+                onClick={() => navigate("/owner/products/create")}
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+              >
+                <span className="text-xl">➕</span>
+                <span>Đăng Sản Phẩm Mới</span>
+              </button>
+            )}
+          </div>
           <p className="text-xl text-gray-600">
-            Thuê những thiết bị tốt nhất cho chuyến đi của bạn
+            {isOwnerView
+              ? "Quản lý tất cả sản phẩm cho thuê của bạn"
+              : "Thuê những thiết bị tốt nhất cho chuyến đi của bạn"}
           </p>
         </div>
 
         {/* Search & Filter Bar */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 items-center">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Tìm kiếm thiết bị du lịch..."
-                className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
-                value={filters.search}
-                onChange={(e) => updateFilters({ search: e.target.value })}
-              />
-              <svg
-                className="absolute left-4 top-5 h-5 w-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder={
+                    isOwnerView
+                      ? "Tìm kiếm sản phẩm của tôi..."
+                      : "Tìm kiếm thiết bị du lịch..."
+                  }
+                  className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                  value={filters.search}
+                  onChange={(e) => updateFilters({ search: e.target.value })}
                 />
-              </svg>
+                <svg
+                  className="absolute left-4 top-5 h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+
+              {/* Sort */}
+              <select
+                className="border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                value={`${filters.sort}-${filters.order}`}
+                onChange={(e) => {
+                  const [sort, order] = e.target.value.split("-");
+                  updateFilters({ sort, order });
+                }}
+              >
+                <option value="createdAt-desc">Mới nhất</option>
+                <option value="price-asc">Giá thấp đến cao</option>
+                <option value="price-desc">Giá cao đến thấp</option>
+                <option value="rating-desc">Đánh giá cao nhất</option>
+              </select>
+
+              {/* Results count */}
+              <div className="text-gray-600 font-medium bg-green-50 px-4 py-2 rounded-lg">
+                Tìm thấy{" "}
+                <span className="text-green-600 font-bold">
+                  {pagination.total || 0}
+                </span>{" "}
+                sản phẩm
+              </div>
             </div>
 
-            {/* Sort */}
-            <select
-              className="border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-              value={`${filters.sort}-${filters.order}`}
-              onChange={(e) => {
-                const [sort, order] = e.target.value.split("-");
-                updateFilters({ sort, order });
-              }}
-            >
-              <option value="createdAt-desc">Mới nhất</option>
-              <option value="price-asc">Giá thấp đến cao</option>
-              <option value="price-desc">Giá cao đến thấp</option>
-              <option value="rating-desc">Đánh giá cao nhất</option>
-            </select>
-
-            {/* Results count */}
-            <div className="text-gray-600 font-medium bg-green-50 px-4 py-2 rounded-lg">
-              Tìm thấy{" "}
-              <span className="text-green-600 font-bold">
-                {pagination.total || 0}
-              </span>{" "}
-              sản phẩm
-            </div>
+            {/* Status filter for owner view */}
+            {isOwnerView && (
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { value: "", label: "Tất cả", color: "gray" },
+                  { value: "DRAFT", label: "Nháp", color: "gray" },
+                  { value: "PENDING", label: "Chờ duyệt", color: "yellow" },
+                  { value: "ACTIVE", label: "Đang hoạt động", color: "green" },
+                  { value: "RENTED", label: "Đang cho thuê", color: "blue" },
+                  { value: "INACTIVE", label: "Ngừng hoạt động", color: "red" },
+                ].map((status) => (
+                  <button
+                    key={status.value}
+                    onClick={() => updateFilters({ status: status.value })}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      filters.status === status.value
+                        ? `bg-${status.color}-500 text-white shadow-lg`
+                        : `bg-${status.color}-50 text-${status.color}-700 hover:bg-${status.color}-100`
+                    }`}
+                  >
+                    {status.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -328,7 +383,32 @@ export default function ProductList() {
               <div className="text-center py-20 text-red-600">{error}</div>
             )}
 
-            {!loading && !error && (
+            {!loading && !error && products.length === 0 && (
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">📦</div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                  {isOwnerView
+                    ? "Bạn chưa có sản phẩm nào"
+                    : "Không tìm thấy sản phẩm"}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {isOwnerView
+                    ? "Hãy tạo sản phẩm đầu tiên của bạn để bắt đầu kinh doanh!"
+                    : "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm"}
+                </p>
+                {isOwnerView && (
+                  <button
+                    onClick={() => navigate("/owner/products/create")}
+                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2"
+                  >
+                    <span className="text-xl">➕</span>
+                    <span>Đăng Sản Phẩm Đầu Tiên</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!loading && !error && products.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product, index) => (
                   <motion.div
@@ -346,7 +426,7 @@ export default function ProductList() {
                       scale: product.isPromoted ? 1.03 : 1.02,
                     }}
                   >
-                    <ProductCard product={product} />
+                    <ProductCard product={product} isOwnerView={isOwnerView} />
                   </motion.div>
                 ))}
               </div>

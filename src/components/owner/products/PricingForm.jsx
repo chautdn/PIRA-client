@@ -1,6 +1,15 @@
 import React from "react";
 
-const PricingForm = ({ pricing, onChange, errors }) => {
+const PricingForm = ({ pricing = {}, onChange, errors = {} }) => {
+  // Ensure pricing has correct structure
+  const safePricing = {
+    dailyRate: pricing?.dailyRate || "",
+    deposit: {
+      amount: pricing?.deposit?.amount || "",
+      type: pricing?.deposit?.type || "FIXED",
+    },
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -19,7 +28,7 @@ const PricingForm = ({ pricing, onChange, errors }) => {
           <input
             type="number"
             name="pricing.dailyRate"
-            value={pricing.dailyRate}
+            value={safePricing.dailyRate}
             onChange={onChange}
             min="0"
             step="1000"
@@ -50,9 +59,9 @@ const PricingForm = ({ pricing, onChange, errors }) => {
             {errors.dailyRate}
           </p>
         )}
-        {pricing.dailyRate && !errors.dailyRate && (
+        {safePricing.dailyRate && !errors.dailyRate && (
           <p className="text-gray-500 text-xs mt-1">
-            ≈ {formatCurrency(pricing.dailyRate)} mỗi ngày
+            ≈ {formatCurrency(safePricing.dailyRate)} mỗi ngày
           </p>
         )}
       </div>
@@ -67,7 +76,7 @@ const PricingForm = ({ pricing, onChange, errors }) => {
             <input
               type="number"
               name="pricing.deposit.amount"
-              value={pricing.deposit.amount}
+              value={safePricing.deposit.amount}
               onChange={onChange}
               min="0"
               step="1000"
@@ -86,7 +95,7 @@ const PricingForm = ({ pricing, onChange, errors }) => {
           {/* Deposit Type */}
           <select
             name="pricing.deposit.type"
-            value={pricing.deposit.type}
+            value={safePricing.deposit.type}
             onChange={onChange}
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 hover:border-primary-400 transition-all duration-200 appearance-none bg-white"
           >
@@ -112,21 +121,21 @@ const PricingForm = ({ pricing, onChange, errors }) => {
           </p>
         )}
 
-        {pricing.deposit.amount && !errors.depositAmount && (
+        {safePricing.deposit.amount && !errors.depositAmount && (
           <p className="text-gray-500 text-xs mt-1">
-            {pricing.deposit.type === "FIXED"
-              ? `≈ ${formatCurrency(pricing.deposit.amount)} tiền đặt cọc`
+            {safePricing.deposit.type === "FIXED"
+              ? `≈ ${formatCurrency(safePricing.deposit.amount)} tiền đặt cọc`
               : `≈ ${
-                  pricing.deposit.amount
+                  safePricing.deposit.amount
                 }% của giá thuê hàng ngày (${formatCurrency(
-                  (pricing.dailyRate * pricing.deposit.amount) / 100
+                  (safePricing.dailyRate * safePricing.deposit.amount) / 100
                 )})`}
           </p>
         )}
       </div>
 
       {/* Pricing Summary */}
-      {pricing.dailyRate && pricing.deposit.amount && (
+      {safePricing.dailyRate && safePricing.deposit.amount && (
         <div className="md:col-span-2 bg-gray-50 p-3 rounded-lg">
           <h4 className="text-sm font-medium text-gray-700 mb-2">
             Pricing Summary
@@ -135,16 +144,16 @@ const PricingForm = ({ pricing, onChange, errors }) => {
             <div className="flex justify-between">
               <span>Daily Rate:</span>
               <span className="font-medium">
-                {formatCurrency(pricing.dailyRate)}
+                {formatCurrency(safePricing.dailyRate)}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Security Deposit:</span>
               <span className="font-medium">
-                {pricing.deposit.type === "FIXED"
-                  ? formatCurrency(pricing.deposit.amount)
-                  : `${pricing.deposit.amount}% (${formatCurrency(
-                      (pricing.dailyRate * pricing.deposit.amount) / 100
+                {safePricing.deposit.type === "FIXED"
+                  ? formatCurrency(safePricing.deposit.amount)
+                  : `${safePricing.deposit.amount}% (${formatCurrency(
+                      (safePricing.dailyRate * safePricing.deposit.amount) / 100
                     )})`}
               </span>
             </div>
@@ -152,11 +161,11 @@ const PricingForm = ({ pricing, onChange, errors }) => {
               <span>Total (1 day):</span>
               <span>
                 {formatCurrency(
-                  parseFloat(pricing.dailyRate) +
-                    (pricing.deposit.type === "FIXED"
-                      ? parseFloat(pricing.deposit.amount)
-                      : (parseFloat(pricing.dailyRate) *
-                          parseFloat(pricing.deposit.amount)) /
+                  parseFloat(safePricing.dailyRate) +
+                    (safePricing.deposit.type === "FIXED"
+                      ? parseFloat(safePricing.deposit.amount)
+                      : (parseFloat(safePricing.dailyRate) *
+                          parseFloat(safePricing.deposit.amount)) /
                         100)
                 )}
               </span>

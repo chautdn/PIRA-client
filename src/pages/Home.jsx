@@ -47,6 +47,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const carouselRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   // Scroll to top on component mount (page reload/refresh)
   useEffect(() => {
@@ -60,23 +62,57 @@ export default function Home() {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
-        // Fetch products sorted by promotion (promoted first, then by tier)
+        // Fetch more products to ensure we get promoted ones
         const response = await productService.list({
-          limit: 10,
+          limit: 50,
           sort: "createdAt",
           order: "desc",
         });
 
-        // Get promoted products and sort by tier (1 = highest)
-        const allProducts =
-          response.data?.data?.products || response.data?.products || [];
+        console.log("[Home] Raw response:", response);
+
+        // Get all products from different possible response structures
+        let allProducts = [];
+        if (response.data?.data?.products) {
+          allProducts = response.data.data.products;
+        } else if (response.data?.products) {
+          allProducts = response.data.products;
+        } else if (response.data?.data) {
+          allProducts = Array.isArray(response.data.data)
+            ? response.data.data
+            : [];
+        } else if (Array.isArray(response.data)) {
+          allProducts = response.data;
+        } else if (response.products) {
+          allProducts = response.products;
+        }
+
+        console.log("[Home] All products count:", allProducts.length);
+        console.log("[Home] Sample product:", allProducts[0]);
+        console.log(
+          "[Home] Promoted products:",
+          allProducts.filter((p) => p.isPromoted)
+        );
+
         const promotedProducts = allProducts
           .filter((p) => p.isPromoted && p.promotionTier)
           .sort((a, b) => a.promotionTier - b.promotionTier); // Lower tier number = higher priority
 
-        setFeaturedProducts(promotedProducts.slice(0, 10));
+        console.log(
+          "[Home] Filtered promoted products count:",
+          promotedProducts.length
+        );
+        console.log("[Home] Promoted products data:", promotedProducts);
+
+        // If no promoted products, fall back to showing all products
+        const productsToShow =
+          promotedProducts.length > 0
+            ? promotedProducts.slice(0, 10)
+            : allProducts.slice(0, 10);
+
+        setFeaturedProducts(productsToShow);
       } catch (err) {
-        console.error("Error fetching featured products:", err);
+        console.error("[Home] Error fetching featured products:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -85,6 +121,22 @@ export default function Home() {
 
     fetchFeaturedProducts();
   }, []);
+
+  // Check scroll position to enable/disable navigation buttons
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+
+    const checkScrollability = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = carousel;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    };
+
+    checkScrollability();
+    carousel.addEventListener("scroll", checkScrollability);
+    return () => carousel.removeEventListener("scroll", checkScrollability);
+  }, [featuredProducts]);
 
   // Helper functions
   const formatPrice = (price) => {
@@ -537,41 +589,48 @@ export default function Home() {
           >
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <span className="text-lg">⭐</span>
-              <span>TOP PROMOTED</span>
+              <span>
+                {featuredProducts.some((p) => p.isPromoted)
+                  ? "TOP PROMOTED"
+                  : "SẢN PHẨM MỚI"}
+              </span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
               Thiết Bị Nổi Bật
             </h2>
             <p className="text-gray-600 text-lg">
-              Top 10 thiết bị được quảng bá cao nhất - Chất lượng đã được xác
-              nhận
+              {featuredProducts.some((p) => p.isPromoted)
+                ? "Top 10 thiết bị được quảng bá cao nhất - Chất lượng đã được xác nhận"
+                : "Khám phá các thiết bị du lịch mới nhất"}
             </p>
           </motion.div>
 
           {loading ? (
-            <div className="mt-8 flex items-center justify-center py-12">
+            <div className="mt-8 flex flex-col items-center justify-center py-12">
               <Loading />
+              <p className="mt-4 text-gray-500">Đang tải sản phẩm...</p>
             </div>
           ) : error ? (
             <div className="mt-8 text-center py-12">
-              <div className="text-gray-500">
+              <div className="text-red-500 font-semibold mb-2">
                 Không thể tải sản phẩm nổi bật
               </div>
+              <div className="text-gray-500 text-sm mb-4">{error}</div>
               <button
                 onClick={() => window.location.reload()}
-                className="mt-4 text-primary-600 hover:text-primary-700"
+                className="mt-4 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-all"
               >
                 Thử lại
               </button>
             </div>
-          ) : featuredProducts.length === 0 ? (
+          ) : !loading && featuredProducts.length === 0 ? (
             <div className="mt-8 text-center py-16">
               <div className="text-6xl mb-4">📦</div>
               <div className="text-gray-900 font-semibold text-xl mb-2">
-                Chưa có thiết bị nổi bật
+                Chưa có sản phẩm
               </div>
               <p className="text-gray-600 mb-6">
-                Hiện tại chưa có sản phẩm được quảng bá. Hãy quay lại sau nhé!
+                Hiện tại chưa có sản phẩm nào. Hãy quay lại sau nhé!
               </p>
               <Link
                 to={ROUTES.PRODUCTS}
@@ -580,167 +639,199 @@ export default function Home() {
                 Xem Tất Cả Sản Phẩm
               </Link>
             </div>
-          ) : (
-            <div className="relative px-12">
-              {/* Navigation Buttons */}
-              <motion.button
+          ) : featuredProducts.length > 0 ? (
+            <div className="relative">
+              {/* Navigation Buttons - Always visible if there are products */}
+              <button
                 onClick={() => {
+                  console.log("[Carousel] Left button clicked");
                   if (carouselRef.current) {
+                    const { scrollLeft, scrollWidth, clientWidth } =
+                      carouselRef.current;
+                    console.log("[Carousel] Current scroll:", {
+                      scrollLeft,
+                      scrollWidth,
+                      clientWidth,
+                    });
+                    const cardWidth = 320 + 24; // width + gap
                     carouselRef.current.scrollBy({
-                      left: -400,
+                      left: -cardWidth,
                       behavior: "smooth",
                     });
                   }
                 }}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-50 shadow-lg rounded-full p-3 transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                disabled={!canScrollLeft}
+                className={`absolute left-2 top-1/2 -translate-y-1/2 z-30 bg-white/90 backdrop-blur-sm hover:bg-white shadow-xl rounded-full p-3 transition-all ${
+                  canScrollLeft
+                    ? "opacity-100"
+                    : "opacity-30 cursor-not-allowed"
+                }`}
+                style={{ transform: "translateY(-50%)" }}
               >
                 <HiChevronLeft className="text-2xl text-gray-700" />
-              </motion.button>
+              </button>
 
-              <motion.button
+              <button
                 onClick={() => {
+                  console.log("[Carousel] Right button clicked");
                   if (carouselRef.current) {
+                    const { scrollLeft, scrollWidth, clientWidth } =
+                      carouselRef.current;
+                    console.log("[Carousel] Current scroll:", {
+                      scrollLeft,
+                      scrollWidth,
+                      clientWidth,
+                    });
+                    const cardWidth = 320 + 24; // width + gap
                     carouselRef.current.scrollBy({
-                      left: 400,
+                      left: cardWidth,
                       behavior: "smooth",
                     });
                   }
                 }}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-50 shadow-lg rounded-full p-3 transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
+                disabled={!canScrollRight}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 z-30 bg-white/90 backdrop-blur-sm hover:bg-white shadow-xl rounded-full p-3 transition-all ${
+                  canScrollRight
+                    ? "opacity-100"
+                    : "opacity-30 cursor-not-allowed"
+                }`}
+                style={{ transform: "translateY(-50%)" }}
               >
                 <HiChevronRight className="text-2xl text-gray-700" />
-              </motion.button>
+              </button>
 
               {/* Carousel Container */}
-              <div
-                ref={carouselRef}
-                className="overflow-x-auto scrollbar-hide scroll-smooth"
-                style={{
-                  scrollSnapType: "x mandatory",
-                  WebkitOverflowScrolling: "touch",
-                }}
-              >
-                <motion.div
-                  className="flex gap-6 pb-4"
-                  initial="initial"
-                  whileInView="animate"
-                  viewport={{ once: true }}
-                  variants={staggerContainer}
+              <div className="overflow-hidden px-12">
+                <div
+                  ref={carouselRef}
+                  className="overflow-x-scroll scrollbar-hide"
+                  style={{
+                    scrollSnapType: "x mandatory",
+                    WebkitOverflowScrolling: "touch",
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    scrollBehavior: "smooth",
+                  }}
                 >
-                  {featuredProducts.map((product, idx) => (
-                    <motion.div
-                      key={product._id}
-                      className="flex-shrink-0 w-80 bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden group cursor-pointer snap-center"
-                      variants={fadeInUpStagger}
-                      whileHover={{
-                        y: -12,
-                        scale: 1.03,
-                        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
-                      }}
-                      transition={{ duration: 0.3 }}
-                      onClick={() =>
-                        navigate(
-                          ROUTES.PRODUCT_DETAIL.replace(":id", product._id)
-                        )
-                      }
-                    >
+                  <motion.div
+                    className="flex gap-6 pb-4"
+                    style={{ minWidth: "max-content" }}
+                    initial="initial"
+                    whileInView="animate"
+                    viewport={{ once: true }}
+                    variants={staggerContainer}
+                  >
+                    {featuredProducts.map((product, idx) => (
                       <motion.div
-                        className="h-56 relative overflow-hidden bg-gray-100"
-                        whileHover={{ scale: 1.05 }}
+                        key={product._id}
+                        className="flex-shrink-0 w-80 bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden group cursor-pointer snap-center"
+                        variants={fadeInUpStagger}
+                        whileHover={{
+                          y: -12,
+                          scale: 1.03,
+                          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                        }}
                         transition={{ duration: 0.3 }}
+                        onClick={() =>
+                          navigate(
+                            ROUTES.PRODUCT_DETAIL.replace(":id", product._id)
+                          )
+                        }
                       >
-                        <img
-                          src={
-                            product.images?.[0]?.url ||
-                            "/images/placeholder.jpg"
-                          }
-                          alt={product.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
                         <motion.div
-                          className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/0 to-black/0 group-hover:from-black/30 transition-all"
-                          initial={{ opacity: 0 }}
-                          whileInView={{ opacity: 1 }}
-                          transition={{ delay: idx * 0.05 }}
-                        />
-
-                        {/* Promotion Badge with Tier */}
-                        <motion.div
-                          className={`absolute top-3 left-3 ${getPromotionTierColor(
-                            product.promotionTier
-                          )} px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm`}
-                          initial={{ scale: 0, rotate: -180 }}
-                          whileInView={{ scale: 1, rotate: 0 }}
-                          transition={{
-                            delay: idx * 0.05 + 0.2,
-                            type: "spring",
-                          }}
+                          className="h-56 relative overflow-hidden bg-gray-100"
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ duration: 0.3 }}
                         >
-                          ⭐ {getPromotionTierName(product.promotionTier)}
+                          <img
+                            src={
+                              product.images?.[0]?.url ||
+                              "/images/placeholder.jpg"
+                            }
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/0 to-black/0 group-hover:from-black/30 transition-all"
+                            initial={{ opacity: 0 }}
+                            whileInView={{ opacity: 1 }}
+                            transition={{ delay: idx * 0.05 }}
+                          />
+
+                          {/* Promotion Badge with Tier */}
+                          <motion.div
+                            className={`absolute top-3 left-3 ${getPromotionTierColor(
+                              product.promotionTier
+                            )} px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm`}
+                            initial={{ scale: 0, rotate: -180 }}
+                            whileInView={{ scale: 1, rotate: 0 }}
+                            transition={{
+                              delay: idx * 0.05 + 0.2,
+                              type: "spring",
+                            }}
+                          >
+                            ⭐ {getPromotionTierName(product.promotionTier)}
+                          </motion.div>
+
+                          {/* Position indicator */}
+                          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                            #{idx + 1}
+                          </div>
                         </motion.div>
 
-                        {/* Position indicator */}
-                        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                          #{idx + 1}
+                        <div className="p-5">
+                          <motion.div
+                            className="flex items-center gap-1 text-sm text-gray-500 mb-2"
+                            whileHover={{ x: 3 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <HiLocationMarker className="text-primary-500 text-base" />
+                            <span className="font-medium">
+                              {product.location?.address?.city || "N/A"}
+                            </span>
+                          </motion.div>
+
+                          <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-700 transition-colors line-clamp-2 mb-3 h-14">
+                            {product.title}
+                          </h3>
+
+                          <div className="flex items-baseline justify-between mb-2">
+                            <motion.div
+                              className="text-2xl font-bold text-primary-600"
+                              whileHover={{ scale: 1.05 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              {formatPrice(product.pricing?.dailyRate)}
+                              <span className="text-sm font-normal text-gray-500">
+                                /ngày
+                              </span>
+                            </motion.div>
+
+                            <motion.div
+                              className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full"
+                              whileHover={{ scale: 1.05 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <HiStar className="text-yellow-500 text-base" />
+                              <span className="text-sm font-semibold text-gray-900">
+                                {product.metrics?.averageRating?.toFixed(1) ||
+                                  "5.0"}
+                              </span>
+                            </motion.div>
+                          </div>
                         </div>
                       </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
 
-                      <div className="p-5">
-                        <motion.div
-                          className="flex items-center gap-1 text-sm text-gray-500 mb-2"
-                          whileHover={{ x: 3 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <HiLocationMarker className="text-primary-500 text-base" />
-                          <span className="font-medium">
-                            {product.location?.address?.city || "N/A"}
-                          </span>
-                        </motion.div>
-
-                        <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-700 transition-colors line-clamp-2 mb-3 h-14">
-                          {product.title}
-                        </h3>
-
-                        <div className="flex items-baseline justify-between mb-2">
-                          <motion.div
-                            className="text-2xl font-bold text-primary-600"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            {formatPrice(product.pricing?.dailyRate)}
-                            <span className="text-sm font-normal text-gray-500">
-                              /ngày
-                            </span>
-                          </motion.div>
-
-                          <motion.div
-                            className="flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <HiStar className="text-yellow-500 text-base" />
-                            <span className="text-sm font-semibold text-gray-900">
-                              {product.metrics?.averageRating?.toFixed(1) ||
-                                "5.0"}
-                            </span>
-                          </motion.div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
+                {/* Scroll gradient overlays */}
+                <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-gray-50 via-white to-transparent pointer-events-none z-20" />
+                <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-gray-50 via-white to-transparent pointer-events-none z-20" />
               </div>
-
-              {/* Scroll gradient overlays */}
-              <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
-              <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
             </div>
-          )}
+          ) : null}
         </div>
       </section>
 

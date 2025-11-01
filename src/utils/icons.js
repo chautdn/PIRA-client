@@ -40,6 +40,8 @@ import {
   FiInfo,
   FiAward,
   FiShield,
+  FiArrowRight,
+  FiArrowLeft,
 } from "react-icons/fi";
 import { GiTakeMyMoney } from "react-icons/gi";
 import {
@@ -59,6 +61,9 @@ import {
   BiCalculator,
   BiErrorCircle,
   BiCreditCard,
+  BiImage,
+  BiMapPin,
+  BiLoaderAlt,
 } from "react-icons/bi";
 import {
   HiSparkles,
@@ -68,6 +73,7 @@ import {
   HiCheckCircle,
   HiExclamationCircle,
   HiInformationCircle,
+  HiCreditCard,
 } from "react-icons/hi";
 
 const icons = {
@@ -137,6 +143,13 @@ const icons = {
   BiCalculator,
   BiErrorCircle,
   BiCreditCard,
+  BiImage,
+  BiMapPin,
+  BiLoaderAlt,
+  BiError: BiErrorCircle, // Alias for FormNavigation
+  FiArrowRight,
+  FiArrowLeft,
+  HiCreditCard,
 };
 
 export default icons;

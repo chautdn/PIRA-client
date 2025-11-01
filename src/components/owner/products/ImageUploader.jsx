@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { toast } from "react-hot-toast";
 
-const ImageUploader = ({ images, setImages, error }) => {
+const ImageUploader = ({ images, onChange, error }) => {
   const fileInputRef = useRef(null);
 
   const handleFileSelect = (e) => {
@@ -46,7 +46,7 @@ const ImageUploader = ({ images, setImages, error }) => {
       isMain: images.length === 0 && index === 0, // First image is main
     }));
 
-    setImages((prev) => [...prev, ...newImages]);
+    onChange([...images, ...newImages]);
 
     // Reset file input
     if (fileInputRef.current) {
@@ -55,37 +55,32 @@ const ImageUploader = ({ images, setImages, error }) => {
   };
 
   const removeImage = (imageId) => {
-    setImages((prev) => {
-      const filtered = prev.filter((img) => img.id !== imageId);
+    const filtered = images.filter((img) => img.id !== imageId);
 
-      // If we removed the main image, make the first remaining image main
-      if (filtered.length > 0 && !filtered.some((img) => img.isMain)) {
-        filtered[0].isMain = true;
-      }
+    // If we removed the main image, make the first remaining image main
+    if (filtered.length > 0 && !filtered.some((img) => img.isMain)) {
+      filtered[0].isMain = true;
+    }
 
-      return filtered;
-    });
+    onChange(filtered);
   };
 
   const setMainImage = (imageId) => {
-    setImages((prev) =>
-      prev.map((img) => ({
-        ...img,
-        isMain: img.id === imageId,
-      }))
-    );
+    const updated = images.map((img) => ({
+      ...img,
+      isMain: img.id === imageId,
+    }));
+    onChange(updated);
   };
 
   const reorderImages = (dragIndex, hoverIndex) => {
-    setImages((prev) => {
-      const newImages = [...prev];
-      const draggedImage = newImages[dragIndex];
+    const newImages = [...images];
+    const draggedImage = newImages[dragIndex];
 
-      newImages.splice(dragIndex, 1);
-      newImages.splice(hoverIndex, 0, draggedImage);
+    newImages.splice(dragIndex, 1);
+    newImages.splice(hoverIndex, 0, draggedImage);
 
-      return newImages;
-    });
+    onChange(newImages);
   };
 
   return (

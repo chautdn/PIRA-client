@@ -101,12 +101,31 @@ const PromotionSuccess = () => {
       clearInterval(pollInterval);
       setLoading(false);
 
-      // If still no result, show error
+      // If still no result, show error with more details
       if (!result || (!result.isActive && result.paymentStatus !== "paid")) {
-        toast.error(
-          "⚠️ Payment verification taking longer than expected. Please check your products page.",
-          { duration: 6000 }
+        console.log(
+          "[Promotion] Timeout reached. Current status:",
+          result?.paymentStatus
         );
+
+        if (result?.paymentStatus === "pending") {
+          toast(
+            "⏳ Payment is still pending. If you completed the payment, please wait a moment and refresh this page.",
+            {
+              duration: 8000,
+              icon: "⚠️",
+              style: {
+                background: "#F59E0B",
+                color: "#fff",
+              },
+            }
+          );
+        } else {
+          toast.error(
+            "⚠️ Payment verification taking longer than expected. Please check your products page.",
+            { duration: 6000 }
+          );
+        }
       }
     }, 30000);
 
@@ -227,11 +246,17 @@ const PromotionSuccess = () => {
         ) : (
           <>
             <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              Processing Payment... ⏳
+              Waiting for Payment... ⏳
             </h1>
-            <p className="text-gray-600 mb-6">
-              We're still processing your promotion payment. This usually takes
-              a few seconds.
+            <p className="text-gray-600 mb-2">
+              Your promotion is waiting for payment confirmation.
+            </p>
+            <p className="text-sm text-orange-600 font-medium mb-4">
+              ⚠️ If you haven't completed the payment yet, please complete it
+              first. Otherwise, the promotion will remain inactive.
+            </p>
+            <p className="text-xs text-gray-500 mb-6">
+              Payment typically processes within 5-10 seconds after completion.
             </p>
           </>
         )}
@@ -290,6 +315,21 @@ const PromotionSuccess = () => {
               View Your Product
               <ArrowRight size={18} />
             </button>
+          ) : isProcessing ? (
+            <>
+              <button
+                onClick={() => window.location.reload()}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-lg flex items-center justify-center gap-2"
+              >
+                ↻ Refresh Status
+              </button>
+              <button
+                onClick={() => navigate("/owner/products")}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              >
+                My Products
+              </button>
+            </>
           ) : (
             <button
               onClick={() => navigate("/owner/products")}
@@ -299,13 +339,30 @@ const PromotionSuccess = () => {
               <ArrowRight size={18} />
             </button>
           )}
-          <button
-            onClick={() => navigate("/")}
-            className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-          >
-            Back to Home
-          </button>
+          {!isProcessing && (
+            <button
+              onClick={() => navigate("/")}
+              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+            >
+              Back to Home
+            </button>
+          )}
         </div>
+
+        {/* Additional Help for Pending State */}
+        {isProcessing && (
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-left">
+            <p className="text-sm font-semibold text-blue-900 mb-2">
+              💡 What to do if payment is stuck?
+            </p>
+            <ul className="text-xs text-blue-800 space-y-1 ml-4 list-disc">
+              <li>Check if you completed the payment on PayOS</li>
+              <li>Wait 30 seconds and refresh this page</li>
+              <li>Check "My Products" - your product may already be active</li>
+              <li>Contact support if the issue persists after 5 minutes</li>
+            </ul>
+          </div>
+        )}
       </motion.div>
     </div>
   );

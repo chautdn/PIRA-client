@@ -286,8 +286,8 @@ const Navigation = () => {
                   Đơn Hàng
                 </Link>
 
-                {/* Owner Menu Dropdown - Only show for OWNER role */}
-                {user && user.role === "OWNER" && (
+                {/* Owner Menu Dropdown - Show for authenticated users who can become owners */}
+                {user && (user.role === "OWNER" || user.role === "RENTER") && (
                   <OwnerMenuDropdown user={user} />
                 )}
               </div>
