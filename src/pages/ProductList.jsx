@@ -366,7 +366,107 @@ export default function ProductList({ isOwnerView = false }) {
                     </div>
                   </div>
                 </div>
-              </div>
+
+                {/* District Filter */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Quận/Huyện</h4>
+                  <select
+                    value={filters.district}
+                    onChange={(e) => updateFilters({ district: e.target.value })}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="hai-chau">Hải Châu</option>
+                    <option value="thanh-khe">Thanh Khê</option>
+                    <option value="son-tra">Sơn Trà</option>
+                    <option value="ngu-hanh-son">Ngũ Hành Sơn</option>
+                    <option value="lien-chieu">Liên Chiểu</option>
+                    <option value="cam-le">Cẩm Lệ</option>
+                  </select>
+                </div>
+
+                {/* Product Condition Filter (moved to select) */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Tình trạng sản phẩm</h4>
+                  <select
+                    value={filters.condition}
+                    onChange={(e) => updateFilters({ condition: e.target.value })}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="new">Mới</option>
+                    <option value="like-new">Như mới</option>
+                  </select>
+                </div>
+
+                {/* Product Status Filter */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Trạng thái sản phẩm</h4>
+                  <div className="space-y-3">
+                    {[
+                      { value: '', label: 'Tất cả' },
+                      { value: 'active', label: 'Đang hoạt động' }
+                    ].map((status) => (
+                      <label key={status.value} className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          name="status"
+                          checked={filters.status === status.value}
+                          onChange={() => updateFilters({ status: status.value })}
+                          className="w-5 h-5 border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-gray-700">{status.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                </div>
+
+                {/* Sort Filter (moved from top bar) */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-4">Sắp xếp</h4>
+                  <select
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
+                    value={`${filters.sort}-${filters.order}`}
+                    onChange={(e) => {
+                      const [sort, order] = e.target.value.split('-');
+                      updateFilters({ sort, order });
+                    }}
+                  >
+                    <option value="createdAt-desc">Mới nhất</option>
+                    <option value="price-asc">Giá thấp đến cao</option>
+                    <option value="price-desc">Giá cao đến thấp</option>
+                    <option value="rating-desc">Đánh giá cao nhất</option>
+                  </select>
+                </div>
+
+                {/* Clear Filters Button (moved below Sort) */}
+                <div className="pt-4">
+                  <button
+                    onClick={() => {
+                      setFilters({
+                        page: 1,
+                        limit: 12,
+                        search: '',
+                        category: '',
+                        minPrice: 0,
+                        maxPrice: 10000000,
+                        sort: 'createdAt',
+                        order: 'desc',
+                        district: '',
+                        condition: '',
+                        status: ''
+                      });
+                    }}
+                    className="w-full py-3 bg-red-50 text-red-600 font-medium rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Xóa tất cả bộ lọc
+                  </button>
+                </div>
             </div>
           </aside>
 
