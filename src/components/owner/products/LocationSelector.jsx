@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import icons from '../../../utils/icons';
+import React, { useState, useEffect } from "react";
+import icons from "../../../utils/icons";
 
 const LocationSelector = ({ location, onChange, errors }) => {
   const [districts] = useState([
-    'Quận Hải Châu',
-    'Quận Thanh Khê', 
-    'Quận Sơn Trá',
-    'Quận Ngũ Hành Sơn',
-    'Quận Liên Chiểu',
-    'Quận Cẩm Lệ',
-    'Huyện Hòa Vang'
+    "Quận Hải Châu",
+    "Quận Thanh Khê",
+    "Quận Sơn Trá",
+    "Quận Ngũ Hành Sơn",
+    "Quận Liên Chiểu",
+    "Quận Cẩm Lệ",
+    "Huyện Hòa Vang",
   ]);
 
   const [wards, setWards] = useState([]);
@@ -26,35 +26,74 @@ const LocationSelector = ({ location, onChange, errors }) => {
   const loadWards = (district) => {
     // Mapping wards for each district in Da Nang
     const wardMap = {
-      'Quận Hải Châu': [
-        'Phường Hải Châu I', 'Phường Hải Châu II', 'Phường Phước Ninh', 'Phường Hòa Thuận Tây',
-        'Phường Hòa Thuận Đông', 'Phường Nam Dương', 'Phường Bình Hiên', 'Phường Bình Thuận',
-        'Phường Hòa Cường Bắc', 'Phường Hòa Cường Nam', 'Phường Thạch Thang', 'Phường Thanh Bình'
+      "Quận Hải Châu": [
+        "Phường Hải Châu I",
+        "Phường Hải Châu II",
+        "Phường Phước Ninh",
+        "Phường Hòa Thuận Tây",
+        "Phường Hòa Thuận Đông",
+        "Phường Nam Dương",
+        "Phường Bình Hiên",
+        "Phường Bình Thuận",
+        "Phường Hòa Cường Bắc",
+        "Phường Hòa Cường Nam",
+        "Phường Thạch Thang",
+        "Phường Thanh Bình",
       ],
-      'Quận Thanh Khê': [
-        'Phường Thanh Khê Tây', 'Phường Thanh Khê Đông', 'Phường Xuân Hà', 'Phường Tân Chính',
-        'Phường Chính Gián', 'Phường Vĩnh Trung', 'Phường Thạc Gián', 'Phường An Khê',
-        'Phường Hòa Khê', 'Phường Tam Thuận'
+      "Quận Thanh Khê": [
+        "Phường Thanh Khê Tây",
+        "Phường Thanh Khê Đông",
+        "Phường Xuân Hà",
+        "Phường Tân Chính",
+        "Phường Chính Gián",
+        "Phường Vĩnh Trung",
+        "Phường Thạc Gián",
+        "Phường An Khê",
+        "Phường Hòa Khê",
+        "Phường Tam Thuận",
       ],
-      'Quận Sơn Trá': [
-        'Phường Thọ Quang', 'Phường Nại Hiên Đông', 'Phường Mân Thái', 'Phường An Hải Bắc',
-        'Phường An Hải Tây', 'Phường An Hải Đông', 'Phường Phước Mỹ'
+      "Quận Sơn Trá": [
+        "Phường Thọ Quang",
+        "Phường Nại Hiên Đông",
+        "Phường Mân Thái",
+        "Phường An Hải Bắc",
+        "Phường An Hải Tây",
+        "Phường An Hải Đông",
+        "Phường Phước Mỹ",
       ],
-      'Quận Ngũ Hành Sơn': [
-        'Phường Mỹ An', 'Phường Khuê Mỹ', 'Phường Hòa Quý', 'Phường Hòa Hải'
+      "Quận Ngũ Hành Sơn": [
+        "Phường Mỹ An",
+        "Phường Khuê Mỹ",
+        "Phường Hòa Quý",
+        "Phường Hòa Hải",
       ],
-      'Quận Liên Chiểu': [
-        'Phường Hòa Hiệp Bắc', 'Phường Hòa Hiệp Nam', 'Phường Hòa Khánh Bắc', 'Phường Hòa Khánh Nam',
-        'Phường Hòa Minh'
+      "Quận Liên Chiểu": [
+        "Phường Hòa Hiệp Bắc",
+        "Phường Hòa Hiệp Nam",
+        "Phường Hòa Khánh Bắc",
+        "Phường Hòa Khánh Nam",
+        "Phường Hòa Minh",
       ],
-      'Quận Cẩm Lệ': [
-        'Phường Khuê Trung', 'Phường Hòa Phát', 'Phường Hòa An', 'Phường Hòa Thọ Tây',
-        'Phường Hòa Thọ Đông', 'Phường Hòa Xuân'
+      "Quận Cẩm Lệ": [
+        "Phường Khuê Trung",
+        "Phường Hòa Phát",
+        "Phường Hòa An",
+        "Phường Hòa Thọ Tây",
+        "Phường Hòa Thọ Đông",
+        "Phường Hòa Xuân",
       ],
-      'Huyện Hòa Vang': [
-        'Xã Hòa Bắc', 'Xã Hòa Liên', 'Xã Hòa Ninh', 'Xã Hòa Sơn', 'Xã Hòa Nhơn',
-        'Xã Hòa Phú', 'Xã Hòa Phong', 'Xã Hòa Châu', 'Xã Hòa Tiến', 'Xã Hòa Khương'
-      ]
+      "Huyện Hòa Vang": [
+        "Xã Hòa Bắc",
+        "Xã Hòa Liên",
+        "Xã Hòa Ninh",
+        "Xã Hòa Sơn",
+        "Xã Hòa Nhơn",
+        "Xã Hòa Phú",
+        "Xã Hòa Phong",
+        "Xã Hòa Châu",
+        "Xã Hòa Tiến",
+        "Xã Hòa Khương",
+      ],
     };
 
     setWards(wardMap[district] || []);
@@ -77,24 +116,26 @@ const LocationSelector = ({ location, onChange, errors }) => {
             name="location.address.streetAddress"
             value={location.address.streetAddress}
             onChange={onChange}
-            className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all duration-200 ${
-              errors.streetAddress 
-                ? 'border-red-400 bg-red-50' 
-                : 'border-gray-300 hover:border-primary-400 focus:border-primary-500'
+            className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 ${
+              errors.streetAddress
+                ? "border-red-500 bg-red-50 focus:ring-red-200 focus:border-red-500 animate-shake"
+                : "border-gray-300 hover:border-primary-400 focus:border-primary-500 focus:ring-primary-200"
             }`}
             placeholder="Ví dụ: 123 Đường Nguyễn Văn Linh"
           />
         </div>
         {errors.streetAddress && (
-          <div className="flex items-center space-x-2 text-red-600 text-sm">
-            <icons.BiInfoCircle className="w-4 h-4" />
-            <span>{errors.streetAddress}</span>
-          </div>
+          <p className="text-red-600 text-sm flex items-center font-medium bg-red-50 px-3 py-1.5 rounded-lg">
+            <icons.BiInfoCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+            {errors.streetAddress}
+          </p>
         )}
-        <p className="text-xs text-gray-500 flex items-center">
-          <icons.BiInfoCircle className="w-3 h-3 mr-1" />
-          Nhập địa chỉ chi tiết bao gồm số nhà và tên đường
-        </p>
+        {!errors.streetAddress && (
+          <p className="text-xs text-gray-500 flex items-center">
+            <icons.BiInfoCircle className="w-3 h-3 mr-1" />
+            Nhập địa chỉ chi tiết bao gồm số nhà và tên đường
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -112,14 +153,14 @@ const LocationSelector = ({ location, onChange, errors }) => {
               name="location.district"
               value={location.district}
               onChange={onChange}
-              className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all duration-200 appearance-none cursor-pointer ${
-                errors.district 
-                  ? 'border-red-400 bg-red-50' 
-                  : 'border-gray-300 hover:border-primary-400 focus:border-primary-500'
+              className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 appearance-none cursor-pointer ${
+                errors.district
+                  ? "border-red-500 bg-red-50 focus:ring-red-200 focus:border-red-500 animate-shake"
+                  : "border-gray-300 hover:border-primary-400 focus:border-primary-500 focus:ring-primary-200"
               }`}
             >
               <option value="">Chọn quận/huyện</option>
-              {districts.map(district => (
+              {districts.map((district) => (
                 <option key={district} value={district}>
                   {district}
                 </option>
@@ -130,10 +171,10 @@ const LocationSelector = ({ location, onChange, errors }) => {
             </div>
           </div>
           {errors.district && (
-            <div className="flex items-center space-x-2 text-red-600 text-sm">
-              <icons.BiInfoCircle className="w-4 h-4" />
-              <span>{errors.district}</span>
-            </div>
+            <p className="text-red-600 text-sm flex items-center font-medium bg-red-50 px-3 py-1.5 rounded-lg">
+              <icons.BiInfoCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+              {errors.district}
+            </p>
           )}
         </div>
 
@@ -149,19 +190,21 @@ const LocationSelector = ({ location, onChange, errors }) => {
             </div>
             <select
               name="location.ward"
-              value={location.ward || ''}
+              value={location.ward || ""}
               onChange={onChange}
               disabled={!location.district || wards.length === 0}
-              className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all duration-200 appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed ${
-                errors.ward 
-                  ? 'border-red-400 bg-red-50' 
-                  : 'border-gray-300 hover:border-primary-400 focus:border-primary-500'
+              className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                errors.ward
+                  ? "border-red-500 bg-red-50 focus:ring-red-200 focus:border-red-500 animate-shake"
+                  : "border-gray-300 hover:border-primary-400 focus:border-primary-500 focus:ring-primary-200"
               }`}
             >
               <option value="">
-                {!location.district ? 'Chọn quận/huyện trước' : 'Chọn phường/xã'}
+                {!location.district
+                  ? "Chọn quận/huyện trước"
+                  : "Chọn phường/xã"}
               </option>
-              {wards.map(ward => (
+              {wards.map((ward) => (
                 <option key={ward} value={ward}>
                   {ward}
                 </option>
@@ -172,10 +215,10 @@ const LocationSelector = ({ location, onChange, errors }) => {
             </div>
           </div>
           {errors.ward && (
-            <div className="flex items-center space-x-2 text-red-600 text-sm">
-              <icons.BiInfoCircle className="w-4 h-4" />
-              <span>{errors.ward}</span>
-            </div>
+            <p className="text-red-600 text-sm flex items-center font-medium bg-red-50 px-3 py-1.5 rounded-lg">
+              <icons.BiInfoCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+              {errors.ward}
+            </p>
           )}
         </div>
       </div>
@@ -206,16 +249,19 @@ const LocationSelector = ({ location, onChange, errors }) => {
             <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mr-3">
               <icons.FiMapPin className="w-5 h-5 text-white" />
             </div>
-            <h4 className="text-lg font-bold text-gray-800">Địa Chỉ Hoàn Chỉnh</h4>
+            <h4 className="text-lg font-bold text-gray-800">
+              Địa Chỉ Hoàn Chỉnh
+            </h4>
           </div>
-          
+
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-gray-800 font-medium text-lg flex items-center">
               <icons.HiOutlineLocationMarker className="w-5 h-5 mr-2 text-red-500" />
-              {location.address.streetAddress}, {location.ward}, {location.district}, Đà Nẵng
+              {location.address.streetAddress}, {location.ward},{" "}
+              {location.district}, Đà Nẵng
             </p>
           </div>
-          
+
           <div className="mt-4 flex items-center justify-between text-sm">
             <div className="flex items-center text-green-700">
               <icons.FiCheck className="w-4 h-4 mr-1" />
@@ -228,7 +274,7 @@ const LocationSelector = ({ location, onChange, errors }) => {
           </div>
         </div>
       )}
-      
+
       {/* Location Tips */}
       <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
         <h5 className="font-bold text-blue-800 mb-3 flex items-center">
@@ -242,11 +288,16 @@ const LocationSelector = ({ location, onChange, errors }) => {
           </div>
           <div className="flex items-start space-x-2">
             <icons.HiOutlineLocationMarker className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span>Ưu tiên khu vực có chỗ đậu xe hoặc gần phương tiện công cộng</span>
+            <span>
+              Ưu tiên khu vực có chỗ đậu xe hoặc gần phương tiện công cộng
+            </span>
           </div>
           <div className="flex items-start space-x-2">
             <icons.BsBuildings className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span>Có thể gặp tại văn phòng, trung tâm thương mại hoặc địa điểm công cộng</span>
+            <span>
+              Có thể gặp tại văn phòng, trung tâm thương mại hoặc địa điểm công
+              cộng
+            </span>
           </div>
         </div>
       </div>

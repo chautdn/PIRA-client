@@ -100,4 +100,56 @@ export const ownerProductApi = {
       throw error.response?.data || error.message;
     }
   },
+
+  // === RENTAL ORDER MANAGEMENT ===
+
+  // GET /api/rental-orders/owner-suborders - Get SubOrders for owner
+  getSubOrders: async (params) => {
+    try {
+      const response = await api.get("/rental-orders/owner-suborders", {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // POST /api/rental-orders/suborders/:id/confirm - Confirm SubOrder
+  confirmSubOrder: async (subOrderId) => {
+    try {
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/confirm`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // POST /api/rental-orders/suborders/:id/reject - Reject SubOrder
+  rejectSubOrder: async (subOrderId, data) => {
+    try {
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/reject`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // POST /api/rental-orders/suborders/:id/create-contract - Create contract
+  createContract: async (subOrderId, contractData) => {
+    try {
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/create-contract`,
+        contractData
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };

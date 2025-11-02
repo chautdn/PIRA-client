@@ -87,6 +87,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const userService = await import("../services/user.Api");
+      const resp = await userService.default.getProfile();
+      const updatedUser = resp.data?.data || resp.data;
+      if (updatedUser) {
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+      }
+      return updatedUser;
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -101,6 +117,7 @@ export const AuthProvider = ({ children }) => {
         register,
         saveSession,
         tryRefresh,
+        refreshUser,
         getLoginRedirectPath,
       }}
     >
