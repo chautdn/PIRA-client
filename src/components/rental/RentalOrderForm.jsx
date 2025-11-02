@@ -5,13 +5,15 @@ import { useRentalOrder } from '../../context/RentalOrderContext';
 import { useAuth } from "../../hooks/useAuth";
 import { Calendar, MapPin, Truck, CreditCard, Clock } from 'lucide-react';
 import MapSelector from '../common/MapSelector';
+import PaymentMethodSelector from '../common/PaymentMethodSelector';
+import { toast } from '../common/Toast';
 
 const RentalOrderForm = () => {
   try {
     const { user } = useAuth();
     const { cart: cartItems, clearCart } = useCart();
     const rentalOrderContext = useRentalOrder();
-    const { createDraftOrder, calculateShipping, isCreatingDraft, isCalculatingShipping, shippingCalculation } = rentalOrderContext;
+    const { createDraftOrder, createPaidOrder, calculateShipping, isCreatingDraft, isCalculatingShipping, shippingCalculation } = rentalOrderContext;
     const navigate = useNavigate();
 
     // Debug effect - only runs once
@@ -44,6 +46,8 @@ const RentalOrderForm = () => {
   const [step, setStep] = useState(1);
   const [groupedProducts, setGroupedProducts] = useState({});
   const [totalShipping, setTotalShipping] = useState(0);
+  const [showPaymentSelector, setShowPaymentSelector] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
 
   // Update contact info when user changes
   useEffect(() => {
@@ -286,22 +290,161 @@ const RentalOrderForm = () => {
     });
   };
 
-  // Handle form submission
+  // Handle form submission - now shows payment selector first
   const handleSubmit = async () => {
     if (!validateForm()) return;
+    
+    // Show payment method selector
+    setShowPaymentSelector(true);
+  };
 
-    console.log('🚀 Submitting order data:', JSON.stringify(orderData, null, 2));
+  // Handle payment method selection and process different payment types
+  const handlePaymentMethodSelect = async (paymentMethod) => {
+    console.log('🚀 Processing payment with method:', paymentMethod);
+    console.log('� Total amount:', totals.grandTotal);
 
     try {
-      const draftOrder = await createDraftOrder(orderData);
+      let paymentResult = null;
+
+      // Process payment based on selected method
+      switch (paymentMethod) {
+        case 'WALLET':
+          // Deduct from user wallet automatically
+          paymentResult = await processWalletPayment(totals.grandTotal);
+          break;
+          
+        case 'BANK_TRANSFER':
+        case 'PAYOS':
+          // Redirect to PayOS payment gateway
+          paymentResult = await processPayOSPayment(paymentMethod, totals.grandTotal);
+          break;
+          
+        case 'COD':
+          // Cash on delivery - no immediate payment needed
+          paymentResult = { 
+            method: 'COD', 
+            status: 'PENDING',
+            message: 'Thanh toán khi nhận hàng' 
+          };
+          break;
+          
+        default:
+          throw new Error('Phương thức thanh toán không hợp lệ');
+      }
+
+      if (!paymentResult || paymentResult.status === 'FAILED') {
+        throw new Error(paymentResult?.message || 'Thanh toán thất bại');
+      }
+
+      // Create order with payment info
+      const orderWithPayment = {
+        ...orderData,
+        paymentMethod: paymentMethod,
+        totalAmount: totals.grandTotal,
+        paymentTransactionId: paymentResult.transactionId,
+        paymentMessage: paymentResult.message
+      };
+
+      console.log('📤 Creating order after successful payment:', orderWithPayment);
+      const paidOrder = await createPaidOrder(orderWithPayment);
       
-      // Clear cart after successful order creation
+      if (!paidOrder || !paidOrder._id) {
+        throw new Error('Không nhận được thông tin đơn hàng hợp lệ từ server');
+      }
+      
+      // Clear cart after successful payment and order creation
       clearCart();
       
-      // Navigate to order confirmation
-      navigate(`/rental-orders/${draftOrder._id}/confirm`);
+      // Show success notification
+      let successMessage = `Đơn thuê #${paidOrder.masterOrderNumber || paidOrder._id} đã được tạo thành công!`;
+      let paymentMessage = '';
+      
+      if (paymentMethod === 'WALLET') {
+        paymentMessage = '✅ Đã thanh toán từ ví thành công!';
+        successMessage += ' Đã thanh toán từ ví.';
+      } else if (paymentMethod === 'COD') {
+        paymentMessage = '📦 Đơn hàng đã được tạo! Bạn sẽ thanh toán khi nhận hàng.';
+        successMessage += ' Bạn sẽ thanh toán khi nhận hàng.';
+      } else {
+        paymentMessage = '✅ Đã thanh toán qua PayOS thành công!';
+        successMessage += ' Đã thanh toán qua PayOS.';
+      }
+
+      // Show success toast notification
+      toast.success(`🎉 ${successMessage}\n\n${paymentMessage}`, {
+        duration: 6000,
+        style: {
+          maxWidth: '500px',
+          padding: '16px',
+        }
+      });
+
+      // Navigate to user's rental orders page
+      navigate('/rental-orders', { 
+        state: { 
+          message: successMessage,
+          orderId: paidOrder._id,
+          paymentMethod: paymentMethod,
+          paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PAID',
+          justCreated: true
+        }
+      });
     } catch (error) {
-      console.error('Lỗi tạo đơn thuê:', error);
+      console.error('Lỗi xử lý thanh toán:', error);
+      alert(`Có lỗi xảy ra: ${error.message}. Vui lòng thử lại.`);
+    }
+  };
+
+  // Process wallet payment - simplified for now
+  const processWalletPayment = async (amount) => {
+    try {
+      console.log('💳 Processing wallet payment for amount:', amount);
+      
+      // For now, just return success - backend will handle actual wallet deduction
+      // TODO: Add wallet balance check if needed
+      return {
+        method: 'WALLET',
+        status: 'SUCCESS',
+        transactionId: `WALLET_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        message: 'Thanh toán từ ví sẽ được xử lý'
+      };
+    } catch (error) {
+      return {
+        method: 'WALLET',
+        status: 'FAILED',
+        message: error.message || 'Lỗi thanh toán từ ví'
+      };
+    }
+  };
+
+  // Process PayOS payment - simplified for now
+  const processPayOSPayment = async (method, amount) => {
+    try {
+      console.log('🏦 Processing PayOS payment for amount:', amount);
+      
+      // Simulate PayOS payment process
+      // In real app, this would redirect to PayOS payment page
+      const confirmed = window.confirm(
+        `Bạn sẽ được chuyển đến trang thanh toán PayOS để thanh toán ${amount.toLocaleString('vi-VN')}đ.\n\nNhấn OK để tiếp tục, Cancel để hủy.`
+      );
+      
+      if (!confirmed) {
+        throw new Error('Người dùng đã hủy thanh toán');
+      }
+      
+      // Mock successful payment
+      return {
+        method: method,
+        status: 'SUCCESS',
+        transactionId: `PAYOS_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        message: 'Thanh toán PayOS thành công'
+      };
+    } catch (error) {
+      return {
+        method: method,
+        status: 'FAILED',
+        message: error.message || 'Lỗi thanh toán PayOS'
+      };
     }
   };
 
@@ -704,6 +847,15 @@ const RentalOrderForm = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Method Selector Modal */}
+      {showPaymentSelector && (
+        <PaymentMethodSelector
+          selectedMethod={selectedPaymentMethod}
+          onSelectMethod={handlePaymentMethodSelect}
+          onClose={() => setShowPaymentSelector(false)}
+        />
+      )}
     </div>
   );
   } catch (error) {

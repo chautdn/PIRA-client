@@ -230,6 +230,60 @@ export const RentalOrderProvider = ({ children }) => {
     }
   };
 
+  // Create paid order (with payment processing)
+  const createPaidOrder = async (orderData) => {
+    dispatch({ type: RENTAL_ORDER_ACTIONS.CREATE_DRAFT_START }); // Reuse for now
+    try {
+      const response = await rentalOrderService.createPaidOrder(orderData);
+      console.log('✅ RentalOrderContext received response:', response);
+      
+      // Handle different response structures safely
+      let masterOrder = null;
+      if (response && typeof response === 'object') {
+        // Check nested structure: response.data.metadata.masterOrder
+        if (response.data && response.data.metadata && response.data.metadata.masterOrder) {
+          masterOrder = response.data.metadata.masterOrder;
+        }
+        // Check: response.metadata.masterOrder  
+        else if (response.metadata && response.metadata.masterOrder) {
+          masterOrder = response.metadata.masterOrder;
+        }
+        // Check: response.masterOrder
+        else if (response.masterOrder) {
+          masterOrder = response.masterOrder;
+        }
+        // Check: response.data.masterOrder
+        else if (response.data && response.data.masterOrder) {
+          masterOrder = response.data.masterOrder;
+        }
+        // Sometimes the response itself is the masterOrder
+        else if (response._id) {
+          masterOrder = response;
+        }
+      }
+      
+      if (!masterOrder || !masterOrder._id) {
+        console.error('❌ No valid masterOrder found in response:', response);
+        console.error('❌ Response type:', typeof response);
+        console.error('❌ Response keys:', response ? Object.keys(response) : 'null');
+        throw new Error('Không thể lấy thông tin đơn hàng từ server. Vui lòng thử lại.');
+      }
+      
+      dispatch({ 
+        type: RENTAL_ORDER_ACTIONS.CREATE_DRAFT_SUCCESS, 
+        payload: response.metadata || response 
+      });
+      return masterOrder;
+    } catch (error) {
+      console.error('❌ Error in createPaidOrder context:', error);
+      dispatch({ 
+        type: RENTAL_ORDER_ACTIONS.CREATE_DRAFT_ERROR, 
+        payload: error.message 
+      });
+      throw error;
+    }
+  };
+
   const confirmOrder = async (masterOrderId) => {
     dispatch({ type: RENTAL_ORDER_ACTIONS.CONFIRM_ORDER_START });
     try {
@@ -270,11 +324,16 @@ export const RentalOrderProvider = ({ children }) => {
     dispatch({ type: RENTAL_ORDER_ACTIONS.LOAD_ORDERS_START });
     try {
       const response = await rentalOrderService.getMyOrders(params);
+      
+      // Fix: API trả về nested metadata
+      const ordersData = response.metadata.metadata?.orders || response.data?.orders || [];
+      const paginationData = response.metadata.metadata?.pagination || response.data?.pagination || {};
+      
       dispatch({ 
         type: RENTAL_ORDER_ACTIONS.LOAD_ORDERS_SUCCESS, 
         payload: {
-          orders: response.metadata.orders,
-          pagination: response.metadata.pagination,
+          orders: ordersData,
+          pagination: paginationData,
           orderType: 'my'
         }
       });
@@ -290,11 +349,16 @@ export const RentalOrderProvider = ({ children }) => {
     dispatch({ type: RENTAL_ORDER_ACTIONS.LOAD_ORDERS_START });
     try {
       const response = await rentalOrderService.getOwnerOrders(params);
+      
+      // Fix: API trả về nested metadata
+      const ordersData = response.metadata.metadata?.orders || response.data?.orders || [];
+      const paginationData = response.metadata.metadata?.pagination || response.data?.pagination || {};
+      
       dispatch({ 
         type: RENTAL_ORDER_ACTIONS.LOAD_ORDERS_SUCCESS, 
         payload: {
-          orders: response.metadata.orders,
-          pagination: response.metadata.pagination,
+          orders: ordersData,
+          pagination: paginationData,
           orderType: 'owner'
         }
       });
@@ -374,6 +438,7 @@ export const RentalOrderProvider = ({ children }) => {
     
     // Actions
     createDraftOrder,
+    createPaidOrder,
     confirmOrder,
     processPayment,
     loadMyOrders,

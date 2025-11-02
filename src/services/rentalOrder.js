@@ -22,6 +22,27 @@ class RentalOrderService {
     }
   }
 
+  // Bước 1b: Tạo đơn thuê với thanh toán (renter pays upfront)
+  async createPaidOrder(orderData) {
+    try {
+      console.log(
+        "📤 Sending paid order data to backend:",
+        JSON.stringify(orderData, null, 2)
+      );
+      const response = await api.post("/rental-orders/create-paid", orderData);
+      console.log("✅ Backend response for paid order:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "❌ Backend error for paid order:",
+        error.response?.data || error.message
+      );
+      throw new Error(
+        error.response?.data?.message || "Không thể tạo đơn thuê với thanh toán"
+      );
+    }
+  }
+
   // Bước 2: Xác nhận đơn hàng
   async confirmOrder(masterOrderId) {
     try {
@@ -75,6 +96,35 @@ class RentalOrderService {
       throw new Error(
         error.response?.data?.message || "Không thể tạo hợp đồng"
       );
+    }
+  }
+
+  // Cập nhật phương thức thanh toán
+  async updatePaymentMethod(masterOrderId, paymentMethod) {
+    try {
+      const response = await api.put(
+        `/rental-orders/${masterOrderId}/payment-method`,
+        { paymentMethod }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message ||
+          "Không thể cập nhật phương thức thanh toán"
+      );
+    }
+  }
+
+  // Ký hợp đồng
+  async signContract(contractId, signatureData) {
+    try {
+      const response = await api.post(
+        `/rental-orders/contracts/${contractId}/sign`,
+        signatureData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || "Không thể ký hợp đồng");
     }
   }
 

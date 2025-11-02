@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { ownerProductApi } from '../../services/ownerProduct.Api';
+import rentalOrderService from '../../services/rentalOrder';
 import { toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/constants';
+import ContractSigningModal from '../../components/common/ContractSigningModal';
 
 const OwnerRentalRequests = () => {
   const { user } = useAuth();
   const [subOrders, setSubOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL'); // ALL, DRAFT, CONFIRMED, REJECTED
+  const [showContractSigning, setShowContractSigning] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -97,19 +101,49 @@ const OwnerRentalRequests = () => {
     }
   };
 
+  const handleGenerateContract = async (masterOrderId) => {
+    try {
+      const response = await rentalOrderService.generateContracts(masterOrderId);
+      toast.success('Hợp đồng đã được tạo thành công - Giờ bạn có thể ký hợp đồng');
+      fetchSubOrders(); // Refresh list to show updated status
+      console.log('Generated contracts:', response);
+    } catch (error) {
+      console.error('Lỗi tạo hợp đồng:', error);
+      toast.error('Không thể tạo hợp đồng');
+    }
+  };
+
+
+
+  const handleSignContract = async (contractId, signatureData) => {
+    try {
+      await rentalOrderService.signContract(contractId, signatureData);
+      toast.success('Hợp đồng đã được ký thành công');
+      fetchSubOrders(); // Refresh list
+    } catch (error) {
+      console.error('Lỗi ký hợp đồng:', error);
+      toast.error('Không thể ký hợp đồng');
+      throw error; // Re-throw để ContractSigningModal xử lý loading state
+    }
+  };
+
   const getStatusBadge = (status) => {
     const styles = {
-      DRAFT: 'bg-yellow-100 text-yellow-800',
+      DRAFT: 'bg-gray-100 text-gray-800', // Old status - rare
+      PENDING_OWNER_CONFIRMATION: 'bg-yellow-100 text-yellow-800', // New main status
       OWNER_CONFIRMED: 'bg-green-100 text-green-800',
       OWNER_REJECTED: 'bg-red-100 text-red-800',
+      READY_FOR_CONTRACT: 'bg-blue-100 text-blue-800',
       PENDING_CONTRACT: 'bg-blue-100 text-blue-800',
       CONTRACTED: 'bg-purple-100 text-purple-800'
     };
 
     const labels = {
-      DRAFT: 'Chờ xác nhận',
+      DRAFT: 'Bản nháp (cũ)',
+      PENDING_OWNER_CONFIRMATION: 'Chờ xác nhận',
       OWNER_CONFIRMED: 'Đã xác nhận',
       OWNER_REJECTED: 'Đã từ chối',
+      READY_FOR_CONTRACT: 'Sẵn sàng hợp đồng',
       PENDING_CONTRACT: 'Chờ ký hợp đồng',
       CONTRACTED: 'Đã ký hợp đồng'
     };
@@ -138,7 +172,7 @@ const OwnerRentalRequests = () => {
         
         {/* Filter */}
         <div className="flex space-x-2">
-          {['ALL', 'DRAFT', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].map((status) => (
+          {['ALL', 'PENDING_OWNER_CONFIRMATION', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -149,7 +183,7 @@ const OwnerRentalRequests = () => {
               }`}
             >
               {status === 'ALL' ? 'Tất cả' : 
-               status === 'DRAFT' ? 'Chờ xác nhận' :
+               status === 'PENDING_OWNER_CONFIRMATION' ? 'Chờ xác nhận' :
                status === 'OWNER_CONFIRMED' ? 'Đã xác nhận' : 'Đã từ chối'}
             </button>
           ))}
@@ -177,16 +211,39 @@ const OwnerRentalRequests = () => {
               subOrder={subOrder}
               onConfirm={handleConfirmSubOrder}
               onReject={handleRejectSubOrder}
+              onGenerateContract={handleGenerateContract}
               getStatusBadge={getStatusBadge}
+              setSelectedContractId={setSelectedContractId}
+              setShowContractSigning={setShowContractSigning}
             />
           ))}
         </div>
+      )}
+
+      {/* Contract Signing Modal */}
+      {showContractSigning && (
+        <ContractSigningModal
+          contractId={selectedContractId}
+          onSign={handleSignContract}
+          onClose={() => {
+            setShowContractSigning(false);
+            setSelectedContractId(null);
+          }}
+        />
       )}
     </div>
   );
 };
 
-const SubOrderCard = ({ subOrder, onConfirm, onReject, getStatusBadge }) => {
+const SubOrderCard = ({ 
+  subOrder, 
+  onConfirm, 
+  onReject, 
+  onGenerateContract, 
+  getStatusBadge,
+  setSelectedContractId,
+  setShowContractSigning
+}) => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
@@ -226,11 +283,11 @@ const SubOrderCard = ({ subOrder, onConfirm, onReject, getStatusBadge }) => {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-600">Tên:</span>{' '}
-            <span className="font-medium">{subOrder.masterOrder?.renter?.profile?.fullName}</span>
+            <span className="font-medium">{subOrder.masterOrder?.renter?.profile?.firstName}</span>
           </div>
           <div>
             <span className="text-gray-600">SĐT:</span>{' '}
-            <span className="font-medium">{subOrder.masterOrder?.renter?.profile?.phoneNumber}</span>
+            <span className="font-medium">{subOrder.masterOrder?.renter?.phone}</span>
           </div>
         </div>
       </div>
@@ -296,9 +353,17 @@ const SubOrderCard = ({ subOrder, onConfirm, onReject, getStatusBadge }) => {
             <span className="font-medium">{formatCurrency(subOrder.pricing?.subtotalDeposit)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Phí vận chuyển:</span>
-            <span className="font-medium">{formatCurrency(subOrder.pricing?.shippingFee)}</span>
-          </div>
+  <span>Phương thức vận chuyển:</span>
+  <span className="font-medium">
+    {subOrder.masterOrder?.deliveryMethod === 'DELIVERY' ? (
+      <>Giao hàng - {formatCurrency(subOrder.pricing?.shippingFee || subOrder.delivery?.shippingFee || 0)}</>
+    ) : subOrder.masterOrder?.deliveryMethod === 'PICKUP' ? (
+      'Nhận hàng tại nơi'
+    ) : (
+      'Không xác định'
+    )}
+  </span>
+</div>
           <div className="flex justify-between text-lg font-semibold">
             <span>Tổng cộng:</span>
             <span>{formatCurrency(
@@ -311,7 +376,7 @@ const SubOrderCard = ({ subOrder, onConfirm, onReject, getStatusBadge }) => {
       </div>
 
       {/* Action buttons */}
-      {subOrder.status === 'DRAFT' && (
+      {subOrder.status === 'PENDING_OWNER_CONFIRMATION' && (
         <div className="flex space-x-4">
           <button
             onClick={() => onConfirm(subOrder._id)}
@@ -331,9 +396,15 @@ const SubOrderCard = ({ subOrder, onConfirm, onReject, getStatusBadge }) => {
       {subOrder.status === 'OWNER_CONFIRMED' && (
         <div className="flex justify-center">
           <button
-            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            onClick={() => {
+              // Assume contract ID is available from subOrder.contract or generate from masterOrder
+              const contractId = subOrder.contract?._id || subOrder.contract || `contract-${subOrder.masterOrder._id || subOrder.masterOrder}`;
+              setSelectedContractId(contractId);
+              setShowContractSigning(true);
+            }}
+            className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium"
           >
-            📝 Tạo hợp đồng
+            ✍️ Ký hợp đồng
           </button>
         </div>
       )}

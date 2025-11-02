@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
+import { toast } from '../components/common/Toast';
 import { useAuth } from "../hooks/useAuth";
 import { 
   Package, 
@@ -10,44 +11,58 @@ import {
   Eye, 
   FileText,
   Clock,
-  CheckCircle,
-  XCircle,
   Filter,
-  Search
+  Search,
+  X,
+  User,
+  Phone,
+  Mail
 } from 'lucide-react';
 
 const RentalOrdersPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { 
     myOrders, 
-    ownerOrders, 
     isLoadingOrders, 
     pagination,
-    loadMyOrders,
-    loadOwnerOrders 
+    loadMyOrders
   } = useRentalOrder();
 
-  const [activeTab, setActiveTab] = useState('renter');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // Load orders on mount and tab change
+  // Load orders on mount and status change
   useEffect(() => {
-    if (activeTab === 'renter') {
-      loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
-    } else {
-      loadOwnerOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+    loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+  }, [statusFilter]);
+
+  // Check for success messages from navigation state or URL params
+  useEffect(() => {
+    // Check for message from navigation state (from order creation)
+    if (location.state?.message && location.state?.justCreated) {
+      toast.success(`🎉 ${location.state.message}\n\nĐơn hàng đã được tạo và sẽ hiển thị trong danh sách bên dưới.`, {
+        duration: 8000,
+        style: {
+          maxWidth: '500px',
+          padding: '16px',
+        }
+      });
+      
+      // Clear the state to prevent showing message again
+      navigate('/rental-orders', { replace: true });
+      return;
     }
-  }, [activeTab, statusFilter]);
 
-  // Check for success messages from URL params
-  useEffect(() => {
+    // Check for success messages from URL params
     const signed = searchParams.get('signed');
     if (signed === 'true') {
       // Show success notification
-      alert('Ký hợp đồng thành công!');
+      toast.success('✅ Ký hợp đồng thành công!', { duration: 5000 });
     }
   }, [searchParams]);
 
@@ -98,23 +113,28 @@ const RentalOrdersPage = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const currentOrders = activeTab === 'renter' ? myOrders : ownerOrders;
-  const currentPagination = activeTab === 'renter' ? pagination.myOrders : pagination.ownerOrders;
+  const handleViewDetail = (order) => {
+    setSelectedOrder(order);
+    setShowDetailModal(true);
+  };
 
-  const filteredOrders = currentOrders.filter(order => {
+  const closeDetailModal = () => {
+    setSelectedOrder(null);
+    setShowDetailModal(false);
+  };
+
+  const currentOrders = myOrders;
+  const currentPagination = pagination.myOrders || {};
+
+  const filteredOrders = (currentOrders || []).filter(order => {
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
-      const orderNumber = activeTab === 'renter' 
-        ? order.masterOrderNumber 
-        : order.subOrderNumber;
+      const orderNumber = order.masterOrderNumber;
       
       return orderNumber.toLowerCase().includes(searchLower) ||
-             (activeTab === 'renter' && order.subOrders?.some(sub => 
+             order.subOrders?.some(sub => 
                sub.products?.some(p => p.product.name.toLowerCase().includes(searchLower))
-             )) ||
-             (activeTab === 'owner' && order.products?.some(p => 
-               p.product.name.toLowerCase().includes(searchLower)
-             ));
+             );
     }
     return true;
   });
@@ -145,40 +165,37 @@ const RentalOrdersPage = () => {
             <h1 className="text-3xl font-bold">Quản lý đơn thuê</h1>
             <p className="text-gray-600">Theo dõi và quản lý các đơn hàng thuê của bạn</p>
           </div>
-          <button
-            onClick={() => navigate('/cart')}
-            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-          >
-            <Package className="w-5 h-5" />
-            <span>Tạo đơn mới</span>
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => loadMyOrders()}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+            >
+              🔄 Reload
+            </button>
+            <button
+              onClick={() => navigate('/products')}
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+            >
+              🛍️ Thuê sản phẩm
+            </button>
+            <button
+              onClick={() => navigate('/cart')}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+            >
+              <Package className="w-5 h-5" />
+              <span>Tạo đơn mới</span>
+            </button>
+          </div>
         </div>
 
-        {/* Tabs */}
+        {/* Header */}
         <div className="bg-white rounded-lg shadow-md mb-6">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab('renter')}
-                className={`py-4 px-2 border-b-2 font-medium text-sm ${
-                  activeTab === 'renter'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Đơn thuê của tôi ({myOrders.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('owner')}
-                className={`py-4 px-2 border-b-2 font-medium text-sm ${
-                  activeTab === 'owner'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Đơn cho thuê ({ownerOrders.length})
-              </button>
-            </nav>
+            <div className="px-6 py-4">
+              <h2 className="text-xl font-semibold text-blue-600">
+                Đơn thuê của tôi ({(myOrders || []).length})
+              </h2>
+            </div>
           </div>
 
           {/* Filters */}
@@ -216,7 +233,7 @@ const RentalOrdersPage = () => {
               </div>
 
               <div className="text-sm text-gray-600">
-                {filteredOrders.length} / {currentOrders.length} đơn hàng
+                {filteredOrders.length} / {(currentOrders || []).length} đơn hàng
               </div>
             </div>
           </div>
@@ -240,27 +257,20 @@ const RentalOrdersPage = () => {
               }
             </h3>
             <p className="text-gray-500 mb-4">
-              {activeTab === 'renter' 
-                ? 'Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!'
-                : 'Bạn chưa có đơn cho thuê nào từ khách hàng.'
-              }
+              Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!
             </p>
-            {activeTab === 'renter' && (
-              <button
-                onClick={() => navigate('/products')}
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-              >
-                Xem sản phẩm
-              </button>
-            )}
+            <button
+              onClick={() => navigate('/products')}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+            >
+              Xem sản phẩm
+            </button>
           </div>
         ) : (
           <div className="space-y-4">
             {filteredOrders.map((order) => (
               <div key={order._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                {activeTab === 'renter' ? (
-                  // Renter view - MasterOrder
-                  <div className="p-6">
+                <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold">Đơn thuê #{order.masterOrderNumber}</h3>
@@ -318,7 +328,7 @@ const RentalOrdersPage = () => {
                         <div className="flex flex-wrap gap-2">
                           {order.subOrders.map((subOrder) => (
                             <div key={subOrder._id} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-                              <span className="text-sm">{subOrder.owner?.profile?.fullName || 'Không rõ'}</span>
+                              <span className="text-sm">{subOrder.owner?.profile?.firstName || 'Không rõ'}</span>
                               <span className={`px-2 py-1 rounded text-xs ${getStatusColor(subOrder.status)}`}>
                                 {getStatusText(subOrder.status)}
                               </span>
@@ -335,7 +345,7 @@ const RentalOrdersPage = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => navigate(`/rental-orders/${order._id}`)}
+                          onClick={() => handleViewDetail(order)}
                           className="flex items-center space-x-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                         >
                           <Eye className="w-4 h-4" />
@@ -354,172 +364,277 @@ const RentalOrdersPage = () => {
                       </div>
                     </div>
                   </div>
-                ) : (
-                  // Owner view - SubOrder
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold">Đơn #{order.subOrderNumber}</h3>
-                        <p className="text-sm text-gray-600">
-                          Người thuê: {order.masterOrder?.renter?.profile?.fullName || 'Không rõ'}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                          {getStatusText(order.status)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                        <div>
-                          <p className="text-sm text-gray-600">Thời gian thuê</p>
-                          <p className="font-medium">{calculateDuration(order.rentalPeriod.startDate, order.rentalPeriod.endDate)} ngày</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Package className="w-5 h-5 text-green-600" />
-                        <div>
-                          <p className="text-sm text-gray-600">Số sản phẩm</p>
-                          <p className="font-medium">{order.products?.length || 0}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="w-5 h-5 text-red-600" />
-                        <div>
-                          <p className="text-sm text-gray-600">Giao hàng</p>
-                          <p className="font-medium">{order.shipping?.method === 'PICKUP' ? 'Nhận trực tiếp' : 'Giao tận nơi'}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="w-5 h-5 text-orange-600" />
-                        <div>
-                          <p className="text-sm text-gray-600">Tổng tiền</p>
-                          <p className="font-medium text-orange-600">
-                            {order.pricing?.totalAmount?.toLocaleString('vi-VN')}đ
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Products Preview */}
-                    {order.products && order.products.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Sản phẩm</h4>
-                        <div className="space-y-2">
-                          {order.products.slice(0, 2).map((productItem) => (
-                            <div key={productItem.product._id} className="flex items-center space-x-3 bg-gray-50 rounded-lg p-3">
-                              <img
-                                src={productItem.product.images?.[0] || '/placeholder.jpg'}
-                                alt={productItem.product.name}
-                                className="w-12 h-12 object-cover rounded"
-                              />
-                              <div className="flex-1">
-                                <p className="font-medium">{productItem.product.name}</p>
-                                <p className="text-sm text-gray-600">Số lượng: {productItem.quantity}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-medium">{productItem.totalRental?.toLocaleString('vi-VN')}đ</p>
-                              </div>
-                            </div>
-                          ))}
-                          {order.products.length > 2 && (
-                            <p className="text-sm text-gray-600 text-center">
-                              và {order.products.length - 2} sản phẩm khác...
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                      <div className="text-sm text-gray-600">
-                        <Clock className="w-4 h-4 inline mr-1" />
-                        Cập nhật lúc {new Date(order.updatedAt).toLocaleString('vi-VN')}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => navigate(`/rental-orders/${order.masterOrder._id}`)}
-                          className="flex items-center space-x-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span>Xem chi tiết</span>
-                        </button>
-                        
-                        {order.status === 'PENDING_OWNER_CONFIRMATION' && (
-                          <>
-                            <button
-                              onClick={() => {
-                                // Handle confirm - would need to implement
-                                console.log('Confirm order', order._id);
-                              }}
-                              className="flex items-center space-x-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                              <span>Xác nhận</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                // Handle reject - would need to implement
-                                console.log('Reject order', order._id);
-                              }}
-                              className="flex items-center space-x-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                            >
-                              <XCircle className="w-4 h-4" />
-                              <span>Từ chối</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
         )}
 
         {/* Pagination */}
-        {currentPagination.pages > 1 && (
+        {currentPagination.pages && currentPagination.pages > 1 && (
           <div className="mt-8 flex items-center justify-center space-x-2">
             <button
               onClick={() => {
-                const newPage = Math.max(1, currentPagination.page - 1);
-                if (activeTab === 'renter') {
-                  loadMyOrders({ page: newPage, status: statusFilter !== 'all' ? statusFilter : undefined });
-                } else {
-                  loadOwnerOrders({ page: newPage, status: statusFilter !== 'all' ? statusFilter : undefined });
-                }
+                const newPage = Math.max(1, (currentPagination.page || 1) - 1);
+                loadMyOrders({ page: newPage, status: statusFilter !== 'all' ? statusFilter : undefined });
               }}
-              disabled={currentPagination.page === 1}
+              disabled={(currentPagination.page || 1) === 1}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
               Trước
             </button>
             
             <span className="px-4 py-2">
-              Trang {currentPagination.page} / {currentPagination.pages}
+              Trang {currentPagination.page || 1} / {currentPagination.pages || 1}
             </span>
             
             <button
               onClick={() => {
-                const newPage = Math.min(currentPagination.pages, currentPagination.page + 1);
-                if (activeTab === 'renter') {
-                  loadMyOrders({ page: newPage, status: statusFilter !== 'all' ? statusFilter : undefined });
-                } else {
-                  loadOwnerOrders({ page: newPage, status: statusFilter !== 'all' ? statusFilter : undefined });
-                }
+                const newPage = Math.min(currentPagination.pages || 1, (currentPagination.page || 1) + 1);
+                loadMyOrders({ page: newPage, status: statusFilter !== 'all' ? statusFilter : undefined });
               }}
-              disabled={currentPagination.page === currentPagination.pages}
+              disabled={(currentPagination.page || 1) === (currentPagination.pages || 1)}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
               Sau
             </button>
+          </div>
+        )}
+
+        {/* Detail Modal */}
+        {showDetailModal && selectedOrder && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div>
+                  <h2 className="text-2xl font-bold">Chi tiết đơn thuê #{selectedOrder.masterOrderNumber}</h2>
+                  <p className="text-gray-600">Tạo ngày {formatDate(selectedOrder.createdAt)}</p>
+                </div>
+                <button
+                  onClick={closeDetailModal}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6">
+                {/* Order Summary */}
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <h3 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Thời gian thuê</p>
+                        <p className="font-medium">{calculateDuration(selectedOrder.rentalPeriod.startDate, selectedOrder.rentalPeriod.endDate)} ngày</p>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(selectedOrder.rentalPeriod.startDate)} - {formatDate(selectedOrder.rentalPeriod.endDate)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-5 h-5 text-red-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Giao hàng</p>
+                        <p className="font-medium">{selectedOrder.deliveryMethod === 'PICKUP' ? 'Nhận trực tiếp' : 'Giao tận nơi'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedOrder.status)}`}>
+                        {getStatusText(selectedOrder.status)}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <DollarSign className="w-5 h-5 text-orange-600" />
+                      <div>
+                        <p className="text-sm text-gray-600">Phương thức thanh toán</p>
+                        <p className="font-medium">
+                          {selectedOrder.paymentMethod === 'WALLET' ? 'Ví điện tử' : 
+                           selectedOrder.paymentMethod === 'PAYOS' ? 'Chuyển khoản' : 
+                           selectedOrder.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' : 
+                           selectedOrder.paymentMethod}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub Orders */}
+                {selectedOrder.subOrders && selectedOrder.subOrders.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-4">Chi tiết từng chủ cho thuê ({selectedOrder.subOrders.length})</h3>
+                    <div className="space-y-4">
+                      {selectedOrder.subOrders.map((subOrder, index) => (
+                        <div key={subOrder._id} className="border border-gray-200 rounded-lg p-4">
+                          {/* Sub Order Header */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                Chủ thuê #{index + 1}
+                              </div>
+                              <span className={`px-2 py-1 rounded text-xs ${getStatusColor(subOrder.status)}`}>
+                                {getStatusText(subOrder.status)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Owner Info */}
+                          <div className="bg-gray-50 rounded p-3 mb-4">
+                            <div className="flex items-center space-x-3">
+                              <User className="w-5 h-5 text-gray-600" />
+                              <div>
+                                <p className="font-medium">{subOrder.owner?.profile?.firstName || 'Không rõ tên'} {subOrder.owner?.profile?.lastName || ''}</p>
+                                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                  {subOrder.owner?.profile?.phoneNumber && (
+                                    <div className="flex items-center space-x-1">
+                                      <Phone className="w-4 h-4" />
+                                      <span>{subOrder.owner.profile.phoneNumber}</span>
+                                    </div>
+                                  )}
+                                  {subOrder.owner?.email && (
+                                    <div className="flex items-center space-x-1">
+                                      <Mail className="w-4 h-4" />
+                                      <span>{subOrder.owner.email}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Products */}
+                          {subOrder.products && subOrder.products.length > 0 && (
+                            <div>
+                              <h4 className="font-medium mb-3">Sản phẩm ({subOrder.products.length})</h4>
+                              <div className="space-y-3">
+                                {subOrder.products.map((productItem) => (
+                                  <div key={productItem.product._id} className="flex items-center space-x-4 bg-white border rounded p-3">
+                                    <img
+                                      src={productItem.product.images?.[0].url || '/placeholder.jpg'}
+                                      alt={productItem.product.name}
+                                      className="w-16 h-16 object-cover rounded"
+                                    />
+                                    <div className="flex-1">
+                                      <h5 className="font-medium">{productItem.product.name}</h5>
+                                      <p className="text-sm text-gray-600">Số lượng: {productItem.quantity}</p>
+                                      <p className="text-sm text-gray-600">
+                                        Giá thuê: {productItem.product.pricing?.rentalPrice?.toLocaleString('vi-VN')}đ/ngày
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="font-medium text-blue-600">
+                                        {productItem.totalRental?.toLocaleString('vi-VN')}đ
+                                      </p>
+                                      <p className="text-sm text-gray-600">Tiền thuê</p>
+                                      {productItem.totalDeposit > 0 && (
+                                        <p className="text-sm text-orange-600">
+                                          +{productItem.totalDeposit?.toLocaleString('vi-VN')}đ cọc
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Sub Order Total */}
+                              <div className="mt-4 p-3 bg-gray-50 rounded">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">Tổng tiền thuê:</span>
+                                  <span className="font-bold text-blue-600">
+                                    {subOrder.pricing?.totalRental?.toLocaleString('vi-VN')}đ
+                                  </span>
+                                </div>
+                                {subOrder.pricing?.totalDeposit > 0 && (
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-medium">Tổng tiền cọc:</span>
+                                    <span className="font-bold text-orange-600">
+                                      {subOrder.pricing?.totalDeposit?.toLocaleString('vi-VN')}đ
+                                    </span>
+                                  </div>
+                                )}
+                                {subOrder.shipping?.fee > 0 && (
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-medium">Phí vận chuyển:</span>
+                                    <span className="font-medium">
+                                      {subOrder.shipping?.fee?.toLocaleString('vi-VN')}đ
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="border-t pt-2 mt-2">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-bold">Tổng thanh toán:</span>
+                                    <span className="font-bold text-lg text-green-600">
+                                      {subOrder.pricing?.totalAmount?.toLocaleString('vi-VN')}đ
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Order Total */}
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-4">Tổng thanh toán đơn hàng</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Tổng tiền thuê:</span>
+                      <span className="font-bold text-blue-600">
+                        {selectedOrder.totalAmount?.toLocaleString('vi-VN')}đ
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Tổng tiền cọc:</span>
+                      <span className="font-bold text-orange-600">
+                        {selectedOrder.totalDepositAmount?.toLocaleString('vi-VN')}đ
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Phí vận chuyển:</span>
+                      <span className="font-medium">
+                        {selectedOrder.totalShippingFee?.toLocaleString('vi-VN')}đ
+                      </span>
+                    </div>
+                    <div className="border-t pt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xl font-bold">Tổng cộng:</span>
+                        <span className="text-xl font-bold text-green-600">
+                          {(selectedOrder.totalAmount + selectedOrder.totalDepositAmount + selectedOrder.totalShippingFee)?.toLocaleString('vi-VN')}đ
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+                {selectedOrder.status === 'READY_FOR_CONTRACT' && (
+                  <button
+                    onClick={() => {
+                      closeDetailModal();
+                      navigate('/rental-orders/contracts');
+                    }}
+                    className="flex items-center space-x-2 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Ký hợp đồng</span>
+                  </button>
+                )}
+                <button
+                  onClick={closeDetailModal}
+                  className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
