@@ -11,15 +11,9 @@ const PaymentMethodSelector = ({ onSelectMethod, selectedMethod, onClose }) => {
       icon: '💳'
     },
     {
-      key: 'BANK_TRANSFER',
-      title: 'Chuyển khoản ngân hàng',
-      description: 'Thanh toán qua PayOS - Chuyển khoản',
-      icon: '🏦'
-    },
-    {
       key: 'PAYOS',
       title: 'PayOS QR Code',
-      description: 'Thanh toán qua mã QR PayOS',
+      description: 'Thanh toán qua mã QR PayOS (Chuyển khoản/Ví điện tử)',
       icon: '💰'
     },
     {

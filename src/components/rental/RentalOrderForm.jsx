@@ -7,6 +7,7 @@ import { Calendar, MapPin, Truck, CreditCard, Clock } from 'lucide-react';
 import MapSelector from '../common/MapSelector';
 import PaymentMethodSelector from '../common/PaymentMethodSelector';
 import { toast } from '../common/Toast';
+import paymentService from '../../services/payment';
 
 const RentalOrderForm = () => {
   try {
@@ -395,18 +396,24 @@ const RentalOrderForm = () => {
     }
   };
 
-  // Process wallet payment - simplified for now
+  // Process wallet payment with real API
   const processWalletPayment = async (amount) => {
     try {
       console.log('💳 Processing wallet payment for amount:', amount);
       
-      // For now, just return success - backend will handle actual wallet deduction
-      // TODO: Add wallet balance check if needed
+      const orderData = {
+        totalAmount: amount,
+        orderNumber: `ORD-${Date.now()}`,
+        description: 'Thanh toán đơn thuê bằng ví điện tử'
+      };
+
+      const result = await paymentService.processWalletPayment(orderData);
+      
       return {
         method: 'WALLET',
         status: 'SUCCESS',
-        transactionId: `WALLET_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-        message: 'Thanh toán từ ví sẽ được xử lý'
+        transactionId: result.metadata?.transactionId,
+        message: 'Thanh toán từ ví thành công'
       };
     } catch (error) {
       return {
@@ -417,26 +424,38 @@ const RentalOrderForm = () => {
     }
   };
 
-  // Process PayOS payment - simplified for now
+  // Process PayOS payment with real API
   const processPayOSPayment = async (method, amount) => {
     try {
       console.log('🏦 Processing PayOS payment for amount:', amount);
       
-      // Simulate PayOS payment process
-      // In real app, this would redirect to PayOS payment page
-      const confirmed = window.confirm(
-        `Bạn sẽ được chuyển đến trang thanh toán PayOS để thanh toán ${amount.toLocaleString('vi-VN')}đ.\n\nNhấn OK để tiếp tục, Cancel để hủy.`
-      );
+      const orderData = {
+        totalAmount: amount,
+        orderNumber: `ORD-${Date.now()}`,
+        description: 'Thanh toán đơn thuê qua PayOS'
+      };
+
+      const result = await paymentService.createOrderPaymentSession(orderData);
       
-      if (!confirmed) {
-        throw new Error('Người dùng đã hủy thanh toán');
+      // Open PayOS payment page in new window/tab
+      if (result.metadata?.checkoutUrl) {
+        window.open(result.metadata.checkoutUrl, '_blank');
+        
+        // For now, assume success (in real app, would wait for webhook)
+        const confirmed = window.confirm(
+          'Vui lòng hoàn tất thanh toán trên trang PayOS.\n\nNhấn OK khi đã thanh toán thành công, Cancel để hủy.'
+        );
+        
+        if (!confirmed) {
+          throw new Error('Người dùng đã hủy thanh toán');
+        }
       }
       
-      // Mock successful payment
       return {
         method: method,
         status: 'SUCCESS',
-        transactionId: `PAYOS_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        transactionId: result.metadata?.transactionId,
+        orderCode: result.metadata?.orderCode,
         message: 'Thanh toán PayOS thành công'
       };
     } catch (error) {

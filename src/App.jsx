@@ -48,6 +48,7 @@ import RentalOrderDetailPage from "./pages/RentalOrderDetail";
 import RentalOrderForm from './components/rental/RentalOrderForm';
 import RentalOrderFormTest from "./components/rental/RentalOrderFormTest";
 import OrderConfirmation from "./components/rental/OrderConfirmation";
+import TransactionHistory from "./pages/TransactionHistory";
 import ContractSigning from "./components/rental/ContractSigning";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
 
@@ -249,6 +250,16 @@ export default function App() {
                   element={
                     <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                       <ContractSigning />
+                    </RoleProtectedRoute>
+                  } 
+                />
+
+                {/* Transaction History */}
+                <Route 
+                  path="/transactions" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <TransactionHistory />
                     </RoleProtectedRoute>
                   } 
                 />
