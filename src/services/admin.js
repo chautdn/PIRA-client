@@ -182,9 +182,43 @@ class AdminService {
   async getProductById(productId) {
     try {
       const response = await api.get(`/admin/products/${productId}`);
-      return response.data.metadata;
+      console.log('AdminService getProductById - Full response:', response);
+      console.log('AdminService getProductById - response.data:', response.data);
+      console.log('AdminService getProductById - response.data.metadata:', response.data?.metadata);
+      
+      // Handle different response structures
+      let productData = null;
+      
+      // Check for responseUtils.success format: { success, message, data }
+      if (response.data && response.data.data) {
+        productData = response.data.data;
+        console.log('Found product data in response.data.data');
+      } else if (response.data && response.data.metadata) {
+        productData = response.data.metadata;
+        console.log('Found product data in response.data.metadata');
+      } else if (response.data) {
+        productData = response.data;
+        console.log('Using response.data directly');
+      }
+      
+      console.log('AdminService getProductById - Final productData:', productData);
+      console.log('AdminService getProductById - productData.title:', productData?.title);
+      
+      return productData || null;
     } catch (error) {
       console.error('Error fetching product:', error);
+      
+      // Handle specific error cases
+      if (error.response?.status === 404) {
+        throw new Error('Product not found');
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error - Unable to fetch product details');
+      } else if (error.response?.status === 401) {
+        throw new Error('Unauthorized - Please login as admin');
+      } else if (error.code === 'NETWORK_ERROR') {
+        throw new Error('Network error - Please check your connection');
+      }
+      
       throw error;
     }
   }
@@ -215,6 +249,41 @@ class AdminService {
       return response.data.metadata;
     } catch (error) {
       console.error('Error updating product:', error);
+      throw error;
+    }
+  }
+
+  async updateProductStatus(productId, status) {
+    try {
+      const response = await api.patch(`/admin/products/${productId}/status`, { status });
+      console.log('AdminService updateProductStatus - Full response:', response);
+      
+      // Handle different response structures
+      let productData = null;
+      
+      if (response.data && response.data.data) {
+        productData = response.data.data;
+      } else if (response.data && response.data.metadata) {
+        productData = response.data.metadata;
+      } else if (response.data) {
+        productData = response.data;
+      }
+      
+      return productData || { status };
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      
+      // Handle specific error cases
+      if (error.response?.status === 404) {
+        throw new Error('Product not found');
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error - Unable to update product status');
+      } else if (error.response?.status === 401) {
+        throw new Error('Unauthorized - Please login as admin');
+      } else if (error.code === 'NETWORK_ERROR') {
+        throw new Error('Network error - Please check your connection');
+      }
+      
       throw error;
     }
   }
@@ -444,6 +513,7 @@ export const {
   approveProduct,
   rejectProduct,
   updateProduct,
+  updateProductStatus,
   deleteProduct,
   getCategories,
   getCategoryById,
