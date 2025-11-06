@@ -11,10 +11,20 @@ export const categoryApi = {
     }
   },
 
-  // GET /api/categories/:id/subcategories - Get subcategories for a category
-  getSubCategories: async (categoryId) => {
+  // GET /api/categories/parents - Get only parent categories
+  getParentCategories: async () => {
     try {
-      const response = await api.get(`/categories/${categoryId}/subcategories`);
+      const response = await api.get("/categories/parents");
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // GET /api/categories/subcategories/:parentId - Get subcategories for a parent category
+  getSubCategories: async (parentId) => {
+    try {
+      const response = await api.get(`/categories/subcategories/${parentId}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
