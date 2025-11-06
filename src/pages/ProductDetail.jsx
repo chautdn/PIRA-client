@@ -19,11 +19,11 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [activeTab, setActiveTab] = useState('description');
   const [quantity, setQuantity] = useState(1);
-  const [selectedDates, setSelectedDates] = useState([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [returnDate, setReturnDate] = useState('');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [monthAvailability, setMonthAvailability] = useState({});
+
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsPage, setReviewsPage] = useState(1);
@@ -44,12 +44,18 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  // Fetch month availability when month changes
+  // Calculate rental days when dates change
   useEffect(() => {
-    if (product?._id) {
-      fetchMonthAvailability();
+    if (deliveryDate && returnDate) {
+      const delivery = new Date(deliveryDate);
+      const returnD = new Date(returnDate);
+      if (returnD > delivery) {
+        const diffTime = Math.abs(returnD - delivery);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        console.log('Rental days:', diffDays);
+      }
     }
-  }, [currentMonth, product?._id]);
+  }, [deliveryDate, returnDate]);
 
   useEffect(() => {
     // fetch reviews when product loaded and reviews tab active
@@ -357,17 +363,7 @@ export default function ProductDetail() {
     }
   };
 
-  const fetchMonthAvailability = async () => {
-    try {
-      const year = currentMonth.getFullYear();
-      const month = currentMonth.getMonth();
-      const availability = await cartApiService.getMonthAvailability(product._id, year, month);
-      setMonthAvailability(availability);
-    } catch (error) {
-      console.error('Error fetching availability:', error);
-      setMonthAvailability({});
-    }
-  };
+
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -420,60 +416,27 @@ export default function ProductDetail() {
     return new Intl.NumberFormat('vi-VN').format(price);
   };
 
-  const handleDateSelect = (day) => {
-    if (!day || !isDateAvailable(day)) return;
-
-    const dateString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-    if (selectedDates.includes(dateString)) {
-      setSelectedDates(selectedDates.filter(date => date !== dateString));
-    } else {
-      setSelectedDates([...selectedDates, dateString]);
+  const handleDeliveryDateChange = (date) => {
+    setDeliveryDate(date);
+    // Auto adjust return date if it's before delivery date
+    if (returnDate && new Date(returnDate) <= new Date(date)) {
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      setReturnDate(nextDay.toISOString().split('T')[0]);
     }
   };
 
-  const isDateAvailable = (day) => {
-    if (!day) return false;
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    if (date < today) return false;
-
-    const dateString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const availInfo = monthAvailability[dateString];
-    
-    return availInfo ? availInfo.available : true;
+  const handleReturnDateChange = (date) => {
+    setReturnDate(date);
   };
 
-  const getDateAvailabilityInfo = (day) => {
-    if (!day) return null;
-    const dateString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return monthAvailability[dateString] || null;
-  };
-
-  const isDateSelected = (day) => {
-    if (!day) return false;
-    const dateString = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return selectedDates.includes(dateString);
-  };
-
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    const days = [];
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(day);
-    }
-    return days;
+  const getRentalDays = () => {
+    if (!deliveryDate || !returnDate) return 0;
+    const delivery = new Date(deliveryDate);
+    const returnD = new Date(returnDate);
+    if (returnD <= delivery) return 0;
+    const diffTime = Math.abs(returnD - delivery);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   const getRentalPrice = () => {
@@ -483,12 +446,12 @@ export default function ProductDetail() {
 
   const getTotalPrice = () => {
     const basePrice = getRentalPrice();
-    return basePrice * selectedDates.length * quantity;
+    return basePrice * getRentalDays() * quantity;
   };
 
   const handleAddToCart = async () => {
-    if (selectedDates.length === 0) {
-      alert('⚠️ Vui lòng chọn ngày thuê');
+    if (!deliveryDate || !returnDate) {
+      alert('⚠️ Vui lòng chọn ngày giao và trả hàng');
       return;
     }
 
@@ -499,9 +462,9 @@ export default function ProductDetail() {
     }
 
     const rentalData = {
-      startDate: new Date(selectedDates[0]),
-      endDate: new Date(selectedDates[selectedDates.length - 1]),
-      duration: selectedDates.length
+      startDate: new Date(deliveryDate),
+      endDate: new Date(returnDate),
+      duration: getRentalDays()
     };
 
     const result = await addToCartContext(product, quantity, rentalData);
@@ -523,15 +486,17 @@ export default function ProductDetail() {
   };
 
   const handleRentNow = () => {
-    if (selectedDates.length === 0) {
-      alert('Vui lòng chọn ngày thuê');
+    if (!deliveryDate || !returnDate) {
+      alert('Vui lòng chọn ngày giao và trả hàng');
       return;
     }
     
     console.log('Rent now:', {
       product: product.id,
       quantity,
-      selectedDates,
+      deliveryDate,
+      returnDate,
+      rentalDays: getRentalDays(),
       totalPrice: getTotalPrice()
     });
   };
@@ -557,12 +522,7 @@ export default function ProductDetail() {
     }
   };
 
-  const monthNames = [
-    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
-  ];
 
-  const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
   if (loading) {
     return (
@@ -1185,130 +1145,77 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Calendar for day rental */}
+              {/* Date Selection for Rental */}
               <div className="mb-8">
-                  <h4 className="font-bold text-gray-900 mb-4 text-lg">📅 Chọn ngày thuê</h4>
-                  <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-green-50 to-blue-50 p-3 rounded-xl">
-                    <button
-                      onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                      className="p-2 hover:bg-white rounded-lg transition-colors"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="font-bold text-gray-900">
-                      {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                    </span>
-                    <button
-                      onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                      className="p-2 hover:bg-white rounded-lg transition-colors"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
+                <h4 className="font-bold text-gray-900 mb-4 text-lg">📅 Chọn thời gian thuê</h4>
+                
+                {/* Delivery Date */}
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🚚 Ngày nhận hàng
+                  </label>
+                  <input
+                    type="date"
+                    value={deliveryDate}
+                    onChange={(e) => handleDeliveryDateChange(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]} // Can't select past dates
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white text-gray-900 font-medium"
+                  />
+                </div>
 
-                  <div className="grid grid-cols-7 gap-1 mb-3">
-                    {dayNames.map(day => (
-                      <div key={day} className="text-center text-xs font-bold text-gray-500 py-2">
-                        {day}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1">
-                    {getDaysInMonth(currentMonth).map((day, index) => {
-                      const availInfo = getDateAvailabilityInfo(day);
-                      const isAvailable = isDateAvailable(day);
-                      const isSelected = isDateSelected(day);
-                      
-                      let bgColor = '';
-                      let textColor = '';
-                      let borderColor = '';
-                      
-                      if (!day) {
-                        return <div key={index} className="invisible" />;
-                      }
-                      
-                      if (!isAvailable) {
-                        bgColor = 'bg-gray-100';
-                        textColor = 'text-gray-300';
-                        borderColor = 'border-gray-200';
-                      } else if (isSelected) {
-                        bgColor = 'bg-gradient-to-br from-green-500 to-blue-500';
-                        textColor = 'text-white';
-                      } else if (availInfo && availInfo.status === 'available') {
-                        bgColor = 'bg-green-50 hover:bg-green-100';
-                        textColor = 'text-green-900';
-                        borderColor = 'border-green-200';
-                      } else {
-                        bgColor = 'hover:bg-gray-100';
-                        textColor = 'text-gray-700';
-                      }
-
-                      return (
-                        <div key={index} className="relative group">
-                          <button
-                            onClick={() => handleDateSelect(day)}
-                            disabled={!isAvailable}
-                            className={`
-                              w-full h-12 text-sm rounded-lg transition-all relative font-medium border
-                              ${bgColor} ${textColor} ${borderColor}
-                              ${!isAvailable ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
-                              ${isSelected ? 'shadow-lg transform scale-105 border-transparent' : 'border-gray-100'}
-                            `}
-                          >
-                            {day}
-                            {availInfo && !isSelected && (
-                              <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-500" />
-                            )}
-                          </button>
-                          
-                          {availInfo && !isSelected && (
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 pointer-events-none">
-                              <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl">
-                                <div className="font-semibold">
-                                  {availInfo.status === 'available' && '✅ Còn hàng'}
-                                  {availInfo.status === 'unavailable' && '❌ Đã hết'}
-                                </div>
-                                <div className="text-gray-300 mt-1">
-                                  Còn {availInfo.availableCount}/{availInfo.totalStock} sản phẩm
-                                </div>
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-4 p-3 bg-gray-50 rounded-xl">
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-green-200 border border-green-300"></div>
-                        <span className="text-gray-600">Còn hàng</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300"></div>
-                        <span className="text-gray-600">Đã hết</span>
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2 text-center">
-                      💡 Di chuột vào ngày để xem chi tiết
-                    </div>
-                  </div>
-
-                  {selectedDates.length > 0 && (
-                    <div className="mt-4 p-3 bg-green-50 rounded-xl text-center">
-                      <div className="text-green-700 font-semibold">
-                        ✅ Đã chọn {selectedDates.length} ngày
-                      </div>
-                    </div>
+                {/* Return Date */}
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    📦 Ngày trả hàng
+                  </label>
+                  <input
+                    type="date"
+                    value={returnDate}
+                    onChange={(e) => handleReturnDateChange(e.target.value)}
+                    min={deliveryDate ? (() => {
+                      const nextDay = new Date(deliveryDate);
+                      nextDay.setDate(nextDay.getDate() + 1);
+                      return nextDay.toISOString().split('T')[0];
+                    })() : new Date().toISOString().split('T')[0]}
+                    disabled={!deliveryDate}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white text-gray-900 font-medium disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                  {!deliveryDate && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Vui lòng chọn ngày nhận hàng trước
+                    </p>
                   )}
                 </div>
+
+                {/* Rental Duration Display */}
+                {deliveryDate && returnDate && getRentalDays() > 0 && (
+                  <motion.div
+                    className="p-4 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-xl"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="text-center">
+                      <div className="text-sm text-gray-700 mb-1">⏱️ Thời gian thuê</div>
+                      <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                        {getRentalDays()} ngày
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        Từ {new Date(deliveryDate).toLocaleDateString('vi-VN')} đến {new Date(returnDate).toLocaleDateString('vi-VN')}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Time Selection Hints */}
+                <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+                  <div className="text-xs text-gray-600 text-center">
+                    <div className="font-semibold mb-1">🕒 Thời gian giao nhận</div>
+                    <div>8:00 - 20:00 hàng ngày</div>
+                    <div className="text-gray-500 mt-1">Tối thiểu 1 ngày thuê</div>
+                  </div>
+                </div>
+              </div>
 
               {/* Quantity Selector */}
               <div className="mb-8">
@@ -1337,7 +1244,7 @@ export default function ProductDetail() {
               </div>
 
               {/* Total Price */}
-              {selectedDates.length > 0 && (
+              {deliveryDate && returnDate && getRentalDays() > 0 && (
                 <motion.div
                   className="mb-8 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-2xl"
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -1350,7 +1257,7 @@ export default function ProductDetail() {
                       {formatPrice(getTotalPrice())}đ
                     </div>
                     <div className="text-sm text-gray-600 mt-2">
-                      {formatPrice(getRentalPrice())}đ × {selectedDates.length} ngày × {quantity} cái
+                      {formatPrice(getRentalPrice())}đ × {getRentalDays()} ngày × {quantity} cái
                     </div>
                   </div>
                 </motion.div>
@@ -1363,7 +1270,7 @@ export default function ProductDetail() {
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  disabled={cartLoading || selectedDates.length === 0}
+                  disabled={cartLoading || !deliveryDate || !returnDate || getRentalDays() <= 0}
                 >
                   🚀 Thuê ngay
                 </motion.button>
@@ -1373,7 +1280,7 @@ export default function ProductDetail() {
                   className="w-full border-2 border-green-500 text-green-600 hover:bg-green-50 py-4 rounded-2xl font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  disabled={cartLoading || selectedDates.length === 0}
+                  disabled={cartLoading || !deliveryDate || !returnDate || getRentalDays() <= 0}
                 >
                   {cartLoading ? '⏳ Đang thêm...' : '🛒 Thêm vào giỏ hàng'}
                 </motion.button>

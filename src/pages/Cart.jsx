@@ -267,16 +267,9 @@ const Cart = () => {
 
               <button
                 onClick={() => navigate('/rental-orders/create')}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-3"
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-4"
               >
                 📋 Tạo Đơn Thuê
-              </button>
-
-              <button
-                onClick={handleCheckout}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-4"
-              >
-                🚀 Tiến Hành Thanh Toán
               </button>
 
               <Link
