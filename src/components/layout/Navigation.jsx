@@ -341,7 +341,7 @@ const Navigation = () => {
             {/* Right: Icons + Auth */}
             <div className="flex items-center gap-3 flex-shrink-0">
               {/* Language Switcher */}
-              <div className="hidden md:block">
+              <div className="hidden md:flex items-center">
                 <LanguageSwitcher />
               </div>
 

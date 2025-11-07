@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense } from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import AppProviders from "./providers/AppProviders";
@@ -113,11 +113,10 @@ function ConditionalFooter() {
 
 export default function App() {
   return (
-    <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center">Loading...</div>}>
-      <AppProviders>
-        <WishlistProvider>
-          <RentalOrderProvider>
-            <BrowserRouter>
+    <AppProviders>
+      <WishlistProvider>
+        <RentalOrderProvider>
+          <BrowserRouter>
           <ScrollToTop />
           <div className="min-h-screen bg-gray-50 flex flex-col">
             <ConditionalNavigation />
@@ -305,6 +304,5 @@ export default function App() {
         </RentalOrderProvider>
       </WishlistProvider>
     </AppProviders>
-    </Suspense>
   );
 }
