@@ -1,0 +1,27 @@
+{
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "cart": "Cart",
+    "wishlist": "Wishlist",
+    "orders": "Orders",
+    "chat": "Chat",
+    "wallet": "Wallet"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password"
+  },
+  "product": {
+    "search": "Search products",
+    "categories": "Categories",
+    "price": "Price",
+    "addToCart": "Add to Cart",
+    "addToWishlist": "Add to Wishlist",
+    "rentNow": "Rent Now"
+  }
+}

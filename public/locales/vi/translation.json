@@ -1,0 +1,27 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "products": "Sản phẩm",
+    "cart": "Giỏ hàng",
+    "wishlist": "Yêu thích",
+    "orders": "Đơn hàng",
+    "chat": "Tin nhắn",
+    "wallet": "Ví"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu"
+  },
+  "product": {
+    "search": "Tìm kiếm sản phẩm",
+    "categories": "Danh mục",
+    "price": "Giá",
+    "addToCart": "Thêm vào giỏ",
+    "addToWishlist": "Thêm vào yêu thích",
+    "rentNow": "Thuê ngay"
+  }
+}

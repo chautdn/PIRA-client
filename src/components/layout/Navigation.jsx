@@ -9,6 +9,8 @@ import LogoutModal from "../common/LogoutModal";
 import useChatSocket from "../../hooks/useChatSocket";
 import useChat from "../../hooks/useChat";
 import { ROUTES } from "../../utils/constants";
+import LanguageSwitcher from "../common/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 // Owner Menu Dropdown Component
 const OwnerMenuDropdown = ({ user }) => {
@@ -167,6 +169,7 @@ const Navigation = () => {
   const { user, logout, loading } = useAuth();
   const { cartCount, toggleCart } = useCart();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // State
   const [unreadCount, setUnreadCount] = useState(0);
@@ -283,21 +286,21 @@ const Navigation = () => {
                   to={ROUTES.HOME}
                   className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
                 >
-                  Trang Chủ
+                  {t('nav.home')}
                 </Link>
                 {user ? (
                   <Link
                     to="/rental-orders"
                     className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
                   >
-                    Đơn Thuê
+                    {t('nav.orders')}
                   </Link>
                 ) : (
                   <Link
                     to={ROUTES.LOGIN}
                     className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
                   >
-                    Đơn Thuê
+                    {t('nav.orders')}
                   </Link>
                 )}
 
@@ -337,11 +340,10 @@ const Navigation = () => {
 
             {/* Right: Icons + Auth */}
             <div className="flex items-center gap-3 flex-shrink-0">
-              {/* Language */}
-              <button className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg transition-all whitespace-nowrap">
-                <span className="text-base">🌐</span>
-                <span>VI</span>
-              </button>
+              {/* Language Switcher */}
+              <div className="hidden md:block">
+                <LanguageSwitcher />
+              </div>
 
               {/* Action Icons */}
               <div className="flex items-center gap-1">
@@ -393,13 +395,13 @@ const Navigation = () => {
                     to={ROUTES.LOGIN}
                     className="px-4 py-2 text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
                   >
-                    Đăng Nhập
+                    {t('auth.login')}
                   </Link>
                   <Link
                     to={ROUTES.REGISTER}
                     className="px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all whitespace-nowrap"
                   >
-                    Đăng Ký
+                    {t('auth.register')}
                   </Link>
                 </div>
               ) : (
