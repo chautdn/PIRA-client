@@ -30,6 +30,8 @@ import UserManagement from "./pages/admin/UserManagement";
 import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
 import AdminProductDetail from "./pages/admin/AdminproductDetail ";
+import OrderManagement from "./pages/admin/OrderManagement";
+
 // Component to handle scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -130,8 +132,8 @@ export default function App() {
                 <Route path="users/:userId" element={<UserDetail />} />
                 <Route path="products" element={<ProductManagement />} />
                 <Route path="products/:productId" element={<AdminProductDetail />} />
+                <Route path="orders" element={<OrderManagement />} />
                 <Route path="categories" element={<div>Category Management - Coming Soon</div>} />
-                <Route path="orders" element={<div>Order Management - Coming Soon</div>} />
                 <Route path="reports" element={<div>Reports & Analytics - Coming Soon</div>} />
                 <Route path="settings" element={<div>System Settings - Coming Soon</div>} />
                 <Route path="profile" element={<Profile />} />

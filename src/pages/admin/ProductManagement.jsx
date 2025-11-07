@@ -61,6 +61,7 @@ const ProductManagement = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
+      console.log('ProductManagement - Loading products with filters:', filters);
       const response = await adminService.getProducts(filters);
       
       console.log('ProductManagement - API response:', response);
@@ -68,8 +69,13 @@ const ProductManagement = () => {
       // Safe check for response structure
       if (response && typeof response === 'object') {
         const products = response.products || response.data?.products || response.data || [];
-        const totalPages = response.totalPages || response.data?.totalPages || Math.ceil((response.total || response.data?.total || products.length) / filters.limit);
         const totalProducts = response.total || response.data?.total || products.length;
+        const totalPages = response.totalPages || response.data?.totalPages || Math.ceil(totalProducts / filters.limit);
+        
+        console.log('ProductManagement - Products count:', products.length);
+        console.log('ProductManagement - Total products:', totalProducts);
+        console.log('ProductManagement - Total pages calculated:', totalPages);
+        console.log('ProductManagement - Current limit:', filters.limit);
         
         console.log('ProductManagement - Products:', products);
         console.log('ProductManagement - Sample product owner:', products[0]?.owner);
@@ -97,11 +103,19 @@ const ProductManagement = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
+    console.log('ProductManagement - Filter change:', { key, value });
+    const newFilters = {
+      ...filters,
       [key]: value,
       page: key !== 'page' ? 1 : value
-    }));
+    };
+    console.log('ProductManagement - New filters:', newFilters);
+    setFilters(newFilters);
+    
+    // Force reload if page change
+    if (key === 'page') {
+      setTimeout(() => loadProducts(), 100);
+    }
   };
 
   const handleSearch = (e) => {
@@ -285,14 +299,28 @@ const ProductManagement = () => {
             </p>
             <p className="text-gray-600 flex items-center gap-2">
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md">
-                📄 Trang {filters.page}/{totalPages}
+                📄 Trang {filters.page}/{totalPages} (10 sản phẩm/trang)
               </span>
             </p>
           </div>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          Export CSV
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => {
+              console.log('DEBUG - Current state:');
+              console.log('filters:', filters);
+              console.log('totalPages:', totalPages);
+              console.log('totalProducts:', totalProducts);
+              console.log('products.length:', products.length);
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+          >
+            Debug
+          </button>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -542,68 +570,150 @@ const ProductManagement = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-          <div className="flex-1 flex justify-between sm:hidden">
+        {/* Enhanced Pagination */}
+        <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-t border-gray-200 rounded-b-lg">
+          {/* Mobile Pagination */}
+          <div className="flex justify-between items-center sm:hidden">
             <button
               onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
-              disabled={filters.page === 1}
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              disabled={filters.page <= 1}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
               Trước
             </button>
+            
+            <span className="text-sm font-medium text-gray-700 bg-white px-3 py-2 rounded-lg border">
+              {filters.page} / {totalPages}
+            </span>
+            
             <button
               onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page + 1))}
-              disabled={filters.page === totalPages}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              disabled={filters.page >= totalPages}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               Sau
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Hiển thị <span className="font-medium">{(filters.page - 1) * filters.limit + 1}</span> đến{' '}
-                <span className="font-medium">{Math.min(filters.page * filters.limit, totalProducts)}</span> trong{' '}
-                <span className="font-medium">{totalProducts}</span> kết quả
-              </p>
+
+          {/* Desktop Pagination */}
+          <div className="hidden sm:flex sm:items-center sm:justify-between">
+            {/* Info Section */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">
+                  Hiển thị <span className="text-blue-600 font-bold">{(filters.page - 1) * filters.limit + 1}</span> - 
+                  <span className="text-blue-600 font-bold">{Math.min(filters.page * filters.limit, totalProducts)}</span> 
+                  trong <span className="text-gray-900 font-bold">{totalProducts}</span> sản phẩm
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-sm font-semibold text-blue-700">
+                  Trang {filters.page}/{totalPages} ({filters.limit} sản phẩm/trang)
+                </span>
+              </div>
             </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+
+            {/* Navigation Section */}
+            <div className="flex items-center">
+              <nav className="flex items-center gap-1">
+                {/* First & Previous Buttons */}
+                <button
+                  onClick={() => handleFilterChange('page', 1)}
+                  disabled={filters.page <= 1}
+                  className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
+                  title="Trang đầu"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+                  </svg>
+                  Đầu
+                </button>
+                
                 <button
                   onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
-                  disabled={filters.page === 1}
-                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  disabled={filters.page <= 1}
+                  className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
+                  title="Trang trước"
                 >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
                   Trước
                 </button>
-                {[...Array(totalPages)].map((_, index) => {
-                  const page = index + 1;
-                  if (page === 1 || page === totalPages || (page >= filters.page - 2 && page <= filters.page + 2)) {
+
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1 mx-2">
+                  {[...Array(totalPages)].map((_, index) => {
+                    const page = index + 1;
+                    const isCurrentPage = page === filters.page;
+                    const showPage = page === 1 || 
+                                   page === totalPages || 
+                                   (page >= filters.page - 2 && page <= filters.page + 2);
+                    
+                    if (!showPage) {
+                      if (page === filters.page - 3 || page === filters.page + 3) {
+                        return (
+                          <span key={page} className="px-2 py-2 text-gray-400 text-sm font-medium">
+                            ...
+                          </span>
+                        );
+                      }
+                      return null;
+                    }
+
                     return (
                       <button
                         key={page}
                         onClick={() => handleFilterChange('page', page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          page === filters.page
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        className={`min-w-[40px] h-10 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shadow-sm ${
+                          isCurrentPage
+                            ? 'bg-blue-600 text-white border-2 border-blue-600 shadow-lg scale-105'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600'
                         }`}
+                        title={`Trang ${page}`}
                       >
                         {page}
                       </button>
                     );
-                  } else if (page === filters.page - 3 || page === filters.page + 3) {
-                    return <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>;
-                  }
-                  return null;
-                })}
+                  })}
+                </div>
+
+                {/* Next & Last Buttons */}
                 <button
                   onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page + 1))}
-                  disabled={filters.page === totalPages}
-                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  disabled={filters.page >= totalPages}
+                  className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
+                  title="Trang sau"
                 >
                   Sau
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                
+                <button
+                  onClick={() => handleFilterChange('page', totalPages)}
+                  disabled={filters.page >= totalPages}
+                  className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
+                  title="Trang cuối"
+                >
+                  Cuối
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
                 </button>
               </nav>
             </div>
