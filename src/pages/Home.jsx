@@ -13,6 +13,7 @@ import {
   BiAward,
   BiInfoCircle,
 } from "react-icons/bi";
+import { useTranslation } from 'react-i18next';
 import {
   HiLocationMarker,
   HiStar,
@@ -43,6 +44,7 @@ import {
 export default function Home() {
   const navigate = useNavigate();
   const { fetchBalance } = useWallet();
+  const { t } = useTranslation();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -318,7 +320,7 @@ export default function Home() {
                 animate={{ scale: [1, 1.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              Được tin tưởng bởi 10,000+ du khách
+              {t('home.badge')}
             </motion.div>
 
             {/* Main heading */}
@@ -326,7 +328,7 @@ export default function Home() {
               className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight pb-4"
               variants={fadeInUp}
             >
-              Cuộc Phiêu Lưu Đang Chờ.
+              {t('home.title_line1')}
               <br />
               <motion.span
                 className="inline-block mt-2 pb-2"
@@ -347,7 +349,7 @@ export default function Home() {
                   lineHeight: "1.3",
                 }}
               >
-                Thuê Thiết Bị Du Lịch Ngay!
+                {t('home.title_line2')}
               </motion.span>
             </motion.h1>
 
@@ -356,9 +358,7 @@ export default function Home() {
               className="mt-8 text-lg sm:text-xl text-primary-50 leading-8 max-w-3xl mx-auto"
               variants={fadeInUpStagger}
             >
-              🏔️ Khám phá. 📸 Ghi lại. 🌍 Chia sẻ. <br className="sm:hidden" />
-              Truy cập thiết bị du lịch cao cấp từ những người địa phương đáng
-              tin cậy.
+              {t('home.description')}
             </motion.p>
 
             {/* Equipment categories quick preview */}
@@ -367,12 +367,12 @@ export default function Home() {
               variants={fadeInUpStagger}
             >
               {[
-                { Icon: MdCameraAlt, label: "Camera" },
-                { Icon: MdBackpack, label: "Balo" },
-                { Icon: FaCampground, label: "Lều Trại" },
-                { Icon: MdLuggage, label: "Vali" },
-                { Icon: MdFlightTakeoff, label: "Flycam" },
-                { Icon: MdGpsFixed, label: "GPS" },
+                { Icon: MdCameraAlt, key: 'camera' },
+                { Icon: MdBackpack, key: 'backpack' },
+                { Icon: FaCampground, key: 'tent' },
+                { Icon: MdLuggage, key: 'luggage' },
+                { Icon: MdFlightTakeoff, key: 'flycam' },
+                { Icon: MdGpsFixed, key: 'gps' },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -386,7 +386,7 @@ export default function Home() {
                   transition={{ duration: 0.2 }}
                 >
                   <item.Icon className="text-xl" />
-                  <span>{item.label}</span>
+                  <span>{t(`home.categories.${item.key}`)}</span>
                 </motion.div>
               ))}
             </motion.div>
@@ -405,7 +405,7 @@ export default function Home() {
                   className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl transition-all"
                 >
                   <FaSearch className="mr-2 text-xl" />
-                  Tìm Thiết Bị Ngay
+                  {t('home.cta_search')}
                 </Link>
               </motion.div>
               <motion.div
@@ -417,7 +417,7 @@ export default function Home() {
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all"
                 >
                   <MdAirplanemodeActive className="mr-2 text-xl" />
-                  Cho Thuê Đồ
+                  {t('home.cta_rent')}
                 </Link>
               </motion.div>
             </motion.div>
