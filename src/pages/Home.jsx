@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { ROUTES } from "../utils/constants";
 import { productService } from "../services/product";
 import Loading from "../components/common/Loading";
@@ -13,7 +14,6 @@ import {
   BiAward,
   BiInfoCircle,
 } from "react-icons/bi";
-import { useTranslation } from 'react-i18next';
 import {
   HiLocationMarker,
   HiStar,
@@ -320,7 +320,7 @@ export default function Home() {
                 animate={{ scale: [1, 1.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              {t('home.badge')}
+              {t('home.hero.trusted')}
             </motion.div>
 
             {/* Main heading */}
@@ -328,7 +328,7 @@ export default function Home() {
               className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight pb-4"
               variants={fadeInUp}
             >
-              {t('home.title_line1')}
+              {t('home.hero.title')}
               <br />
               <motion.span
                 className="inline-block mt-2 pb-2"
@@ -346,33 +346,31 @@ export default function Home() {
                   backgroundSize: "200% 100%",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
-                  lineHeight: "1.3",
-                }}
-              >
-                {t('home.title_line2')}
-              </motion.span>
-            </motion.h1>
-
-            {/* Description */}
-            <motion.p
-              className="mt-8 text-lg sm:text-xl text-primary-50 leading-8 max-w-3xl mx-auto"
-              variants={fadeInUpStagger}
+                lineHeight: "1.3",
+              }}
             >
-              {t('home.description')}
-            </motion.p>
+              {t('home.hero.subtitle')}
+            </motion.span>
+          </motion.h1>
 
-            {/* Equipment categories quick preview */}
+          {/* Description */}
+          <motion.p
+            className="mt-8 text-lg sm:text-xl text-primary-50 leading-8 max-w-3xl mx-auto"
+            variants={fadeInUpStagger}
+          >
+            {t('home.hero.description')}
+          </motion.p>            {/* Equipment categories quick preview */}
             <motion.div
               className="mt-8 flex flex-wrap items-center justify-center gap-3"
               variants={fadeInUpStagger}
             >
               {[
-                { Icon: MdCameraAlt, key: 'camera' },
-                { Icon: MdBackpack, key: 'backpack' },
-                { Icon: FaCampground, key: 'tent' },
-                { Icon: MdLuggage, key: 'luggage' },
-                { Icon: MdFlightTakeoff, key: 'flycam' },
-                { Icon: MdGpsFixed, key: 'gps' },
+                { Icon: MdCameraAlt, label: t('home.categories.camera') },
+                { Icon: MdBackpack, label: t('home.categories.backpack') },
+                { Icon: FaCampground, label: t('home.categories.tent') },
+                { Icon: MdLuggage, label: t('home.categories.vali') },
+                { Icon: MdFlightTakeoff, label: t('home.categories.flycam') },
+                { Icon: MdGpsFixed, label: t('home.categories.gps') },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -386,7 +384,7 @@ export default function Home() {
                   transition={{ duration: 0.2 }}
                 >
                   <item.Icon className="text-xl" />
-                  <span>{t(`home.categories.${item.key}`)}</span>
+                  <span>{item.label}</span>
                 </motion.div>
               ))}
             </motion.div>
@@ -405,7 +403,7 @@ export default function Home() {
                   className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl transition-all"
                 >
                   <FaSearch className="mr-2 text-xl" />
-                  {t('home.cta_search')}
+                  {t('home.hero.searchButton')}
                 </Link>
               </motion.div>
               <motion.div
@@ -417,7 +415,7 @@ export default function Home() {
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all"
                 >
                   <MdAirplanemodeActive className="mr-2 text-xl" />
-                  {t('home.cta_rent')}
+                  {t('home.hero.rentButton')}
                 </Link>
               </motion.div>
             </motion.div>
@@ -433,7 +431,7 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiStar className="text-2xl text-yellow-300" />
-                <span className="font-semibold">4.9/5 đánh giá</span>
+                <span className="font-semibold">{t('home.features.rating')}</span>
               </motion.div>
               <motion.div
                 className="flex items-center gap-2 py-2"
@@ -441,7 +439,7 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiShieldCheck className="text-2xl text-green-300" />
-                <span className="font-semibold">Thanh toán an toàn</span>
+                <span className="font-semibold">{t('home.features.safety')}</span>
               </motion.div>
               <motion.div
                 className="flex items-center gap-2 py-2"
@@ -449,7 +447,7 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiClock className="text-2xl text-blue-300" />
-                <span className="font-semibold">Hỗ trợ 24/7</span>
+                <span className="font-semibold">{t('home.features.support')}</span>
               </motion.div>
             </motion.div>
           </motion.div>
@@ -596,47 +594,47 @@ export default function Home() {
               </span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Thiết Bị Nổi Bật
+              {t('common.featuredProducts.title')}
             </h2>
             <p className="text-gray-600 text-lg">
               {featuredProducts.some((p) => p.isPromoted)
-                ? "Top 10 thiết bị được quảng bá cao nhất - Chất lượng đã được xác nhận"
-                : "Khám phá các thiết bị du lịch mới nhất"}
+                ? t('common.featuredProducts.subtitle')
+                : t('common.featuredProducts.newProducts')}
             </p>
           </motion.div>
 
           {loading ? (
             <div className="mt-8 flex flex-col items-center justify-center py-12">
               <Loading />
-              <p className="mt-4 text-gray-500">Đang tải sản phẩm...</p>
+              <p className="mt-4 text-gray-500">{t('common.loading.products')}</p>
             </div>
           ) : error ? (
             <div className="mt-8 text-center py-12">
               <div className="text-red-500 font-semibold mb-2">
-                Không thể tải sản phẩm nổi bật
+                {t('common.error.products')}
               </div>
               <div className="text-gray-500 text-sm mb-4">{error}</div>
               <button
                 onClick={() => window.location.reload()}
                 className="mt-4 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-all"
               >
-                Thử lại
+                {t('common.retry')}
               </button>
             </div>
           ) : !loading && featuredProducts.length === 0 ? (
             <div className="mt-8 text-center py-16">
               <div className="text-6xl mb-4">📦</div>
               <div className="text-gray-900 font-semibold text-xl mb-2">
-                Chưa có sản phẩm
+                {t('common.noProducts.title')}
               </div>
               <p className="text-gray-600 mb-6">
-                Hiện tại chưa có sản phẩm nào. Hãy quay lại sau nhé!
+                {t('common.noProducts.message')}
               </p>
               <Link
                 to={ROUTES.PRODUCTS}
                 className="inline-flex items-center bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-semibold transition-all"
               >
-                Xem Tất Cả Sản Phẩm
+                {t('common.viewAll')}
               </Link>
             </div>
           ) : featuredProducts.length > 0 ? (
@@ -846,11 +844,10 @@ export default function Home() {
             className="text-center mb-12"
           >
             <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Tại Sao Chọn PIRA?
+              {t('home.whyChoosePira.title')}
             </h3>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Tham gia cùng hàng nghìn du khách tin tưởng PIRA cho nhu cầu thuê
-              thiết bị
+              {t('home.whyChoosePira.subtitle')}
             </p>
           </motion.div>
 
@@ -864,20 +861,20 @@ export default function Home() {
             {[
               {
                 Icon: FiSearch,
-                title: "Lựa Chọn Đa Dạng",
-                desc: "Từ máy ảnh, đồ cắm trại đến thiết bị chuyên dụng, tất cả đều sẵn trong khu vực của bạn.",
+                title: t('home.whyChoosePira.cards.variety.title'),
+                desc: t('home.whyChoosePira.cards.variety.desc'),
                 color: "from-blue-500 to-blue-600",
               },
               {
                 Icon: FaShieldAlt,
-                title: "Giao Dịch An Toàn",
-                desc: "Thanh toán bảo mật, xác minh và bảo hiểm toàn diện đảm bảo sự yên tâm.",
+                title: t('home.whyChoosePira.cards.safety.title'),
+                desc: t('home.whyChoosePira.cards.safety.desc'),
                 color: "from-green-500 to-green-600",
               },
               {
                 Icon: FaUsers,
-                title: "Cộng Đồng Tin Cậy",
-                desc: "Đánh giá đã xác minh, xếp hạng người dùng và cộng đồng hỗ trợ.",
+                title: t('home.whyChoosePira.cards.community.title'),
+                desc: t('home.whyChoosePira.cards.community.desc'),
                 color: "from-purple-500 to-purple-600",
               },
             ].map((item, idx) => (
@@ -942,10 +939,10 @@ export default function Home() {
               <span>REVIEWS</span>
             </div>
             <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Được Tin Tưởng Bởi Du Khách Toàn Cầu
+              {t('common.testimonials.title')}
             </h3>
             <p className="text-gray-600 text-lg">
-              Xem cộng đồng của chúng tôi nói gì về trải nghiệm PIRA
+              {t('common.testimonials.subtitle')}
             </p>
           </motion.div>
 
@@ -958,19 +955,13 @@ export default function Home() {
           >
             {[
               {
-                name: "Mai Hoàng",
-                location: "Hồ Chí Minh",
-                text: "PIRA đã làm cho chuyến du lịch của tôi trở nên tuyệt vời! Thuê dễ, chủ sở hữu hỗ trợ.",
+                ...t('common.testimonials.reviews.0'),
               },
               {
-                name: "Nguyễn Văn A",
-                location: "Hà Nội",
-                text: "Dịch vụ tuyệt vời, thiết bị chất lượng cao. Sẽ quay lại sử dụng PIRA.",
+                ...t('common.testimonials.reviews.1'),
               },
               {
-                name: "Trần Thị B",
-                location: "Đà Nẵng",
-                text: "Giao diện dễ sử dụng, thanh toán an toàn. Rất hài lòng với trải nghiệm.",
+                ...t('common.testimonials.reviews.2'),
               },
             ].map((testimonial, i) => (
               <motion.div
@@ -1106,11 +1097,10 @@ export default function Home() {
               </motion.div>
 
               <h3 className="text-3xl sm:text-5xl font-extrabold mb-4">
-                Sẵn Sàng Bắt Đầu Cuộc Phiêu Lưu?
+                {t('common.cta.title')}
               </h3>
               <p className="text-lg sm:text-xl text-primary-100 max-w-2xl mx-auto leading-relaxed">
-                Tham gia PIRA ngay hôm nay và khám phá thế giới khả năng du lịch
-                với hàng ngàn thiết bị chất lượng cao.
+                {t('common.cta.subtitle')}
               </p>
             </motion.div>
 
@@ -1131,7 +1121,7 @@ export default function Home() {
                   className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-bold text-lg shadow-2xl transition-all"
                 >
                   <FaSearch className="mr-2 text-xl" />
-                  Tìm Thiết Bị Ngay
+                  {t('common.cta.findEquipment')}
                   <motion.span
                     className="ml-2"
                     animate={{ x: [0, 3, 0] }}
@@ -1151,7 +1141,7 @@ export default function Home() {
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 backdrop-blur-sm px-8 py-4 rounded-xl font-bold text-lg transition-all"
                 >
                   <MdAirplanemodeActive className="mr-2 text-xl" />
-                  Cho Thuê Đồ
+                  {t('common.cta.rentOut')}
                 </Link>
               </motion.div>
             </motion.div>
@@ -1165,9 +1155,9 @@ export default function Home() {
               viewport={{ once: true }}
             >
               {[
-                { number: "10,000+", label: "Du Khách" },
-                { number: "5,000+", label: "Thiết Bị" },
-                { number: "4.9★", label: "Đánh Giá" },
+                { number: "10,000+", label: t('common.cta.stats.travelers') },
+                { number: "5,000+", label: t('common.cta.stats.equipment') },
+                { number: "4.9★", label: t('common.cta.stats.rating') },
               ].map((stat, idx) => (
                 <motion.div
                   key={idx}

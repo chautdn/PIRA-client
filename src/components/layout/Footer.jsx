@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation();
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Main Footer Content */}
@@ -16,8 +18,7 @@ export default function Footer() {
               <span className="text-2xl font-extrabold text-white">PIRA</span>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              Nền tảng tin cậy cho thuê thiết bị du lịch. 
-              Khám phá thế giới với thiết bị chất lượng cao từ cộng đồng địa phương.
+              {t('common.footer.forRenters.description')}
             </p>
             <div className="flex gap-3">
               {['📘', '📷', '🐦', '📺'].map((icon, idx) => (
@@ -33,84 +34,111 @@ export default function Footer() {
 
           {/* Cho Người Thuê */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">Cho Người Thuê</h3>
+            <h3 className="text-lg font-bold mb-4 text-white">{t('common.footer.forRenters.title')}</h3>
             <ul className="space-y-3">
-              {[
-                'Duyệt Thiết Bị',
-                'Cách Hoạt Động',
-                'An Toàn & Bảo Hiểm',
-                'Hỗ Trợ Khách Hàng',
-                'Câu Hỏi Thường Gặp',
-              ].map((item, idx) => (
-                <li key={idx}>
-                  <Link
-                    to="#"
-                    className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group"
-                  >
-                    <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                    {item}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.forRenters.browseEquipment')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.forRenters.howItWorks')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.forOwners.safety')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.forOwners.customerSupport')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.forOwners.faq')}
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Cho Chủ Thiết Bị */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">Cho Chủ Thiết Bị</h3>
+            <h3 className="text-lg font-bold mb-4 text-white">{t('common.footer.forOwners.title')}</h3>
             <ul className="space-y-3">
-              {[
-                'Đăng Thiết Bị',
-                'Quản Lý Đơn Hàng',
-                'Thu Nhập & Thanh Toán',
-                'Bảo Hiểm Thiết Bị',
-                'Trung Tâm Chủ Sở Hữu',
-              ].map((item, idx) => (
-                <li key={idx}>
-                  <Link
-                    to="#"
-                    className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group"
-                  >
-                    <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                    {item}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.forOwners.listEquipment')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.company.customerService')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.company.paymentInfo')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.forOwners.ownerCenter')}
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Công Ty */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">Công Ty</h3>
+            <h3 className="text-lg font-bold mb-4 text-white">{t('common.footer.company.title')}</h3>
             <ul className="space-y-3">
-              {[
-                'Về Chúng Tôi',
-                'Liên Hệ',
-                'Blog & Tin Tức',
-                'Chính Sách Bảo Mật',
-                'Điều Khoản Dịch Vụ',
-              ].map((item, idx) => (
-                <li key={idx}>
-                  <Link
-                    to="#"
-                    className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group"
-                  >
-                    <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                    {item}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.company.aboutUs')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.company.blog')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.company.privacy')}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
+                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                  {t('common.footer.company.terms')}
+                </Link>
+              </li>
             </ul>
 
             {/* Contact Info */}
             <div className="mt-6 space-y-2 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <span>📧</span>
-                <span>support@pira.vn</span>
+                <span>{t('common.footer.contact.email')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span>📞</span>
-                <span>1900 1234</span>
+                <span>{t('common.footer.contact.phone')}</span>
               </div>
             </div>
           </div>
@@ -122,17 +150,17 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-400">
-              © 2024 PIRA. Tất cả quyền được bảo lưu.
+              {t('common.footer.copyright')}
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-400">
               <Link to="#" className="hover:text-primary-400 transition-colors">
-                Chính Sách Bảo Mật
+                {t('common.footer.company.privacy')}
               </Link>
               <Link to="#" className="hover:text-primary-400 transition-colors">
-                Điều Khoản
+                {t('common.footer.company.terms')}
               </Link>
               <Link to="#" className="hover:text-primary-400 transition-colors">
-                Sitemap
+                {t('common.footer.company.sitemap')}
               </Link>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-400">

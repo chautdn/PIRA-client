@@ -17,6 +17,7 @@ const OwnerMenuDropdown = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -35,27 +36,27 @@ const OwnerMenuDropdown = ({ user }) => {
   const menuItems = [
     {
       icon: "📦",
-      label: "Sản Phẩm Của Tôi",
-      description: "Quản lý sản phẩm cho thuê",
+      label: t('owner.menu.myProducts.label'),
+      description: t('owner.menu.myProducts.description'),
       route: ROUTES.OWNER_PRODUCTS,
     },
     {
       icon: "➕",
-      label: "Đăng Sản Phẩm Mới",
-      description: "Tạo sản phẩm cho thuê",
+      label: t('owner.menu.addProduct.label'),
+      description: t('owner.menu.addProduct.description'),
       route: ROUTES.OWNER_CREATE_PRODUCT,
       requiresVerification: true,
     },
     {
       icon: "📋",
-      label: "Yêu Cầu Thuê",
-      description: "Quản lý yêu cầu thuê sản phẩm",
+      label: t('owner.menu.rentalRequests.label'),
+      description: t('owner.menu.rentalRequests.description'),
       route: "/owner/rental-requests",
     },
     {
       icon: "",
-      label: "Thống Kê",
-      description: "Xem doanh thu và báo cáo",
+      label: t('owner.menu.analytics.label'),
+      description: t('owner.menu.analytics.description'),
       route: "#", // TODO: Add analytics route
     },
   ];
@@ -92,7 +93,7 @@ const OwnerMenuDropdown = ({ user }) => {
         className="flex items-center gap-2 px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
       >
         <span className="text-base">🏠</span>
-        <span>Cho Thuê</span>
+        <span>{t('nav.rental')}</span>
         <svg
           className={`w-4 h-4 transition-transform ${
             isOpen ? "rotate-180" : ""
@@ -114,10 +115,10 @@ const OwnerMenuDropdown = ({ user }) => {
         <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-3 border-b border-gray-100">
             <h3 className="text-sm font-bold text-gray-900">
-              Quản Lý Cho Thuê
+              {t('owner.menu.title')}
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Tất cả tính năng dành cho chủ sản phẩm
+              {t('owner.menu.description')}
             </p>
           </div>
 
@@ -139,7 +140,7 @@ const OwnerMenuDropdown = ({ user }) => {
                     {item.label}
                     {item.route === "#" && (
                       <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
-                        Sắp có
+                        {t('owner.menu.analytics.comingSoon')}
                       </span>
                     )}
                   </div>
@@ -155,7 +156,7 @@ const OwnerMenuDropdown = ({ user }) => {
             <div className="flex items-center gap-2 text-xs text-primary-800">
               <span>💡</span>
               <span className="font-medium">
-                Mẹo: Đăng nhiều sản phẩm để tăng thu nhập!
+                {t('owner.menu.tip')}
               </span>
             </div>
           </div>
