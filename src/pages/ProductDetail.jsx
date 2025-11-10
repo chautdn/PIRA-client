@@ -455,9 +455,15 @@ export default function ProductDetail() {
       return;
     }
 
-    const maxQty = product.availability?.quantity || 1;
-    if (quantity > maxQty) {
-      alert(`⚠️ Chỉ còn ${maxQty} sản phẩm có sẵn`);
+    // Validation
+    const maxStock = product.availability?.quantity || 0;
+    if (quantity < 1) {
+      alert('⚠️ Số lượng phải lớn hơn 0');
+      return;
+    }
+    
+    if (quantity > maxStock) {
+      alert(`⚠️ Số lượng không được vượt quá ${maxStock} cái`);
       return;
     }
 
@@ -570,7 +576,7 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
       {/* Breadcrumb */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-40">
+      <div className="bg-white/40 backdrop-blur-sm border-b border-gray-200  z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center space-x-3 text-sm">
             <Link to="/" className="text-gray-500 hover:text-green-600 transition-colors font-medium">
@@ -1158,9 +1164,24 @@ export default function ProductDetail() {
                     type="date"
                     value={deliveryDate}
                     onChange={(e) => handleDeliveryDateChange(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]} // Can't select past dates
+                    min={(() => {
+                      const now = new Date();
+                      const minDate = new Date();
+                      if (now.getHours() >= 12) {
+                        minDate.setDate(minDate.getDate() + 1);
+                      }
+                      return minDate.toISOString().split('T')[0];
+                    })()} // Trước 12h: hôm nay, sau 12h: ngày mai
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white text-gray-900 font-medium"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(() => {
+                      const now = new Date();
+                      return now.getHours() >= 12 
+                        ? "⏰ Sau 12h trưa: Có thể nhận hàng từ ngày mai"
+                        : "⏰ Trước 12h trưa: Có thể nhận hàng từ hôm nay";
+                    })()}
+                  </p>
                 </div>
 
                 {/* Return Date */}
@@ -1232,14 +1253,25 @@ export default function ProductDetail() {
                     <div className="text-sm text-gray-600">cái</div>
                   </div>
                   <button
-                    onClick={() => setQuantity(Math.min(product.availability?.quantity || 5, quantity + 1))}
-                    className="w-12 h-12 rounded-lg bg-white hover:bg-gray-100 flex items-center justify-center font-bold text-gray-600 transition-colors"
+                    onClick={() => {
+                      const maxStock = product.availability?.quantity || 0;
+                      if (quantity < maxStock) {
+                        setQuantity(quantity + 1);
+                      }
+                    }}
+                    disabled={quantity >= (product.availability?.quantity || 0)}
+                    className="w-12 h-12 rounded-lg bg-white hover:bg-gray-100 flex items-center justify-center font-bold text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
                 </div>
                 <div className="mt-2 text-sm text-gray-600 text-center">
-                  Còn lại: {product.availability?.quantity || 5} cái
+                  Có sẵn: {product.availability?.quantity || 0} cái
+                  {quantity >= (product.availability?.quantity || 0) && (
+                    <div className="text-orange-600 text-xs mt-1">
+                      ⚠️ Đã đạt số lượng tối đa
+                    </div>
+                  )}
                 </div>
               </div>
 

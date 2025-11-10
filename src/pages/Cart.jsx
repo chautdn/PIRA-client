@@ -5,8 +5,9 @@ import { useCart } from "../context/CartContext";
 import { ROUTES } from "../utils/constants";
 
 const Cart = () => {
-  const { cart, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { cart, cartTotal, updateQuantity, updateRental, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
+  const [editingDates, setEditingDates] = React.useState({});
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -15,22 +16,8 @@ const Cart = () => {
     }).format(price);
   };
 
-  // Tính phí nền tảng (5-10% tùy loại sản phẩm)
-  const calculatePlatformFee = () => {
-    return cart.reduce((total, item) => {
-      const { product, quantity, rental } = item;
-      const dailyRate = product.pricing?.dailyRate || 0;
-      const days = rental?.duration || 1;
-      const itemTotal = dailyRate * days * quantity;
-      
-      // Phí nền tảng: 5% cho sản phẩm thông thường, 10% cho sản phẩm cao cấp
-      const feeRate = product.pricing?.dailyRate > 500000 ? 0.10 : 0.05;
-      return total + (itemTotal * feeRate);
-    }, 0);
-  };
-
-  const platformFee = calculatePlatformFee();
-  const finalTotal = cartTotal + platformFee;
+  // Không có phí nền tảng khi thuê sản phẩm
+  const finalTotal = cartTotal;
 
   const handleCheckout = () => {
     // TODO: Implement checkout logic
@@ -41,6 +28,76 @@ const Cart = () => {
     if (window.confirm("Bạn có chắc muốn xóa toàn bộ giỏ hàng?")) {
       clearCart();
     }
+  };
+
+  const handleEditDates = (productId) => {
+    const item = cart.find(item => item.product._id === productId);
+    if (item?.rental) {
+      const startDate = item.rental.startDate ? new Date(item.rental.startDate).toISOString().split('T')[0] : '';
+      const endDate = item.rental.endDate ? new Date(item.rental.endDate).toISOString().split('T')[0] : '';
+      
+      setEditingDates({
+        ...editingDates,
+        [productId]: {
+          startDate,
+          endDate,
+          isEditing: true
+        }
+      });
+    }
+  };
+
+  const handleCancelEdit = (productId) => {
+    setEditingDates({
+      ...editingDates,
+      [productId]: { ...editingDates[productId], isEditing: false }
+    });
+  };
+
+  const handleSaveDates = async (productId) => {
+    const editData = editingDates[productId];
+    if (!editData?.startDate || !editData?.endDate) {
+      alert('⚠️ Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc');
+      return;
+    }
+
+    const startDate = new Date(editData.startDate);
+    const endDate = new Date(editData.endDate);
+    
+    if (startDate >= endDate) {
+      alert('⚠️ Ngày kết thúc phải sau ngày bắt đầu');
+      return;
+    }
+
+    const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    
+    const rental = {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      duration: days
+    };
+
+    const result = await updateRental(productId, rental);
+    
+    if (result.success) {
+      alert('✅ Đã cập nhật thời gian thuê!');
+      setEditingDates({
+        ...editingDates,
+        [productId]: { ...editingDates[productId], isEditing: false }
+      });
+    } else {
+      alert(`❌ ${result.error || 'Không thể cập nhật thời gian thuê'}`);
+    }
+  };
+
+  const handleDateChange = (productId, field, value) => {
+    setEditingDates({
+      ...editingDates,
+      [productId]: {
+        ...editingDates[productId],
+        [field]: value
+      }
+    });
   };
 
   if (cart.length === 0) {
@@ -145,16 +202,78 @@ const Cart = () => {
                             {formatPrice(dailyRate)}<span className="text-sm font-normal text-gray-500">/ngày</span>
                           </div>
                           {rental && (
-                            <div className="text-sm text-gray-600 mt-2 space-y-1">
+                            <div className="text-sm text-gray-600 mt-2 space-y-2">
                               <div className="flex items-center gap-2">
                                 <span className="text-blue-500">📅</span>
                                 <span>Thuê: <strong>{days} ngày</strong></span>
                               </div>
-                              {rental.startDate && (
-                                <div className="text-xs text-gray-500">
-                                  {new Date(rental.startDate).toLocaleDateString('vi-VN')} 
-                                  {' → '}
-                                  {new Date(rental.endDate).toLocaleDateString('vi-VN')}
+                              
+                              {/* Rental Dates - Show edit form if editing */}
+                              {editingDates[product._id]?.isEditing ? (
+                                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                  <div className="text-sm font-semibold text-blue-800 mb-2">Chỉnh sửa thời gian thuê</div>
+                                  <div className="grid grid-cols-2 gap-2 mb-3">
+                                    <div>
+                                      <label className="block text-xs text-gray-600 mb-1">Ngày bắt đầu</label>
+                                      <input
+                                        type="date"
+                                        value={editingDates[product._id]?.startDate || ''}
+                                        onChange={(e) => handleDateChange(product._id, 'startDate', e.target.value)}
+                                        className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                        min={(() => {
+                                          const now = new Date();
+                                          const minDate = new Date();
+                                          if (now.getHours() >= 12) {
+                                            minDate.setDate(minDate.getDate() + 1);
+                                          }
+                                          return minDate.toISOString().split('T')[0];
+                                        })()}
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-gray-600 mb-1">Ngày kết thúc</label>
+                                      <input
+                                        type="date"
+                                        value={editingDates[product._id]?.endDate || ''}
+                                        onChange={(e) => handleDateChange(product._id, 'endDate', e.target.value)}
+                                        className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                        min={editingDates[product._id]?.startDate || new Date().toISOString().split('T')[0]}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => handleSaveDates(product._id)}
+                                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
+                                    >
+                                      ✓ Lưu
+                                    </button>
+                                    <button
+                                      onClick={() => handleCancelEdit(product._id)}
+                                      className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs rounded transition-colors"
+                                    >
+                                      ✕ Hủy
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    {rental.startDate && (
+                                      <div className="text-xs text-gray-500">
+                                        {new Date(rental.startDate).toLocaleDateString('vi-VN')} 
+                                        {' → '}
+                                        {new Date(rental.endDate).toLocaleDateString('vi-VN')}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => handleEditDates(product._id)}
+                                    className="text-blue-500 hover:text-blue-700 text-xs underline ml-2"
+                                    title="Chỉnh sửa ngày thuê"
+                                  >
+                                    ✏️ Sửa ngày
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -177,21 +296,22 @@ const Cart = () => {
                             </span>
                             <button
                               onClick={() => {
-                                const maxQty = product.availability?.quantity || 1;
-                                if (quantity < maxQty) {
+                                const maxStock = product.availability?.quantity || 0;
+                                if (quantity < maxStock) {
                                   updateQuantity(product._id, quantity + 1);
                                 }
                               }}
-                              disabled={quantity >= (product.availability?.quantity || 1)}
-                              className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-xl disabled:opacity-30 disabled:cursor-not-allowed"
-                              title={`Tăng số lượng (tối đa: ${product.availability?.quantity || 1})`}
+                              disabled={quantity >= (product.availability?.quantity || 0)}
+                              className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={quantity >= (product.availability?.quantity || 0) ? 
+                                "Đã đạt số lượng tối đa" : "Tăng số lượng"}
                             >
                               +
                             </button>
                           </div>
 
                           <div className="text-xs text-gray-500">
-                            Tối đa: {product.availability?.quantity || 1} cái
+                            Có sẵn: {product.availability?.quantity || 0} cái
                           </div>
 
                           <button
@@ -241,13 +361,7 @@ const Cart = () => {
                   <span>Tạm tính</span>
                   <span className="font-semibold">{formatPrice(cartTotal)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Phí nền tảng</span>
-                  <span className="font-semibold text-orange-600">{formatPrice(platformFee)}</span>
-                </div>
-                <div className="text-xs text-gray-500 ml-4">
-                  (5% cho sản phẩm thường, 10% cho sản phẩm cao cấp)
-                </div>
+              
                 <div className="flex justify-between text-gray-600">
                   <span>Giảm giá</span>
                   <span className="text-green-600 font-semibold">-0₫</span>

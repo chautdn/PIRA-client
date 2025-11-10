@@ -89,17 +89,17 @@ export const CartProvider = ({ children }) => {
         };
       }
       
-      // Validation
-      const maxQuantity = product.availability?.quantity || 1;
+      // Validation quantity
+      const maxStock = product.availability?.quantity || 0;
       
       if (quantity < 1) {
         return { success: false, error: "Số lượng phải lớn hơn 0" };
       }
       
-      if (quantity > maxQuantity) {
+      if (quantity > maxStock) {
         return { 
           success: false, 
-          error: `Chỉ còn ${maxQuantity} sản phẩm có sẵn` 
+          error: `Số lượng không được vượt quá ${maxStock} cái` 
         };
       }
 
@@ -113,13 +113,22 @@ export const CartProvider = ({ children }) => {
         }
 
         const start = new Date(rental.startDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const now = new Date();
+        
+        // Kiểm tra thời gian: trước 12h trưa có thể chọn hôm nay, sau 12h phải chọn ngày mai
+        const minStartDate = new Date();
+        if (now.getHours() >= 12) {
+          minStartDate.setDate(minStartDate.getDate() + 1);
+        }
+        minStartDate.setHours(0, 0, 0, 0);
 
-        if (start < today) {
+        if (start < minStartDate) {
+          const timeMessage = now.getHours() >= 12 
+            ? "Sau 12h trưa, ngày bắt đầu phải từ ngày mai trở đi"
+            : "Ngày bắt đầu phải từ hôm nay trở đi";
           return { 
             success: false, 
-            error: "Ngày bắt đầu phải từ hôm nay trở đi" 
+            error: timeMessage
           };
         }
 
@@ -198,23 +207,22 @@ export const CartProvider = ({ children }) => {
         return { success: false, error: "Vui lòng đăng nhập" };
       }
       
-      // Validation: tìm sản phẩm trong cart để kiểm tra quantity available
+      // Validation quantity for update
       const currentItem = cart.find(item => item.product._id === productId);
       if (!currentItem) {
         return { success: false, error: "Sản phẩm không tồn tại trong giỏ hàng" };
       }
 
-      const maxQuantity = currentItem.product.availability?.quantity || 1;
+      const maxStock = currentItem.product.availability?.quantity || 0;
       
-      // Validate quantity
       if (quantity < 1) {
         return { success: false, error: "Số lượng phải lớn hơn 0" };
       }
       
-      if (quantity > maxQuantity) {
+      if (quantity > maxStock) {
         return { 
           success: false, 
-          error: `Số lượng tối đa là ${maxQuantity}` 
+          error: `Số lượng không được vượt quá ${maxStock} cái` 
         };
       }
 
@@ -239,29 +247,59 @@ export const CartProvider = ({ children }) => {
   };
 
   // Update rental dates
-  const updateRental = (productId, rental) => {
-    const cartItems = [...cart];
-    const itemIndex = cartItems.findIndex(
-      (item) => item.product._id === productId
-    );
-
-    if (itemIndex > -1) {
-      cartItems[itemIndex].rental = rental;
+  const updateRental = async (productId, rental) => {
+    try {
+      setLoading(true);
       
-      // Save to localStorage or backend
-      if (isAuthenticated()) {
-        // TODO: Implement backend API for updating rental
-        cartService.saveCart(cartItems);
-      } else {
-        cartService.saveCart(cartItems);
+      if (!isAuthenticated()) {
+        return { success: false, error: "Vui lòng đăng nhập" };
+      }
+
+      // Validation rental dates
+      if (!rental || !rental.startDate || !rental.endDate) {
+        return { success: false, error: "Vui lòng chọn ngày thuê hợp lệ" };
+      }
+
+      const startDate = new Date(rental.startDate);
+      const endDate = new Date(rental.endDate);
+      const now = new Date();
+      
+      // Kiểm tra thời gian: trước 12h trưa có thể chọn hôm nay, sau 12h phải chọn ngày mai
+      const minStartDate = new Date();
+      if (now.getHours() >= 12) {
+        minStartDate.setDate(minStartDate.getDate() + 1);
+      }
+      minStartDate.setHours(0, 0, 0, 0);
+
+      if (startDate < minStartDate) {
+        const timeMessage = now.getHours() >= 12 
+          ? "Sau 12h trưa, ngày bắt đầu phải từ ngày mai trở đi"
+          : "Ngày bắt đầu phải từ hôm nay trở đi";
+        return { success: false, error: timeMessage };
+      }
+
+      if (endDate <= startDate) {
+        return { success: false, error: "Ngày kết thúc phải sau ngày bắt đầu" };
+      }
+
+      let cartItems = [];
+
+      try {
+        cartItems = await cartApiService.updateRental(productId, rental);
+      } catch (error) {
+        console.error("Backend error:", error);
+        return { success: false, error: error.response?.data?.message || "Không thể cập nhật thời gian thuê" };
       }
 
       setCart(cartItems);
       updateCartStats(cartItems);
       return { success: true };
+    } catch (error) {
+      console.error("Update rental error:", error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
     }
-    
-    return { success: false, error: "Product not found in cart" };
   };
 
   // Clear cart
