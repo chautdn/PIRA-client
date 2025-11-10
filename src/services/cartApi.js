@@ -36,10 +36,18 @@ class CartApiService {
   }
 
   /**
-   * Update quantity in backend cart
+   * Update quantity in backend cart (legacy - works with first item)
    */
   async updateQuantity(productId, quantity) {
     const response = await api.put(`/cart/${productId}`, { quantity });
+    return response.data.data?.items || [];
+  }
+
+  /**
+   * Update quantity by itemId in backend cart
+   */
+  async updateQuantityByItemId(itemId, quantity) {
+    const response = await api.put(`/cart/item/${itemId}`, { quantity });
     return response.data.data?.items || [];
   }
 
@@ -52,10 +60,18 @@ class CartApiService {
   }
 
   /**
-   * Remove item from backend cart
+   * Remove item from backend cart (removes all items with this productId)
    */
   async removeItem(productId) {
     const response = await api.delete(`/cart/${productId}`);
+    return response.data.data?.items || [];
+  }
+
+  /**
+   * Remove item by itemId from backend cart
+   */
+  async removeItemById(itemId) {
+    const response = await api.delete(`/cart/item/${itemId}`);
     return response.data.data?.items || [];
   }
 

@@ -5,7 +5,7 @@ import { useCart } from "../context/CartContext";
 import { ROUTES } from "../utils/constants";
 
 const Cart = () => {
-  const { cart, cartTotal, updateQuantity, updateRental, removeFromCart, clearCart } = useCart();
+  const { cart, cartTotal, updateQuantityByItemId, updateRental, removeFromCartById, clearCart } = useCart();
   const navigate = useNavigate();
   const [editingDates, setEditingDates] = React.useState({});
 
@@ -30,15 +30,15 @@ const Cart = () => {
     }
   };
 
-  const handleEditDates = (productId) => {
-    const item = cart.find(item => item.product._id === productId);
+  const handleEditDates = (itemId) => {
+    const item = cart.find(item => item._id === itemId);
     if (item?.rental) {
       const startDate = item.rental.startDate ? new Date(item.rental.startDate).toISOString().split('T')[0] : '';
       const endDate = item.rental.endDate ? new Date(item.rental.endDate).toISOString().split('T')[0] : '';
       
       setEditingDates({
         ...editingDates,
-        [productId]: {
+        [itemId]: {
           startDate,
           endDate,
           isEditing: true
@@ -47,15 +47,15 @@ const Cart = () => {
     }
   };
 
-  const handleCancelEdit = (productId) => {
+  const handleCancelEdit = (itemId) => {
     setEditingDates({
       ...editingDates,
-      [productId]: { ...editingDates[productId], isEditing: false }
+      [itemId]: { ...editingDates[itemId], isEditing: false }
     });
   };
 
-  const handleSaveDates = async (productId) => {
-    const editData = editingDates[productId];
+  const handleSaveDates = async (itemId) => {
+    const editData = editingDates[itemId];
     if (!editData?.startDate || !editData?.endDate) {
       alert('⚠️ Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc');
       return;
@@ -71,6 +71,9 @@ const Cart = () => {
 
     const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
     
+    const item = cart.find(item => item._id === itemId);
+    const productId = item.product._id;
+    
     const rental = {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -83,18 +86,18 @@ const Cart = () => {
       alert('✅ Đã cập nhật thời gian thuê!');
       setEditingDates({
         ...editingDates,
-        [productId]: { ...editingDates[productId], isEditing: false }
+        [itemId]: { ...editingDates[itemId], isEditing: false }
       });
     } else {
       alert(`❌ ${result.error || 'Không thể cập nhật thời gian thuê'}`);
     }
   };
 
-  const handleDateChange = (productId, field, value) => {
+  const handleDateChange = (itemId, field, value) => {
     setEditingDates({
       ...editingDates,
-      [productId]: {
-        ...editingDates[productId],
+      [itemId]: {
+        ...editingDates[itemId],
         [field]: value
       }
     });
@@ -167,7 +170,7 @@ const Cart = () => {
 
                   return (
                     <motion.div
-                      key={product._id}
+                      key={item._id}
                       layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -209,7 +212,7 @@ const Cart = () => {
                               </div>
                               
                               {/* Rental Dates - Show edit form if editing */}
-                              {editingDates[product._id]?.isEditing ? (
+                              {editingDates[item._id]?.isEditing ? (
                                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                                   <div className="text-sm font-semibold text-blue-800 mb-2">Chỉnh sửa thời gian thuê</div>
                                   <div className="grid grid-cols-2 gap-2 mb-3">
@@ -217,8 +220,8 @@ const Cart = () => {
                                       <label className="block text-xs text-gray-600 mb-1">Ngày bắt đầu</label>
                                       <input
                                         type="date"
-                                        value={editingDates[product._id]?.startDate || ''}
-                                        onChange={(e) => handleDateChange(product._id, 'startDate', e.target.value)}
+                                        value={editingDates[item._id]?.startDate || ''}
+                                        onChange={(e) => handleDateChange(item._id, 'startDate', e.target.value)}
                                         className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
                                         min={(() => {
                                           const now = new Date();
@@ -234,22 +237,22 @@ const Cart = () => {
                                       <label className="block text-xs text-gray-600 mb-1">Ngày kết thúc</label>
                                       <input
                                         type="date"
-                                        value={editingDates[product._id]?.endDate || ''}
-                                        onChange={(e) => handleDateChange(product._id, 'endDate', e.target.value)}
+                                        value={editingDates[item._id]?.endDate || ''}
+                                        onChange={(e) => handleDateChange(item._id, 'endDate', e.target.value)}
                                         className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
-                                        min={editingDates[product._id]?.startDate || new Date().toISOString().split('T')[0]}
+                                        min={editingDates[item._id]?.startDate || new Date().toISOString().split('T')[0]}
                                       />
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
                                     <button
-                                      onClick={() => handleSaveDates(product._id)}
+                                      onClick={() => handleSaveDates(item._id)}
                                       className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
                                     >
                                       ✓ Lưu
                                     </button>
                                     <button
-                                      onClick={() => handleCancelEdit(product._id)}
+                                      onClick={() => handleCancelEdit(item._id)}
                                       className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs rounded transition-colors"
                                     >
                                       ✕ Hủy
@@ -268,7 +271,7 @@ const Cart = () => {
                                     )}
                                   </div>
                                   <button
-                                    onClick={() => handleEditDates(product._id)}
+                                    onClick={() => handleEditDates(item._id)}
                                     className="text-blue-500 hover:text-blue-700 text-xs underline ml-2"
                                     title="Chỉnh sửa ngày thuê"
                                   >
@@ -284,7 +287,7 @@ const Cart = () => {
                         <div className="flex items-center gap-4">
                           <div className="flex items-center bg-gray-50 rounded-lg overflow-hidden border-2 border-gray-200">
                             <button
-                              onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))}
+                              onClick={() => updateQuantityByItemId(item._id, Math.max(1, quantity - 1))}
                               disabled={quantity <= 1}
                               className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-xl disabled:opacity-30 disabled:cursor-not-allowed"
                               title="Giảm số lượng"
@@ -298,7 +301,7 @@ const Cart = () => {
                               onClick={() => {
                                 const maxStock = product.availability?.quantity || 0;
                                 if (quantity < maxStock) {
-                                  updateQuantity(product._id, quantity + 1);
+                                  updateQuantityByItemId(item._id, quantity + 1);
                                 }
                               }}
                               disabled={quantity >= (product.availability?.quantity || 0)}
@@ -315,7 +318,7 @@ const Cart = () => {
                           </div>
 
                           <button
-                            onClick={() => removeFromCart(product._id)}
+                            onClick={() => removeFromCartById(item._id)}
                             className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all ml-auto"
                             title="Xóa sản phẩm"
                           >

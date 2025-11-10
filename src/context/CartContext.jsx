@@ -170,7 +170,35 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Remove from cart
+  // Remove from cart by itemId
+  const removeFromCartById = async (itemId) => {
+    try {
+      setLoading(true);
+      
+      if (!isAuthenticated()) {
+        return { success: false, error: "Vui lòng đăng nhập" };
+      }
+      
+      let cartItems = [];
+
+      try {
+        cartItems = await cartApiService.removeItemById(itemId);
+      } catch (error) {
+        console.error("Backend error:", error);
+        return { success: false, error: error.response?.data?.message || "Không thể xóa item" };
+      }
+
+      setCart(cartItems);
+      updateCartStats(cartItems);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Remove from cart by productId (removes all items with this productId)
   const removeFromCart = async (productId) => {
     try {
       setLoading(true);
@@ -198,8 +226,8 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Update quantity
-  const updateQuantity = async (productId, quantity) => {
+  // Update quantity by itemId (new method for multiple items per product)
+  const updateQuantityByItemId = async (itemId, quantity) => {
     try {
       setLoading(true);
       
@@ -207,32 +235,23 @@ export const CartProvider = ({ children }) => {
         return { success: false, error: "Vui lòng đăng nhập" };
       }
       
-      // Validation quantity for update
-      const currentItem = cart.find(item => item.product._id === productId);
+      // Find item by itemId
+      const currentItem = cart.find(item => item._id === itemId);
       if (!currentItem) {
-        return { success: false, error: "Sản phẩm không tồn tại trong giỏ hàng" };
+        return { success: false, error: "Item không tồn tại trong giỏ hàng" };
       }
 
-      const maxStock = currentItem.product.availability?.quantity || 0;
-      
       if (quantity < 1) {
         return { success: false, error: "Số lượng phải lớn hơn 0" };
-      }
-      
-      if (quantity > maxStock) {
-        return { 
-          success: false, 
-          error: `Số lượng không được vượt quá ${maxStock} cái` 
-        };
       }
 
       let cartItems = [];
 
       try {
-        cartItems = await cartApiService.updateQuantity(productId, quantity);
+        cartItems = await cartApiService.updateQuantityByItemId(itemId, quantity);
       } catch (error) {
         console.error("Backend error:", error);
-        return { success: false, error: "Không thể cập nhật số lượng" };
+        return { success: false, error: error.response?.data?.message || "Không thể cập nhật số lượng" };
       }
 
       setCart(cartItems);
@@ -244,6 +263,15 @@ export const CartProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Update quantity (legacy method - works with first item found)
+  const updateQuantity = async (productId, quantity) => {
+    const item = cart.find(item => item.product._id === productId);
+    if (!item) {
+      return { success: false, error: "Sản phẩm không tồn tại trong giỏ hàng" };
+    }
+    return updateQuantityByItemId(item._id, quantity);
   };
 
   // Update rental dates
@@ -388,7 +416,9 @@ export const CartProvider = ({ children }) => {
     loading,
     addToCart,
     removeFromCart,
+    removeFromCartById,
     updateQuantity,
+    updateQuantityByItemId,
     updateRental,
     clearCart,
     syncCart,
