@@ -41,6 +41,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
+import DisputeManagement from "./pages/admin/DisputeManagement";
+import DisputeTracking from "./pages/DisputeTracking";
 
 // Rental system pages
 import RentalOrdersPage from "./pages/RentalOrders";
@@ -264,6 +266,16 @@ export default function App() {
                   } 
                 />
 
+                {/* Dispute routes - cho OWNER và RENTER */}
+                <Route 
+                  path="/disputes" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <DisputeTracking />
+                    </RoleProtectedRoute>
+                  } 
+                />
+
                 {/* Admin routes - chỉ ADMIN được vào */}
                 <Route
                   path="/admin"
@@ -277,6 +289,7 @@ export default function App() {
                   <Route path="users" element={<UserManagement />} />
                   <Route path="users/:userId" element={<UserDetail />} />
                   <Route path="products" element={<ProductManagement />} />
+                  <Route path="disputes" element={<DisputeManagement />} />
                   <Route
                     path="categories"
                     element={<div>Category Management - Coming Soon</div>}

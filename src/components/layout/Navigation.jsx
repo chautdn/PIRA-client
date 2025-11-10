@@ -51,7 +51,13 @@ const OwnerMenuDropdown = ({ user }) => {
       route: "/owner/rental-requests",
     },
     {
-      icon: "",
+      icon: "⚖️",
+      label: "Tranh Chấp",
+      description: "Quản lý tranh chấp và khiếu nại",
+      route: "/disputes",
+    },
+    {
+      icon: "📊",
       label: "Thống Kê",
       description: "Xem doanh thu và báo cáo",
       route: "#", // TODO: Add analytics route
@@ -298,6 +304,16 @@ const Navigation = () => {
                     className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
                   >
                     Đơn Thuê
+                  </Link>
+                )}
+
+                {/* Dispute link for authenticated users */}
+                {user && (
+                  <Link
+                    to="/disputes"
+                    className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                  >
+                    ⚖️ Tranh Chấp
                   </Link>
                 )}
 

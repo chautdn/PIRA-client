@@ -43,6 +43,11 @@ const AdminLayout = () => {
       icon: '🛒'
     },
     {
+      name: 'Quản lý Tranh chấp',
+      path: '/admin/disputes',
+      icon: '⚖️'
+    },
+    {
       name: 'Báo cáo & Thống kê',
       path: '/admin/reports',
       icon: '📈'
