@@ -354,10 +354,51 @@ class AdminService {
   async getOrders(params = {}) {
     try {
       const query = new URLSearchParams(params).toString();
+      console.log('🔄 AdminService.getOrders - Calling API with params:', params);
+      console.log('🔗 API URL:', `/admin/orders?${query}`);
+      
       const response = await api.get(`/admin/orders?${query}`);
-      return response.data.metadata;
+      console.log('📦 AdminService.getOrders - Raw response:', response);
+      console.log('📦 AdminService.getOrders - Response data:', response.data);
+      
+      // Handle different response structures from backend
+      if (response.data) {
+        // Check for success wrapper format
+        if (response.data.success && response.data.data) {
+          console.log('✅ Found data in success wrapper');
+          return response.data.data;
+        }
+        // Check for metadata format
+        else if (response.data.metadata) {
+          console.log('✅ Found data in metadata');
+          return response.data.metadata;
+        }
+        // Direct data format
+        else {
+          console.log('✅ Using direct response data');
+          return response.data;
+        }
+      }
+      
+      console.log('⚠️ No valid data structure found');
+      return { orders: [], total: 0, totalPages: 1, currentPage: 1 };
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('❌ AdminService.getOrders - Error:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error data:', error.response?.data);
+      
+      // Re-throw with more context
+      if (error.response?.status === 401) {
+        throw new Error('Unauthorized: Please login as admin');
+      } else if (error.response?.status === 403) {
+        throw new Error('Forbidden: Admin access required');
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error: Please try again later');
+      } else if (error.code === 'NETWORK_ERROR') {
+        throw new Error('Network error: Please check your connection');
+      }
+      
       throw error;
     }
   }
@@ -365,9 +406,42 @@ class AdminService {
   async getOrderById(orderId) {
     try {
       const response = await api.get(`/admin/orders/${orderId}`);
-      return response.data.metadata;
+      console.log('AdminService getOrderById - Full response:', response);
+      console.log('AdminService getOrderById - response.data:', response.data);
+      console.log('AdminService getOrderById - response.data.metadata:', response.data?.metadata);
+      
+      // Handle different response structures
+      let orderData = null;
+      
+      // Check for responseUtils.success format: { success, message, data }
+      if (response.data && response.data.data) {
+        orderData = response.data.data;
+        console.log('Found order data in response.data.data');
+      } else if (response.data && response.data.metadata) {
+        orderData = response.data.metadata;
+        console.log('Found order data in response.data.metadata');
+      } else if (response.data) {
+        orderData = response.data;
+        console.log('Using response.data directly');
+      }
+      
+      console.log('AdminService getOrderById - Final orderData:', orderData);
+      
+      return orderData || null;
     } catch (error) {
       console.error('Error fetching order:', error);
+      
+      // Handle specific error cases
+      if (error.response?.status === 404) {
+        throw new Error('Order not found');
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error - Unable to fetch order details');
+      } else if (error.response?.status === 401) {
+        throw new Error('Unauthorized - Please login as admin');
+      } else if (error.code === 'NETWORK_ERROR') {
+        throw new Error('Network error - Please check your connection');
+      }
+      
       throw error;
     }
   }
@@ -375,7 +449,7 @@ class AdminService {
   async updateOrderStatus(orderId, status) {
     try {
       const response = await api.patch(`/admin/orders/${orderId}/status`, { status });
-      return response.data.metadata;
+      return response.data;
     } catch (error) {
       console.error('Error updating order status:', error);
       throw error;

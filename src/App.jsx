@@ -31,6 +31,7 @@ import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
 import AdminProductDetail from "./pages/admin/AdminproductDetail ";
 import OrderManagement from "./pages/admin/OrderManagement";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -133,6 +134,7 @@ export default function App() {
                 <Route path="products" element={<ProductManagement />} />
                 <Route path="products/:productId" element={<AdminProductDetail />} />
                 <Route path="orders" element={<OrderManagement />} />
+                <Route path="orders/:orderId" element={<AdminOrderDetail />} />
                 <Route path="categories" element={<div>Category Management - Coming Soon</div>} />
                 <Route path="reports" element={<div>Reports & Analytics - Coming Soon</div>} />
                 <Route path="settings" element={<div>System Settings - Coming Soon</div>} />
