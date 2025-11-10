@@ -36,7 +36,17 @@ const DisputeTracking = () => {
     try {
       setLoading(true);
       const response = await disputeService.getMyDisputes(filters);
-      setDisputes(response.data || []);
+      console.log('My Disputes Response:', response);
+      
+      // API response structure: { status, message, data, metadata }
+      const result = response?.data || response?.metadata || {};
+      console.log('Result object:', result);
+      
+      // Result might be { disputes: [...], total, page, ... } or just an array
+      const disputesData = result?.disputes || result?.docs || (Array.isArray(result) ? result : []);
+      console.log('Extracted my disputes:', disputesData);
+      
+      setDisputes(Array.isArray(disputesData) ? disputesData : []);
     } catch (error) {
       console.error('Error loading disputes:', error);
       toast.error('Không thể tải danh sách tranh chấp');

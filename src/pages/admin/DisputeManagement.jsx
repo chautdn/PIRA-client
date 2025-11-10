@@ -47,7 +47,18 @@ const DisputeManagement = () => {
     try {
       setLoading(true);
       const response = await disputeService.getAllDisputes(filters);
-      setDisputes(response.metadata || []);
+      console.log('Admin Disputes Response:', response);
+      
+      // API response structure: { status, message, data, metadata }
+      // data and metadata contain the same result object
+      const result = response?.data || response?.metadata || {};
+      console.log('Result object:', result);
+      
+      // Result might be { disputes: [...], total, page, ... } or just an array
+      const disputesData = result?.disputes || result?.docs || (Array.isArray(result) ? result : []);
+      console.log('Extracted disputes:', disputesData);
+      
+      setDisputes(Array.isArray(disputesData) ? disputesData : []);
     } catch (error) {
       console.error('Error loading disputes:', error);
       toast.error('Không thể tải danh sách tranh chấp');
