@@ -3,7 +3,12 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const rentersLinks = t('footer.links.renters', { returnObjects: true }) || [];
+  const ownersLinks = t('footer.links.owners', { returnObjects: true }) || [];
+  const companyLinks = t('footer.links.company', { returnObjects: true }) || [];
+
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Main Footer Content */}
@@ -18,7 +23,7 @@ export default function Footer() {
               <span className="text-2xl font-extrabold text-white">PIRA</span>
             </div>
             <p className="text-gray-300 leading-relaxed mb-6">
-              {t('common.footer.forRenters.description')}
+              {t('footer.brand.description')}
             </p>
             <div className="flex gap-3">
               {['📘', '📷', '🐦', '📺'].map((icon, idx) => (
@@ -32,113 +37,68 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Cho Người Thuê */}
+          {/* Renters */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">{t('common.footer.forRenters.title')}</h3>
+            <h3 className="text-lg font-bold mb-4 text-white">{t('footer.renters')}</h3>
             <ul className="space-y-3">
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.forRenters.browseEquipment')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.forRenters.howItWorks')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.forOwners.safety')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.forOwners.customerSupport')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.forOwners.faq')}
-                </Link>
-              </li>
+              {rentersLinks.map((item, idx) => (
+                <li key={idx}>
+                  <Link
+                    to="#"
+                    className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group"
+                  >
+                    <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                    {item}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Cho Chủ Thiết Bị */}
+          {/* Owners */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">{t('common.footer.forOwners.title')}</h3>
+            <h3 className="text-lg font-bold mb-4 text-white">{t('footer.owners')}</h3>
             <ul className="space-y-3">
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.forOwners.listEquipment')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.company.customerService')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.company.paymentInfo')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.forOwners.ownerCenter')}
-                </Link>
-              </li>
+              {ownersLinks.map((item, idx) => (
+                <li key={idx}>
+                  <Link
+                    to="#"
+                    className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group"
+                  >
+                    <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                    {item}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Công Ty */}
+          {/* Company */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">{t('common.footer.company.title')}</h3>
+            <h3 className="text-lg font-bold mb-4 text-white">{t('footer.company')}</h3>
             <ul className="space-y-3">
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.company.aboutUs')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.company.blog')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.company.privacy')}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group">
-                  <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
-                  {t('common.footer.company.terms')}
-                </Link>
-              </li>
+              {companyLinks.map((item, idx) => (
+                <li key={idx}>
+                  <Link
+                    to="#"
+                    className="text-gray-300 hover:text-primary-400 transition-colors inline-flex items-center group"
+                  >
+                    <span className="mr-2 text-primary-500 group-hover:translate-x-1 transition-transform">→</span>
+                    {item}
+                  </Link>
+                </li>
+              ))}
             </ul>
 
             {/* Contact Info */}
             <div className="mt-6 space-y-2 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <span>📧</span>
-                <span>{t('common.footer.contact.email')}</span>
+                <span>{t('footer.contact.email')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span>📞</span>
-                <span>{t('common.footer.contact.phone')}</span>
+                <span>{t('footer.contact.phone')}</span>
               </div>
             </div>
           </div>
@@ -150,24 +110,24 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-400">
-              {t('common.footer.copyright')}
+              {t('footer.bottom.copyright')}
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-400">
               <Link to="#" className="hover:text-primary-400 transition-colors">
-                {t('common.footer.company.privacy')}
+                {t('footer.bottom.privacy')}
               </Link>
               <Link to="#" className="hover:text-primary-400 transition-colors">
-                {t('common.footer.company.terms')}
+                {t('footer.bottom.terms')}
               </Link>
               <Link to="#" className="hover:text-primary-400 transition-colors">
-                {t('common.footer.company.sitemap')}
+                {t('footer.bottom.sitemap')}
               </Link>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <span>🌐</span>
-              <select className="bg-transparent border border-gray-600 rounded px-2 py-1 text-gray-300 hover:border-primary-500 transition-colors">
-                <option value="vi">Tiếng Việt</option>
-                <option value="en">English</option>
+              <select value={i18n.language} onChange={(e) => i18n.changeLanguage(e.target.value)} className="bg-transparent border border-gray-600 rounded px-2 py-1 text-gray-300 hover:border-primary-500 transition-colors">
+                <option value="vi">{t('common.language.vi')}</option>
+                <option value="en">{t('common.language.en')}</option>
               </select>
             </div>
           </div>
@@ -176,6 +136,4 @@ export default function Footer() {
     </footer>
   );
 }
-
-
 

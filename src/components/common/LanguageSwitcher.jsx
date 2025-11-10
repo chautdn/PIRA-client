@@ -4,7 +4,7 @@ import { Button } from 'antd';
 import { GlobalOutlined } from '@ant-design/icons';
 
 const LanguageSwitcher = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const handleLanguageChange = (lang) => {
@@ -28,13 +28,13 @@ const LanguageSwitcher = () => {
             className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
             onClick={() => handleLanguageChange('en')}
           >
-            English
+            {t('common.language.en')}
           </button>
           <button
             className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
             onClick={() => handleLanguageChange('vi')}
           >
-            Tiếng Việt
+            {t('common.language.vi')}
           </button>
         </div>
       )}

@@ -44,7 +44,7 @@ import {
 export default function Home() {
   const navigate = useNavigate();
   const { fetchBalance } = useWallet();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -142,21 +142,17 @@ export default function Home() {
 
   // Helper functions
   const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
+    const locale = i18n?.language === 'en' ? 'en-US' : 'vi-VN';
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'VND',
     }).format(price);
   };
 
   const getPromotionTierName = (tier) => {
-    const tierNames = {
-      1: "Premium",
-      2: "Gold",
-      3: "Silver",
-      4: "Bronze",
-      5: "Basic",
-    };
-    return tierNames[tier] || "Featured";
+    // Use i18n translations for tier names
+    if (!tier) return t('home.promotion.tiers.featured');
+    return t(`home.promotion.tiers.${tier}`, { defaultValue: t('home.promotion.tiers.featured') });
   };
 
   const getPromotionTierColor = (tier) => {
@@ -211,6 +207,9 @@ export default function Home() {
     whileHover: { rotate: 5 },
     transition: { duration: 0.2 },
   };
+
+  // Testimonials array from translations (returnObjects enabled)
+  const reviews = t('common.testimonials.reviews', { returnObjects: true }) || [];
 
   return (
     <div className="bg-gray-50">
@@ -481,10 +480,10 @@ export default function Home() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Khám Phá Theo Danh Mục
+              {t('common.exploreCategories.title')}
             </h2>
             <p className="text-gray-600 text-lg">
-              Tìm thiết bị phù hợp cho chuyến phiêu lưu của bạn
+              {t('common.exploreCategories.subtitle')}
             </p>
           </motion.div>
 
@@ -498,32 +497,38 @@ export default function Home() {
             {[
               {
                 icon: MdCameraAlt,
-                name: "Camera",
+                slug: 'camera',
+                label: t('home.categories.camera'),
                 color: "from-blue-500 to-blue-600",
               },
               {
                 icon: MdBackpack,
-                name: "Balo",
+                slug: 'backpack',
+                label: t('home.categories.backpack'),
                 color: "from-green-500 to-green-600",
               },
               {
                 icon: FaCampground,
-                name: "Lều",
+                slug: 'tent',
+                label: t('home.categories.tent'),
                 color: "from-orange-500 to-orange-600",
               },
               {
                 icon: MdLuggage,
-                name: "Vali",
+                slug: 'vali',
+                label: t('home.categories.vali'),
                 color: "from-purple-500 to-purple-600",
               },
               {
                 icon: MdFlightTakeoff,
-                name: "Flycam",
+                slug: 'flycam',
+                label: t('home.categories.flycam'),
                 color: "from-red-500 to-red-600",
               },
               {
                 icon: MdGpsFixed,
-                name: "GPS",
+                slug: 'gps',
+                label: t('home.categories.gps'),
                 color: "from-teal-500 to-teal-600",
               },
             ].map((category, idx) => (
@@ -534,7 +539,8 @@ export default function Home() {
                 whileHover={{ y: -8 }}
                 transition={{ duration: 0.3 }}
                 onClick={() =>
-                  navigate(`${ROUTES.PRODUCTS}?category=${category.name}`)
+                  // Use slug for query param (stable), label is localized
+                  navigate(`${ROUTES.PRODUCTS}?category=${category.slug}`)
                 }
               >
                 <div
@@ -558,7 +564,7 @@ export default function Home() {
                   </motion.div>
 
                   <div className="text-white font-bold text-lg relative z-10 drop-shadow-md">
-                    {category.name}
+                    {category.label}
                   </div>
 
                   {/* Shine effect on hover */}
@@ -589,8 +595,8 @@ export default function Home() {
               <span className="text-lg">⭐</span>
               <span>
                 {featuredProducts.some((p) => p.isPromoted)
-                  ? "TOP PROMOTED"
-                  : "SẢN PHẨM MỚI"}
+                  ? t('common.featuredProducts.badgePromoted')
+                  : t('common.featuredProducts.badgeNew')}
               </span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
@@ -786,7 +792,7 @@ export default function Home() {
                           >
                             <HiLocationMarker className="text-primary-500 text-base" />
                             <span className="font-medium">
-                              {product.location?.address?.city || "N/A"}
+                              {product.location?.address?.city || t('common.na')}
                             </span>
                           </motion.div>
 
@@ -802,7 +808,7 @@ export default function Home() {
                             >
                               {formatPrice(product.pricing?.dailyRate)}
                               <span className="text-sm font-normal text-gray-500">
-                                /ngày
+                                {t('common.perDay')}
                               </span>
                             </motion.div>
 
@@ -936,7 +942,7 @@ export default function Home() {
           >
             <div className="inline-flex items-center gap-2 bg-yellow-50 text-yellow-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <span className="text-lg">💬</span>
-              <span>REVIEWS</span>
+              <span>{t('common.reviewsBadge')}</span>
             </div>
             <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
               {t('common.testimonials.title')}
@@ -953,17 +959,7 @@ export default function Home() {
             whileInView="animate"
             viewport={{ once: true }}
           >
-            {[
-              {
-                ...t('common.testimonials.reviews.0'),
-              },
-              {
-                ...t('common.testimonials.reviews.1'),
-              },
-              {
-                ...t('common.testimonials.reviews.2'),
-              },
-            ].map((testimonial, i) => (
+            {reviews.map((testimonial, i) => (
               <motion.div
                 key={i}
                 className="relative bg-gradient-to-br from-white to-gray-50 rounded-2xl p-8 shadow-lg border border-gray-200 group cursor-pointer overflow-hidden"
@@ -1093,7 +1089,7 @@ export default function Home() {
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <span className="text-lg">🚀</span>
-                <span>BẮT ĐẦU NGAY HÔM NAY</span>
+                <span>{t('common.cta.badge')}</span>
               </motion.div>
 
               <h3 className="text-3xl sm:text-5xl font-extrabold mb-4">

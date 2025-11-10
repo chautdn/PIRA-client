@@ -22,6 +22,70 @@ i18n
             register: 'Register',
             logout: 'Logout'
           },
+          orders: {
+            title: 'Order Management',
+            subtitle: 'Track and manage your rental orders',
+            reload: 'Reload',
+            rentProduct: 'Rent Product',
+            createOrder: 'Create New Order',
+            myOrders: 'My Orders',
+            searchPlaceholder: 'Search orders...',
+            allStatus: 'All Statuses',
+            status: {
+              DRAFT: 'Draft',
+              PENDING_PAYMENT: 'Pending Payment',
+              PAYMENT_COMPLETED: 'Paid',
+              PENDING_CONFIRMATION: 'Pending Confirmation',
+              PENDING_OWNER_CONFIRMATION: 'Pending Owner Confirmation',
+              OWNER_CONFIRMED: 'Owner Confirmed',
+              OWNER_REJECTED: 'Owner Rejected',
+              READY_FOR_CONTRACT: 'Ready for Contract',
+              CONTRACT_SIGNED: 'Contract Signed',
+              ACTIVE: 'Active',
+              COMPLETED: 'Completed',
+              CANCELLED: 'Cancelled'
+            },
+            noOrders: 'No orders yet',
+            noOrdersDesc: 'You have no rental orders. Create your first order!',
+            viewProducts: 'View Products',
+            notFound: 'No orders found',
+            createdAt: 'Created at',
+            rentalTime: 'Rental Duration',
+            days: 'days',
+            productCount: 'Product Count',
+            delivery: 'Delivery',
+            deliveryPickup: 'Pickup',
+            deliveryShip: 'Ship to address',
+            total: 'Total',
+            updateAt: 'Updated at',
+            viewDetail: 'View Details',
+            signContract: 'Sign Contract',
+            prev: 'Prev',
+            next: 'Next',
+            page: 'Page',
+            of: 'of',
+            owner: 'Owner',
+            ownerUnknown: 'Unknown',
+            ownerDetail: 'Owner Details',
+            product: 'Product',
+            quantity: 'Quantity',
+            price: 'Rental Price',
+            deposit: 'Deposit',
+            shippingFee: 'Shipping Fee',
+            totalRental: 'Total Rental',
+            totalDeposit: 'Total Deposit',
+            totalAmount: 'Total Payment',
+            paymentMethod: 'Payment Method',
+            paymentWallet: 'Wallet',
+            paymentBank: 'Bank Transfer',
+            paymentCOD: 'Cash on Delivery',
+            close: 'Close',
+            contract: 'Contract',
+            ownerNameUnknown: 'Unknown Name',
+            notLoggedIn: 'Please log in',
+            loginToView: 'You need to log in to view orders',
+            login: 'Log in'
+          },
           owner: {
             menu: {
               title: 'Rental Management',
@@ -54,6 +118,16 @@ i18n
               trusted: "Trusted by 10,000+ customers",
               searchButton: "Find Equipment Now",
               rentButton: "Rent Out Equipment"
+            },
+            promotion: {
+              tiers: {
+                1: 'Premium',
+                2: 'Gold',
+                3: 'Silver',
+                4: 'Bronze',
+                5: 'Basic',
+                featured: 'Featured'
+              }
             },
             categories: {
               camera: "Camera",
@@ -103,8 +177,14 @@ i18n
             }
           },
           common: {
-            loading: "Loading...",
-            error: "Something went wrong",
+            loading: {
+              general: "Loading...",
+              products: "Loading products..."
+            },
+            error: {
+              general: "Something went wrong",
+              products: "Could not load featured products"
+            },
             success: "Success",
             cancel: "Cancel",
             save: "Save",
@@ -119,47 +199,12 @@ i18n
               title: "No Products Yet",
               message: "There are no products yet. Please check back later!"
             },
-            footer: {
-              forRenters: {
-                title: "For Renters",
-                browseEquipment: "Browse Equipment",
-                howItWorks: "How It Works",
-                description: "Enhance your travel experience with quality equipment from local community."
-              },
-              forOwners: {
-                title: "For Equipment Owners",
-                listEquipment: "List Equipment",
-                safety: "Safety & Insurance",
-                customerSupport: "Customer Support",
-                ownerCenter: "Owner Center",
-                faq: "FAQ"
-              },
-              company: {
-                title: "Company",
-                aboutUs: "About Us",
-                customerService: "Customer Service",
-                paymentInfo: "Payment & Income",
-                blog: "Blog & News",
-                privacy: "Privacy Policy",
-                terms: "Terms of Service",
-                sitemap: "Sitemap"
-              },
-              contact: {
-                email: "support@pira.vn",
-                phone: "1900 1234"
-              },
-              copyright: "© 2024 PIRA. All rights reserved."
-            },
-            loading: {
-              products: "Loading products..."
-            },
-            error: {
-              products: "Could not load featured products"
-            },
             featuredProducts: {
               title: "Featured Equipment",
               subtitle: "Top 10 promoted items - Quality verified",
-              newProducts: "Discover our latest travel equipment"
+              newProducts: "Discover our latest travel equipment",
+              badgePromoted: "TOP PROMOTED",
+              badgeNew: "NEW PRODUCTS"
             },
             exploreCategories: {
               title: "Explore by Category",
@@ -186,7 +231,11 @@ i18n
                 }
               ]
             },
+            reviewsBadge: "REVIEWS",
+            perDay: "/day",
+            na: "N/A",
             cta: {
+              badge: "GET STARTED TODAY",
               title: "Ready to Start Your Adventure?",
               subtitle: "Join PIRA today and explore a world of possibilities with thousands of quality equipment.",
               findEquipment: "Find Equipment Now",
@@ -216,6 +265,70 @@ i18n
             login: 'Đăng Nhập',
             register: 'Đăng Ký',
             logout: 'Đăng Xuất'
+          },
+          orders: {
+            title: 'Quản lý đơn thuê',
+            subtitle: 'Theo dõi và quản lý các đơn hàng thuê của bạn',
+            reload: 'Reload',
+            rentProduct: 'Thuê sản phẩm',
+            createOrder: 'Tạo đơn mới',
+            myOrders: 'Đơn thuê của tôi',
+            searchPlaceholder: 'Tìm kiếm đơn hàng...',
+            allStatus: 'Tất cả trạng thái',
+            status: {
+              DRAFT: 'Nháp',
+              PENDING_PAYMENT: 'Chờ thanh toán',
+              PAYMENT_COMPLETED: 'Đã thanh toán',
+              PENDING_CONFIRMATION: 'Chờ xác nhận',
+              PENDING_OWNER_CONFIRMATION: 'Chờ chủ xác nhận',
+              OWNER_CONFIRMED: 'Chủ đã xác nhận',
+              OWNER_REJECTED: 'Chủ từ chối',
+              READY_FOR_CONTRACT: 'Sẵn sàng ký HĐ',
+              CONTRACT_SIGNED: 'Đã ký HĐ',
+              ACTIVE: 'Đang thuê',
+              COMPLETED: 'Hoàn thành',
+              CANCELLED: 'Đã hủy'
+            },
+            noOrders: 'Chưa có đơn hàng nào',
+            noOrdersDesc: 'Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!',
+            viewProducts: 'Xem sản phẩm',
+            notFound: 'Không tìm thấy đơn hàng nào',
+            createdAt: 'Tạo ngày',
+            rentalTime: 'Thời gian thuê',
+            days: 'ngày',
+            productCount: 'Số sản phẩm',
+            delivery: 'Giao hàng',
+            deliveryPickup: 'Nhận trực tiếp',
+            deliveryShip: 'Giao tận nơi',
+            total: 'Tổng tiền',
+            updateAt: 'Cập nhật lúc',
+            viewDetail: 'Xem chi tiết',
+            signContract: 'Ký HĐ',
+            prev: 'Trước',
+            next: 'Sau',
+            page: 'Trang',
+            of: '/',
+            owner: 'Chủ thuê',
+            ownerUnknown: 'Không rõ',
+            ownerDetail: 'Chi tiết chủ thuê',
+            product: 'Sản phẩm',
+            quantity: 'Số lượng',
+            price: 'Giá thuê',
+            deposit: 'Cọc',
+            shippingFee: 'Phí vận chuyển',
+            totalRental: 'Tổng tiền thuê',
+            totalDeposit: 'Tổng tiền cọc',
+            totalAmount: 'Tổng thanh toán',
+            paymentMethod: 'Phương thức thanh toán',
+            paymentWallet: 'Ví điện tử',
+            paymentBank: 'Chuyển khoản',
+            paymentCOD: 'Thanh toán khi nhận hàng',
+            close: 'Đóng',
+            contract: 'Hợp đồng',
+            ownerNameUnknown: 'Không rõ tên',
+            notLoggedIn: 'Vui lòng đăng nhập',
+            loginToView: 'Bạn cần đăng nhập để xem đơn hàng',
+            login: 'Đăng nhập'
           },
           owner: {
             menu: {
@@ -249,6 +362,16 @@ i18n
               trusted: "Được tin tưởng bởi 10.000+ khách hàng",
               searchButton: "Tìm Thiết Bị Ngay",
               rentButton: "Cho Thuê Đồ"
+            },
+            promotion: {
+              tiers: {
+                1: 'Cao Cấp',
+                2: 'Vàng',
+                3: 'Bạc',
+                4: 'Đồng',
+                5: 'Cơ Bản',
+                featured: 'Nổi Bật'
+              }
             },
             whyChoosePira: {
               title: "Tại Sao Chọn PIRA?",
@@ -298,8 +421,14 @@ i18n
             }
           },
           common: {
-            loading: "Đang tải...",
-            error: "Đã xảy ra lỗi",
+            loading: {
+              general: "Đang tải...",
+              products: "Đang tải sản phẩm..."
+            },
+            error: {
+              general: "Đã xảy ra lỗi",
+              products: "Không thể tải sản phẩm nổi bật"
+            },
             success: "Thành công",
             cancel: "Hủy",
             save: "Lưu",
@@ -314,47 +443,12 @@ i18n
               title: "Chưa có sản phẩm",
               message: "Hiện tại chưa có sản phẩm nào. Vui lòng quay lại sau!"
             },
-            footer: {
-              forRenters: {
-                title: "Cho Người Thuê",
-                browseEquipment: "Duyệt Thiết Bị",
-                howItWorks: "Cách Hoạt Động",
-                description: "Nên tăng trải nghiệm cho thuê thiết bị du lịch. Khám phá thế giới với thiết bị chất lượng cao từ cộng đồng địa phương."
-              },
-              forOwners: {
-                title: "Cho Chủ Thiết Bị",
-                listEquipment: "Đăng Thiết Bị",
-                safety: "An Toàn & Bảo Hiểm",
-                customerSupport: "Hỗ Trợ Khách Hàng",
-                ownerCenter: "Trung Tâm Chủ Sở Hữu",
-                faq: "Câu Hỏi Thường Gặp"
-              },
-              company: {
-                title: "Công Ty",
-                aboutUs: "Về Chúng Tôi",
-                customerService: "Quản Lý Đơn Hàng",
-                paymentInfo: "Thu Nhập & Thanh Toán",
-                blog: "Blog & Tin Tức",
-                privacy: "Chính Sách Bảo Mật",
-                terms: "Điều Khoản Dịch Vụ",
-                sitemap: "Sitemap"
-              },
-              contact: {
-                email: "support@pira.vn",
-                phone: "1900 1234"
-              },
-              copyright: "© 2024 PIRA. Tất cả quyền được bảo lưu."
-            },
-            loading: {
-              products: "Đang tải sản phẩm..."
-            },
-            error: {
-              products: "Không thể tải sản phẩm nổi bật"
-            },
             featuredProducts: {
               title: "Thiết Bị Nổi Bật",
               subtitle: "Top 10 thiết bị được quảng bá - Chất lượng đã xác minh",
-              newProducts: "Khám phá các thiết bị du lịch mới nhất"
+              newProducts: "Khám phá các thiết bị du lịch mới nhất",
+              badgePromoted: "TOP QUẢNG BÁ",
+              badgeNew: "SẢN PHẨM MỚI"
             },
             exploreCategories: {
               title: "Khám Phá Theo Danh Mục",
@@ -381,7 +475,11 @@ i18n
                 }
               ]
             },
+            reviewsBadge: "ĐÁNH GIÁ",
+            perDay: "/ngày",
+            na: "N/A",
             cta: {
+              badge: "BẮT ĐẦU NGAY HÔM NAY",
               title: "Sẵn Sàng Bắt Đầu Cuộc Phiêu Lưu?",
               subtitle: "Tham gia PIRA ngay hôm nay và khám phá thế giới khả năng với hàng ngàn thiết bị chất lượng.",
               findEquipment: "Tìm Thiết Bị Ngay",
@@ -398,10 +496,47 @@ i18n
     },
     lng: 'vi', // Default language
     fallbackLng: 'vi',
+    // Allow returning objects/arrays from translation keys (used for testimonials)
+    returnObjects: true,
     interpolation: {
       escapeValue: false
     }
   });
+
+// Add extra translation keys (footer, language labels)
+  i18n.addResourceBundle('en', 'translation', {
+    footer: {
+      brand: { description: 'Trusted platform for renting travel equipment. Explore the world with high-quality gear from the local community.' },
+      renters: 'For Renters',
+      owners: 'For Owners',
+      company: 'Company',
+      links: {
+        renters: ['Device Approval', 'How It Works', 'Safety & Insurance', 'Customer Support', 'FAQ'],
+        owners: ['List Device', 'Order Management', 'Income & Payments', 'Device Insurance', 'Owner Center'],
+        company: ['About Us', 'Contact', 'Blog & News', 'Privacy Policy', 'Terms of Service']
+      },
+      contact: { email: 'support@pira.vn', phone: '1900 1234' },
+      bottom: { privacy: 'Privacy Policy', terms: 'Terms', sitemap: 'Sitemap', copyright: '© 2024 PIRA. All rights reserved.' }
+    },
+    common: { language: { en: 'English', vi: 'Tiếng Việt' } }
+  }, true, true);
+
+  i18n.addResourceBundle('vi', 'translation', {
+    footer: {
+      brand: { description: 'Nền tảng tin cậy cho thuê thiết bị du lịch. Khám phá thế giới với thiết bị chất lượng cao từ cộng đồng địa phương.' },
+      renters: 'Cho Người Thuê',
+      owners: 'Cho Chủ Thiết Bị',
+      company: 'Công Ty',
+      links: {
+        renters: ['Duyệt Thiết Bị', 'Cách Hoạt Động', 'An Toàn & Bảo Hiểm', 'Hỗ Trợ Khách Hàng', 'Câu Hỏi Thường Gặp'],
+        owners: ['Đăng Thiết Bị', 'Quản Lý Đơn Hàng', 'Thu Nhập & Thanh Toán', 'Bảo Hiểm Thiết Bị', 'Trung Tâm Chủ Sở Hữu'],
+        company: ['Về Chúng Tôi', 'Liên Hệ', 'Blog & Tin Tức', 'Chính Sách Bảo Mật', 'Điều Khoản Dịch Vụ']
+      },
+      contact: { email: 'support@pira.vn', phone: '1900 1234' },
+      bottom: { privacy: 'Chính Sách Bảo Mật', terms: 'Điều Khoản', sitemap: 'Sitemap', copyright: '© 2024 PIRA. Tất cả quyền được bảo lưu.' }
+    },
+    common: { language: { en: 'English', vi: 'Tiếng Việt' } }
+  }, true, true);
 
 // Handle language changes
 i18n.on('languageChanged', (lng) => {

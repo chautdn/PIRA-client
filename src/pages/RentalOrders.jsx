@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
 import { toast } from '../components/common/Toast';
 import { useAuth } from "../hooks/useAuth";
-import { 
-  Package, 
-  Calendar, 
-  MapPin, 
-  DollarSign, 
-  Eye, 
+import { useTranslation } from 'react-i18next';
+import {
+  Package,
+  Calendar,
+  MapPin,
+  DollarSign,
+  Eye,
   FileText,
   Clock,
   Filter,
@@ -84,23 +85,8 @@ const RentalOrdersPage = () => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusText = (status) => {
-    const texts = {
-      'DRAFT': 'Nháp',
-      'PENDING_PAYMENT': 'Chờ thanh toán',
-      'PAYMENT_COMPLETED': 'Đã thanh toán',
-      'PENDING_CONFIRMATION': 'Chờ xác nhận',
-      'PENDING_OWNER_CONFIRMATION': 'Chờ chủ xác nhận',
-      'OWNER_CONFIRMED': 'Chủ đã xác nhận',
-      'OWNER_REJECTED': 'Chủ từ chối',
-      'READY_FOR_CONTRACT': 'Sẵn sàng ký HĐ',
-      'CONTRACT_SIGNED': 'Đã ký HĐ',
-      'ACTIVE': 'Đang thuê',
-      'COMPLETED': 'Hoàn thành',
-      'CANCELLED': 'Đã hủy'
-    };
-    return texts[status] || status;
-  };
+  const { t } = useTranslation();
+  const getStatusText = (status) => t(`orders.status.${status}`);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -143,13 +129,13 @@ const RentalOrdersPage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Vui lòng đăng nhập</h2>
-          <p className="text-gray-600 mb-4">Bạn cần đăng nhập để xem đơn hàng</p>
+          <h2 className="text-2xl font-bold mb-4">{t('orders.notLoggedIn')}</h2>
+          <p className="text-gray-600 mb-4">{t('orders.loginToView')}</p>
           <button
             onClick={() => navigate('/login')}
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
           >
-            Đăng nhập
+            {t('orders.login')}
           </button>
         </div>
       </div>
@@ -162,28 +148,28 @@ const RentalOrdersPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Quản lý đơn thuê</h1>
-            <p className="text-gray-600">Theo dõi và quản lý các đơn hàng thuê của bạn</p>
+            <h1 className="text-3xl font-bold">{t('orders.title')}</h1>
+            <p className="text-gray-600">{t('orders.subtitle')}</p>
           </div>
           <div className="flex space-x-2">
             <button
               onClick={() => loadMyOrders()}
               className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
             >
-              🔄 Reload
+              🔄 {t('orders.reload')}
             </button>
             <button
               onClick={() => navigate('/products')}
               className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
             >
-              🛍️ Thuê sản phẩm
+              🛍️ {t('orders.rentProduct')}
             </button>
             <button
               onClick={() => navigate('/cart')}
               className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
             >
               <Package className="w-5 h-5" />
-              <span>Tạo đơn mới</span>
+              <span>{t('orders.createOrder')}</span>
             </button>
           </div>
         </div>
@@ -193,7 +179,7 @@ const RentalOrdersPage = () => {
           <div className="border-b border-gray-200">
             <div className="px-6 py-4">
               <h2 className="text-xl font-semibold text-blue-600">
-                Đơn thuê của tôi ({(myOrders || []).length})
+                {t('orders.myOrders')} ({(myOrders || []).length})
               </h2>
             </div>
           </div>
@@ -206,7 +192,7 @@ const RentalOrdersPage = () => {
                   <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Tìm kiếm đơn hàng..."
+                    placeholder={t('orders.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -219,21 +205,21 @@ const RentalOrdersPage = () => {
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="all">Tất cả trạng thái</option>
-                    <option value="DRAFT">Nháp</option>
-                    <option value="PENDING_PAYMENT">Chờ thanh toán</option>
-                    <option value="PENDING_CONFIRMATION">Chờ xác nhận</option>
-                    <option value="READY_FOR_CONTRACT">Sẵn sàng ký HĐ</option>
-                    <option value="CONTRACT_SIGNED">Đã ký HĐ</option>
-                    <option value="ACTIVE">Đang thuê</option>
-                    <option value="COMPLETED">Hoàn thành</option>
-                    <option value="CANCELLED">Đã hủy</option>
+                    <option value="all">{t('orders.allStatus')}</option>
+                    <option value="DRAFT">{t('orders.status.DRAFT')}</option>
+                    <option value="PENDING_PAYMENT">{t('orders.status.PENDING_PAYMENT')}</option>
+                    <option value="PENDING_CONFIRMATION">{t('orders.status.PENDING_CONFIRMATION')}</option>
+                    <option value="READY_FOR_CONTRACT">{t('orders.status.READY_FOR_CONTRACT')}</option>
+                    <option value="CONTRACT_SIGNED">{t('orders.status.CONTRACT_SIGNED')}</option>
+                    <option value="ACTIVE">{t('orders.status.ACTIVE')}</option>
+                    <option value="COMPLETED">{t('orders.status.COMPLETED')}</option>
+                    <option value="CANCELLED">{t('orders.status.CANCELLED')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="text-sm text-gray-600">
-                {filteredOrders.length} / {(currentOrders || []).length} đơn hàng
+                {filteredOrders.length} / {(currentOrders || []).length} {t('orders.myOrders')}
               </div>
             </div>
           </div>
@@ -244,7 +230,7 @@ const RentalOrdersPage = () => {
           <div className="bg-white rounded-lg shadow-md p-8">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-              <span className="ml-3">Đang tải đơn hàng...</span>
+              <span className="ml-3">{t('common.loading.general')}</span>
             </div>
           </div>
         ) : filteredOrders.length === 0 ? (
@@ -252,18 +238,18 @@ const RentalOrdersPage = () => {
             <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">
               {searchQuery || statusFilter !== 'all' 
-                ? 'Không tìm thấy đơn hàng nào'
-                : 'Chưa có đơn hàng nào'
+                ? t('orders.notFound')
+                : t('orders.noOrders')
               }
             </h3>
             <p className="text-gray-500 mb-4">
-              Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!
+              {t('orders.noOrdersDesc')}
             </p>
             <button
               onClick={() => navigate('/products')}
               className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
             >
-              Xem sản phẩm
+              {t('orders.viewProducts')}
             </button>
           </div>
         ) : (
@@ -273,9 +259,9 @@ const RentalOrdersPage = () => {
                 <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="text-lg font-semibold">Đơn thuê #{order.masterOrderNumber}</h3>
+                        <h3 className="text-lg font-semibold">{t('orders.myOrders')} #{order.masterOrderNumber}</h3>
                         <p className="text-sm text-gray-600">
-                          Tạo ngày {formatDate(order.createdAt)}
+                          {t('orders.createdAt')} {formatDate(order.createdAt)}
                         </p>
                       </div>
                       <div className="flex items-center space-x-3">
@@ -289,15 +275,15 @@ const RentalOrdersPage = () => {
                       <div className="flex items-center space-x-2">
                         <Calendar className="w-5 h-5 text-blue-600" />
                         <div>
-                          <p className="text-sm text-gray-600">Thời gian thuê</p>
-                          <p className="font-medium">{calculateDuration(order.rentalPeriod.startDate, order.rentalPeriod.endDate)} ngày</p>
+                          <p className="text-sm text-gray-600">{t('orders.rentalTime')}</p>
+                          <p className="font-medium">{calculateDuration(order.rentalPeriod.startDate, order.rentalPeriod.endDate)} {t('orders.days')}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center space-x-2">
                         <Package className="w-5 h-5 text-green-600" />
                         <div>
-                          <p className="text-sm text-gray-600">Số sản phẩm</p>
+                          <p className="text-sm text-gray-600">{t('orders.productCount')}</p>
                           <p className="font-medium">{order.subOrders?.reduce((sum, sub) => sum + sub.products?.length || 0, 0) || 0}</p>
                         </div>
                       </div>
@@ -305,15 +291,15 @@ const RentalOrdersPage = () => {
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-5 h-5 text-red-600" />
                         <div>
-                          <p className="text-sm text-gray-600">Giao hàng</p>
-                          <p className="font-medium">{order.deliveryMethod === 'PICKUP' ? 'Nhận trực tiếp' : 'Giao tận nơi'}</p>
+                          <p className="text-sm text-gray-600">{t('orders.delivery')}</p>
+                          <p className="font-medium">{order.deliveryMethod === 'PICKUP' ? t('orders.deliveryPickup') : t('orders.deliveryShip')}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center space-x-2">
                         <DollarSign className="w-5 h-5 text-orange-600" />
                         <div>
-                          <p className="text-sm text-gray-600">Tổng tiền</p>
+                          <p className="text-sm text-gray-600">{t('orders.total')}</p>
                           <p className="font-medium text-orange-600">
                             {(order.totalAmount + order.totalDepositAmount + order.totalShippingFee).toLocaleString('vi-VN')}đ
                           </p>
@@ -324,11 +310,11 @@ const RentalOrdersPage = () => {
                     {/* Sub Orders Preview */}
                     {order.subOrders && order.subOrders.length > 0 && (
                       <div className="mb-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Chủ cho thuê ({order.subOrders.length})</h4>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">{t('orders.owner')} ({order.subOrders.length})</h4>
                         <div className="flex flex-wrap gap-2">
                           {order.subOrders.map((subOrder) => (
                             <div key={subOrder._id} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-                              <span className="text-sm">{subOrder.owner?.profile?.firstName || 'Không rõ'}</span>
+                              <span className="text-sm">{subOrder.owner?.profile?.firstName || t('orders.ownerUnknown')}</span>
                               <span className={`px-2 py-1 rounded text-xs ${getStatusColor(subOrder.status)}`}>
                                 {getStatusText(subOrder.status)}
                               </span>
@@ -341,7 +327,7 @@ const RentalOrdersPage = () => {
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                       <div className="text-sm text-gray-600">
                         <Clock className="w-4 h-4 inline mr-1" />
-                        Cập nhật lúc {new Date(order.updatedAt).toLocaleString('vi-VN')}
+                        {t('orders.updateAt')} {new Date(order.updatedAt).toLocaleString('vi-VN')}
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
@@ -349,7 +335,7 @@ const RentalOrdersPage = () => {
                           className="flex items-center space-x-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                         >
                           <Eye className="w-4 h-4" />
-                          <span>Xem chi tiết</span>
+                          <span>{t('orders.viewDetail')}</span>
                         </button>
                         
                         {order.status === 'READY_FOR_CONTRACT' && (
@@ -358,7 +344,7 @@ const RentalOrdersPage = () => {
                             className="flex items-center space-x-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                           >
                             <FileText className="w-4 h-4" />
-                            <span>Ký HĐ</span>
+                            <span>{t('orders.signContract')}</span>
                           </button>
                         )}
                       </div>
@@ -380,11 +366,11 @@ const RentalOrdersPage = () => {
               disabled={(currentPagination.page || 1) === 1}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
-              Trước
+              {t('orders.prev')}
             </button>
             
             <span className="px-4 py-2">
-              Trang {currentPagination.page || 1} / {currentPagination.pages || 1}
+              {t('orders.page')} {currentPagination.page || 1} {t('orders.of')} {currentPagination.pages || 1}
             </span>
             
             <button
@@ -395,7 +381,7 @@ const RentalOrdersPage = () => {
               disabled={(currentPagination.page || 1) === (currentPagination.pages || 1)}
               className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
-              Sau
+              {t('orders.next')}
             </button>
           </div>
         )}
@@ -407,8 +393,8 @@ const RentalOrdersPage = () => {
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
-                  <h2 className="text-2xl font-bold">Chi tiết đơn thuê #{selectedOrder.masterOrderNumber}</h2>
-                  <p className="text-gray-600">Tạo ngày {formatDate(selectedOrder.createdAt)}</p>
+                  <h2 className="text-2xl font-bold">{t('orders.viewDetail')} #{selectedOrder.masterOrderNumber}</h2>
+                  <p className="text-gray-600">{t('orders.createdAt')} {formatDate(selectedOrder.createdAt)}</p>
                 </div>
                 <button
                   onClick={closeDetailModal}
@@ -422,13 +408,13 @@ const RentalOrdersPage = () => {
               <div className="p-6">
                 {/* Order Summary */}
                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                  <h3 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t('orders.ownerDetail')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-5 h-5 text-blue-600" />
                       <div>
-                        <p className="text-sm text-gray-600">Thời gian thuê</p>
-                        <p className="font-medium">{calculateDuration(selectedOrder.rentalPeriod.startDate, selectedOrder.rentalPeriod.endDate)} ngày</p>
+                        <p className="text-sm text-gray-600">{t('orders.rentalTime')}</p>
+                        <p className="font-medium">{calculateDuration(selectedOrder.rentalPeriod.startDate, selectedOrder.rentalPeriod.endDate)} {t('orders.days')}</p>
                         <p className="text-xs text-gray-500">
                           {formatDate(selectedOrder.rentalPeriod.startDate)} - {formatDate(selectedOrder.rentalPeriod.endDate)}
                         </p>
@@ -437,8 +423,8 @@ const RentalOrdersPage = () => {
                     <div className="flex items-center space-x-2">
                       <MapPin className="w-5 h-5 text-red-600" />
                       <div>
-                        <p className="text-sm text-gray-600">Giao hàng</p>
-                        <p className="font-medium">{selectedOrder.deliveryMethod === 'PICKUP' ? 'Nhận trực tiếp' : 'Giao tận nơi'}</p>
+                        <p className="text-sm text-gray-600">{t('orders.delivery')}</p>
+                        <p className="font-medium">{selectedOrder.deliveryMethod === 'PICKUP' ? t('orders.deliveryPickup') : t('orders.deliveryShip')}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -449,11 +435,11 @@ const RentalOrdersPage = () => {
                     <div className="flex items-center space-x-2">
                       <DollarSign className="w-5 h-5 text-orange-600" />
                       <div>
-                        <p className="text-sm text-gray-600">Phương thức thanh toán</p>
+                        <p className="text-sm text-gray-600">{t('orders.paymentMethod')}</p>
                         <p className="font-medium">
-                          {selectedOrder.paymentMethod === 'WALLET' ? 'Ví điện tử' : 
-                           selectedOrder.paymentMethod === 'PAYOS' ? 'Chuyển khoản' : 
-                           selectedOrder.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' : 
+                          {selectedOrder.paymentMethod === 'WALLET' ? t('orders.paymentWallet') :
+                           selectedOrder.paymentMethod === 'PAYOS' ? t('orders.paymentBank') :
+                           selectedOrder.paymentMethod === 'COD' ? t('orders.paymentCOD') :
                            selectedOrder.paymentMethod}
                         </p>
                       </div>
@@ -464,7 +450,7 @@ const RentalOrdersPage = () => {
                 {/* Sub Orders */}
                 {selectedOrder.subOrders && selectedOrder.subOrders.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-4">Chi tiết từng chủ cho thuê ({selectedOrder.subOrders.length})</h3>
+                    <h3 className="text-lg font-semibold mb-4">{t('orders.ownerDetail')} ({selectedOrder.subOrders.length})</h3>
                     <div className="space-y-4">
                       {selectedOrder.subOrders.map((subOrder, index) => (
                         <div key={subOrder._id} className="border border-gray-200 rounded-lg p-4">
@@ -472,7 +458,7 @@ const RentalOrdersPage = () => {
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-3">
                               <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                                Chủ thuê #{index + 1}
+                                {t('orders.owner')} #{index + 1}
                               </div>
                               <span className={`px-2 py-1 rounded text-xs ${getStatusColor(subOrder.status)}`}>
                                 {getStatusText(subOrder.status)}
@@ -485,7 +471,7 @@ const RentalOrdersPage = () => {
                             <div className="flex items-center space-x-3">
                               <User className="w-5 h-5 text-gray-600" />
                               <div>
-                                <p className="font-medium">{subOrder.owner?.profile?.firstName || 'Không rõ tên'} {subOrder.owner?.profile?.lastName || ''}</p>
+                                <p className="font-medium">{subOrder.owner?.profile?.firstName || t('orders.ownerNameUnknown')} {subOrder.owner?.profile?.lastName || ''}</p>
                                 <div className="flex items-center space-x-4 text-sm text-gray-600">
                                   {subOrder.owner?.profile?.phoneNumber && (
                                     <div className="flex items-center space-x-1">
@@ -507,7 +493,7 @@ const RentalOrdersPage = () => {
                           {/* Products */}
                           {subOrder.products && subOrder.products.length > 0 && (
                             <div>
-                              <h4 className="font-medium mb-3">Sản phẩm ({subOrder.products.length})</h4>
+                              <h4 className="font-medium mb-3">{t('orders.product')} ({subOrder.products.length})</h4>
                               <div className="space-y-3">
                                 {subOrder.products.map((productItem) => (
                                   <div key={productItem.product._id} className="flex items-center space-x-4 bg-white border rounded p-3">
@@ -518,19 +504,19 @@ const RentalOrdersPage = () => {
                                     />
                                     <div className="flex-1">
                                       <h5 className="font-medium">{productItem.product.name}</h5>
-                                      <p className="text-sm text-gray-600">Số lượng: {productItem.quantity}</p>
+                                      <p className="text-sm text-gray-600">{t('orders.quantity')}: {productItem.quantity}</p>
                                       <p className="text-sm text-gray-600">
-                                        Giá thuê: {productItem.product.pricing?.rentalPrice?.toLocaleString('vi-VN')}đ/ngày
+                                        {t('orders.price')}: {productItem.product.pricing?.rentalPrice?.toLocaleString('vi-VN')}đ{t('common.perDay')}
                                       </p>
                                     </div>
                                     <div className="text-right">
                                       <p className="font-medium text-blue-600">
                                         {productItem.totalRental?.toLocaleString('vi-VN')}đ
                                       </p>
-                                      <p className="text-sm text-gray-600">Tiền thuê</p>
+                                      <p className="text-sm text-gray-600">{t('orders.totalRental')}</p>
                                       {productItem.totalDeposit > 0 && (
                                         <p className="text-sm text-orange-600">
-                                          +{productItem.totalDeposit?.toLocaleString('vi-VN')}đ cọc
+                                          +{productItem.totalDeposit?.toLocaleString('vi-VN')}đ {t('orders.deposit')}
                                         </p>
                                       )}
                                     </div>
@@ -541,14 +527,14 @@ const RentalOrdersPage = () => {
                               {/* Sub Order Total */}
                               <div className="mt-4 p-3 bg-gray-50 rounded">
                                 <div className="flex justify-between items-center">
-                                  <span className="font-medium">Tổng tiền thuê:</span>
+                                  <span className="font-medium">{t('orders.totalRental')}:</span>
                                   <span className="font-bold text-blue-600">
                                     {subOrder.pricing?.totalRental?.toLocaleString('vi-VN')}đ
                                   </span>
                                 </div>
                                 {subOrder.pricing?.totalDeposit > 0 && (
                                   <div className="flex justify-between items-center">
-                                    <span className="font-medium">Tổng tiền cọc:</span>
+                                    <span className="font-medium">{t('orders.totalDeposit')}:</span>
                                     <span className="font-bold text-orange-600">
                                       {subOrder.pricing?.totalDeposit?.toLocaleString('vi-VN')}đ
                                     </span>
@@ -556,7 +542,7 @@ const RentalOrdersPage = () => {
                                 )}
                                 {subOrder.shipping?.fee > 0 && (
                                   <div className="flex justify-between items-center">
-                                    <span className="font-medium">Phí vận chuyển:</span>
+                                    <span className="font-medium">{t('orders.shippingFee')}:</span>
                                     <span className="font-medium">
                                       {subOrder.shipping?.fee?.toLocaleString('vi-VN')}đ
                                     </span>
@@ -564,7 +550,7 @@ const RentalOrdersPage = () => {
                                 )}
                                 <div className="border-t pt-2 mt-2">
                                   <div className="flex justify-between items-center">
-                                    <span className="font-bold">Tổng thanh toán:</span>
+                                    <span className="font-bold">{t('orders.totalAmount')}:</span>
                                     <span className="font-bold text-lg text-green-600">
                                       {subOrder.pricing?.totalAmount?.toLocaleString('vi-VN')}đ
                                     </span>
@@ -581,29 +567,29 @@ const RentalOrdersPage = () => {
 
                 {/* Order Total */}
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold mb-4">Tổng thanh toán đơn hàng</h3>
+                  <h3 className="text-lg font-semibold mb-4">{t('orders.totalAmount')}</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">Tổng tiền thuê:</span>
+                      <span className="font-medium">{t('orders.totalRental')}:</span>
                       <span className="font-bold text-blue-600">
                         {selectedOrder.totalAmount?.toLocaleString('vi-VN')}đ
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">Tổng tiền cọc:</span>
+                      <span className="font-medium">{t('orders.totalDeposit')}:</span>
                       <span className="font-bold text-orange-600">
                         {selectedOrder.totalDepositAmount?.toLocaleString('vi-VN')}đ
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">Phí vận chuyển:</span>
+                      <span className="font-medium">{t('orders.shippingFee')}:</span>
                       <span className="font-medium">
                         {selectedOrder.totalShippingFee?.toLocaleString('vi-VN')}đ
                       </span>
                     </div>
                     <div className="border-t pt-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-xl font-bold">Tổng cộng:</span>
+                        <span className="text-xl font-bold">{t('orders.totalAmount')}:</span>
                         <span className="text-xl font-bold text-green-600">
                           {(selectedOrder.totalAmount + selectedOrder.totalDepositAmount + selectedOrder.totalShippingFee)?.toLocaleString('vi-VN')}đ
                         </span>
@@ -624,14 +610,14 @@ const RentalOrdersPage = () => {
                     className="flex items-center space-x-2 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
                   >
                     <FileText className="w-4 h-4" />
-                    <span>Ký hợp đồng</span>
+                    <span>{t('orders.signContract')}</span>
                   </button>
                 )}
                 <button
                   onClick={closeDetailModal}
                   className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
                 >
-                  Đóng
+                  {t('orders.close')}
                 </button>
               </div>
             </div>
