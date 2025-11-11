@@ -10,7 +10,6 @@ const AdminOrderDetail = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     if (orderId) {
@@ -29,7 +28,6 @@ const AdminOrderDetail = () => {
         return;
       }
       
-      // Fetch order detail (assuming we have this API)
       const response = await adminService.getOrderById(orderId);
       
       if (response && response.success && response.data) {
@@ -42,19 +40,6 @@ const AdminOrderDetail = () => {
       setError('Lỗi khi tải chi tiết đơn hàng: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (newStatus) => {
-    try {
-      setUpdating(true);
-      await adminService.updateOrderStatus(orderId, newStatus);
-      setOrder(prev => ({ ...prev, status: newStatus }));
-    } catch (err) {
-      console.error('Error updating order status:', err);
-      alert('Lỗi khi cập nhật trạng thái: ' + (err.message || 'Unknown error'));
-    } finally {
-      setUpdating(false);
     }
   };
 
@@ -394,6 +379,48 @@ const AdminOrderDetail = () => {
                     </div>
                   </div>
                 )}
+                
+                {/* Địa chỉ lấy hàng từ owner */}
+                {order.owner?.address && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">🏠 Địa chỉ lấy hàng (Chủ sở hữu)</h4>
+                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div className="space-y-2">
+                        <p className="text-sm text-green-800 font-medium">
+                          {formatAddress(order.owner.address)}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-green-600">
+                          <span>👤 {order.owner?.fullName || order.owner?.name || 'N/A'}</span>
+                          {order.owner?.phone && (
+                            <span>📞 {order.owner.phone}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-green-600 mt-2">
+                          * Đây là địa chỉ của chủ sở hữu, nơi có thể lấy/trả hàng
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Địa chỉ CCCD của owner (nếu có) */}
+                {order.owner?.cccd?.address && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">🆔 Địa chỉ trên CCCD (Chủ sở hữu)</h4>
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        {formatAddress(order.owner.cccd.address)}
+                      </p>
+                      <div className="flex items-center space-x-2 mt-2">
+                        {formatAddress(order.owner.address) === formatAddress(order.owner.cccd.address) ? (
+                          <span className="text-xs text-green-600">✅ Trùng khớp với địa chỉ thường trú</span>
+                        ) : (
+                          <span className="text-xs text-orange-600">⚠️ Khác với địa chỉ thường trú</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -500,45 +527,6 @@ const AdminOrderDetail = () => {
                   <span className="text-sm text-gray-600">Ngày kết thúc:</span>
                   <p className="font-medium">{formatDate(order.rentalPeriod?.endDate)}</p>
                 </div>
-              </div>
-            </div>
-
-            {/* Status Management */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <span>⚙️</span>
-                  Quản lý trạng thái
-                </h3>
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Trạng thái đơn hàng
-                  </label>
-                  <select
-                    value={order.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                    disabled={updating}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                  >
-                    <option value="PENDING">⏳ Chờ xử lý</option>
-                    <option value="CONFIRMED">✅ Đã xác nhận</option>
-                    <option value="PAID">💳 Đã thanh toán</option>
-                    <option value="SHIPPED">🚚 Đã gửi hàng</option>
-                    <option value="DELIVERED">📦 Đã giao hàng</option>
-                    <option value="ACTIVE">🟢 Đang thuê</option>
-                    <option value="RETURNED">↩️ Đã trả</option>
-                    <option value="COMPLETED">🎉 Hoàn thành</option>
-                    <option value="CANCELLED">❌ Đã hủy</option>
-                  </select>
-                </div>
-                {updating && (
-                  <div className="flex items-center justify-center py-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-sm text-gray-600">Đang cập nhật...</span>
-                  </div>
-                )}
               </div>
             </div>
           </div>

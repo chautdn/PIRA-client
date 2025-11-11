@@ -107,17 +107,6 @@ const OrderManagement = () => {
     handleFilterChange('page', page);
   };
 
-  const handleStatusChange = async (orderId, newStatus) => {
-    try {
-      await adminService.updateOrderStatus(orderId, newStatus);
-      // Refresh orders after status update
-      fetchOrders();
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      setError('Lỗi khi cập nhật trạng thái đơn hàng');
-    }
-  };
-
   const formatCurrency = (amount) => {
     if (!amount) return '0 VND';
     return `${Number(amount).toLocaleString('vi-VN')} VND`;
@@ -497,35 +486,12 @@ const OrderManagement = () => {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <button
-                          onClick={() => navigate(`/admin/orders/${order._id}`)}
-                          className="w-full px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-1"
-                        >
-                          👁️ Xem chi tiết
-                        </button>
-                        <select
-                          value={order.status}
-                          onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="PENDING">⏳ Chờ xử lý</option>
-                          <option value="CONFIRMED">✅ Đã xác nhận</option>
-                          <option value="PAID">💳 Đã thanh toán</option>
-                          <option value="SHIPPED">🚚 Đã gửi hàng</option>
-                          <option value="DELIVERED">📦 Đã giao hàng</option>
-                          <option value="ACTIVE">🟢 Đang thuê</option>
-                          <option value="RETURNED">↩️ Đã trả</option>
-                          <option value="COMPLETED">🎉 Hoàn thành</option>
-                          <option value="CANCELLED">❌ Đã hủy</option>
-                        </select>
-                        {(order.confirmedAt || order.completedAt) && (
-                          <div className="text-xs text-gray-500">
-                            {order.confirmedAt && <div>✅ {formatDate(order.confirmedAt)}</div>}
-                            {order.completedAt && <div>🎉 {formatDate(order.completedAt)}</div>}
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => navigate(`/admin/orders/${order._id}`)}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+                      >
+                        👁️ Xem chi tiết
+                      </button>
                     </td>
                   </tr>
                 ))
