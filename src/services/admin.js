@@ -568,6 +568,74 @@ class AdminService {
       throw error;
     }
   }
+
+  // ========== REPORT MANAGEMENT ==========
+  async getReports(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await api.get(`/admin/reports?${queryParams.toString()}`);
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      throw error;
+    }
+  }
+
+  async getReportById(reportId) {
+    try {
+      const response = await api.get(`/admin/reports/${reportId}`);
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error fetching report detail:', error);
+      throw error;
+    }
+  }
+
+  async updateReportStatus(reportId, status, adminNotes) {
+    try {
+      const response = await api.patch(`/admin/reports/${reportId}/status`, {
+        status,
+        adminNotes
+      });
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error updating report status:', error);
+      throw error;
+    }
+  }
+
+  async deleteReport(reportId) {
+    try {
+      const response = await api.delete(`/admin/reports/${reportId}`);
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      throw error;
+    }
+  }
 }
 
 // Create and export admin service instance
