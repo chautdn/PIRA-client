@@ -636,6 +636,22 @@ class AdminService {
       throw error;
     }
   }
+
+  async deleteReportedProduct(reportId, productId) {
+    try {
+      const response = await api.delete(`/admin/reports/${reportId}/product`, {
+        data: { productId }
+      });
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error deleting reported product:', error);
+      throw error;
+    }
+  }
 }
 
 // Create and export admin service instance

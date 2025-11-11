@@ -90,11 +90,15 @@ const AdminReportDetail = () => {
 
     try {
       setDeletingProduct(true);
+      // Use direct product deletion endpoint
       await adminService.deleteProduct(report.reportedItem._id);
+      
+      // Then update report status
+      await adminService.updateReportStatus(report._id, 'RESOLVED', 'Sản phẩm đã bị xóa bởi admin');
       
       // Reload report to show updated state
       await loadReportDetail();
-      alert('Xóa sản phẩm thành công! Sản phẩm đã bị gỡ khỏi hệ thống.');
+      alert('Xóa sản phẩm thành công! Sản phẩm đã bị gỡ khỏi hệ thống và báo cáo đã được đánh dấu là đã giải quyết.');
     } catch (err) {
       console.error('Error deleting product:', err);
       alert('Có lỗi xảy ra khi xóa sản phẩm: ' + (err.message || 'Unknown error'));
@@ -420,16 +424,24 @@ const AdminReportDetail = () => {
               <div className="border rounded-lg p-4 bg-gray-50">
                 <div className="flex items-start gap-4">
                   {report.reportedItem.images && report.reportedItem.images.length > 0 && (
-                    <img
-                      src={typeof report.reportedItem.images[0] === 'string' 
-                        ? report.reportedItem.images[0] 
-                        : report.reportedItem.images[0]?.url || report.reportedItem.images[0]}
-                      alt="Product"
-                      className="w-20 h-20 object-cover rounded-lg border"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/80x80?text=No+Image';
-                      }}
-                    />
+                    <div className="relative w-20 h-20">
+                      <img
+                        src={typeof report.reportedItem.images[0] === 'string' 
+                          ? report.reportedItem.images[0] 
+                          : report.reportedItem.images[0]?.url || report.reportedItem.images[0]}
+                        alt="Product"
+                        className="w-20 h-20 object-cover rounded-lg border"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling && (e.target.nextSibling.style.display = 'flex');
+                        }}
+                      />
+                      <div 
+                        className="hidden w-20 h-20 bg-gray-200 rounded-lg border items-center justify-center text-gray-500 text-xs"
+                      >
+                        No Image
+                      </div>
+                    </div>
                   )}
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
