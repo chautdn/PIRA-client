@@ -6,7 +6,23 @@ class AdminService {
   async getDashboardStats() {
     try {
       const response = await api.get('/admin/dashboard');
-      return response.data.metadata || response.data;
+      console.log('AdminService getDashboardStats - Full response:', response);
+      console.log('AdminService getDashboardStats - Response data:', response.data);
+      
+      // Handle different response structures
+      if (response.data && response.data.success && response.data.data) {
+        console.log('Found dashboard data in response.data.data');
+        return response.data.data;
+      } else if (response.data && response.data.metadata) {
+        console.log('Found dashboard data in response.data.metadata');
+        return response.data.metadata;
+      } else if (response.data) {
+        console.log('Using response.data directly');
+        return response.data;
+      }
+      
+      console.warn('No valid dashboard data structure found');
+      return null;
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       
@@ -290,10 +306,41 @@ class AdminService {
 
   async deleteProduct(productId) {
     try {
+      console.log('Attempting to delete product with ID:', productId);
       const response = await api.delete(`/admin/products/${productId}`);
+      console.log('Delete product response:', response);
+      
+      // Check if response indicates success even if status is not 2xx
+      if (response.data && (response.data.success || response.data.message)) {
+        console.log('Product deleted successfully:', response.data);
+        return response.data.metadata || response.data;
+      }
+      
       return response.data.metadata;
     } catch (error) {
       console.error('Error deleting product:', error);
+      
+      // If it's a 500 error but the message suggests success, handle it differently
+      if (error.response?.status === 500) {
+        const responseData = error.response.data;
+        console.log('500 Error response data:', responseData);
+        
+        // If response suggests the deletion was actually successful
+        if (responseData?.message && responseData.message.includes('success')) {
+          console.log('Product may have been deleted despite 500 error');
+          return { success: true, message: 'Product deleted successfully' };
+        }
+      }
+      
+      // Handle different error types
+      if (error.response?.status === 404) {
+        throw new Error('Sản phẩm không tồn tại hoặc đã bị xóa');
+      } else if (error.response?.status === 401) {
+        throw new Error('Không có quyền xóa sản phẩm');
+      } else if (error.response?.status === 500) {
+        throw new Error('Lỗi server khi xóa sản phẩm');
+      }
+      
       throw error;
     }
   }

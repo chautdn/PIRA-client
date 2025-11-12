@@ -13,8 +13,11 @@ const OrderManagement = () => {
     search: '',
     status: '',
     paymentStatus: '',
-    page: 1
+    page: 1,
+    limit: 10
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -25,6 +28,23 @@ const OrderManagement = () => {
   useEffect(() => {
     fetchOrders();
   }, [filters]);
+
+  // Sync searchQuery with filters.search when filters change externally
+  useEffect(() => {
+    // Only sync if search query is different and not in typing mode
+    if (!searchTimeout && filters.search !== searchQuery) {
+      setSearchQuery(filters.search);
+    }
+  }, [filters.search, searchQuery, searchTimeout]);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   const fetchOrders = async () => {
     try {
@@ -96,11 +116,33 @@ const OrderManagement = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-      page: key === 'page' ? value : 1
-    }));
+    if (key === 'search') {
+      // Update search query immediately (for UI)
+      setSearchQuery(value);
+      
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      // Set new timeout to update actual filter
+      const newTimeout = setTimeout(() => {
+        setFilters(prev => ({
+          ...prev,
+          search: value,
+          page: 1
+        }));
+      }, 500);
+
+      setSearchTimeout(newTimeout);
+    } else {
+      // For other filters, update immediately
+      setFilters(prev => ({
+        ...prev,
+        [key]: value,
+        page: key === 'page' ? value : 1
+      }));
+    }
   };
 
   const handlePageChange = (page) => {
@@ -241,12 +283,12 @@ const OrderManagement = () => {
           <div className="flex items-center gap-6 mt-2">
             <p className="text-gray-600 flex items-center gap-2">
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-md">
-                📊 Tổng cộng: {pagination.total.toLocaleString('vi-VN')} đơn hàng
+                📊 Tổng cộng: {(pagination?.total || 0).toLocaleString('vi-VN')} đơn hàng
               </span>
             </p>
             <p className="text-gray-600 flex items-center gap-2">
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md">
-                📄 Trang {pagination.currentPage}/{pagination.totalPages}
+                📄 Trang {pagination?.currentPage || 1}/{pagination?.totalPages || 1}
               </span>
             </p>
           </div>
@@ -261,7 +303,14 @@ const OrderManagement = () => {
             Bộ lọc & Tìm kiếm
           </h2>
           <button
-            onClick={() => setFilters({ search: '', status: '', paymentStatus: '', page: 1 })}
+            onClick={() => {
+              setFilters({ search: '', status: '', paymentStatus: '', page: 1, limit: 10 });
+              setSearchQuery('');
+              if (searchTimeout) {
+                clearTimeout(searchTimeout);
+                setSearchTimeout(null);
+              }
+            }}
             className="inline-flex items-center gap-2 px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
           >
             <span>🗑️</span>
@@ -277,13 +326,20 @@ const OrderManagement = () => {
                 Tìm kiếm
               </span>
             </label>
-            <input
-              type="text"
-              placeholder="Mã đơn hàng, tên khách hàng..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Mã đơn hàng, tên khách hàng..."
+                value={searchQuery}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+              {searchTimeout && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Status */}

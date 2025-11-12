@@ -135,6 +135,15 @@ const UserDropdown = () => {
             </Link>
 
             <Link
+              to="/my-reports"
+              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              <span className="mr-3">📝</span>
+              My Reports
+            </Link>
+
+            <Link
               to="/settings"
               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => setIsOpen(false)}

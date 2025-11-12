@@ -3,14 +3,20 @@ import { adminService } from '../../services/admin';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalProducts: 0,
-    totalOrders: 0,
-    totalRevenue: 0,
-    pendingProducts: 0,
-    activeUsers: 0,
-    todayOrders: 0,
-    monthlyRevenue: 0
+    overview: {
+      totalUsers: 0,
+      totalProducts: 0,
+      totalOrders: 0,
+      totalCategories: 0,
+      activeUsers: 0,
+      pendingProducts: 0
+    },
+    charts: {
+      usersByRole: [],
+      productsByStatus: [],
+      monthlyUsers: [],
+      monthlyRevenue: []
+    }
   });
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,30 +29,57 @@ const AdminDashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const dashboardData = await adminService.getDashboardStats();
+      setError(null);
       
-      // Ensure dashboardData has the expected structure
-      if (dashboardData && typeof dashboardData === 'object') {
-        setStats(prevStats => ({
-          ...prevStats,
-          ...dashboardData
-        }));
+      const dashboardData = await adminService.getDashboardStats();
+      console.log('Dashboard data from API:', dashboardData);
+      
+      if (dashboardData) {
+        // Check if data has the expected structure
+        if (dashboardData.overview) {
+          console.log('Dashboard data has overview structure');
+          setStats({
+            overview: {
+              totalUsers: dashboardData.overview.totalUsers || 0,
+              totalProducts: dashboardData.overview.totalProducts || 0,
+              totalOrders: dashboardData.overview.totalOrders || 0,
+              totalCategories: dashboardData.overview.totalCategories || 0,
+              activeUsers: dashboardData.overview.activeUsers || 0,
+              pendingProducts: dashboardData.overview.pendingProducts || 0
+            },
+            charts: {
+              usersByRole: dashboardData.charts?.usersByRole || [],
+              productsByStatus: dashboardData.charts?.productsByStatus || [],
+              monthlyUsers: dashboardData.charts?.monthlyUsers || [],
+              monthlyRevenue: dashboardData.charts?.monthlyRevenue || []
+            }
+          });
+        } else {
+          console.log('Dashboard data does not have overview structure:', Object.keys(dashboardData));
+          // Handle flat structure or different format
+          setStats({
+            overview: {
+              totalUsers: dashboardData.totalUsers || 0,
+              totalProducts: dashboardData.totalProducts || 0,
+              totalOrders: dashboardData.totalOrders || 0,
+              totalCategories: dashboardData.totalCategories || 0,
+              activeUsers: dashboardData.activeUsers || 0,
+              pendingProducts: dashboardData.pendingProducts || 0
+            },
+            charts: {
+              usersByRole: [],
+              productsByStatus: [],
+              monthlyUsers: [],
+              monthlyRevenue: []
+            }
+          });
+        }
       } else {
-        // Fallback to mock data if API fails
-        console.warn('Dashboard API returned invalid data, using mock data');
-        setStats({
-          totalUsers: 156,
-          totalProducts: 89,
-          totalOrders: 234,
-          totalRevenue: 45600000,
-          pendingProducts: 12,
-          activeUsers: 145,
-          todayOrders: 8,
-          monthlyRevenue: 12400000
-        });
+        console.warn('Dashboard API returned null/undefined data');
+        setError('Không thể tải dữ liệu dashboard');
       }
       
-      // Load recent activities (mock data for now)
+      // Load recent activities (this could be enhanced with real API)
       setRecentActivities([
         { id: 1, type: 'user', action: 'Người dùng mới đăng ký', user: 'Nguyễn Văn A', time: '2 phút trước' },
         { id: 2, type: 'product', action: 'Sản phẩm mới đăng', product: 'Camera Canon EOS', time: '5 phút trước' },
@@ -54,20 +87,8 @@ const AdminDashboard = () => {
         { id: 4, type: 'report', action: 'Báo cáo vi phạm', reportId: '#R001', time: '15 phút trước' }
       ]);
     } catch (err) {
-      setError('Không thể tải dữ liệu dashboard');
       console.error('Dashboard error:', err);
-      
-      // Set mock data when API fails
-      setStats({
-        totalUsers: 156,
-        totalProducts: 89,
-        totalOrders: 234,
-        totalRevenue: 45600000,
-        pendingProducts: 12,
-        activeUsers: 145,
-        todayOrders: 8,
-        monthlyRevenue: 12400000
-      });
+      setError('Không thể tải dữ liệu dashboard: ' + (err.message || 'Lỗi không xác định'));
     } finally {
       setLoading(false);
     }
@@ -180,64 +201,90 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Tổng Users"
-          value={stats.totalUsers}
+          value={stats.overview.totalUsers}
           change={12}
           icon="👥"
           color="blue"
         />
         <StatCard
           title="Tổng Sản phẩm"
-          value={stats.totalProducts}
+          value={stats.overview.totalProducts}
           change={8}
           icon="📦"
           color="green"
         />
         <StatCard
-          title="Đơn hàng"
-          value={stats.totalOrders}
+          title="Tổng Đơn hàng"
+          value={stats.overview.totalOrders}
           change={-3}
           icon="🛒"
           color="purple"
         />
         <StatCard
-          title="Doanh thu (VND)"
-          value={stats.totalRevenue}
-          change={15}
-          icon="💰"
+          title="Danh mục"
+          value={stats.overview.totalCategories}
+          change={5}
+          icon="�"
           color="yellow"
         />
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Sản phẩm chờ duyệt"
-          value={stats.pendingProducts}
+          value={stats.overview.pendingProducts}
           icon="⏳"
           color="yellow"
         />
         <StatCard
           title="Users hoạt động"
-          value={stats.activeUsers}
+          value={stats.overview.activeUsers}
           icon="🟢"
           color="green"
         />
         <StatCard
-          title="Đơn hàng hôm nay"
-          value={stats.todayOrders}
-          icon="📅"
+          title="Tổng doanh thu"
+          value={stats.charts.monthlyRevenue?.reduce((total, item) => total + (item.revenue || 0), 0) || 0}
+          icon="�"
           color="indigo"
-        />
-        <StatCard
-          title="Doanh thu tháng"
-          value={stats.monthlyRevenue}
-          icon="📈"
-          color="purple"
         />
       </div>
 
       {/* Charts and Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Statistics Breakdown */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Thống kê chi tiết</h3>
+          <div className="space-y-4">
+            {/* Users by Role */}
+            <div>
+              <h4 className="font-medium text-gray-800 mb-2">Users theo vai trò</h4>
+              <div className="space-y-2">
+                {stats.charts.usersByRole.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 capitalize">{item._id || 'Không xác định'}</span>
+                    <span className="text-sm font-medium">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Products by Status */}
+            <div>
+              <h4 className="font-medium text-gray-800 mb-2">Sản phẩm theo trạng thái</h4>
+              <div className="space-y-2">
+                {stats.charts.productsByStatus.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">{item._id || 'Không xác định'}</span>
+                    <span className="text-sm font-medium">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác nhanh</h3>
@@ -246,20 +293,21 @@ const AdminDashboard = () => {
               <span className="text-blue-600">👥</span>
               <div>
                 <p className="font-medium">Quản lý Users</p>
+                <p className="text-sm text-gray-500">{stats.overview.totalUsers} users trong hệ thống</p>
               </div>
             </button>
             <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
               <span className="text-green-600">📦</span>
               <div>
                 <p className="font-medium">Duyệt sản phẩm</p>
-                <p className="text-sm text-gray-500">{stats.pendingProducts} sản phẩm đang chờ</p>
+                <p className="text-sm text-gray-500">{stats.overview.pendingProducts} sản phẩm đang chờ</p>
               </div>
             </button>
             <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
               <span className="text-purple-600">🛒</span>
               <div>
                 <p className="font-medium">Quản lý đơn hàng</p>
-                <p className="text-sm text-gray-500">Theo dõi trạng thái đơn hàng</p>
+                <p className="text-sm text-gray-500">{stats.overview.totalOrders} đơn hàng</p>
               </div>
             </button>
             <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
@@ -273,7 +321,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Recent Activities */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Hoạt động gần đây</h3>
             <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">

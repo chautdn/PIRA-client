@@ -18,6 +18,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
+import MyReports from "./pages/MyReports";
 
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
@@ -86,6 +87,7 @@ export default function App() {
               <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
               <Route path={ROUTES.PRODUCT_DETAIL} element={<ProductDetail />} />
               <Route path={ROUTES.PROFILE} element={<Profile />} />
+              <Route path={ROUTES.MY_REPORTS} element={<MyReports />} />
 
               {/* Dashboard - chỉ OWNER được vào */}
               <Route

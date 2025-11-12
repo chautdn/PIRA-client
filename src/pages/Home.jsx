@@ -4,12 +4,17 @@ import { motion } from "framer-motion";
 import { ROUTES } from "../utils/constants";
 import { productService } from "../services/product";
 import Loading from "../components/common/Loading";
+import { useAuth } from "../hooks/useAuth";
+import ReportModal from "../components/ReportModal";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   // Scroll to top on component mount (page reload/refresh)
   useEffect(() => {
@@ -68,6 +73,22 @@ export default function Home() {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6, ease: "easeOut" },
+  };
+
+  // Report handlers
+  const handleReportProduct = (product) => {
+    if (!user) {
+      navigate(ROUTES.LOGIN);
+      return;
+    }
+    setSelectedProduct(product);
+    setShowReportModal(true);
+  };
+
+  const handleReportSuccess = () => {
+    console.log('Report submitted successfully');
+    setShowReportModal(false);
+    setSelectedProduct(null);
   };
 
   const staggerContainer = {
@@ -349,32 +370,34 @@ export default function Home() {
                       >
                         ⭐ {product.metrics?.averageRating?.toFixed(1) || "5.0"}
                       </motion.div>
-                      <motion.div
-                        whileHover={{ x: 5 }}
-                        transition={{ duration: 0.2 }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Link
-                          to={`${ROUTES.PRODUCT_DETAIL.replace(
-                            ":id",
-                            product._id
-                          )}`}
-                          className="inline-flex items-center text-gray-700 hover:text-primary-700"
+                      <div className="flex items-center gap-2">
+                        <motion.div
+                          whileHover={{ x: 5 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <motion.span
-                            className="mr-1"
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              delay: idx * 0.3,
-                            }}
+                          <Link
+                            to={`${ROUTES.PRODUCT_DETAIL.replace(
+                              ":id",
+                              product._id
+                            )}`}
+                            className="inline-flex items-center text-gray-700 hover:text-primary-700"
                           >
-                            👁️
-                          </motion.span>
-                          Xem Chi Tiết
-                        </Link>
-                      </motion.div>
+                            <motion.span
+                              className="mr-1"
+                              animate={{ rotate: [0, 10, -10, 0] }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                delay: idx * 0.3,
+                              }}
+                            >
+                              👁️
+                            </motion.span>
+                            Xem Chi Tiết
+                          </Link>
+                        </motion.div>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -654,6 +677,17 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => {
+          setShowReportModal(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        onReportSuccess={handleReportSuccess}
+      />
     </div>
   );
 }

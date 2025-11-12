@@ -16,6 +16,8 @@ const ProductManagement = () => {
     sortBy: 'createdAt',
     sortOrder: 'desc'
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -28,6 +30,23 @@ const ProductManagement = () => {
     loadProducts();
     loadCategories();
   }, [filters]);
+
+  // Sync searchQuery with filters.search when filters change externally
+  useEffect(() => {
+    // Only sync if search query is different and not in typing mode
+    if (!searchTimeout && filters.search !== searchQuery) {
+      setSearchQuery(filters.search);
+    }
+  }, [filters.search, searchQuery, searchTimeout]);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   const loadCategories = async () => {
     try {
@@ -155,11 +174,34 @@ const ProductManagement = () => {
 
   const handleFilterChange = (key, value) => {
     console.log('ProductManagement - Filter change:', { key, value });
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-      page: key === 'page' ? value : 1
-    }));
+    
+    if (key === 'search') {
+      // Update search query immediately (for UI)
+      setSearchQuery(value);
+      
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      // Set new timeout to update actual filter
+      const newTimeout = setTimeout(() => {
+        setFilters(prev => ({
+          ...prev,
+          search: value,
+          page: 1
+        }));
+      }, 500);
+
+      setSearchTimeout(newTimeout);
+    } else {
+      // For other filters, update immediately
+      setFilters(prev => ({
+        ...prev,
+        [key]: value,
+        page: key === 'page' ? value : 1
+      }));
+    }
   };
 
   const handlePageChange = (page) => {
@@ -373,24 +415,73 @@ const ProductManagement = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <span>🔍</span>
+            Bộ lọc & Tìm kiếm
+          </h2>
+          <button
+            onClick={() => {
+              setFilters({ 
+                page: 1, 
+                limit: 10, 
+                search: '', 
+                status: '', 
+                category: '', 
+                sortBy: 'createdAt', 
+                sortOrder: 'desc' 
+              });
+              setSearchQuery('');
+              if (searchTimeout) {
+                clearTimeout(searchTimeout);
+                setSearchTimeout(null);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+          >
+            <span>🗑️</span>
+            Xóa bộ lọc
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Tên sản phẩm, mô tả..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>🔍</span>
+                Tìm kiếm
+              </span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                placeholder="Tên sản phẩm, mô tả..."
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+              {searchTimeout && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>📋</span>
+                Trạng thái
+              </span>
+            </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả trạng thái</option>
               <option value="DRAFT">📝 Bản nháp</option>
@@ -401,12 +492,19 @@ const ProductManagement = () => {
               <option value="SUSPENDED">🚫 Bị khóa</option>
             </select>
           </div>
+
+          {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>📂</span>
+                Danh mục
+              </span>
+            </label>
             <select
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả danh mục</option>
               {categories.map((category) => (
@@ -416,8 +514,15 @@ const ProductManagement = () => {
               ))}
             </select>
           </div>
+
+          {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sắp xếp</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>🔄</span>
+                Sắp xếp
+              </span>
+            </label>
             <select
               value={`${filters.sortBy}-${filters.sortOrder}`}
               onChange={(e) => {
@@ -425,17 +530,17 @@ const ProductManagement = () => {
                 handleFilterChange('sortBy', sortBy);
                 handleFilterChange('sortOrder', sortOrder);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
-              <option value="createdAt-desc">Mới nhất</option>
-              <option value="createdAt-asc">Cũ nhất</option>
-              <option value="title-asc">Tên A-Z</option>
-              <option value="title-desc">Tên Z-A</option>
-              <option value="price-asc">Giá thấp → cao</option>
-              <option value="price-desc">Giá cao → thấp</option>
+              <option value="createdAt-desc">🆕 Mới nhất</option>
+              <option value="createdAt-asc">🕰️ Cũ nhất</option>
+              <option value="title-asc">🔤 Tên A-Z</option>
+              <option value="title-desc">🔤 Tên Z-A</option>
+              <option value="price-asc">💰 Giá thấp → cao</option>
+              <option value="price-desc">💰 Giá cao → thấp</option>
             </select>
           </div>
-        </form>
+        </div>
       </div>
 
       {/* Bulk Actions */}

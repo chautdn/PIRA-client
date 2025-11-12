@@ -12,6 +12,9 @@ const AdminReportDetail = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [deletingProduct, setDeletingProduct] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (reportId) {
@@ -47,10 +50,12 @@ const AdminReportDetail = () => {
       
       // Reload report data
       await loadReportDetail();
-      alert('Cập nhật trạng thái thành công!');
+      setSuccessMessage('Cập nhật trạng thái thành công!');
+      setShowSuccessMessage(true);
     } catch (err) {
       console.error('Error updating report status:', err);
-      alert('Có lỗi xảy ra khi cập nhật trạng thái!');
+      setSuccessMessage('Có lỗi xảy ra khi cập nhật trạng thái!');
+      setShowSuccessMessage(true);
     } finally {
       setUpdating(false);
     }
@@ -63,45 +68,90 @@ const AdminReportDetail = () => {
 
     try {
       await adminService.deleteReport(reportId);
-      alert('Xóa báo cáo thành công!');
-      navigate('/admin/reports');
+      setSuccessMessage('Xóa báo cáo thành công! Đang chuyển hướng...');
+      setShowSuccessMessage(true);
+      setTimeout(() => {
+        navigate('/admin/reports');
+      }, 2000);
     } catch (err) {
       console.error('Error deleting report:', err);
-      alert('Có lỗi xảy ra khi xóa báo cáo!');
+      setSuccessMessage('Có lỗi xảy ra khi xóa báo cáo!');
+      setShowSuccessMessage(true);
     }
   };
 
   const handleDeleteProduct = async () => {
     if (!report.reportedItem?._id) {
-      alert('Không tìm thấy sản phẩm để xóa!');
+      setSuccessMessage('Không tìm thấy sản phẩm để xóa!');
+      setShowSuccessMessage(true);
       return;
     }
 
-    if (!confirm(
-      `Bạn có chắc chắn muốn xóa sản phẩm "${report.reportedItem.title}"?\n\n` +
-      'Hành động này sẽ:\n' +
-      '- Xóa vĩnh viễn sản phẩm khỏi hệ thống\n' +
-      '- Không thể hoàn tác\n' +
-      '- Ảnh hưởng đến tất cả dữ liệu liên quan\n\n' +
-      'Bạn có muốn tiếp tục?'
-    )) {
-      return;
-    }
+    // Show confirmation modal
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteProduct = async () => {
+    let productDeleted = false;
+    let reportUpdated = false;
+    
     try {
       setDeletingProduct(true);
-      // Use direct product deletion endpoint
-      await adminService.deleteProduct(report.reportedItem._id);
+      setShowDeleteModal(false);
       
-      // Then update report status
-      await adminService.updateReportStatus(report._id, 'RESOLVED', 'Sản phẩm đã bị xóa bởi admin');
+      // Step 1: Delete product
+      try {
+        const deleteResult = await adminService.deleteProduct(report.reportedItem._id);
+        productDeleted = true;
+        console.log('Product deleted successfully:', deleteResult);
+      } catch (deleteError) {
+        console.error('Error deleting product:', deleteError);
+        
+        // Check if error message suggests the product was actually deleted
+        if (deleteError.message && deleteError.message.includes('không tồn tại')) {
+          console.log('Product may already be deleted');
+          productDeleted = true;
+        } else {
+          throw new Error(`Không thể xóa sản phẩm: ${deleteError.message || 'Unknown error'}`);
+        }
+      }
       
-      // Reload report to show updated state
-      await loadReportDetail();
-      alert('Xóa sản phẩm thành công! Sản phẩm đã bị gỡ khỏi hệ thống và báo cáo đã được đánh dấu là đã giải quyết.');
+      // Step 2: Update report status (if product deletion was successful)
+      if (productDeleted) {
+        try {
+          // Small delay to ensure backend has processed the deletion
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          await adminService.updateReportStatus(report._id, 'RESOLVED', 'Sản phẩm đã bị xóa bởi admin');
+          reportUpdated = true;
+          console.log('Report status updated successfully');
+        } catch (updateError) {
+          console.error('Error updating report status:', updateError);
+          // Don't throw error here - product is already deleted
+          console.warn('Product was deleted but failed to update report status:', updateError.message);
+        }
+      }
+      
+      // Step 3: Reload report data (only if report was updated successfully)
+      if (reportUpdated) {
+        try {
+          await loadReportDetail();
+          console.log('Report reloaded successfully');
+        } catch (reloadError) {
+          console.error('Error reloading report:', reloadError);
+          // Don't throw error - just log it
+          console.warn('Product was deleted and report updated but failed to reload');
+        }
+      }
+      
+      // Show simple success message
+      setSuccessMessage('Đã xóa sản phẩm thành công');
+      setShowSuccessMessage(true);
+      
     } catch (err) {
-      console.error('Error deleting product:', err);
-      alert('Có lỗi xảy ra khi xóa sản phẩm: ' + (err.message || 'Unknown error'));
+      console.error('Critical error in delete process:', err);
+      setSuccessMessage(err.message || 'Có lỗi xảy ra khi xóa sản phẩm');
+      setShowSuccessMessage(true);
     } finally {
       setDeletingProduct(false);
     }
@@ -741,6 +791,108 @@ const AdminReportDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <span className="text-2xl">⚠️</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Xóa sản phẩm
+                </h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa sản phẩm "<strong>{report?.reportedItem?.title}</strong>"?
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+              <div className="text-sm text-red-700">
+                <p className="font-medium mb-2">⚠️ Cảnh báo:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Sản phẩm sẽ bị xóa vĩnh viễn khỏi hệ thống</li>
+                  <li>Hành động này không thể hoàn tác</li>
+                  <li>Ảnh hưởng đến tất cả dữ liệu liên quan</li>
+                  <li>Báo cáo sẽ được đánh dấu là đã giải quyết</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                disabled={deletingProduct}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteProduct}
+                disabled={deletingProduct}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deletingProduct ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Đang xóa...
+                  </div>
+                ) : (
+                  'Xóa sản phẩm'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success/Error Message Modal */}
+      {showSuccessMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                  <span className="text-2xl">{successMessage.includes('thành công') ? '✅' : '❌'}</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {successMessage.includes('thành công') ? 'Thành công' : 'Lỗi'}
+                </h3>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-700">
+                {successMessage}
+              </p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSuccessMessage(false);
+                  setSuccessMessage('');
+                }}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

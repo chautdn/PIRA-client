@@ -20,6 +20,7 @@ export const ROUTES = {
   PRODUCTS: "/products",
   PRODUCT_DETAIL: "/product/:id",
   PROFILE: "/profile",
+  MY_REPORTS: "/my-reports",
   VERIFY_EMAIL: "/auth/verify-email",
   CHAT: "/chat",
   CHAT_CONVERSATION: "/chat/:conversationId",

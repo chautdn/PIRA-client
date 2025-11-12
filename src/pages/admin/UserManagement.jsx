@@ -15,6 +15,8 @@ const UserManagement = () => {
     sortBy: 'createdAt',
     sortOrder: 'desc'
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -31,6 +33,15 @@ const UserManagement = () => {
   useEffect(() => {
     loadUsers();
   }, [filters]);
+
+  // Cleanup timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   const loadUsers = async () => {
     try {
@@ -61,16 +72,32 @@ const UserManagement = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-      page: key !== 'page' ? 1 : value // Reset page when other filters change
-    }));
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    loadUsers();
+    if (key === 'search') {
+      setSearchQuery(value);
+      
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+      
+      // Set new timeout for debounced search
+      const timeout = setTimeout(() => {
+        setFilters(prev => ({
+          ...prev,
+          search: value,
+          page: 1
+        }));
+        setSearchTimeout(null);
+      }, 500);
+      
+      setSearchTimeout(timeout);
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        [key]: value,
+        page: key !== 'page' ? 1 : value
+      }));
+    }
   };
 
   const handleUserStatusChange = async (userId, newStatus) => {
@@ -282,48 +309,111 @@ const UserManagement = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <span>🔍</span>
+            Bộ lọc & Tìm kiếm
+          </h2>
+          <button
+            onClick={() => {
+              setFilters({ 
+                page: 1, 
+                limit: 10, 
+                search: '', 
+                role: '', 
+                status: '', 
+                sortBy: 'createdAt', 
+                sortOrder: 'desc' 
+              });
+              setSearchQuery('');
+              if (searchTimeout) {
+                clearTimeout(searchTimeout);
+                setSearchTimeout(null);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+          >
+            <span>🗑️</span>
+            Xóa bộ lọc
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Tên, email, số điện thoại..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>🔍</span>
+                Tìm kiếm
+              </span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                placeholder="Tên, email, số điện thoại..."
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+              {searchTimeout && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Role */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>👥</span>
+                Vai trò
+              </span>
+            </label>
             <select
               value={filters.role}
               onChange={(e) => handleFilterChange('role', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả vai trò</option>
-              <option value="RENTER">Người thuê</option>
-              <option value="OWNER">Chủ sở hữu</option>
-              <option value="SHIPPER">Shipper</option>
-              <option value="ADMIN">Admin</option>
+              <option value="RENTER">🏠 Người thuê</option>
+              <option value="OWNER">🏡 Chủ sở hữu</option>
+              <option value="SHIPPER">🚚 Shipper</option>
+              <option value="ADMIN">👑 Admin</option>
             </select>
           </div>
+
+          {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>📋</span>
+                Trạng thái
+              </span>
+            </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="INACTIVE">Không hoạt động</option>
-              <option value="SUSPENDED">Tạm khóa</option>
-              <option value="PENDING">Chờ xác thực</option>
+              <option value="ACTIVE">✅ Hoạt động</option>
+              <option value="INACTIVE">❌ Không hoạt động</option>
+              <option value="SUSPENDED">⚠️ Tạm khóa</option>
+              <option value="PENDING">⏳ Chờ xác thực</option>
             </select>
           </div>
+
+          {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sắp xếp</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>🔄</span>
+                Sắp xếp
+              </span>
+            </label>
             <select
               value={`${filters.sortBy}-${filters.sortOrder}`}
               onChange={(e) => {
@@ -331,16 +421,16 @@ const UserManagement = () => {
                 handleFilterChange('sortBy', sortBy);
                 handleFilterChange('sortOrder', sortOrder);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
-              <option value="createdAt-desc">Mới nhất</option>
-              <option value="createdAt-asc">Cũ nhất</option>
-              <option value="firstName-asc">Tên A-Z</option>
-              <option value="firstName-desc">Tên Z-A</option>
-              <option value="email-asc">Email A-Z</option>
+              <option value="createdAt-desc">🆕 Mới nhất</option>
+              <option value="createdAt-asc">🕰️ Cũ nhất</option>
+              <option value="firstName-asc">🔤 Tên A-Z</option>
+              <option value="firstName-desc">🔤 Tên Z-A</option>
+              <option value="email-asc">📧 Email A-Z</option>
             </select>
           </div>
-        </form>
+        </div>
       </div>
 
       {/* Bulk Actions */}

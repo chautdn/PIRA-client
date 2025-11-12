@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { productService } from "../services/product";
 import { useAuth } from "../hooks/useAuth";
 import { ROUTES } from "../utils/constants";
+import ReportModal from "../components/ReportModal";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -20,6 +21,7 @@ export default function ProductDetail() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [rentalType, setRentalType] = useState("day");
   const [selectedHours, setSelectedHours] = useState(4);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -157,6 +159,20 @@ export default function ProductDetail() {
 
   // Check if current user is the product owner
   const isOwner = user && product?.owner?._id === user._id;
+
+  // Report handlers
+  const handleReportProduct = () => {
+    if (!user) {
+      navigate(ROUTES.LOGIN);
+      return;
+    }
+    setShowReportModal(true);
+  };
+
+  const handleReportSuccess = () => {
+    console.log('Report submitted successfully');
+    // You can add additional success actions here, like showing a toast notification
+  };
 
   const monthNames = [
     "Tháng 1",
@@ -920,6 +936,18 @@ export default function ProductDetail() {
                     💬 Nhắn tin với chủ sở hữu
                   </motion.button>
                 )}
+
+                {/* Report Button */}
+                {!isOwner && user && (
+                  <motion.button
+                    onClick={handleReportProduct}
+                    className="w-full border-2 border-red-500 text-red-600 hover:bg-red-50 py-4 rounded-2xl font-bold text-lg transition-all duration-300"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    🚨 Báo cáo sản phẩm
+                  </motion.button>
+                )}
               </div>
 
               {/* Owner Info */}
@@ -1003,6 +1031,14 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        product={product}
+        onReportSuccess={handleReportSuccess}
+      />
     </div>
   );
 }
