@@ -160,6 +160,7 @@ export const ownerProductApi = {
         params,
       });
       return response.data;
+      
     } catch (error) {
       throw error.response?.data || error.message;
     }

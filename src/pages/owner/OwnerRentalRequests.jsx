@@ -71,12 +71,31 @@ const OwnerRentalRequests = () => {
 
       const subOrdersList = extractSubOrders(response);
       setSubOrders(subOrdersList);
+      return subOrdersList; // Return để có thể sử dụng trong refreshSubOrderData
     } catch (error) {
       console.error('Lỗi tải danh sách yêu cầu thuê:', error);
       toast.error('Không thể tải danh sách yêu cầu thuê');
       setSubOrders([]); // Đảm bảo luôn là array
+      return [];
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Hàm để refresh dữ liệu và cập nhật selectedSubOrder
+  const refreshSubOrderData = async (subOrderId) => {
+    try {
+      const updatedSubOrders = await fetchSubOrders();
+      
+      // Cập nhật selectedSubOrder nếu đang mở
+      if (selectedSubOrder && selectedSubOrder._id === subOrderId) {
+        const updatedSubOrder = updatedSubOrders.find(s => s._id === subOrderId);
+        if (updatedSubOrder) {
+          setSelectedSubOrder(updatedSubOrder);
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi refresh dữ liệu:', error);
     }
   };
 
@@ -84,7 +103,12 @@ const OwnerRentalRequests = () => {
     try {
       await ownerProductApi.confirmProductItem(subOrderId, itemIndex);
       toast.success('Đã xác nhận sản phẩm');
-      fetchSubOrders(); // Refresh list
+      
+      // Refresh list và cập nhật selectedSubOrder
+      await refreshSubOrderData(subOrderId);
+      
+      // Kiểm tra xem có cần tự động ký hợp đồng không
+      await checkAndAutoSignContract(subOrderId);
     } catch (error) {
       console.error('Lỗi xác nhận sản phẩm:', error);
       toast.error(error.message || 'Không thể xác nhận sản phẩm');
@@ -95,7 +119,12 @@ const OwnerRentalRequests = () => {
     try {
       await ownerProductApi.rejectProductItem(subOrderId, itemIndex, reason);
       toast.success('Đã từ chối sản phẩm');
-      fetchSubOrders(); // Refresh list
+      
+      // Refresh list và cập nhật selectedSubOrder
+      await refreshSubOrderData(subOrderId);
+      
+      // Kiểm tra xem có cần tự động ký hợp đồng không
+      await checkAndAutoSignContract(subOrderId);
     } catch (error) {
       console.error('Lỗi từ chối sản phẩm:', error);
       toast.error(error.message || 'Không thể từ chối sản phẩm');
@@ -155,6 +184,44 @@ const OwnerRentalRequests = () => {
     } catch (error) {
       console.error('Lỗi tạo hợp đồng:', error);
       toast.error('Không thể tạo hợp đồng');
+    }
+  };
+
+  // Kiểm tra và tự động ký hợp đồng nếu tất cả sản phẩm đã được xác nhận
+  const checkAndAutoSignContract = async (subOrderId) => {
+    try {
+      // Đợi một chút để server cập nhật xong
+      setTimeout(async () => {
+        try {
+          // Lấy dữ liệu mới từ server
+          const response = await ownerProductApi.getOwnerSubOrders(filter === 'ALL' ? undefined : filter);
+          const updatedSubOrders = response.data || response;
+          
+          // Tìm subOrder đã được cập nhật
+          const currentSubOrder = updatedSubOrders.find(s => s._id === subOrderId);
+          if (!currentSubOrder) return;
+          
+          // Kiểm tra xem tất cả sản phẩm đã được xác nhận hay từ chối hết chưa
+          const pendingItems = currentSubOrder.products?.filter(item => item.confirmationStatus === 'PENDING') || [];
+          
+          if (pendingItems.length === 0) {
+            // Tất cả sản phẩm đã được xử lý
+            const confirmedItems = currentSubOrder.products?.filter(item => item.confirmationStatus === 'CONFIRMED') || [];
+            
+            if (confirmedItems.length > 0) {
+              // Có ít nhất 1 sản phẩm được xác nhận -> tự động chuyển sang trạng thái OWNER_CONFIRMED
+              toast.success('Tất cả sản phẩm đã được xử lý! Đơn hàng chuyển sang trạng thái chờ ký hợp đồng.');
+            } else {
+              // Tất cả sản phẩm đều bị từ chối
+              toast.info('Tất cả sản phẩm đã bị từ chối. Đơn hàng sẽ được hủy và hoàn tiền tự động.');
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi kiểm tra tự động:', error);
+        }
+      }, 500); // Đợi 500ms để server cập nhật
+    } catch (error) {
+      console.error('Lỗi kiểm tra tự động ký hợp đồng:', error);
     }
   };
 
@@ -332,6 +399,7 @@ const OwnerRentalRequests = () => {
                   getStatusBadge={getStatusBadge}
                   setSelectedContractId={setSelectedContractId}
                   setShowContractSigning={setShowContractSigning}
+                  refreshSubOrderData={refreshSubOrderData}
                 />
                 <div className="flex justify-end mt-3">
                   <button onClick={() => setSelectedSubOrder(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Đóng</button>
@@ -364,11 +432,15 @@ const SubOrderCard = ({
   onGenerateContract, 
   getStatusBadge,
   setSelectedContractId,
-  setShowContractSigning
+  setShowContractSigning,
+  refreshSubOrderData
 }) => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [selectedItemIndex, setSelectedItemIndex] = useState(null);
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [showBulkRejectModal, setShowBulkRejectModal] = useState(false);
+  const [bulkRejectReason, setBulkRejectReason] = useState('');
 
   const handleReject = () => {
     if (rejectReason.trim() && selectedItemIndex !== null) {
@@ -378,6 +450,91 @@ const SubOrderCard = ({
       setSelectedItemIndex(null);
     }
   };
+
+  // Handle checkbox toggle
+  const handleItemSelect = (itemIndex, isChecked) => {
+    const newSelected = new Set(selectedItems);
+    if (isChecked) {
+      newSelected.add(itemIndex);
+    } else {
+      newSelected.delete(itemIndex);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  // Handle select all checkbox
+  const handleSelectAll = (isChecked) => {
+    if (isChecked) {
+      const pendingItems = new Set();
+      (subOrder.products || []).forEach((item, index) => {
+        if (item.confirmationStatus === 'PENDING') {
+          pendingItems.add(index);
+        }
+      });
+      setSelectedItems(pendingItems);
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  // Handle bulk confirm
+  const handleBulkConfirm = async () => {
+    try {
+      const itemCount = selectedItems.size;
+      
+      // Disable các hàm refresh tạm thời để tránh multiple calls
+      for (const itemIndex of selectedItems) {
+        // Gọi API trực tiếp
+        await ownerProductApi.confirmProductItem(subOrder._id, itemIndex);
+      }
+      
+      setSelectedItems(new Set());
+      toast.success(`Đã xác nhận ${itemCount} sản phẩm`);
+      
+      // Refresh data một lần sau khi hoàn thành tất cả
+      if (refreshSubOrderData) {
+        await refreshSubOrderData(subOrder._id);
+      }
+    } catch (error) {
+      console.error('Lỗi bulk confirm:', error);
+      toast.error('Có lỗi khi xác nhận sản phẩm');
+    }
+  };
+
+  // Handle bulk reject
+  const handleBulkReject = async () => {
+    if (bulkRejectReason.trim()) {
+      try {
+        const itemCount = selectedItems.size;
+        
+        // Disable các hàm refresh tạm thời để tránh multiple calls
+        for (const itemIndex of selectedItems) {
+          // Gọi API trực tiếp
+          await ownerProductApi.rejectProductItem(subOrder._id, itemIndex, bulkRejectReason);
+        }
+        
+        setSelectedItems(new Set());
+        setShowBulkRejectModal(false);
+        setBulkRejectReason('');
+        toast.success(`Đã từ chối ${itemCount} sản phẩm`);
+        
+        // Refresh data một lần sau khi hoàn thành tất cả
+        if (refreshSubOrderData) {
+          await refreshSubOrderData(subOrder._id);
+        }
+      } catch (error) {
+        console.error('Lỗi bulk reject:', error);
+        toast.error('Có lỗi khi từ chối sản phẩm');
+      }
+    }
+  };
+
+  // Get pending items count
+  const pendingItems = (subOrder.products || []).filter(item => item.confirmationStatus === 'PENDING');
+  const allPendingSelected = pendingItems.length > 0 && pendingItems.every((_, index) => {
+    const actualIndex = (subOrder.products || []).findIndex(p => p.confirmationStatus === 'PENDING' && p === pendingItems[index]);
+    return selectedItems.has(actualIndex);
+  });
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('vi-VN', {
@@ -481,19 +638,45 @@ const SubOrderCard = ({
 
       {/* Danh sách sản phẩm */}
       <div className="mb-4">
-        <h4 className="font-medium text-gray-900 mb-2">Sản phẩm thuê</h4>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-medium text-gray-900">Sản phẩm thuê</h4>
+          {pendingItems.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`selectAll-${subOrder._id}`}
+                checked={allPendingSelected}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor={`selectAll-${subOrder._id}`} className="text-sm text-gray-700">
+                Chọn tất cả sản phẩm chờ xác nhận ({pendingItems.length})
+              </label>
+            </div>
+          )}
+        </div>
         <div className="space-y-3">
           {(subOrder.products || []).map((item, index) => (
             <div key={index} className="p-3 bg-gray-50 rounded border">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center space-x-3">
+                  {/* Checkbox chỉ hiển thị cho sản phẩm PENDING */}
+                  {item.confirmationStatus === 'PENDING' && (
+                    <input
+                      type="checkbox"
+                      id={`product-${subOrder._id}-${index}`}
+                      checked={selectedItems.has(index)}
+                      onChange={(e) => handleItemSelect(index, e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  )}
                   <img 
                     src={item.product?.images?.[0]?.url || '/placeholder.jpg'} 
-                    alt={item.product?.name}
+                    alt={item.product?.title}
                     className="w-12 h-12 object-cover rounded"
                   />
                   <div>
-                    <p className="font-medium">{item.product?.name}</p>
+                    <p className="font-medium">{item.product?.title}</p>
                     <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
                     <p className="text-sm text-gray-600">
                       Giá: {formatCurrency(item.rentalRate)}/ngày
@@ -581,6 +764,37 @@ const SubOrderCard = ({
             </div>
           ))}
         </div>
+
+        {/* Action Bar - chỉ hiện khi có sản phẩm được chọn */}
+        {selectedItems.size > 0 && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-blue-700">
+                Đã chọn <span className="font-semibold">{selectedItems.size}</span> sản phẩm
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleBulkConfirm}
+                  className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  ✓ Xác nhận tất cả đã chọn
+                </button>
+                <button
+                  onClick={() => setShowBulkRejectModal(true)}
+                  className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  ✗ Từ chối tất cả đã chọn
+                </button>
+                <button
+                  onClick={() => setSelectedItems(new Set())}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Bỏ chọn
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tổng tiền */}
@@ -682,6 +896,54 @@ const SubOrderCard = ({
                 className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Từ chối
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Reject Modal */}
+      {showBulkRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Từ chối các sản phẩm đã chọn</h3>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Bạn đang từ chối <span className="font-semibold">{selectedItems.size}</span> sản phẩm:
+              </p>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {Array.from(selectedItems).map(itemIndex => {
+                  const item = subOrder.products[itemIndex];
+                  return (
+                    <div key={itemIndex} className="text-sm p-2 bg-gray-50 rounded">
+                      {item?.product?.title} (x{item?.quantity})
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <textarea
+              value={bulkRejectReason}
+              onChange={(e) => setBulkRejectReason(e.target.value)}
+              placeholder="Nhập lý do từ chối chung cho tất cả sản phẩm đã chọn..."
+              className="w-full p-3 border rounded-lg resize-none h-24 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            />
+            <div className="flex space-x-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowBulkRejectModal(false);
+                  setBulkRejectReason('');
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleBulkReject}
+                disabled={!bulkRejectReason.trim()}
+                className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Từ chối {selectedItems.size} sản phẩm
               </button>
             </div>
           </div>
