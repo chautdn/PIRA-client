@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import disputeService from '../../services/dispute';
+import DeliveryDisputeResolveModal from '../../components/admin/DeliveryDisputeResolveModal';
 
 const DisputeManagement = () => {
   const [disputes, setDisputes] = useState([]);
@@ -20,7 +21,19 @@ const DisputeManagement = () => {
     penaltyAmount: 0
   });
 
+  // Helper to get user name from different name formats
+  const getUserName = (user) => {
+    if (!user) return 'N/A';
+    if (user.profile?.fullName) return user.profile.fullName;
+    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+    if (user.firstName) return user.firstName;
+    if (user.email) return user.email.split('@')[0];
+    return 'N/A';
+  };
+
   const disputeTypes = {
+    'DELIVERY_REFUSAL': 'Shipper từ chối giao',
+    'DELIVERY_REFUSAL_RETURN': 'Shipper từ chối nhận trả',
     'WRONG_PRODUCT_DELIVERY': 'Giao sai sản phẩm',
     'MISSING_ACCESSORIES': 'Thiếu phụ kiện',
     'SHIPPER_DAMAGE': 'Shipper làm hỏng',
@@ -28,14 +41,19 @@ const DisputeManagement = () => {
     'DAMAGED_RETURN': 'Trả hàng bị hư',
     'LATE_RETURN_PENALTY': 'Phạt trả muộn',
     'OWNER_NOT_RECEIVE': 'Owner không nhận hàng',
+    'GENERAL': 'Khiếu nại chung',
     'OTHER': 'Khác'
   };
 
   const disputeStatuses = {
+    'PENDING': { label: 'Chờ xử lý', color: 'yellow' },
+    'OWNER_RESPONSE_REQUIRED': { label: 'Chờ Owner phản hồi', color: 'orange' },
     'PENDING_OWNER_RESPONSE': { label: 'Chờ Owner', color: 'yellow' },
     'PENDING_ADMIN_REVIEW': { label: 'Chờ Admin', color: 'orange' },
+    'UNDER_REVIEW': { label: 'Đang xem xét', color: 'blue' },
     'IN_REVIEW': { label: 'Đang xử lý', color: 'blue' },
     'RESOLVED': { label: 'Đã giải quyết', color: 'green' },
+    'REJECTED': { label: 'Từ chối', color: 'red' },
     'CLOSED': { label: 'Đã đóng', color: 'gray' }
   };
 
@@ -48,19 +66,25 @@ const DisputeManagement = () => {
       setLoading(true);
       const response = await disputeService.getAllDisputes(filters);
       console.log('Admin Disputes Response:', response);
+      console.log('Full response structure:', JSON.stringify(response, null, 2));
       
       // API response structure: { status, message, data, metadata }
       // data and metadata contain the same result object
       const result = response?.data || response?.metadata || {};
       console.log('Result object:', result);
+      console.log('Result keys:', Object.keys(result));
+      console.log('Result.disputes:', result?.disputes);
+      console.log('Result.pagination:', result?.pagination);
       
       // Result might be { disputes: [...], total, page, ... } or just an array
       const disputesData = result?.disputes || result?.docs || (Array.isArray(result) ? result : []);
       console.log('Extracted disputes:', disputesData);
+      console.log('Disputes count:', disputesData?.length);
       
       setDisputes(Array.isArray(disputesData) ? disputesData : []);
     } catch (error) {
       console.error('Error loading disputes:', error);
+      console.error('Error details:', error.response?.data);
       toast.error('Không thể tải danh sách tranh chấp');
       // Mock data for testing
       setDisputes([
@@ -82,25 +106,36 @@ const DisputeManagement = () => {
     }
   };
 
-  const handleResolve = async () => {
-    if (!resolveData.decision) {
+  const handleResolve = async (customData) => {
+    // If called from specialized modal (TH1,2), use custom data
+    // If called from generic modal, use resolveData state
+    const dataToSend = customData || resolveData;
+
+    if (!dataToSend.decision) {
       toast.error('Vui lòng chọn quyết định');
       return;
     }
 
-    if (!resolveData.reason || resolveData.reason.length < 20) {
+    if (!dataToSend.reason || dataToSend.reason.length < 20) {
       toast.error('Vui lòng nhập lý do (ít nhất 20 ký tự)');
       return;
     }
 
     try {
-      await disputeService.adminResolve(selectedDispute._id, resolveData);
-      toast.success('Đã giải quyết tranh chấp');
+      await disputeService.adminResolve(selectedDispute._id, dataToSend);
+      toast.success('Đã giải quyết tranh chấp thành công');
       setShowResolveModal(false);
+      setResolveData({
+        decision: '',
+        reason: '',
+        refundAmount: 0,
+        penaltyAmount: 0
+      });
       loadDisputes();
     } catch (error) {
       console.error('Error resolving dispute:', error);
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      throw error; // Re-throw for specialized modal to handle
     }
   };
 
@@ -207,21 +242,35 @@ const DisputeManagement = () => {
                         {disputeTypes[dispute.type]}
                       </span>
                     </div>
-                    <p className="text-gray-900 font-medium mb-1">{dispute.title}</p>
-                    <p className="text-sm text-gray-600 mb-3">{dispute.description?.substring(0, 150)}...</p>
+                    {dispute.title && <p className="text-gray-900 font-medium mb-1">{dispute.title}</p>}
+                    <p className="text-sm text-gray-600 mb-3">
+                      {dispute.description ? 
+                        (dispute.description.length > 150 ? dispute.description.substring(0, 150) + '...' : dispute.description)
+                        : 'Không có mô tả'}
+                    </p>
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div>
-                        <span className="text-gray-500">Khách thuê:</span>
-                        <p className="font-medium">{dispute.renter?.name || 'N/A'}</p>
+                        <span className="text-gray-500">Người báo cáo:</span>
+                        <p className="font-medium">
+                          {getUserName(dispute.reportedBy || dispute.renter)}
+                          <span className="text-xs text-gray-500 ml-1">
+                            ({(dispute.reportedBy || dispute.renter)?.role || ''})
+                          </span>
+                        </p>
                       </div>
                       <div>
-                        <span className="text-gray-500">Owner:</span>
-                        <p className="font-medium">{dispute.owner?.name || 'N/A'}</p>
+                        <span className="text-gray-500">Bị báo cáo:</span>
+                        <p className="font-medium">
+                          {getUserName(dispute.reportedAgainst || dispute.owner)}
+                          <span className="text-xs text-gray-500 ml-1">
+                            ({(dispute.reportedAgainst || dispute.owner)?.role || ''})
+                          </span>
+                        </p>
                       </div>
                       <div>
                         <span className="text-gray-500">Mã đơn:</span>
-                        <p className="font-medium">{dispute.subOrder?.orderCode || 'N/A'}</p>
+                        <p className="font-medium">{dispute.subOrder?.orderCode || dispute.order?.orderCode || 'N/A'}</p>
                       </div>
                       <div>
                         <span className="text-gray-500">Ngày tạo:</span>
@@ -246,28 +295,38 @@ const DisputeManagement = () => {
         </div>
       )}
 
-      {/* Resolve Modal */}
+      {/* Resolve Modal - Conditional rendering based on dispute type */}
       {showResolveModal && selectedDispute && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-          >
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Giải quyết tranh chấp #{selectedDispute.disputeId}
-                </h2>
-                <button
-                  onClick={() => setShowResolveModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+        <>
+          {/* TH1, TH2: Delivery Disputes - Use specialized modal */}
+          {(['WRONG_PRODUCT_DELIVERY', 'MISSING_ACCESSORIES'].includes(selectedDispute.type)) ? (
+            <DeliveryDisputeResolveModal
+              dispute={selectedDispute}
+              onResolve={handleResolve}
+              onClose={() => setShowResolveModal(false)}
+            />
+          ) : (
+            /* Generic Resolve Modal for other dispute types */
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Giải quyết tranh chấp #{selectedDispute.disputeId}
+                    </h2>
+                    <button
+                      onClick={() => setShowResolveModal(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
 
               {/* Dispute Details */}
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -368,6 +427,8 @@ const DisputeManagement = () => {
             </div>
           </motion.div>
         </div>
+          )}
+        </>
       )}
     </div>
   );

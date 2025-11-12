@@ -14,7 +14,7 @@ import disputeService from '../../services/dispute';
  * - Hệ thống giữ tiền 24h
  * - Owner có 24h để phản hồi
  */
-const DeliveryRefusalForm = ({ subOrder, onSuccess, onCancel }) => {
+const DeliveryRefusalForm = ({ subOrder, subOrderId, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     type: '',
     reason: '',
@@ -60,11 +60,16 @@ const DeliveryRefusalForm = ({ subOrder, onSuccess, onCancel }) => {
       setLoading(true);
 
       const disputeData = {
-        subOrderId: subOrder._id,
+        subOrderId: subOrderId || subOrder._id, // Use prop first, fallback to subOrder._id
         type: formData.type,
         reason: `${refusalReasons[formData.type].label}: ${formData.reason}`,
         shipperPhotos: subOrder.delivery?.deliveryProof || []
       };
+
+      console.log('📤 Sending dispute data:', disputeData);
+      console.log('📦 SubOrder object:', subOrder);
+      console.log('📦 SubOrderId from prop:', subOrderId);
+      console.log('📦 SubOrder._id:', subOrder._id);
 
       const response = await disputeService.createDeliveryRefusal(disputeData);
 

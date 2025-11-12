@@ -1,6 +1,16 @@
 import api from './api';
 
 const disputeService = {
+  // ========== GENERAL CREATE API ==========
+  
+  /**
+   * Tạo dispute chung (không cần subOrder)
+   */
+  createGeneralDispute: async (data) => {
+    const response = await api.post('/disputes', data);
+    return response.data;
+  },
+
   // ========== RENTER APIs ==========
   
   /**
@@ -104,6 +114,14 @@ const disputeService = {
    */
   getDisputeById: async (disputeId) => {
     const response = await api.get(`/disputes/${disputeId}`);
+    return response.data;
+  },
+
+  /**
+   * Check if dispute exists for subOrder
+   */
+  checkDisputeExists: async (subOrderId) => {
+    const response = await api.get(`/disputes/check/${subOrderId}`);
     return response.data;
   }
 };

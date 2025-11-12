@@ -43,6 +43,7 @@ import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
 import DisputeManagement from "./pages/admin/DisputeManagement";
 import DisputeTracking from "./pages/DisputeTracking";
+import CreateDispute from "./pages/CreateDispute";
 
 // Rental system pages
 import RentalOrdersPage from "./pages/RentalOrders";
@@ -269,6 +270,24 @@ export default function App() {
                 {/* Dispute routes - cho OWNER và RENTER */}
                 <Route 
                   path="/disputes" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <DisputeTracking />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/disputes/create" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <CreateDispute />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/disputes/my-disputes" 
                   element={
                     <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                       <DisputeTracking />

@@ -12,6 +12,7 @@ import DamagedReturnForm from '../components/dispute/DamagedReturnForm';
 import LateReturnPenaltyForm from '../components/dispute/LateReturnPenaltyForm';
 import OwnerNotReceiveForm from '../components/dispute/OwnerNotReceiveForm';
 import OwnerResponseForm from '../components/dispute/OwnerResponseForm';
+import OwnerResponseModal from '../components/dispute/OwnerResponseModal';
 import GeneralDisputeForm from '../components/dispute/GeneralDisputeForm';
 
 const DisputeTracking = () => {
@@ -21,6 +22,8 @@ const DisputeTracking = () => {
   const [selectedDispute, setSelectedDispute] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedDisputeType, setSelectedDisputeType] = useState('');
+  const [showOwnerResponse, setShowOwnerResponse] = useState(false);
+  const [respondingDispute, setRespondingDispute] = useState(null);
   const [filters, setFilters] = useState({
     status: '',
     type: '',
@@ -203,6 +206,36 @@ const DisputeTracking = () => {
               const status = statusConfig[dispute.status] || statusConfig.PENDING;
               const disputeType = disputeTypes.find(t => t.value === dispute.type);
               
+              // Debug ALL disputes and user data
+              console.log('🔍 Dispute:', dispute.disputeId, {
+                type: dispute.type,
+                status: dispute.status,
+                owner: dispute.owner,
+                renter: dispute.renter,
+                deadline: dispute.ownerResponseDeadline
+              });
+              console.log('👤 Current user:', user);
+              
+              // Debug owner response button visibility
+              const isOwner = dispute.owner?._id?.toString() === user?.id?.toString();
+              const isRightStatus = dispute.status === 'PENDING' || dispute.status === 'PENDING_OWNER_RESPONSE';
+              const isRightType = dispute.type === 'WRONG_PRODUCT_DELIVERY' || dispute.type === 'MISSING_ACCESSORIES';
+              const isBeforeDeadline = dispute.ownerResponseDeadline ? new Date(dispute.ownerResponseDeadline) > new Date() : true;
+              
+              const shouldShowOwnerResponse = isOwner && isRightStatus && isRightType && isBeforeDeadline;
+              
+              console.log('🔘 Button visibility check for', dispute.disputeId, {
+                isOwner,
+                isRightStatus,
+                isRightType,
+                isBeforeDeadline,
+                shouldShow: shouldShowOwnerResponse
+              });
+              
+              if (shouldShowOwnerResponse) {
+                console.log('✅ Should show owner response button for dispute:', dispute.disputeId);
+              }
+              
               return (
                 <motion.div
                   key={dispute._id}
@@ -256,6 +289,35 @@ const DisputeTracking = () => {
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
                         {status.icon} {status.label}
                       </span>
+                      
+                      {/* Owner Response Deadline Warning */}
+                      {isOwner && (dispute.status === 'PENDING_OWNER_RESPONSE') && dispute.ownerResponseDeadline && (
+                        <div className="text-xs text-right">
+                          {isBeforeDeadline ? (
+                            <span className="text-orange-600 font-medium">
+                              ⏰ Hạn phản hồi: {formatDate(dispute.ownerResponseDeadline)}
+                            </span>
+                          ) : (
+                            <span className="text-red-600 font-bold">
+                              ⚠️ Quá hạn phản hồi!
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Owner Response Button */}
+                      {shouldShowOwnerResponse && (
+                        <button
+                          onClick={() => {
+                            console.log('🔘 Owner response button clicked for:', dispute.disputeId);
+                            setRespondingDispute(dispute);
+                            setShowOwnerResponse(true);
+                          }}
+                          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm"
+                        >
+                          ⚡ Phản hồi ngay
+                        </button>
+                      )}
                       
                       <button
                         onClick={() => setSelectedDispute(dispute)}
@@ -443,6 +505,21 @@ const DisputeTracking = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Owner Response Modal */}
+        <OwnerResponseModal
+          dispute={respondingDispute}
+          isOpen={showOwnerResponse}
+          onClose={() => {
+            setShowOwnerResponse(false);
+            setRespondingDispute(null);
+          }}
+          onSuccess={() => {
+            loadDisputes(); // Reload disputes
+            setShowOwnerResponse(false);
+            setRespondingDispute(null);
+          }}
+        />
       </div>
     </div>
   );

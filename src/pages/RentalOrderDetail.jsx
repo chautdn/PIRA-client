@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
 import { useAuth } from "../hooks/useAuth";
+import disputeService from '../services/dispute';
 import { 
   ArrowLeft,
   Package, 
@@ -35,12 +36,34 @@ const RentalOrderDetailPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [confirmAction, setConfirmAction] = useState(null); // 'confirm' or 'reject'
   const [rejectReason, setRejectReason] = useState('');
+  const [subOrderDisputes, setSubOrderDisputes] = useState({}); // Track disputes by subOrderId
 
   useEffect(() => {
     if (id) {
       loadOrderDetail(id);
     }
   }, [id]);
+
+  // Check for existing disputes when order loads
+  useEffect(() => {
+    const checkDisputes = async () => {
+      if (!currentOrder?.subOrders) return;
+      
+      const disputeChecks = {};
+      for (const subOrder of currentOrder.subOrders) {
+        try {
+          const result = await disputeService.checkDisputeExists(subOrder._id);
+          disputeChecks[subOrder._id] = result.exists;
+        } catch (error) {
+          console.error('Error checking dispute for subOrder:', subOrder._id, error);
+          disputeChecks[subOrder._id] = false;
+        }
+      }
+      setSubOrderDisputes(disputeChecks);
+    };
+    
+    checkDisputes();
+  }, [currentOrder]);
 
   if (!user) {
     return (
@@ -396,6 +419,23 @@ const RentalOrderDetailPage = () => {
                                   <XCircle className="w-4 h-4" />
                                   <span>Từ chối</span>
                                 </button>
+                              </div>
+                            )}
+                            
+                            {isRenter && subOrder.status === 'SHIPPED' && !subOrderDisputes[subOrder._id] && (
+                              <button
+                                onClick={() => navigate(`/disputes/create?subOrderId=${subOrder._id}&type=delivery-refusal`)}
+                                className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 flex items-center space-x-1"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                <span>Từ chối giao hàng</span>
+                              </button>
+                            )}
+                            
+                            {isRenter && subOrder.status === 'SHIPPED' && subOrderDisputes[subOrder._id] && (
+                              <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-sm flex items-center space-x-1">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>Đã tạo tranh chấp</span>
                               </div>
                             )}
                           </div>

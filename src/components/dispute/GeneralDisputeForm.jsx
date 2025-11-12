@@ -136,15 +136,11 @@ const GeneralDisputeForm = ({ order, onSuccess, onCancel }) => {
       setLoading(true);
 
       const disputeData = {
-        subOrderId: order._id,
-        title: formData.title,
-        type: formData.type,
-        description: formData.description,
-        requestedResolution: formData.requestedResolution,
-        renterEvidence: {
-          photos: formData.photos,
-          videos: formData.video ? [formData.video] : []
-        }
+        type: 'GENERAL',
+        description: `${formData.title}\n\n${formData.description}\n\nYêu cầu: ${formData.requestedResolution}`,
+        evidence: [...formData.photos, ...(formData.video ? [formData.video] : [])],
+        orderId: order?._id || null,
+        reportedAgainst: null // Có thể thêm logic chọn người bị báo cáo nếu cần
       };
 
       const result = await disputeService.createGeneralDispute(disputeData);
@@ -175,9 +171,11 @@ const GeneralDisputeForm = ({ order, onSuccess, onCancel }) => {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Tạo tranh chấp
         </h2>
-        <p className="text-sm text-gray-600">
-          Mã đơn: <span className="font-medium">{order.orderCode}</span>
-        </p>
+        {order?.orderCode && (
+          <p className="text-sm text-gray-600">
+            Mã đơn: <span className="font-medium">{order.orderCode}</span>
+          </p>
+        )}
       </div>
 
       {/* Info */}

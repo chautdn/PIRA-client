@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
 import { toast } from '../components/common/Toast';
 import { useAuth } from "../hooks/useAuth";
+import disputeService from '../services/dispute';
 import { 
   Package, 
   Calendar, 
@@ -14,9 +15,11 @@ import {
   Filter,
   Search,
   X,
+  XCircle,
   User,
   Phone,
-  Mail
+  Mail,
+  AlertCircle
 } from 'lucide-react';
 
 const RentalOrdersPage = () => {
@@ -35,11 +38,33 @@ const RentalOrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [subOrderDisputes, setSubOrderDisputes] = useState({});
 
   // Load orders on mount and status change
   useEffect(() => {
     loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
   }, [statusFilter]);
+
+  // Check for existing disputes when selected order changes
+  useEffect(() => {
+    const checkDisputes = async () => {
+      if (!selectedOrder?.subOrders) return;
+      
+      const disputeChecks = {};
+      for (const subOrder of selectedOrder.subOrders) {
+        try {
+          const result = await disputeService.checkDisputeExists(subOrder._id);
+          disputeChecks[subOrder._id] = result.exists;
+        } catch (error) {
+          console.error('Error checking dispute for subOrder:', subOrder._id, error);
+          disputeChecks[subOrder._id] = false;
+        }
+      }
+      setSubOrderDisputes(disputeChecks);
+    };
+    
+    checkDisputes();
+  }, [selectedOrder]);
 
   // Check for success messages from navigation state or URL params
   useEffect(() => {
@@ -478,6 +503,27 @@ const RentalOrdersPage = () => {
                                 {getStatusText(subOrder.status)}
                               </span>
                             </div>
+                            
+                            {/* Action Buttons for SHIPPED status */}
+                            {subOrder.status === 'SHIPPED' && !subOrderDisputes[subOrder._id] && (
+                              <button
+                                onClick={() => {
+                                  closeDetailModal();
+                                  navigate(`/disputes/create?subOrderId=${subOrder._id}&type=delivery-refusal`);
+                                }}
+                                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center space-x-2 text-sm"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                <span>Từ chối giao hàng</span>
+                              </button>
+                            )}
+                            
+                            {subOrder.status === 'SHIPPED' && subOrderDisputes[subOrder._id] && (
+                              <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg flex items-center space-x-2 text-sm">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>Đã tạo tranh chấp</span>
+                              </div>
+                            )}
                           </div>
 
                           {/* Owner Info */}
