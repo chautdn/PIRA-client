@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { userReportService } from '../services/userReport';
-import { useAuth } from '../hooks/useAuth';
+import { userReportService } from '../../services/userReport';
+import { useAuth } from '../../hooks/useAuth';
 
 const MyReports = () => {
   const { user } = useAuth();

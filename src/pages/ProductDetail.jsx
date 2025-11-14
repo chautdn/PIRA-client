@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext';
 import { cartApiService } from '../services/cartApi';
 import { useAuth } from '../hooks/useAuth'; // Added for authentication
 import { ROUTES } from '../utils/constants'; // Added for route constants
+import ReportModal from './ReportModal';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -36,6 +37,7 @@ export default function ProductDetail() {
   const [menuOpen, setMenuOpen] = useState({});
   const [editingReview, setEditingReview] = useState({});
   const [editingResponse, setEditingResponse] = useState({});
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Check if current user is the product owner
   const isOwner = user && product?.owner?._id === user._id;
@@ -628,6 +630,19 @@ export default function ProductDetail() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                 </svg>
               </button>
+              {!isOwner && user && (
+                <motion.button
+                  onClick={() => setShowReportModal(true)}
+                  className="p-4 rounded-full border-2 border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 transition-all transform hover:scale-110"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Báo cáo sản phẩm"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </motion.button>
+              )}
             </div>
           </div>
         </motion.div>
@@ -1327,6 +1342,7 @@ export default function ProductDetail() {
                     💬 Nhắn tin với chủ sở hữu
                   </motion.button>
                 )}
+                
               </div>
 
               {/* Owner Info */}
@@ -1390,6 +1406,16 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        product={product}
+        onReportSuccess={() => {
+          console.log('Report submitted successfully');
+        }}
+      />
 
       {/* Lightbox Modal */}
       {/* Write Review Modal */}

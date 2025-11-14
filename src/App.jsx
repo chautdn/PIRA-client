@@ -43,6 +43,7 @@ import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
 import ReportManagement from "./pages/admin/ReportManagement";
 import AdminReportDetail from "./pages/admin/AdminReportDetail";
+import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
 import RentalOrdersPage from "./pages/RentalOrders";
@@ -211,6 +212,15 @@ export default function App() {
                 <Route path="/wallet/topup-cancel" element={<TopUpCancel />} />
                 <Route path="/withdrawals" element={<Withdrawals />} />
 
+                {/* My Reports */}
+                <Route 
+                  path={ROUTES.MY_REPORTS} 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <MyReports />
+                    </RoleProtectedRoute>
+                  } 
+                />
                 
                 {/* Rental Order routes */}
                 <Route 

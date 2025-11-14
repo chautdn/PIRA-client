@@ -152,6 +152,15 @@ const UserDropdown = () => {
             </Link>
 
             <Link
+              to={ROUTES.MY_REPORTS}
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              <span className="mr-3 text-lg">🚨</span>
+              My Reports
+            </Link>
+
+            <Link
               to="/withdrawals"
               className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               onClick={() => setIsOpen(false)}
