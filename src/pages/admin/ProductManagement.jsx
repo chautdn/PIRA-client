@@ -4,6 +4,7 @@ import { adminService } from '../../services/admin';
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
@@ -15,55 +16,198 @@ const ProductManagement = () => {
     sortBy: 'createdAt',
     sortOrder: 'desc'
   });
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [approvalData, setApprovalData] = useState({
-    action: 'approve',
-    reason: '',
-    feedback: ''
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalProducts: 0,
+    limit: 10
   });
+  const [selectedProducts, setSelectedProducts] = useState([]);
 
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, [filters]);
+
+  // Sync searchQuery with filters.search when filters change externally
+  useEffect(() => {
+    // Only sync if search query is different and not in typing mode
+    if (!searchTimeout && filters.search !== searchQuery) {
+      setSearchQuery(filters.search);
+    }
+  }, [filters.search, searchQuery, searchTimeout]);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await adminService.getCategories({ 
+        status: 'ACTIVE',
+        limit: 100,
+        sortBy: 'level',
+        sortOrder: 'asc'
+      });
+      
+      const categoriesData = response.categories || response.data?.categories || response.data || [];
+      
+      // Sort categories by level and priority, then by name for better hierarchy display
+      const sortedCategories = categoriesData.sort((a, b) => {
+        // First sort by level (parent categories first)
+        if ((a.level || 0) !== (b.level || 0)) {
+          return (a.level || 0) - (b.level || 0);
+        }
+        // Then by priority (higher priority first)
+        if ((a.priority || 1) !== (b.priority || 1)) {
+          return (b.priority || 1) - (a.priority || 1);
+        }
+        // Finally by name alphabetically
+        return (a.name || '').localeCompare(b.name || '', 'vi-VN');
+      });
+      
+      console.log('Loaded categories:', sortedCategories);
+      setCategories(sortedCategories);
+    } catch (err) {
+      console.error('Load categories error:', err);
+      setCategories([]);
+    }
+  };
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const response = await adminService.getProducts(filters);
+      setError(null);
+      console.log('ProductManagement - Loading products with filters:', filters);
       
-      // Safe check for response structure
-      if (response && typeof response === 'object') {
-        setProducts(response.products || response.data?.products || []);
-        setTotalPages(response.totalPages || response.data?.totalPages || 1);
-        setTotalProducts(response.total || response.data?.total || 0);
+      // Check if user is authenticated
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Bạn cần đăng nhập để xem danh sách sản phẩm');
+        setProducts([]);
+        return;
+      }
+      
+      const response = await adminService.getProducts(filters);
+      console.log('ProductManagement - API response:', response);
+      
+      // Handle response structure similar to OrderManagement
+      if (response && response.success && response.data) {
+        const { products: productsData, pagination: paginationData } = response.data;
+        
+        setProducts(productsData || []);
+        setPagination({
+          currentPage: paginationData?.currentPage || 1,
+          totalPages: paginationData?.totalPages || 1,
+          totalProducts: paginationData?.totalProducts || 0,
+          limit: paginationData?.limit || 10
+        });
+      } else if (response && response.products) {
+        // Direct products response
+        setProducts(response.products || []);
+        const total = response.totalProducts || response.total || response.products?.length || 0;
+        const totalPages = response.totalPages || Math.ceil(total / filters.limit);
+        
+        setPagination({
+          currentPage: response.currentPage || filters.page,
+          totalPages: totalPages,
+          totalProducts: total,
+          limit: filters.limit
+        });
+      } else if (response && response.pagination) {
+        // Backend format with pagination object
+        setProducts(response.products || []);
+        setPagination({
+          currentPage: response.pagination.currentPage || 1,
+          totalPages: response.pagination.totalPages || 1,
+          totalProducts: response.pagination.totalProducts || 0,
+          limit: response.pagination.limit || 10
+        });
       } else {
         // Fallback for unexpected response structure
         setProducts([]);
-        setTotalPages(1);
-        setTotalProducts(0);
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalProducts: 0,
+          limit: 10
+        });
       }
+      
+      console.log('ProductManagement - Products count:', (response.products || []).length);
+      console.log('ProductManagement - Pagination:', pagination);
     } catch (err) {
-      setError('Không thể tải danh sách sản phẩm');
       console.error('Load products error:', err);
+      
+      // Handle specific error types
+      if (err.response?.status === 401) {
+        setError('Bạn không có quyền truy cập. Vui lòng đăng nhập lại.');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+      } else if (err.response?.status === 403) {
+        setError('Bạn không có quyền admin để xem danh sách sản phẩm.');
+      } else if (err.response?.status === 500) {
+        setError('Lỗi server. Vui lòng thử lại sau.');
+      } else {
+        setError('Không thể tải danh sách sản phẩm: ' + (err.response?.data?.message || err.message));
+      }
+      
       // Set default values on error
       setProducts([]);
-      setTotalPages(1);
-      setTotalProducts(0);
+      setPagination({
+        currentPage: 1,
+        totalPages: 1,
+        totalProducts: 0,
+        limit: 10
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-      page: key !== 'page' ? 1 : value
-    }));
+    console.log('ProductManagement - Filter change:', { key, value });
+    
+    if (key === 'search') {
+      // Update search query immediately (for UI)
+      setSearchQuery(value);
+      
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      // Set new timeout to update actual filter
+      const newTimeout = setTimeout(() => {
+        setFilters(prev => ({
+          ...prev,
+          search: value,
+          page: 1
+        }));
+      }, 500);
+
+      setSearchTimeout(newTimeout);
+    } else {
+      // For other filters, update immediately
+      setFilters(prev => ({
+        ...prev,
+        [key]: value,
+        page: key === 'page' ? value : 1
+      }));
+    }
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      handleFilterChange('page', page);
+    }
   };
 
   const handleSearch = (e) => {
@@ -71,31 +215,7 @@ const ProductManagement = () => {
     loadProducts();
   };
 
-  const handleApprovalAction = async () => {
-    if (!selectedProduct) return;
-
-    try {
-      if (approvalData.action === 'approve') {
-        await adminService.approveProduct(selectedProduct._id, {
-          feedback: approvalData.feedback
-        });
-      } else {
-        await adminService.rejectProduct(selectedProduct._id, {
-          reason: approvalData.reason,
-          feedback: approvalData.feedback
-        });
-      }
-      
-      setShowApprovalModal(false);
-      setSelectedProduct(null);
-      setApprovalData({ action: 'approve', reason: '', feedback: '' });
-      loadProducts();
-      alert(`Sản phẩm đã được ${approvalData.action === 'approve' ? 'phê duyệt' : 'từ chối'} thành công!`);
-    } catch (err) {
-      console.error('Approval action error:', err);
-      alert('Có lỗi xảy ra khi thực hiện thao tác!');
-    }
-  };
+  // Removed approval actions - only keep delete functionality
 
   const handleDeleteProduct = async (productId) => {
     if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
@@ -133,26 +253,15 @@ const ProductManagement = () => {
     }
 
     try {
-      if (action === 'approve') {
-        for (const productId of selectedProducts) {
-          await adminService.approveProduct(productId);
-        }
-        alert('Phê duyệt thành công!');
-      } else if (action === 'reject') {
-        for (const productId of selectedProducts) {
-          await adminService.rejectProduct(productId, { reason: 'Bulk rejection' });
-        }
-        alert('Từ chối thành công!');
-      } else if (action === 'delete') {
+      if (action === 'delete') {
         if (!confirm('Bạn có chắc chắn muốn xóa các sản phẩm đã chọn?')) return;
         for (const productId of selectedProducts) {
           await adminService.deleteProduct(productId);
         }
         alert('Xóa thành công!');
+        setSelectedProducts([]);
+        loadProducts();
       }
-      
-      setSelectedProducts([]);
-      loadProducts();
     } catch (err) {
       console.error('Bulk action error:', err);
       alert('Có lỗi xảy ra khi thực hiện thao tác!');
@@ -160,32 +269,52 @@ const ProductManagement = () => {
   };
 
   const getStatusBadge = (status) => {
-    const statusClasses = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      APPROVED: 'bg-green-100 text-green-800',
-      REJECTED: 'bg-red-100 text-red-800',
-      INACTIVE: 'bg-gray-100 text-gray-800'
-    };
-    
-    const statusText = {
-      PENDING: 'Chờ duyệt',
-      APPROVED: 'Đã duyệt',
-      REJECTED: 'Bị từ chối',
-      INACTIVE: 'Không hoạt động'
+    const statusConfig = {
+      DRAFT: { 
+        color: 'bg-gray-100 text-gray-700 border-gray-200', 
+        text: '📝 Bản nháp',
+        icon: '📝'
+      },
+      PENDING: { 
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
+        text: '⏳ Chờ duyệt',
+        icon: '⏳'
+      },
+      ACTIVE: { 
+        color: 'bg-green-100 text-green-800 border-green-200', 
+        text: ' Đang hoạt động',
+        icon: '✅'
+      },
+      RENTED: { 
+        color: 'bg-blue-100 text-blue-800 border-blue-200', 
+        text: ' Đã cho thuê',
+        icon: '🏠'
+      },
+      INACTIVE: { 
+        color: 'bg-orange-100 text-orange-800 border-orange-200', 
+        text: 'Tạm ngừng',
+        icon: '⏸️'
+      },
+      SUSPENDED: { 
+        color: 'bg-red-100 text-red-800 border-red-200', 
+        text: ' Bị khóa',
+        icon: '🚫'
+      }
     };
 
+    const config = statusConfig[status] || statusConfig.INACTIVE;
+    
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusClasses[status] || 'bg-gray-100 text-gray-800'}`}>
-        {statusText[status] || status}
+      <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full border ${config.color}`}>
+        <span>{config.icon}</span>
+        <span>{config.text}</span>
       </span>
     );
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
+    if (!price || price === 0) return '0 VNĐ';
+    return new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
   };
 
   const formatDate = (dateString) => {
@@ -194,6 +323,47 @@ const ProductManagement = () => {
       month: '2-digit',
       day: '2-digit'
     });
+  };
+
+  // Helper function to get category hierarchy display
+  const getCategoryDisplay = (category, subCategory) => {
+    if (!category && !subCategory) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded-md border border-gray-200">
+          ❓ Chưa phân loại
+        </span>
+      );
+    }
+
+    const elements = [];
+
+    if (category) {
+      const categoryLevel = category.level || 0;
+      const categoryIcon = categoryLevel === 0 ? '📁' : categoryLevel === 1 ? '📂' : '📄';
+      const priorityIcon = (category.priority || 1) > 5 ? ' ⭐' : '';
+      
+      elements.push(
+        <span 
+          key={category._id}
+          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200"
+        >
+          {categoryIcon} {category.name}{priorityIcon}
+        </span>
+      );
+    }
+
+    if (subCategory) {
+      elements.push(
+        <span 
+          key={subCategory._id}
+          className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md border border-purple-200"
+        >
+          📄 {subCategory.name}
+        </span>
+      );
+    }
+
+    return <div className="flex items-center gap-1">{elements}</div>;
   };
 
   if (loading) {
@@ -209,57 +379,150 @@ const ProductManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý Sản phẩm</h1>
-          <p className="text-gray-600">Tổng cộng {totalProducts} sản phẩm</p>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <span className="text-blue-600">📦</span>
+            Quản lý Sản phẩm
+          </h1>
+          <div className="flex items-center gap-6 mt-2">
+            <p className="text-gray-600 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-md">
+                📊 Tổng cộng: {pagination.totalProducts.toLocaleString('vi-VN')} sản phẩm
+              </span>
+            </p>
+            <p className="text-gray-600 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md">
+                📄 Trang {pagination.currentPage}/{pagination.totalPages} ({pagination.limit} sản phẩm/trang)
+              </span>
+            </p>
+          </div>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          Export CSV
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => {
+              console.log('DEBUG - Current state:');
+              console.log('filters:', filters);
+              console.log('pagination:', pagination);
+              console.log('products.length:', products.length);
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+          >
+            Debug
+          </button>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <span>🔍</span>
+            Bộ lọc & Tìm kiếm
+          </h2>
+          <button
+            onClick={() => {
+              setFilters({ 
+                page: 1, 
+                limit: 10, 
+                search: '', 
+                status: '', 
+                category: '', 
+                sortBy: 'createdAt', 
+                sortOrder: 'desc' 
+              });
+              setSearchQuery('');
+              if (searchTimeout) {
+                clearTimeout(searchTimeout);
+                setSearchTimeout(null);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+          >
+            <span>🗑️</span>
+            Xóa bộ lọc
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Tên sản phẩm, mô tả..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>🔍</span>
+                Tìm kiếm
+              </span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                placeholder="Tên sản phẩm, mô tả..."
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+              {searchTimeout && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>📋</span>
+                Trạng thái
+              </span>
+            </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="PENDING">Chờ duyệt</option>
-              <option value="APPROVED">Đã duyệt</option>
-              <option value="REJECTED">Bị từ chối</option>
-              <option value="INACTIVE">Không hoạt động</option>
+              <option value="DRAFT">📝 Bản nháp</option>
+              <option value="PENDING">⏳ Chờ duyệt</option>
+              <option value="ACTIVE">✅ Đang hoạt động</option>
+              <option value="RENTED">🏠 Đã cho thuê</option>
+              <option value="INACTIVE">⏸️ Tạm ngừng</option>
+              <option value="SUSPENDED">🚫 Bị khóa</option>
             </select>
           </div>
+
+          {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>📂</span>
+                Danh mục
+              </span>
+            </label>
             <select
               value={filters.category}
               onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả danh mục</option>
-              <option value="electronics">Điện tử</option>
-              <option value="clothing">Thời trang</option>
-              <option value="sports">Thể thao</option>
-              <option value="books">Sách</option>
+              {categories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </div>
+
+          {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sắp xếp</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>🔄</span>
+                Sắp xếp
+              </span>
+            </label>
             <select
               value={`${filters.sortBy}-${filters.sortOrder}`}
               onChange={(e) => {
@@ -267,44 +530,32 @@ const ProductManagement = () => {
                 handleFilterChange('sortBy', sortBy);
                 handleFilterChange('sortOrder', sortOrder);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
-              <option value="createdAt-desc">Mới nhất</option>
-              <option value="createdAt-asc">Cũ nhất</option>
-              <option value="name-asc">Tên A-Z</option>
-              <option value="name-desc">Tên Z-A</option>
-              <option value="price-asc">Giá thấp → cao</option>
-              <option value="price-desc">Giá cao → thấp</option>
+              <option value="createdAt-desc">🆕 Mới nhất</option>
+              <option value="createdAt-asc">🕰️ Cũ nhất</option>
+              <option value="title-asc">🔤 Tên A-Z</option>
+              <option value="title-desc">🔤 Tên Z-A</option>
+              <option value="price-asc">💰 Giá thấp → cao</option>
+              <option value="price-desc">💰 Giá cao → thấp</option>
             </select>
           </div>
-        </form>
+        </div>
       </div>
 
       {/* Bulk Actions */}
       {selectedProducts.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-blue-800">
+            <span className="text-sm text-red-800">
               Đã chọn {selectedProducts.length} sản phẩm
             </span>
             <div className="flex gap-2">
               <button
-                onClick={() => handleBulkAction('approve')}
-                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-              >
-                Phê duyệt
-              </button>
-              <button
-                onClick={() => handleBulkAction('reject')}
+                onClick={() => handleBulkAction('delete')}
                 className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
               >
-                Từ chối
-              </button>
-              <button
-                onClick={() => handleBulkAction('delete')}
-                className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700"
-              >
-                Xóa
+                Xóa các sản phẩm đã chọn
               </button>
             </div>
           </div>
@@ -360,43 +611,95 @@ const ProductManagement = () => {
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-gray-300 rounded-lg flex-shrink-0">
                         {product.images && product.images.length > 0 ? (
-                          <img
-                            src={product.images[0]}
-                            alt=""
-                            className="w-12 h-12 rounded-lg object-cover"
-                          />
+                          <div className="relative">
+                            <img
+                              src={typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.url || product.images[0]}
+                              alt=""
+                              className="w-12 h-12 rounded-lg object-cover border-2 border-gray-200"
+                              onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/48x48?text=No+Image';
+                              }}
+                            />
+                            {product.images.length > 1 && (
+                              <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                {product.images.length}
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-400 text-xs">📦</span>
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center border-2 border-gray-200">
+                            <span className="text-gray-500 text-lg">📦</span>
                           </div>
                         )}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900 line-clamp-2">
-                          {product.name}
+                          {product.title || product.name || 'Tên sản phẩm'}
                         </div>
-                        <div className="text-sm text-gray-500">ID: {product._id}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          {product.category && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200">
+                              {product.category.level === 0 ? '�' : product.category.level === 1 ? '�📂' : '📄'} 
+                              {product.category.name}
+                              {product.category.priority > 5 && <span className="text-yellow-600">⭐</span>}
+                            </span>
+                          )}
+                          {product.subCategory && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md border border-purple-200">
+                              � {product.subCategory.name}
+                            </span>
+                          )}
+                          {!product.category && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded-md border border-gray-200">
+                              ❓ Chưa phân loại
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900">
-                      {product.owner?.firstName} {product.owner?.lastName}
+                      {product.owner?.name || product.owner?.fullName || product.owner?.username || 'Chưa có tên'}
                     </div>
-                    <div className="text-sm text-gray-500">{product.owner?.email}</div>
+                    <div className="text-sm text-gray-500">{product.owner?.email || 'Chưa có email'}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {formatPrice(product.price)}/ngày
-                    </div>
-                    {product.depositAmount && (
-                      <div className="text-sm text-gray-500">
-                        Cọc: {formatPrice(product.depositAmount)}
+                    <div className="space-y-1">
+                      <div className="text-sm font-bold text-green-700">
+                        💰 {formatPrice(product.pricing?.dailyRate || product.dailyRate || 0)}/ngày
                       </div>
-                    )}
+                      {product.pricing?.weeklyRate && (
+                        <div className="text-xs text-blue-600">
+                          📅 {formatPrice(product.pricing.weeklyRate)}/tuần
+                        </div>
+                      )}
+                      {product.pricing?.monthlyRate && (
+                        <div className="text-xs text-purple-600">
+                          📆 {formatPrice(product.pricing.monthlyRate)}/tháng
+                        </div>
+                      )}
+                      {(product.pricing?.deposit?.amount || product.deposit) && (
+                        <div className="text-xs text-orange-600">
+                          🔒 Cọc: {formatPrice(product.pricing?.deposit?.amount || product.deposit)}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
-                    {getStatusBadge(product.status)}
+                    <div className="space-y-2">
+                      {getStatusBadge(product.status || 'INACTIVE')}
+                      {product.availability?.isAvailable === false && (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
+                          ❌ Không khả dụng
+                        </div>
+                      )}
+                      {product.featuredTier && (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-md border border-yellow-200">
+                          ⭐ Featured T{product.featuredTier}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {formatDate(product.createdAt)}
@@ -408,30 +711,6 @@ const ProductManagement = () => {
                     >
                       Chi tiết
                     </Link>
-                    {product.status === 'PENDING' && (
-                      <>
-                        <button
-                          onClick={() => {
-                            setSelectedProduct(product);
-                            setApprovalData({ action: 'approve', reason: '', feedback: '' });
-                            setShowApprovalModal(true);
-                          }}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Duyệt
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedProduct(product);
-                            setApprovalData({ action: 'reject', reason: '', feedback: '' });
-                            setShowApprovalModal(true);
-                          }}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Từ chối
-                        </button>
-                      </>
-                    )}
                     <button
                       onClick={() => handleDeleteProduct(product._id)}
                       className="text-red-600 hover:text-red-900"
@@ -446,49 +725,78 @@ const ProductManagement = () => {
         </div>
 
         {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button
-              onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
-              disabled={filters.page === 1}
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-            >
-              Trước
-            </button>
-            <button
-              onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page + 1))}
-              disabled={filters.page === totalPages}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-            >
-              Sau
-            </button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Hiển thị <span className="font-medium">{(filters.page - 1) * filters.limit + 1}</span> đến{' '}
-                <span className="font-medium">{Math.min(filters.page * filters.limit, totalProducts)}</span> trong{' '}
-                <span className="font-medium">{totalProducts}</span> kết quả
-              </p>
+        {pagination.totalPages > 1 && (
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+            {/* Mobile Pagination */}
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 1}
+                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  pagination.currentPage === 1
+                    ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                    : 'text-gray-700 bg-white hover:bg-gray-50'
+                }`}
+              >
+                Trước
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={pagination.currentPage === pagination.totalPages}
+                className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  pagination.currentPage === pagination.totalPages
+                    ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                    : 'text-gray-700 bg-white hover:bg-gray-50'
+                }`}
+              >
+                Sau
+              </button>
             </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                <button
-                  onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
-                  disabled={filters.page === 1}
-                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Trước
-                </button>
-                {[...Array(totalPages)].map((_, index) => {
-                  const page = index + 1;
-                  if (page === 1 || page === totalPages || (page >= filters.page - 2 && page <= filters.page + 2)) {
+            
+            {/* Desktop Pagination */}
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Hiển thị <span className="font-medium">{(pagination.currentPage - 1) * pagination.limit + 1}</span> đến{' '}
+                  <span className="font-medium">
+                    {Math.min(pagination.currentPage * pagination.limit, pagination.totalProducts)}
+                  </span>{' '}
+                  trong <span className="font-medium">{pagination.totalProducts}</span> kết quả
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={pagination.currentPage === 1}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
+                      pagination.currentPage === 1
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        : 'text-gray-500 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                    let page;
+                    if (pagination.totalPages <= 5) {
+                      page = i + 1;
+                    } else if (pagination.currentPage <= 3) {
+                      page = i + 1;
+                    } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                      page = pagination.totalPages - 4 + i;
+                    } else {
+                      page = pagination.currentPage - 2 + i;
+                    }
+                    
                     return (
                       <button
                         key={page}
-                        onClick={() => handleFilterChange('page', page)}
+                        onClick={() => handlePageChange(page)}
                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          page === filters.page
+                          page === pagination.currentPage
                             ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                             : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                         }`}
@@ -496,105 +804,28 @@ const ProductManagement = () => {
                         {page}
                       </button>
                     );
-                  } else if (page === filters.page - 3 || page === filters.page + 3) {
-                    return <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>;
-                  }
-                  return null;
-                })}
-                <button
-                  onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page + 1))}
-                  disabled={filters.page === totalPages}
-                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Sau
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Approval Modal */}
-      {showApprovalModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                {approvalData.action === 'approve' ? 'Phê duyệt' : 'Từ chối'} sản phẩm
-              </h3>
-              <button
-                onClick={() => setShowApprovalModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Sản phẩm: {selectedProduct.name}</p>
-              <p className="text-sm text-gray-600">Chủ sở hữu: {selectedProduct.owner?.firstName} {selectedProduct.owner?.lastName}</p>
-            </div>
-
-            <div className="space-y-4">
-              {approvalData.action === 'reject' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lý do từ chối *
-                  </label>
-                  <select
-                    value={approvalData.reason}
-                    onChange={(e) => setApprovalData(prev => ({ ...prev, reason: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                  })}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={pagination.currentPage === pagination.totalPages}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
+                      pagination.currentPage === pagination.totalPages
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        : 'text-gray-500 bg-white hover:bg-gray-50'
+                    }`}
                   >
-                    <option value="">Chọn lý do</option>
-                    <option value="inappropriate_content">Nội dung không phù hợp</option>
-                    <option value="fake_product">Sản phẩm giả mạo</option>
-                    <option value="poor_quality">Chất lượng kém</option>
-                    <option value="violation">Vi phạm quy định</option>
-                    <option value="other">Khác</option>
-                  </select>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Góp ý/Phản hồi
-                </label>
-                <textarea
-                  value={approvalData.feedback}
-                  onChange={(e) => setApprovalData(prev => ({ ...prev, feedback: e.target.value }))}
-                  rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập góp ý hoặc phản hồi (tùy chọn)"
-                />
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </nav>
               </div>
             </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowApprovalModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleApprovalAction}
-                className={`flex-1 px-4 py-2 rounded-lg text-white ${
-                  approvalData.action === 'approve'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
-                disabled={approvalData.action === 'reject' && !approvalData.reason}
-              >
-                {approvalData.action === 'approve' ? 'Phê duyệt' : 'Từ chối'}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
