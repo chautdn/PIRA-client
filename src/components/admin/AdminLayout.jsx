@@ -43,8 +43,13 @@ const AdminLayout = () => {
       icon: '🛒'
     },
     {
-      name: 'Báo cáo & Thống kê',
+      name: 'Quản lý Báo cáo',
       path: '/admin/reports',
+      icon: '🚨'
+    },
+    {
+      name: 'Báo cáo & Thống kê',
+      path: '/admin/analytics',
       icon: '📈'
     },
     {

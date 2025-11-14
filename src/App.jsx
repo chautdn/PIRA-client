@@ -41,6 +41,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
+import ReportManagement from "./pages/admin/ReportManagement";
+import AdminReportDetail from "./pages/admin/AdminReportDetail";
 
 // Rental system pages
 import RentalOrdersPage from "./pages/RentalOrders";
@@ -287,7 +289,11 @@ export default function App() {
                   />
                   <Route
                     path="reports"
-                    element={<div>Reports & Analytics - Coming Soon</div>}
+                    element={<ReportManagement />} 
+                  />
+                  <Route
+                    path="reports/:reportId"
+                    element={<AdminReportDetail />} 
                   />
                   <Route
                     path="settings"

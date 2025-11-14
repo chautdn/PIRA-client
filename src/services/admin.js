@@ -10,18 +10,15 @@ class AdminService {
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
       
-      // If authentication error, return null to trigger fallback
       if (error.response?.status === 401) {
         console.warn('Not authorized to access admin dashboard');
         return null;
       }
       
-      // For other errors, still return null to trigger fallback
       return null;
     }
   }
 
-  // Helper method for mock dashboard data
   getMockDashboardStats() {
     return {
       totalUsers: 156,
@@ -41,7 +38,6 @@ class AdminService {
       const query = new URLSearchParams(params).toString();
       const response = await api.get(`/admin/users?${query}`);
       
-      // Handle different response structures
       if (response.data && response.data.metadata) {
         return response.data.metadata;
       } else if (response.data) {
@@ -52,7 +48,6 @@ class AdminService {
     } catch (error) {
       console.error('Error fetching users:', error);
       
-      // Return mock data if server is not available
       if (error.code === 'NETWORK_ERROR' || error.response?.status === 500) {
         return {
           users: [],
@@ -69,32 +64,21 @@ class AdminService {
     try {
       const response = await api.get(`/admin/users/${userId}`);
       console.log('AdminService getUserById - Full response:', response);
-      console.log('AdminService getUserById - response.data:', response.data);
-      console.log('AdminService getUserById - response.data.metadata:', response.data?.metadata);
       
-      // Handle different response structures
       let userData = null;
       
-      // Check for responseUtils.success format: { success, message, data }
       if (response.data && response.data.data) {
         userData = response.data.data;
-        console.log('Found user data in response.data.data');
       } else if (response.data && response.data.metadata) {
         userData = response.data.metadata;
-        console.log('Found user data in response.data.metadata');
       } else if (response.data) {
         userData = response.data;
-        console.log('Using response.data directly');
       }
-      
-      console.log('AdminService getUserById - Final userData:', userData);
-      console.log('AdminService getUserById - userData.email:', userData?.email);
       
       return userData || null;
     } catch (error) {
       console.error('Error fetching user:', error);
       
-      // Handle specific error cases
       if (error.response?.status === 404) {
         throw new Error('User not found');
       } else if (error.response?.status === 500) {
@@ -155,7 +139,6 @@ class AdminService {
       const query = new URLSearchParams(params).toString();
       const response = await api.get(`/admin/products?${query}`);
       
-      // Handle different response structures
       if (response.data && response.data.metadata) {
         return response.data.metadata;
       } else if (response.data) {
@@ -166,7 +149,6 @@ class AdminService {
     } catch (error) {
       console.error('Error fetching products:', error);
       
-      // Return mock data if server is not available
       if (error.code === 'NETWORK_ERROR' || error.response?.status === 500) {
         return {
           products: [],
@@ -316,11 +298,67 @@ class AdminService {
   // Reports Management APIs
   async getReports(params = {}) {
     try {
-      const query = new URLSearchParams(params).toString();
-      const response = await api.get(`/admin/reports?${query}`);
-      return response.data.metadata;
+      const queryParams = new URLSearchParams();
+      
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await api.get(`/admin/reports?${queryParams.toString()}`);
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
     } catch (error) {
       console.error('Error fetching reports:', error);
+      throw error;
+    }
+  }
+
+  async getReportById(reportId) {
+    try {
+      const response = await api.get(`/admin/reports/${reportId}`);
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error fetching report detail:', error);
+      throw error;
+    }
+  }
+
+  async updateReportStatus(reportId, status, adminNotes) {
+    try {
+      const response = await api.patch(`/admin/reports/${reportId}/status`, {
+        status,
+        adminNotes
+      });
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error updating report status:', error);
+      throw error;
+    }
+  }
+
+  async deleteReport(reportId) {
+    try {
+      const response = await api.delete(`/admin/reports/${reportId}`);
+      
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error deleting report:', error);
       throw error;
     }
   }
@@ -454,6 +492,9 @@ export const {
   getOrderById,
   updateOrderStatus,
   getReports,
+  getReportById,
+  updateReportStatus,
+  deleteReport,
   handleReport,
   getSystemSettings,
   updateSystemSettings,
