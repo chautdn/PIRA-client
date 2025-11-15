@@ -19,10 +19,6 @@ const Cart = () => {
   // Không có phí nền tảng khi thuê sản phẩm
   const finalTotal = cartTotal;
 
-  const handleCheckout = () => {
-    // TODO: Implement checkout logic
-    alert("Chức năng thanh toán đang được phát triển!");
-  };
 
   const handleClearCart = () => {
     if (window.confirm("Bạn có chắc muốn xóa toàn bộ giỏ hàng?")) {
