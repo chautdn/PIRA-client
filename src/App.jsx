@@ -23,6 +23,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
 import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
+import OwnerProducts from "./pages/owner/OwnerProducts";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
 
@@ -148,7 +149,7 @@ export default function App() {
                   path={ROUTES.OWNER_PRODUCTS}
                   element={
                     <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                      <ProductList isOwnerView={true} />
+                      <OwnerProducts />
                     </RoleProtectedRoute>
                   }
                 />
