@@ -152,4 +152,42 @@ export const ownerProductApi = {
       throw error.response?.data || error.message;
     }
   },
+
+  // GET /api/owner-products/rental-requests - Get rental requests for owner
+  getRentalRequests: async (params) => {
+    try {
+      const response = await api.get("/owner-products/rental-requests", {
+        params,
+      });
+      return response.data;
+      
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // POST /api/owner-products/rental-requests/:subOrderId/items/:itemIndex/confirm
+  confirmProductItem: async (subOrderId, itemIndex) => {
+    try {
+      const response = await api.post(
+        `/owner-products/rental-requests/${subOrderId}/items/${itemIndex}/confirm`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // POST /api/owner-products/rental-requests/:subOrderId/items/:itemIndex/reject
+  rejectProductItem: async (subOrderId, itemIndex, reason) => {
+    try {
+      const response = await api.post(
+        `/owner-products/rental-requests/${subOrderId}/items/${itemIndex}/reject`,
+        { reason }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
