@@ -39,7 +39,6 @@ export const ROUTES = {
     REPORTS: "/admin/reports",
     SETTINGS: "/admin/settings",
     PROFILE: "/admin/profile",
-    
   },
 };
 
@@ -63,4 +62,10 @@ export const USER_STATUS = {
   INACTIVE: "INACTIVE",
   BANNED: "BANNED",
   SUSPENDED: "SUSPENDED",
+};
+export const formatCurrency = (amount) => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(amount);
 };

@@ -3,7 +3,7 @@ import { ROUTES } from "./constants";
 export const getRedirectPath = (userRole) => {
   switch (userRole?.toUpperCase()) {
     case "OWNER":
-      return ROUTES.DASHBOARD;
+      return ROUTES.HOME; // Owners use navigation menu, not dashboard
     case "RENTER":
       return ROUTES.HOME;
     case "SHIPPER":

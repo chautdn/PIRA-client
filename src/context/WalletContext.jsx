@@ -60,9 +60,21 @@ export const WalletProvider = ({ children }) => {
     dispatch({ type: "SET_LOADING", payload: true });
     try {
       const response = await api.get("/payment/wallet/balance");
+      console.log("Wallet API Response:", response.data);
+
+      // Try different possible response structures
+      const balance =
+        response.data?.metadata?.balance?.available || // New structure
+        response.data?.metadata?.balance || // Simple number
+        response.data?.data?.balance?.available || // Alternative structure
+        response.data?.data?.balance ||
+        0;
+
+      console.log("Extracted balance:", balance);
+
       dispatch({
         type: "SET_BALANCE",
-        payload: response.data?.metadata?.balance || 0,
+        payload: balance,
       });
     } catch (error) {
       const errorMessage =
@@ -70,6 +82,7 @@ export const WalletProvider = ({ children }) => {
         error.message ||
         "Failed to fetch wallet balance";
       dispatch({ type: "SET_ERROR", payload: errorMessage });
+      console.error("Wallet fetch error:", error);
       toast.error(errorMessage);
     } finally {
       dispatch({ type: "SET_LOADING", payload: false });

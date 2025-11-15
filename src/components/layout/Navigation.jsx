@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../context/CartContext";
@@ -9,6 +9,159 @@ import LogoutModal from "../common/LogoutModal";
 import useChatSocket from "../../hooks/useChatSocket";
 import useChat from "../../hooks/useChat";
 import { ROUTES } from "../../utils/constants";
+
+// Owner Menu Dropdown Component
+const OwnerMenuDropdown = ({ user }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  const menuItems = [
+    {
+      icon: "📦",
+      label: "Sản Phẩm Của Tôi",
+      description: "Quản lý sản phẩm cho thuê",
+      route: ROUTES.OWNER_PRODUCTS,
+    },
+    {
+      icon: "➕",
+      label: "Đăng Sản Phẩm Mới",
+      description: "Tạo sản phẩm cho thuê",
+      route: ROUTES.OWNER_CREATE_PRODUCT,
+      requiresVerification: true,
+    },
+    {
+      icon: "📋",
+      label: "Yêu Cầu Thuê",
+      description: "Quản lý yêu cầu thuê sản phẩm",
+      route: "/owner/rental-requests",
+    },
+    {
+      icon: "",
+      label: "Thống Kê",
+      description: "Xem doanh thu và báo cáo",
+      route: "#", // TODO: Add analytics route
+    },
+  ];
+
+  const handleItemClick = (route, requiresVerification = false) => {
+    setIsOpen(false);
+
+    if (route === "#") {
+      return;
+    }
+
+    // If this is the create product route, we'll let the page handle verification
+    // But we can show a quick info toast if not verified
+    if (requiresVerification && route === ROUTES.OWNER_CREATE_PRODUCT) {
+      const cccdVerified = user?.cccd?.isVerified || false;
+      const bankAccountAdded = !!(
+        user?.bankAccount?.accountNumber && user?.bankAccount?.bankCode
+      );
+
+      if (!cccdVerified || !bankAccountAdded) {
+        // Still navigate, but the page will show verification screen
+        navigate(route);
+        return;
+      }
+    }
+
+    navigate(route);
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+      >
+        <span className="text-base">🏠</span>
+        <span>Cho Thuê</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <h3 className="text-sm font-bold text-gray-900">
+              Quản Lý Cho Thuê
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Tất cả tính năng dành cho chủ sản phẩm
+            </p>
+          </div>
+
+          <div className="py-1">
+            {menuItems.map((item, index) => (
+              <button
+                key={index}
+                onClick={() =>
+                  handleItemClick(item.route, item.requiresVerification)
+                }
+                disabled={item.route === "#"}
+                className={`w-full px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors text-left ${
+                  item.route === "#" ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                <span className="text-2xl flex-shrink-0">{item.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    {item.label}
+                    {item.route === "#" && (
+                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                        Sắp có
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {item.description}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="px-4 py-3 border-t border-gray-100 bg-gradient-to-r from-primary-50 to-primary-100">
+            <div className="flex items-center gap-2 text-xs text-primary-800">
+              <span>💡</span>
+              <span className="font-medium">
+                Mẹo: Đăng nhiều sản phẩm để tăng thu nhập!
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Navigation = () => {
   const { user, logout, loading } = useAuth();
@@ -51,7 +204,7 @@ const Navigation = () => {
     if (user && connected) {
       fetchConversations();
     }
-  }, [user, connected, fetchConversations]);
+  }, [user, connected]); // Removed fetchConversations to prevent infinite loop
 
   // Lắng nghe tin nhắn mới qua socket
   useEffect(() => {
@@ -71,23 +224,18 @@ const Navigation = () => {
       unsubscribeMessage?.();
       unsubscribeNotification?.();
     };
-  }, [connected, onNewMessage, onNotification, fetchConversations, user]);
+  }, [connected, onNewMessage, onNotification, user]); // Removed fetchConversations to prevent infinite loop
 
-  // Search realtime với debounce 300ms
-  useEffect(() => {
+  // Handle search submission
+  const handleSearch = (e) => {
+    e.preventDefault();
     const keyword = searchInput.trim();
-    const timer = setTimeout(() => {
-      if (window.location.pathname.startsWith(ROUTES.PRODUCTS)) {
-        if (keyword) {
-          navigate(`${ROUTES.PRODUCTS}?search=${encodeURIComponent(keyword)}`);
-        } else {
-          navigate(ROUTES.PRODUCTS);
-        }
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchInput, navigate]);
+    if (keyword) {
+      navigate(`${ROUTES.PRODUCTS}?search=${encodeURIComponent(keyword)}`);
+    } else {
+      navigate(ROUTES.PRODUCTS);
+    }
+  };
 
   // Xử lý đăng xuất
   const handleLogout = async () => {
@@ -116,15 +264,15 @@ const Navigation = () => {
     <>
       <nav className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center h-24">
             {/* Left: Brand + Menu */}
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-6 flex-shrink-0">
               {/* Brand */}
-              <Link to={ROUTES.HOME} className="flex items-center gap-2 group">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <span className="text-white text-xl font-bold">P</span>
+              <Link to={ROUTES.HOME} className="flex items-center gap-3 group">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <span className="text-white text-2xl font-bold">P</span>
                 </div>
-                <span className="text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+                <span className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
                   PIRA
                 </span>
               </Link>
@@ -133,42 +281,64 @@ const Navigation = () => {
               <div className="hidden md:flex items-center gap-1">
                 <Link
                   to={ROUTES.HOME}
-                  className="px-4 py-2 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all"
+                  className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
                 >
                   Trang Chủ
                 </Link>
-                <Link
-                  to={ROUTES.PRODUCTS}
-                  className="px-4 py-2 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all"
-                >
-                  Tìm Kiếm
-                </Link>
-                <Link
-                  to="#"
-                  className="px-4 py-2 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all"
-                >
-                  Đơn Hàng
-                </Link>
+                {user ? (
+                  <Link
+                    to="/rental-orders"
+                    className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                  >
+                    Đơn Thuê
+                  </Link>
+                ) : (
+                  <Link
+                    to={ROUTES.LOGIN}
+                    className="px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                  >
+                    Đơn Thuê
+                  </Link>
+                )}
+
+                {/* Owner Menu Dropdown - Show for authenticated users who can become owners */}
+                {user && (user.role === "OWNER" || user.role === "RENTER") && (
+                  <OwnerMenuDropdown user={user} />
+                )}
               </div>
             </div>
 
             {/* Center: Search bar */}
-            <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
-              <div className="flex items-center w-full border-2 border-gray-200 hover:border-primary-400 focus-within:border-primary-500 rounded-xl px-4 py-2.5 bg-gray-50 focus-within:bg-white transition-all shadow-sm">
-                <span className="text-gray-400 text-lg mr-3">🔎</span>
-                <input
-                  className="w-full outline-none bg-transparent text-gray-700 placeholder:text-gray-400 font-medium"
-                  placeholder="Tìm kiếm thiết bị du lịch..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                />
-              </div>
+            <div className="hidden lg:flex flex-1 max-w-xl mx-6">
+              <form onSubmit={handleSearch} className="w-full">
+                <button
+                  type="submit"
+                  className="flex items-center justify-center w-full border-2 border-gray-200 hover:border-primary-400 focus:border-primary-500 rounded-xl px-5 py-3 bg-gray-50 hover:bg-white transition-all shadow-sm group cursor-pointer"
+                  onClick={handleSearch}
+                >
+                  <span className="text-xl text-gray-400 group-hover:text-primary-600 transition-colors">
+                    🔎
+                  </span>
+                  <input
+                    className="w-full outline-none bg-transparent text-gray-700 placeholder:text-gray-400 font-medium text-base ml-4 cursor-pointer"
+                    placeholder="Tìm kiếm thiết bị du lịch..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch(e);
+                      }
+                    }}
+                  />
+                </button>
+              </form>
             </div>
 
             {/* Right: Icons + Auth */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-shrink-0">
               {/* Language */}
-              <button className="hidden md:flex items-center gap-1 px-3 py-2 text-sm font-semibold text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg transition-all">
+              <button className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg transition-all whitespace-nowrap">
                 <span className="text-base">🌐</span>
                 <span>VI</span>
               </button>
@@ -183,7 +353,7 @@ const Navigation = () => {
                 >
                   <span className="text-xl">🛒</span>
                   {cartCount > 0 && (
-                    <span className="absolute top-1 right-1 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
+                    <span className="absolute top-0.5 right-0.5 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
                       {cartCount > 9 ? "9+" : cartCount}
                     </span>
                   )}
@@ -206,7 +376,7 @@ const Navigation = () => {
                 >
                   <span className="text-xl">💬</span>
                   {user && unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
+                    <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
@@ -218,31 +388,22 @@ const Navigation = () => {
 
               {/* Auth Section */}
               {!user ? (
-                <div className="flex items-center gap-2 ml-2">
+                <div className="flex items-center gap-2">
                   <Link
                     to={ROUTES.LOGIN}
-                    className="px-4 py-2 text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg text-sm font-semibold transition-all"
+                    className="px-4 py-2 text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
                   >
                     Đăng Nhập
                   </Link>
                   <Link
                     to={ROUTES.REGISTER}
-                    className="px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all"
+                    className="px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all whitespace-nowrap"
                   >
                     Đăng Ký
                   </Link>
                 </div>
               ) : (
-                <div className="flex items-center gap-3">
-                  <UserDropdown />
-                  <button
-                    onClick={() => setShowLogoutModal(true)}
-                    disabled={loading}
-                    className="hidden md:block bg-red-600 text-white hover:bg-red-700 px-3 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
-                  >
-                    Đăng Xuất
-                  </button>
-                </div>
+                <UserDropdown />
               )}
             </div>
           </div>
