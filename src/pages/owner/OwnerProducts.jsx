@@ -47,7 +47,7 @@ const ProductActionButtons = ({
               className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
             >
               <FiEdit className="w-4 h-4" />
-              <span>Edit Product</span>
+              <span>Chỉnh sửa</span>
             </button>
 
             {isHidden ? (
@@ -59,7 +59,7 @@ const ProductActionButtons = ({
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-green-700"
               >
                 <FiEye className="w-4 h-4" />
-                <span>Unhide</span>
+                <span>Hiện lại</span>
               </button>
             ) : (
               <button
@@ -70,7 +70,7 @@ const ProductActionButtons = ({
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-orange-700"
               >
                 <FiEyeOff className="w-4 h-4" />
-                <span>Hide Product</span>
+                <span>Ẩn sản phẩm</span>
               </button>
             )}
 
@@ -84,7 +84,7 @@ const ProductActionButtons = ({
               className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center gap-3 text-red-700"
             >
               <FiTrash2 className="w-4 h-4" />
-              <span>Delete Product</span>
+              <span>Xóa sản phẩm</span>
             </button>
           </div>
         </>
@@ -110,9 +110,10 @@ export default function OwnerProducts() {
   // Modal states
   const [modalState, setModalState] = useState({
     isOpen: false,
-    type: null, // 'hide', 'unhide', 'delete'
+    type: null, // 'hide', 'unhide', 'delete', 'error'
     productId: null,
     loading: false,
+    errorMessage: null,
   });
 
   useEffect(() => {
@@ -222,8 +223,28 @@ export default function OwnerProducts() {
       }
     } catch (err) {
       console.error(`Error performing ${modalState.type}:`, err);
-      alert(err.message || `Failed to ${modalState.type} product`);
-      setModalState((prev) => ({ ...prev, loading: false }));
+      // Show error in modal instead of alert
+      setModalState({
+        isOpen: true,
+        type: "error",
+        productId: null,
+        loading: false,
+        errorMessage:
+          err.message || `Không thể ${getActionName(modalState.type)} sản phẩm`,
+      });
+    }
+  };
+
+  const getActionName = (type) => {
+    switch (type) {
+      case "hide":
+        return "ẩn";
+      case "unhide":
+        return "hiện";
+      case "delete":
+        return "xóa";
+      default:
+        return "xử lý";
     }
   };
 
@@ -231,33 +252,41 @@ export default function OwnerProducts() {
     switch (modalState.type) {
       case "hide":
         return {
-          title: "Hide Product",
+          title: "Ẩn Sản Phẩm",
           message:
-            "Are you sure you want to hide this product? It will no longer be visible to other users, but you can unhide it anytime.",
-          confirmText: "Hide Product",
+            "Bạn có chắc chắn muốn ẩn sản phẩm này không? Sản phẩm sẽ không còn hiển thị với người dùng khác, nhưng bạn có thể hiện lại bất kỳ lúc nào.",
+          confirmText: "Ẩn Sản Phẩm",
           type: "hide",
         };
       case "unhide":
         return {
-          title: "Unhide Product",
+          title: "Hiện Lại Sản Phẩm",
           message:
-            "Are you sure you want to unhide this product? It will become visible to other users again.",
-          confirmText: "Unhide Product",
+            "Bạn có chắc chắn muốn hiện lại sản phẩm này không? Sản phẩm sẽ hiển thị trở lại cho người dùng khác.",
+          confirmText: "Hiện Lại",
           type: "unhide",
         };
       case "delete":
         return {
-          title: "Delete Product",
+          title: "Xóa Sản Phẩm",
           message:
-            "Are you sure you want to delete this product? Once deleted, the product will no longer appear and this action cannot be undone.",
-          confirmText: "Delete Product",
+            "Bạn có chắc chắn muốn xóa sản phẩm này không? Sau khi xóa, sản phẩm sẽ không còn hiển thị và hành động này không thể hoàn tác.",
+          confirmText: "Xóa Sản Phẩm",
           type: "danger",
+        };
+      case "error":
+        return {
+          title: "Lỗi",
+          message:
+            modalState.errorMessage || "Có lỗi xảy ra. Vui lòng thử lại.",
+          confirmText: "Đóng",
+          type: "error",
         };
       default:
         return {
           title: "",
           message: "",
-          confirmText: "Confirm",
+          confirmText: "Xác nhận",
           type: "warning",
         };
     }
@@ -404,7 +433,7 @@ export default function OwnerProducts() {
                     <div className="bg-white px-4 py-2 rounded-lg shadow-lg">
                       <span className="text-gray-800 font-semibold flex items-center gap-2">
                         <FiEyeOff className="w-5 h-5" />
-                        Hidden
+                        Đã Ẩn
                       </span>
                     </div>
                   </div>
@@ -510,10 +539,10 @@ export default function OwnerProducts() {
       <ConfirmModal
         isOpen={modalState.isOpen}
         onClose={closeModal}
-        onConfirm={confirmAction}
+        onConfirm={modalState.type === "error" ? closeModal : confirmAction}
         {...getModalConfig()}
         loading={modalState.loading}
-        cancelText="Cancel"
+        cancelText={modalState.type === "error" ? null : "Hủy"}
       />
     </div>
   );

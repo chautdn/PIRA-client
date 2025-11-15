@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ownerProductApi } from "../../services/ownerProduct.Api";
 import { FiArrowLeft, FiSave, FiImage, FiX } from "react-icons/fi";
+import ConfirmModal from "../../components/owner/ConfirmModal";
 
 export default function OwnerProductEdit() {
   const { productId } = useParams();
@@ -19,6 +20,12 @@ export default function OwnerProductEdit() {
 
   const [newImages, setNewImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: null,
+    imageId: null,
+    message: null,
+  });
 
   useEffect(() => {
     loadProduct();
@@ -38,7 +45,7 @@ export default function OwnerProductEdit() {
       }
     } catch (err) {
       console.error("Error loading product:", err);
-      setError("Failed to load product");
+      setError("Không thể tải sản phẩm");
     } finally {
       setLoading(false);
     }
@@ -56,7 +63,11 @@ export default function OwnerProductEdit() {
     const files = Array.from(e.target.files);
 
     if (files.length + (product?.images?.length || 0) + newImages.length > 10) {
-      alert("Maximum 10 images allowed");
+      setModalState({
+        isOpen: true,
+        type: "error",
+        message: "Tối đa 10 hình ảnh. Vui lòng xóa một số hình ảnh hiện tại trước khi thêm mới.",
+      });
       return;
     }
 
@@ -73,20 +84,29 @@ export default function OwnerProductEdit() {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const removeExistingImage = async (imageId) => {
-    if (!window.confirm("Are you sure you want to delete this image?")) {
-      return;
-    }
+  const removeExistingImage = (imageId) => {
+    setModalState({
+      isOpen: true,
+      type: "deleteImage",
+      imageId: imageId,
+    });
+  };
 
+  const confirmDeleteImage = async () => {
     try {
-      await ownerProductApi.deleteImage(productId, imageId);
+      await ownerProductApi.deleteImage(productId, modalState.imageId);
       setProduct((prev) => ({
         ...prev,
-        images: prev.images.filter((img) => img._id !== imageId),
+        images: prev.images.filter((img) => img._id !== modalState.imageId),
       }));
+      setModalState({ isOpen: false, type: null, imageId: null });
     } catch (err) {
       console.error("Error deleting image:", err);
-      alert("Failed to delete image");
+      setModalState({
+        isOpen: true,
+        type: "error",
+        message: err.message || "Không thể xóa hình ảnh",
+      });
     }
   };
 
@@ -112,12 +132,15 @@ export default function OwnerProductEdit() {
       );
 
       if (res.success) {
-        alert("Product updated successfully!");
-        navigate("/owner/products");
+        setModalState({
+          isOpen: true,
+          type: "success",
+          message: "Cập nhật sản phẩm thành công!",
+        });
       }
     } catch (err) {
       console.error("Error updating product:", err);
-      setError(err.message || "Failed to update product");
+      setError(err.message || "Không thể cập nhật sản phẩm");
     } finally {
       setSaving(false);
     }
@@ -128,7 +151,7 @@ export default function OwnerProductEdit() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-          <p className="mt-4 text-gray-600">Loading product...</p>
+          <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
         </div>
       </div>
     );
@@ -140,7 +163,7 @@ export default function OwnerProductEdit() {
         <div className="text-center">
           <h3 className="text-xl font-bold text-red-600 mb-4">{error}</h3>
           <Link to="/owner/products" className="text-blue-600 hover:underline">
-            Back to Products
+            Quay lại danh sách sản phẩm
           </Link>
         </div>
       </div>
@@ -157,11 +180,11 @@ export default function OwnerProductEdit() {
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <FiArrowLeft />
-            Back to Products
+            Quay lại
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Edit Product</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Chỉnh Sửa Sản Phẩm</h1>
           <p className="text-gray-600 mt-2">
-            Update product name, description, and images
+            Cập nhật tên, mô tả và hình ảnh sản phẩm
           </p>
         </div>
 
@@ -183,12 +206,12 @@ export default function OwnerProductEdit() {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-medium text-blue-800">
-                Limited Editing Mode
+                Chế độ chỉnh sửa giới hạn
               </h3>
               <p className="mt-1 text-sm text-blue-700">
-                You can only update the product name, description, and images.
-                Pricing, category, and other critical fields cannot be changed
-                to ensure fairness to existing rental agreements.
+                Bạn chỉ có thể cập nhật tên, mô tả và hình ảnh sản phẩm. Giá cả, danh mục và các
+                trường quan trọng khác không thể thay đổi để đảm bảo công bằng cho các hợp
+                đồng thuê hiện tại.
               </p>
             </div>
           </div>
@@ -208,7 +231,7 @@ export default function OwnerProductEdit() {
           {/* Product Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Product Name *
+              Tên Sản Phẩm <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -219,17 +242,17 @@ export default function OwnerProductEdit() {
               minLength={3}
               maxLength={100}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Enter product name"
+              placeholder="Nhập tên sản phẩm"
             />
             <p className="text-sm text-gray-500 mt-1">
-              {formData.title.length}/100 characters
+              {formData.title.length}/100 ký tự
             </p>
           </div>
 
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description *
+              Mô tả <span className="text-red-500">*</span>
             </label>
             <textarea
               name="description"
@@ -240,10 +263,10 @@ export default function OwnerProductEdit() {
               maxLength={2000}
               rows={6}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="Describe your product..."
+              placeholder="Mô tả chi tiết về sản phẩm của bạn..."
             />
             <p className="text-sm text-gray-500 mt-1">
-              {formData.description.length}/2000 characters
+              {formData.description.length}/2000 ký tự
             </p>
           </div>
 
@@ -251,14 +274,14 @@ export default function OwnerProductEdit() {
           {product?.images && product.images.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Current Images ({product.images.length})
+                Hình ảnh Hiện tại ({product.images.length})
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {product.images.map((image) => (
                   <div key={image._id} className="relative group">
                     <img
                       src={typeof image === "string" ? image : image.url}
-                      alt={image.alt || "Product"}
+                      alt={image.alt || "Hình ảnh sản phẩm"}
                       className="w-full h-32 object-cover rounded-lg"
                     />
                     <button
@@ -270,7 +293,7 @@ export default function OwnerProductEdit() {
                     </button>
                     {image.isMain && (
                       <div className="absolute bottom-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
-                        Main
+                        Chính
                       </div>
                     )}
                   </div>
@@ -282,7 +305,7 @@ export default function OwnerProductEdit() {
           {/* New Images */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Add New Images (Optional)
+              Thêm Hình ảnh Mới (Không bắt buộc)
             </label>
 
             {imagePreviews.length > 0 && (
@@ -291,7 +314,7 @@ export default function OwnerProductEdit() {
                   <div key={index} className="relative group">
                     <img
                       src={preview}
-                      alt={`New ${index + 1}`}
+                      alt={`Mới ${index + 1}`}
                       className="w-full h-32 object-cover rounded-lg"
                     />
                     <button
@@ -302,7 +325,7 @@ export default function OwnerProductEdit() {
                       <FiX size={16} />
                     </button>
                     <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                      New
+                      Mới
                     </div>
                   </div>
                 ))}
@@ -324,10 +347,10 @@ export default function OwnerProductEdit() {
               >
                 <FiImage className="w-12 h-12 text-gray-400 mb-3" />
                 <span className="text-sm font-medium text-gray-700">
-                  Click to upload images
+                  Nhấp để tải lên hình ảnh
                 </span>
                 <span className="text-xs text-gray-500 mt-1">
-                  PNG, JPG up to 10MB (Max 10 images total)
+                  PNG, JPG tối đa 10MB (Tối đa 10 hình ảnh)
                 </span>
               </label>
             </div>
@@ -336,21 +359,21 @@ export default function OwnerProductEdit() {
           {/* Read-only Info */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Product Information (Read-only)
+              Thông tin Sản phẩm (Chỉ đọc)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-600">Category:</span>
+                <span className="text-gray-600">Danh mục:</span>
                 <span className="ml-2 font-medium">
                   {product?.category?.name}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Condition:</span>
+                <span className="text-gray-600">Tình trạng:</span>
                 <span className="ml-2 font-medium">{product?.condition}</span>
               </div>
               <div>
-                <span className="text-gray-600">Daily Rate:</span>
+                <span className="text-gray-600">Giá thuê / ngày:</span>
                 <span className="ml-2 font-medium">
                   {new Intl.NumberFormat("vi-VN", {
                     style: "currency",
@@ -359,7 +382,7 @@ export default function OwnerProductEdit() {
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Deposit:</span>
+                <span className="text-gray-600">Đặt cọc:</span>
                 <span className="ml-2 font-medium">
                   {new Intl.NumberFormat("vi-VN", {
                     style: "currency",
@@ -380,12 +403,12 @@ export default function OwnerProductEdit() {
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Saving...
+                  Đang lưu...
                 </>
               ) : (
                 <>
                   <FiSave />
-                  Save Changes
+                  Lưu Thay đổi
                 </>
               )}
             </button>
@@ -393,11 +416,53 @@ export default function OwnerProductEdit() {
               to="/owner/products"
               className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-center"
             >
-              Cancel
+              Hủy
             </Link>
           </div>
         </form>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={modalState.isOpen}
+        onClose={() => {
+          setModalState({ isOpen: false, type: null, imageId: null, message: null });
+          if (modalState.type === "success") {
+            navigate("/owner/products");
+          }
+        }}
+        onConfirm={() => {
+          if (modalState.type === "deleteImage") {
+            confirmDeleteImage();
+          } else if (modalState.type === "success") {
+            navigate("/owner/products");
+          }
+        }}
+        type={modalState.type}
+        title={
+          modalState.type === "deleteImage"
+            ? "Xóa Hình ảnh"
+            : modalState.type === "success"
+            ? "Thành công"
+            : modalState.type === "error"
+            ? "Lỗi"
+            : ""
+        }
+        message={
+          modalState.message ||
+          (modalState.type === "deleteImage"
+            ? "Bạn có chắc chắn muốn xóa hình ảnh này không?"
+            : "")
+        }
+        confirmText={
+          modalState.type === "deleteImage"
+            ? "Xóa"
+            : "Đóng"
+        }
+        cancelText={
+          modalState.type === "success" || modalState.type === "error" ? null : "Hủy"
+        }
+      />
     </div>
   );
 }

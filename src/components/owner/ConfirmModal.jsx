@@ -5,6 +5,7 @@ import {
   FiEye,
   FiTrash2,
   FiX,
+  FiAlertCircle,
 } from "react-icons/fi";
 
 export default function ConfirmModal({
@@ -28,6 +29,8 @@ export default function ConfirmModal({
         return <FiEyeOff className="w-12 h-12 text-orange-600" />;
       case "unhide":
         return <FiEye className="w-12 h-12 text-green-600" />;
+      case "error":
+        return <FiAlertCircle className="w-12 h-12 text-red-600" />;
       default:
         return <FiAlertTriangle className="w-12 h-12 text-yellow-600" />;
     }
@@ -36,6 +39,8 @@ export default function ConfirmModal({
   const getButtonStyle = () => {
     switch (type) {
       case "danger":
+        return "bg-red-600 hover:bg-red-700 text-white";
+      case "error":
         return "bg-red-600 hover:bg-red-700 text-white";
       case "hide":
         return "bg-orange-600 hover:bg-orange-700 text-white";
@@ -78,22 +83,26 @@ export default function ConfirmModal({
 
           {/* Actions */}
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {cancelText}
-            </button>
+            {cancelText && (
+              <button
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cancelText}
+              </button>
+            )}
             <button
               onClick={onConfirm}
               disabled={loading}
-              className={`flex-1 px-4 py-3 rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed ${getButtonStyle()}`}
+              className={`${
+                cancelText ? "flex-1" : "w-full"
+              } px-4 py-3 rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed ${getButtonStyle()}`}
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Processing...</span>
+                  <span>Đang xử lý...</span>
                 </div>
               ) : (
                 confirmText
