@@ -285,7 +285,6 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
                 <p className="font-medium mb-1">Lưu ý quan trọng:</p>
                 <ul className="list-disc list-inside space-y-1 text-xs">
                   <li>Yêu cầu sẽ được xử lý trong 3-5 ngày làm việc</li>
-                  <li>Số tiền sẽ bị khóa cho đến khi hoàn tất</li>
                   <li>Bạn có thể hủy yêu cầu nếu chưa được xử lý</li>
                   <li>Kiểm tra kỹ thông tin tài khoản ngân hàng</li>
                 </ul>

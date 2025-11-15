@@ -247,6 +247,21 @@ class RentalOrderService {
       );
     }
   }
+
+  // Lấy danh sách sản phẩm đang được thuê (active rentals) cho chủ sản phẩm
+  async getOwnerActiveRentals(params = {}) {
+    try {
+      const response = await api.get("/rental-orders/owner-active-rentals", {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message ||
+          "Không thể lấy danh sách sản phẩm đang cho thuê"
+      );
+    }
+  }
 }
 
 export default new RentalOrderService();
