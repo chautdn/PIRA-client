@@ -43,10 +43,19 @@ const LocationStep = ({ formData, errors, handleInputChange, onSaveDraft }) => {
               <div className="flex-1">
                 <h4 className="font-bold text-blue-900 mb-1">Địa Chỉ Hồ Sơ</h4>
                 <p className="text-sm text-blue-800">
-                  {user.address.streetAddress || "Chưa cập nhật số nhà"}{user.address.streetAddress && user.address.district ? ", " : ""}{user.address.district || ""}
-                  {user.address.city && (user.address.streetAddress || user.address.district) ? `, ${user.address.city}` : user.address.city || ""}
+                  {user.address.streetAddress || "Chưa cập nhật số nhà"}
+                  {user.address.streetAddress && user.address.district
+                    ? ", "
+                    : ""}
+                  {user.address.district || ""}
+                  {user.address.city &&
+                  (user.address.streetAddress || user.address.district)
+                    ? `, ${user.address.city}`
+                    : user.address.city || ""}
                 </p>
-                {(!user.address.streetAddress || !user.address.district || !user.address.city) && (
+                {(!user.address.streetAddress ||
+                  !user.address.district ||
+                  !user.address.city) && (
                   <p className="text-xs text-blue-700 mt-1">
                     ⚠️ Địa chỉ chưa đầy đủ. Vui lòng cập nhật để sử dụng.
                   </p>

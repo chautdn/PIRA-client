@@ -31,9 +31,11 @@ const OwnerCreateProduct = () => {
 
       const cccdVerified = updatedUser?.cccd?.isVerified || false;
       const bankAccountAdded = !!(
-        updatedUser?.bankAccount?.accountNumber &&
-        updatedUser?.bankAccount?.bankCode &&
-        updatedUser?.bankAccount?.isVerified // Must be verified
+        (
+          updatedUser?.bankAccount?.accountNumber &&
+          updatedUser?.bankAccount?.bankCode &&
+          updatedUser?.bankAccount?.isVerified
+        ) // Must be verified
       );
       const addressComplete = !!(
         updatedUser?.address?.streetAddress &&
@@ -409,24 +411,29 @@ const OwnerCreateProduct = () => {
                           <li className="flex items-start gap-2">
                             <span>•</span>
                             <span>
-                              <strong>CCCD:</strong> Bảo vệ cộng đồng khỏi gian lận và lừa đảo
+                              <strong>CCCD:</strong> Bảo vệ cộng đồng khỏi gian
+                              lận và lừa đảo
                             </span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
                             <span>
-                              <strong>Ngân hàng:</strong> Đảm bảo thanh toán nhanh chóng và an toàn
+                              <strong>Ngân hàng:</strong> Đảm bảo thanh toán
+                              nhanh chóng và an toàn
                             </span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
                             <span>
-                              <strong>Địa chỉ:</strong> Người thuê biết vị trí và khoảng cách sản phẩm
+                              <strong>Địa chỉ:</strong> Người thuê biết vị trí
+                              và khoảng cách sản phẩm
                             </span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
-                            <span>Tăng độ tin cậy và uy tín của bạn với khách hàng</span>
+                            <span>
+                              Tăng độ tin cậy và uy tín của bạn với khách hàng
+                            </span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>

@@ -52,30 +52,31 @@ const Profile = () => {
 
   // Handle location selection from MapSelector
   const handleLocationSelect = (locationData) => {
-    console.log('Selected location:', locationData);
-    setFormData(prev => ({
+    console.log("Selected location:", locationData);
+    setFormData((prev) => ({
       ...prev,
       address: {
         ...prev.address,
-        streetAddress: locationData.streetAddress || locationData.fullAddress || '',
-        ward: locationData.ward || '',
+        streetAddress:
+          locationData.streetAddress || locationData.fullAddress || "",
+        ward: locationData.ward || "",
         district: locationData.district || prev.address.district,
         city: locationData.city || prev.address.city,
         province: locationData.province || prev.address.province,
         coordinates: {
           latitude: locationData.latitude,
-          longitude: locationData.longitude
+          longitude: locationData.longitude,
         },
-      }
+      },
     }));
-    toast.success('Đã cập nhật vị trí địa chỉ!');
+    toast.success("Đã cập nhật vị trí địa chỉ!");
   };
 
   // Fetch user profile
   useEffect(() => {
     fetchProfile();
     loadKycStatus();
-    
+
     // Show notification if coming from product creation
     if (location.state?.fromProductCreate) {
       toast("📍 Cập nhật địa chỉ để tiếp tục tạo sản phẩm", {
@@ -186,13 +187,13 @@ const Profile = () => {
       setUser(response.data);
       setEditing(false);
       toast.success("Cập nhật thành công!");
-      
+
       // Check if came from product creation page
       if (location.state?.fromProductCreate) {
         toast.success("🔄 Quay lại trang tạo sản phẩm...", { duration: 2000 });
         setTimeout(() => {
-          navigate("/owner/products/create", { 
-            state: { fromProfile: true } 
+          navigate("/owner/products/create", {
+            state: { fromProfile: true },
           });
         }, 1500);
       }
@@ -807,7 +808,8 @@ const Profile = () => {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Chọn địa chỉ trên bản đồ (để tính khoảng cách chính xác)
+                          Chọn địa chỉ trên bản đồ (để tính khoảng cách chính
+                          xác)
                         </label>
                         <MapSelector
                           onLocationSelect={handleLocationSelect}
@@ -815,13 +817,16 @@ const Profile = () => {
                           placeholder="Nhấn để chọn địa chỉ trên bản đồ VietMap..."
                           className="mb-4"
                         />
-                        {formData.address.latitude && formData.address.longitude && (
-                          <div className="text-sm text-green-600 bg-green-50 p-2 rounded mb-2">
-                            ✅ Đã có tọa độ: {formData.address.latitude.toFixed(6)}, {formData.address.longitude.toFixed(6)}
-                          </div>
-                        )}
+                        {formData.address.latitude &&
+                          formData.address.longitude && (
+                            <div className="text-sm text-green-600 bg-green-50 p-2 rounded mb-2">
+                              ✅ Đã có tọa độ:{" "}
+                              {formData.address.latitude.toFixed(6)},{" "}
+                              {formData.address.longitude.toFixed(6)}
+                            </div>
+                          )}
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Địa chỉ cụ thể (tự điền từ bản đồ)
