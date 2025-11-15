@@ -3,7 +3,95 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ownerProductApi } from "../../services/ownerProduct.Api";
 import ProductCard from "../../components/common/ProductCard";
-import { FiPlus } from "react-icons/fi";
+import ConfirmModal from "../../components/owner/ConfirmModal";
+import { FiPlus, FiEdit, FiEyeOff, FiEye, FiTrash2 } from "react-icons/fi";
+
+// Product Action Buttons Component
+const ProductActionButtons = ({
+  product,
+  onEdit,
+  onHide,
+  onUnhide,
+  onDelete,
+}) => {
+  const [showActions, setShowActions] = useState(false);
+  const isHidden = product.status === "OWNER_HIDDEN";
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowActions(!showActions)}
+        className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm p-2 rounded-lg shadow-md hover:bg-white transition-all z-10"
+      >
+        <svg
+          className="w-5 h-5 text-gray-700"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+        </svg>
+      </button>
+
+      {showActions && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setShowActions(false)}
+          ></div>
+          <div className="absolute top-12 left-2 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[180px] z-20">
+            <button
+              onClick={() => {
+                onEdit(product._id);
+                setShowActions(false);
+              }}
+              className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+            >
+              <FiEdit className="w-4 h-4" />
+              <span>Edit Product</span>
+            </button>
+
+            {isHidden ? (
+              <button
+                onClick={() => {
+                  onUnhide(product._id);
+                  setShowActions(false);
+                }}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-green-700"
+              >
+                <FiEye className="w-4 h-4" />
+                <span>Unhide</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  onHide(product._id);
+                  setShowActions(false);
+                }}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-orange-700"
+              >
+                <FiEyeOff className="w-4 h-4" />
+                <span>Hide Product</span>
+              </button>
+            )}
+
+            <div className="border-t border-gray-200 my-1"></div>
+
+            <button
+              onClick={() => {
+                onDelete(product._id);
+                setShowActions(false);
+              }}
+              className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center gap-3 text-red-700"
+            >
+              <FiTrash2 className="w-4 h-4" />
+              <span>Delete Product</span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 export default function OwnerProducts() {
   const navigate = useNavigate();
@@ -17,6 +105,14 @@ export default function OwnerProducts() {
     search: "",
     sort: "createdAt",
     order: "desc",
+  });
+
+  // Modal states
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: null, // 'hide', 'unhide', 'delete'
+    productId: null,
+    loading: false,
   });
 
   useEffect(() => {
@@ -55,6 +151,116 @@ export default function OwnerProducts() {
 
   const handlePageChange = (page) => {
     setFilters((prev) => ({ ...prev, page }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleEdit = (productId) => {
+    navigate(`/owner/products/edit/${productId}`);
+  };
+
+  const handleHide = (productId) => {
+    setModalState({
+      isOpen: true,
+      type: "hide",
+      productId,
+      loading: false,
+    });
+  };
+
+  const handleUnhide = (productId) => {
+    setModalState({
+      isOpen: true,
+      type: "unhide",
+      productId,
+      loading: false,
+    });
+  };
+
+  const handleDelete = (productId) => {
+    setModalState({
+      isOpen: true,
+      type: "delete",
+      productId,
+      loading: false,
+    });
+  };
+
+  const closeModal = () => {
+    if (!modalState.loading) {
+      setModalState({
+        isOpen: false,
+        type: null,
+        productId: null,
+        loading: false,
+      });
+    }
+  };
+
+  const confirmAction = async () => {
+    setModalState((prev) => ({ ...prev, loading: true }));
+
+    try {
+      let res;
+
+      switch (modalState.type) {
+        case "hide":
+          res = await ownerProductApi.hideProduct(modalState.productId);
+          break;
+        case "unhide":
+          res = await ownerProductApi.unhideProduct(modalState.productId);
+          break;
+        case "delete":
+          res = await ownerProductApi.softDeleteProduct(modalState.productId);
+          break;
+        default:
+          return;
+      }
+
+      if (res.success) {
+        closeModal();
+        loadProducts();
+      }
+    } catch (err) {
+      console.error(`Error performing ${modalState.type}:`, err);
+      alert(err.message || `Failed to ${modalState.type} product`);
+      setModalState((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  const getModalConfig = () => {
+    switch (modalState.type) {
+      case "hide":
+        return {
+          title: "Hide Product",
+          message:
+            "Are you sure you want to hide this product? It will no longer be visible to other users, but you can unhide it anytime.",
+          confirmText: "Hide Product",
+          type: "hide",
+        };
+      case "unhide":
+        return {
+          title: "Unhide Product",
+          message:
+            "Are you sure you want to unhide this product? It will become visible to other users again.",
+          confirmText: "Unhide Product",
+          type: "unhide",
+        };
+      case "delete":
+        return {
+          title: "Delete Product",
+          message:
+            "Are you sure you want to delete this product? Once deleted, the product will no longer appear and this action cannot be undone.",
+          confirmText: "Delete Product",
+          type: "danger",
+        };
+      default:
+        return {
+          title: "",
+          message: "",
+          confirmText: "Confirm",
+          type: "warning",
+        };
+    }
   };
 
   return (
@@ -121,7 +327,7 @@ export default function OwnerProducts() {
 
             <div className="text-gray-600 font-medium bg-green-50 px-4 py-2 rounded-lg">
               <span className="text-green-600 font-bold">
-                {pagination.total || 0}
+                {pagination.totalItems || 0}
               </span>{" "}
               sản phẩm
             </div>
@@ -137,9 +343,7 @@ export default function OwnerProducts() {
         )}
 
         {/* Error State */}
-        {error && (
-          <div className="text-center py-20 text-red-600">{error}</div>
-        )}
+        {error && <div className="text-center py-20 text-red-600">{error}</div>}
 
         {/* Empty State - No Products */}
         {!loading && !error && products.length === 0 && (
@@ -185,53 +389,132 @@ export default function OwnerProducts() {
                   y: product.isPromoted ? -8 : -5,
                   scale: product.isPromoted ? 1.03 : 1.02,
                 }}
+                className="relative"
               >
+                <ProductActionButtons
+                  product={product}
+                  onEdit={handleEdit}
+                  onHide={handleHide}
+                  onUnhide={handleUnhide}
+                  onDelete={handleDelete}
+                />
                 <ProductCard product={product} isOwnerView={true} />
+                {product.status === "OWNER_HIDDEN" && (
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-xl flex items-center justify-center pointer-events-none">
+                    <div className="bg-white px-4 py-2 rounded-lg shadow-lg">
+                      <span className="text-gray-800 font-semibold flex items-center gap-2">
+                        <FiEyeOff className="w-5 h-5" />
+                        Hidden
+                      </span>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
         )}
 
         {/* Pagination */}
-        {pagination.pages > 1 && (
-          <div className="mt-12 flex items-center justify-center gap-2">
-            {pagination.page > 1 && (
-              <button
-                onClick={() => handlePageChange(pagination.page - 1)}
-                className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
-              >
-                Trước
-              </button>
-            )}
-
-            {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-              const page = i + 1;
-              return (
+        {pagination.totalPages > 1 && (
+          <div className="mt-12 flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              {/* Previous button */}
+              {pagination.currentPage > 1 && (
                 <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`px-4 py-2 rounded-xl border transition-all ${
-                    page === pagination.page
-                      ? "bg-green-500 text-white border-green-500 shadow-lg"
-                      : "border-gray-300 hover:bg-gray-50"
-                  }`}
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
                 >
-                  {page}
+                  Trước
                 </button>
-              );
-            })}
+              )}
 
-            {pagination.page < pagination.pages && (
-              <button
-                onClick={() => handlePageChange(pagination.page + 1)}
-                className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
-              >
-                Sau
-              </button>
-            )}
+              {/* Page numbers */}
+              {(() => {
+                const currentPage = pagination.currentPage;
+                const totalPages = pagination.totalPages;
+                const pages = [];
+
+                // Always show first page
+                if (currentPage > 3) {
+                  pages.push(1);
+                  if (currentPage > 4) {
+                    pages.push("...");
+                  }
+                }
+
+                // Show pages around current page
+                for (
+                  let i = Math.max(1, currentPage - 2);
+                  i <= Math.min(totalPages, currentPage + 2);
+                  i++
+                ) {
+                  pages.push(i);
+                }
+
+                // Always show last page
+                if (currentPage < totalPages - 2) {
+                  if (currentPage < totalPages - 3) {
+                    pages.push("...");
+                  }
+                  pages.push(totalPages);
+                }
+
+                return pages.map((page, index) => {
+                  if (page === "...") {
+                    return (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="px-2 text-gray-400"
+                      >
+                        ...
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-4 py-2 rounded-xl border transition-all ${
+                        page === currentPage
+                          ? "bg-green-500 text-white border-green-500 shadow-lg"
+                          : "border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                });
+              })()}
+
+              {/* Next button */}
+              {pagination.currentPage < pagination.totalPages && (
+                <button
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
+                >
+                  Sau
+                </button>
+              )}
+            </div>
+
+            {/* Page info */}
+            <div className="text-sm text-gray-600">
+              Trang {pagination.currentPage} / {pagination.totalPages}
+            </div>
           </div>
         )}
       </div>
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        onConfirm={confirmAction}
+        {...getModalConfig()}
+        loading={modalState.loading}
+        cancelText="Cancel"
+      />
     </div>
   );
 }
