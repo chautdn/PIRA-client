@@ -31,6 +31,7 @@ const CreateForm = () => {
     handlePrevious,
     handleStepClick,
     handleSubmit,
+    saveDraft,
     TOTAL_STEPS,
   } = useProductForm();
 
@@ -80,6 +81,7 @@ const CreateForm = () => {
             formData={formData}
             errors={errors}
             handleInputChange={handleInputChange}
+            onSaveDraft={saveDraft}
           />
         );
 

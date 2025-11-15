@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import userService from "../../services/user.Api";
 import kycService from "../../services/kyc.Api"; // Thêm import này
 import { toast } from "react-hot-toast";
@@ -10,6 +11,8 @@ import MapSelector from "../common/MapSelector";
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -72,6 +75,18 @@ const Profile = () => {
   useEffect(() => {
     fetchProfile();
     loadKycStatus();
+    
+    // Show notification if coming from product creation
+    if (location.state?.fromProductCreate) {
+      toast("📍 Cập nhật địa chỉ để tiếp tục tạo sản phẩm", {
+        icon: "💡",
+        duration: 4000,
+        style: {
+          background: "#3B82F6",
+          color: "#fff",
+        },
+      });
+    }
   }, []);
 
   const fetchProfile = async () => {
@@ -171,6 +186,16 @@ const Profile = () => {
       setUser(response.data);
       setEditing(false);
       toast.success("Cập nhật thành công!");
+      
+      // Check if came from product creation page
+      if (location.state?.fromProductCreate) {
+        toast.success("🔄 Quay lại trang tạo sản phẩm...", { duration: 2000 });
+        setTimeout(() => {
+          navigate("/owner/products/create", { 
+            state: { fromProfile: true } 
+          });
+        }, 1500);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Có lỗi xảy ra");
     } finally {
