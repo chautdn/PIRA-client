@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import useChat from "../../hooks/useChat";
@@ -20,6 +21,7 @@ const ChatContainer = () => {
     selectedConversation,
     setSelectedConversation,
   } = useChat(conversationId);
+  const { t } = useTranslation();
 
   const {
     connected,
@@ -107,7 +109,7 @@ const ChatContainer = () => {
       <div className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-gray-500 text-lg">
-            Select a conversation to start chatting
+            {t('chat.selectConversation')}
           </div>
         </div>
       </div>

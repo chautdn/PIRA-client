@@ -1,10 +1,12 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useCart } from "../context/CartContext";
 import { ROUTES } from "../utils/constants";
 
 const Cart = () => {
+  const { t } = useTranslation();
   const { cart, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
 
@@ -34,11 +36,11 @@ const Cart = () => {
 
   const handleCheckout = () => {
     // TODO: Implement checkout logic
-    alert("Chức năng thanh toán đang được phát triển!");
+    alert(t('common.error.general'));
   };
 
   const handleClearCart = () => {
-    if (window.confirm("Bạn có chắc muốn xóa toàn bộ giỏ hàng?")) {
+    if (window.confirm(t('cart.confirmRemove'))) {
       clearCart();
     }
   };
@@ -54,17 +56,17 @@ const Cart = () => {
           >
             <div className="text-8xl mb-6">🛒</div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Giỏ Hàng Trống
+              {t('cart.empty.title')}
             </h1>
             <p className="text-gray-600 mb-8">
-              Bạn chưa có sản phẩm nào trong giỏ hàng. Hãy khám phá các sản phẩm của chúng tôi!
+              {t('cart.empty.message')}
             </p>
             <Link
               to={ROUTES.PRODUCTS}
               className="inline-flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl"
             >
               <span className="mr-2">🔍</span>
-              Khám Phá Sản Phẩm
+              {t('cart.empty.browseButton')}
             </Link>
           </motion.div>
         </div>
@@ -77,9 +79,9 @@ const Cart = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Giỏ Hàng</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('cart.title')}</h1>
           <p className="text-gray-600">
-            Bạn có {cart.length} sản phẩm trong giỏ hàng
+            {t('cart.summary', { count: cart.length })}
           </p>
         </div>
 
@@ -90,13 +92,13 @@ const Cart = () => {
               {/* Clear Cart Button */}
               <div className="flex justify-between items-center pb-4 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-gray-900">
-                  Sản Phẩm ({cart.length})
+                  {t('cart.items', { count: cart.length })}
                 </h2>
                 <button
                   onClick={handleClearCart}
                   className="text-red-500 hover:text-red-700 text-sm font-semibold transition-colors"
                 >
-                  Xóa Tất Cả
+                  {t('cart.removeAll')}
                 </button>
               </div>
 
@@ -142,19 +144,19 @@ const Cart = () => {
 
                         <div className="text-gray-600 mb-4">
                           <div className="text-lg font-semibold text-gray-900">
-                            {formatPrice(dailyRate)}<span className="text-sm font-normal text-gray-500">/ngày</span>
+                            {formatPrice(dailyRate)}<span className="text-sm font-normal text-gray-500">{t('cart.pricePerDay')}</span>
                           </div>
                           {rental && (
                             <div className="text-sm text-gray-600 mt-2 space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-blue-500">📅</span>
-                                <span>Thuê: <strong>{days} ngày</strong></span>
+                                <span>{t('cart.rentalDuration')}: <strong>{days} {t('cart.days')}</strong></span>
                               </div>
                               {rental.startDate && (
                                 <div className="text-xs text-gray-500">
-                                  {new Date(rental.startDate).toLocaleDateString('vi-VN')} 
+                                  {new Date(rental.startDate).toLocaleDateString(t('language') === 'en' ? 'en-US' : 'vi-VN')} 
                                   {' → '}
-                                  {new Date(rental.endDate).toLocaleDateString('vi-VN')}
+                                  {new Date(rental.endDate).toLocaleDateString(t('language') === 'en' ? 'en-US' : 'vi-VN')}
                                 </div>
                               )}
                             </div>
@@ -168,7 +170,7 @@ const Cart = () => {
                               onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))}
                               disabled={quantity <= 1}
                               className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-xl disabled:opacity-30 disabled:cursor-not-allowed"
-                              title="Giảm số lượng"
+                              title={t('cart.decreaseQuantity')}
                             >
                               −
                             </button>
@@ -184,20 +186,20 @@ const Cart = () => {
                               }}
                               disabled={quantity >= (product.availability?.quantity || 1)}
                               className="px-4 py-2 hover:bg-gray-200 transition-colors font-bold text-xl disabled:opacity-30 disabled:cursor-not-allowed"
-                              title={`Tăng số lượng (tối đa: ${product.availability?.quantity || 1})`}
+                              title={t('cart.increaseQuantity', { quantity: product.availability?.quantity || 1 })}
                             >
                               +
                             </button>
                           </div>
 
                           <div className="text-xs text-gray-500">
-                            Tối đa: {product.availability?.quantity || 1} cái
+                            {t('cart.maxQuantity', { quantity: product.availability?.quantity || 1 })}
                           </div>
 
                           <button
                             onClick={() => removeFromCart(product._id)}
                             className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all ml-auto"
-                            title="Xóa sản phẩm"
+                            title={t('cart.removeItem')}
                           >
                             <svg
                               className="w-6 h-6"
@@ -233,23 +235,23 @@ const Cart = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-md p-6 sticky top-24">
               <h2 className="text-xl font-bold text-gray-900 mb-6">
-                Tóm Tắt Đơn Hàng
+                {t('orders.summary') || t('cart.total')}
               </h2>
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>Tạm tính</span>
+                  <span>{t('cart.subtotal')}</span>
                   <span className="font-semibold">{formatPrice(cartTotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Phí nền tảng</span>
+                  <span>{t('cart.platformFee')}</span>
                   <span className="font-semibold text-orange-600">{formatPrice(platformFee)}</span>
                 </div>
                 <div className="text-xs text-gray-500 ml-4">
-                  (5% cho sản phẩm thường, 10% cho sản phẩm cao cấp)
+                  {t('cart.platformFeeNote')}
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Giảm giá</span>
+                  <span>{t('cart.discount')}</span>
                   <span className="text-green-600 font-semibold">-0₫</span>
                 </div>
               </div>
@@ -257,7 +259,7 @@ const Cart = () => {
               <div className="border-t border-gray-200 pt-4 mb-6">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-gray-900">
-                    Tổng cộng
+                    {t('cart.total')}
                   </span>
                   <span className="text-3xl font-bold text-green-600">
                     {formatPrice(finalTotal)}
@@ -269,36 +271,36 @@ const Cart = () => {
                 onClick={() => navigate('/rental-orders/create')}
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-3"
               >
-                📋 Tạo Đơn Thuê
+                {t('cart.createOrder')}
               </button>
 
               <button
                 onClick={handleCheckout}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-4"
               >
-                🚀 Tiến Hành Thanh Toán
+                {t('cart.checkout')}
               </button>
 
               <Link
                 to={ROUTES.PRODUCTS}
                 className="block w-full text-center border-2 border-green-500 hover:border-green-600 text-green-600 hover:text-green-700 hover:bg-green-50 py-3 rounded-xl font-semibold transition-all"
               >
-                ← Tiếp Tục Mua Sắm
+                {t('cart.continueShopping')}
               </Link>
 
               {/* Security Info */}
               <div className="mt-6 pt-6 border-t border-gray-200 space-y-3 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <span>🔒</span>
-                  <span>Thanh toán bảo mật 100%</span>
+                  <span>{t('cart.security.secure')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>✓</span>
-                  <span>Hỗ trợ 24/7</span>
+                  <span>{t('cart.security.support')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>🚚</span>
-                  <span>Miễn phí vận chuyển</span>
+                  <span>{t('cart.security.shipping')}</span>
                 </div>
               </div>
             </div>

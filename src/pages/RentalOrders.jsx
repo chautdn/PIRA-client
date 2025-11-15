@@ -46,7 +46,7 @@ const RentalOrdersPage = () => {
   useEffect(() => {
     // Check for message from navigation state (from order creation)
     if (location.state?.message && location.state?.justCreated) {
-      toast.success(`🎉 ${location.state.message}\n\nĐơn hàng đã được tạo và sẽ hiển thị trong danh sách bên dưới.`, {
+      toast.success(`🎉 ${location.state.message}\n\n${t('orders.createdMessage')}`, {
         duration: 8000,
         style: {
           maxWidth: '500px',
@@ -63,7 +63,7 @@ const RentalOrdersPage = () => {
     const signed = searchParams.get('signed');
     if (signed === 'true') {
       // Show success notification
-      toast.success('✅ Ký hợp đồng thành công!', { duration: 5000 });
+      toast.success(`✅ ${t('orders.contractSignedMessage')}`, { duration: 5000 });
     }
   }, [searchParams]);
 
@@ -85,11 +85,19 @@ const RentalOrdersPage = () => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const getStatusText = (status) => t(`orders.status.${status}`);
 
+  const localeForFormat = i18n.language === 'vi' ? 'vi-VN' : 'en-US';
+  const currencySuffix = i18n.language === 'vi' ? 'đ' : ' VND';
+  const formatCurrency = (value) => (value == null ? '0' : new Intl.NumberFormat(localeForFormat).format(value));
+
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    try {
+      return new Date(dateString).toLocaleDateString(localeForFormat);
+    } catch (e) {
+      return dateString;
+    }
   };
 
   const calculateDuration = (startDate, endDate) => {
@@ -301,7 +309,7 @@ const RentalOrdersPage = () => {
                         <div>
                           <p className="text-sm text-gray-600">{t('orders.total')}</p>
                           <p className="font-medium text-orange-600">
-                            {(order.totalAmount + order.totalDepositAmount + order.totalShippingFee).toLocaleString('vi-VN')}đ
+                            {formatCurrency(order.totalAmount + order.totalDepositAmount + order.totalShippingFee)}{currencySuffix}
                           </p>
                         </div>
                       </div>
@@ -327,7 +335,7 @@ const RentalOrdersPage = () => {
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                       <div className="text-sm text-gray-600">
                         <Clock className="w-4 h-4 inline mr-1" />
-                        {t('orders.updateAt')} {new Date(order.updatedAt).toLocaleString('vi-VN')}
+                        {t('orders.updateAt')} {new Date(order.updatedAt).toLocaleString(localeForFormat)}
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
@@ -506,17 +514,17 @@ const RentalOrdersPage = () => {
                                       <h5 className="font-medium">{productItem.product.name}</h5>
                                       <p className="text-sm text-gray-600">{t('orders.quantity')}: {productItem.quantity}</p>
                                       <p className="text-sm text-gray-600">
-                                        {t('orders.price')}: {productItem.product.pricing?.rentalPrice?.toLocaleString('vi-VN')}đ{t('common.perDay')}
+                                        {t('orders.price')}: {formatCurrency(productItem.product.pricing?.rentalPrice)}{currencySuffix}{t('common.perDay')}
                                       </p>
                                     </div>
                                     <div className="text-right">
                                       <p className="font-medium text-blue-600">
-                                        {productItem.totalRental?.toLocaleString('vi-VN')}đ
+                                        {formatCurrency(productItem.totalRental)}{currencySuffix}
                                       </p>
                                       <p className="text-sm text-gray-600">{t('orders.totalRental')}</p>
                                       {productItem.totalDeposit > 0 && (
                                         <p className="text-sm text-orange-600">
-                                          +{productItem.totalDeposit?.toLocaleString('vi-VN')}đ {t('orders.deposit')}
+                                          +{formatCurrency(productItem.totalDeposit)}{currencySuffix} {t('orders.deposit')}
                                         </p>
                                       )}
                                     </div>
@@ -528,15 +536,15 @@ const RentalOrdersPage = () => {
                               <div className="mt-4 p-3 bg-gray-50 rounded">
                                 <div className="flex justify-between items-center">
                                   <span className="font-medium">{t('orders.totalRental')}:</span>
-                                  <span className="font-bold text-blue-600">
-                                    {subOrder.pricing?.totalRental?.toLocaleString('vi-VN')}đ
+                                    <span className="font-bold text-blue-600">
+                                    {formatCurrency(subOrder.pricing?.totalRental)}{currencySuffix}
                                   </span>
                                 </div>
                                 {subOrder.pricing?.totalDeposit > 0 && (
                                   <div className="flex justify-between items-center">
                                     <span className="font-medium">{t('orders.totalDeposit')}:</span>
                                     <span className="font-bold text-orange-600">
-                                      {subOrder.pricing?.totalDeposit?.toLocaleString('vi-VN')}đ
+                                      {formatCurrency(subOrder.pricing?.totalDeposit)}{currencySuffix}
                                     </span>
                                   </div>
                                 )}
@@ -544,7 +552,7 @@ const RentalOrdersPage = () => {
                                   <div className="flex justify-between items-center">
                                     <span className="font-medium">{t('orders.shippingFee')}:</span>
                                     <span className="font-medium">
-                                      {subOrder.shipping?.fee?.toLocaleString('vi-VN')}đ
+                                      {formatCurrency(subOrder.shipping?.fee)}{currencySuffix}
                                     </span>
                                   </div>
                                 )}
@@ -552,7 +560,7 @@ const RentalOrdersPage = () => {
                                   <div className="flex justify-between items-center">
                                     <span className="font-bold">{t('orders.totalAmount')}:</span>
                                     <span className="font-bold text-lg text-green-600">
-                                      {subOrder.pricing?.totalAmount?.toLocaleString('vi-VN')}đ
+                                      {formatCurrency(subOrder.pricing?.totalAmount)}{currencySuffix}
                                     </span>
                                   </div>
                                 </div>
@@ -571,27 +579,27 @@ const RentalOrdersPage = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">{t('orders.totalRental')}:</span>
-                      <span className="font-bold text-blue-600">
-                        {selectedOrder.totalAmount?.toLocaleString('vi-VN')}đ
+                        <span className="font-bold text-blue-600">
+                        {formatCurrency(selectedOrder.totalAmount)}{currencySuffix}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-medium">{t('orders.totalDeposit')}:</span>
                       <span className="font-bold text-orange-600">
-                        {selectedOrder.totalDepositAmount?.toLocaleString('vi-VN')}đ
+                        {formatCurrency(selectedOrder.totalDepositAmount)}{currencySuffix}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-medium">{t('orders.shippingFee')}:</span>
-                      <span className="font-medium">
-                        {selectedOrder.totalShippingFee?.toLocaleString('vi-VN')}đ
+                        <span className="font-medium">
+                        {formatCurrency(selectedOrder.totalShippingFee)}{currencySuffix}
                       </span>
                     </div>
                     <div className="border-t pt-2">
                       <div className="flex justify-between items-center">
                         <span className="text-xl font-bold">{t('orders.totalAmount')}:</span>
                         <span className="text-xl font-bold text-green-600">
-                          {(selectedOrder.totalAmount + selectedOrder.totalDepositAmount + selectedOrder.totalShippingFee)?.toLocaleString('vi-VN')}đ
+                          {formatCurrency((selectedOrder.totalAmount + selectedOrder.totalDepositAmount + selectedOrder.totalShippingFee))}{currencySuffix}
                         </span>
                       </div>
                     </div>

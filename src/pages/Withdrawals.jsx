@@ -8,6 +8,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useTranslation } from 'react-i18next';
 import BankAccountForm from "../components/wallet/BankAccountForm";
 import WithdrawalModal from "../components/wallet/WithdrawalModal";
 import userService from "../services/user.Api";
@@ -15,6 +16,7 @@ import toast from "react-hot-toast";
 
 const Withdrawals = () => {
   const { user, refreshUser } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [showBankForm, setShowBankForm] = useState(false);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
@@ -81,7 +83,7 @@ const Withdrawals = () => {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Before You Can Withdraw
+          {t('wallet.withdrawals.beforeTitle')}
         </h2>
         <div className="space-y-4">
           {/* Step 1: KYC */}
@@ -103,7 +105,7 @@ const Withdrawals = () => {
                   isKycVerified ? "text-green-900" : "text-gray-900"
                 }`}
               >
-                Step 1: Complete KYC Verification
+                {t('wallet.withdrawals.step1.title')}
               </h3>
               <p
                 className={`text-sm mt-1 ${
@@ -111,15 +113,15 @@ const Withdrawals = () => {
                 }`}
               >
                 {isKycVerified
-                  ? "✓ Your identity has been verified"
-                  : "Verify your identity to unlock withdrawals"}
+                  ? t('wallet.withdrawals.step1.verified')
+                  : t('wallet.withdrawals.step1.notVerified')}
               </p>
               {!isKycVerified && (
                 <button
                   onClick={handleGoToKyc}
                   className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Complete KYC Verification →
+                  {t('wallet.withdrawals.step1.button')}
                 </button>
               )}
             </div>
@@ -160,7 +162,7 @@ const Withdrawals = () => {
                     : "text-gray-500"
                 }`}
               >
-                Step 2: Add Bank Account
+                {t('wallet.withdrawals.step2.title')}
               </h3>
               <p
                 className={`text-sm mt-1 ${
@@ -172,17 +174,20 @@ const Withdrawals = () => {
                 }`}
               >
                 {hasBankAccount
-                  ? `✓ ${bankAccount.bankName} - ${bankAccount.accountNumber}`
+                  ? t('wallet.withdrawals.step2.bankInfo', {
+                      bankName: bankAccount.bankName,
+                      accountNumber: bankAccount.accountNumber,
+                    })
                   : isKycVerified
-                  ? "Link your Vietnamese bank account for withdrawals"
-                  : "Complete KYC verification first"}
+                  ? t('wallet.withdrawals.step2.noBankKycVerified')
+                  : t('wallet.withdrawals.step2.noBankKycNotVerified')}
               </p>
               {!hasBankAccount && isKycVerified && (
                 <button
                   onClick={() => setShowBankForm(true)}
                   className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Add Bank Account →
+                  {t('wallet.withdrawals.step2.addButton')}
                 </button>
               )}
               {hasBankAccount && (
@@ -190,7 +195,7 @@ const Withdrawals = () => {
                   onClick={() => setShowBankForm(true)}
                   className="mt-2 text-sm text-gray-600 hover:text-gray-700 font-medium"
                 >
-                  Edit Bank Account
+                  {t('wallet.withdrawals.step2.editButton')}
                 </button>
               )}
             </div>
@@ -204,7 +209,7 @@ const Withdrawals = () => {
               <CheckCircle className="text-blue-600 mr-2" size={20} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-blue-900">
-                  You're all set! You can now request withdrawals.
+                  {t('wallet.withdrawals.ready')}
                 </p>
               </div>
             </div>
@@ -218,10 +223,8 @@ const Withdrawals = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Withdrawals</h1>
-        <p className="mt-2 text-gray-600">
-          Withdraw funds from your PIRA wallet to your bank account
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('wallet.withdrawals.title')}</h1>
+        <p className="mt-2 text-gray-600">{t('wallet.withdrawals.subtitle')}</p>
       </div>
 
       {/* Requirements Checklist */}
@@ -253,7 +256,7 @@ const Withdrawals = () => {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
-              Withdrawal History
+              {t('wallet.withdrawals.historyTitle')}
             </h2>
             {isKycVerified && hasBankAccount && (
               <button
@@ -262,7 +265,7 @@ const Withdrawals = () => {
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 <Plus size={16} className="mr-2" />
-                Request Withdrawal
+                {t('wallet.withdrawals.requestButton')}
               </button>
             )}
           </div>
@@ -283,13 +286,11 @@ const Withdrawals = () => {
                 d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No withdrawals yet
-            </h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">{t('wallet.withdrawals.noWithdrawalsTitle')}</h3>
             <p className="mt-1 text-sm text-gray-500">
               {isKycVerified && hasBankAccount
-                ? 'Click "Request Withdrawal" to get started'
-                : "Complete the steps above to start withdrawing"}
+                ? t('wallet.withdrawals.noWithdrawalsDescReady')
+                : t('wallet.withdrawals.noWithdrawalsDescNotReady')}
             </p>
           </div>
         </div>

@@ -1,11 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useCart } from "../../context/CartContext";
 import { ROUTES } from "../../utils/constants";
 import CartItem from "./CartItem";
 
 const CartDrawer = () => {
+  const { t } = useTranslation();
   const { cart, cartCount, cartTotal, isCartOpen, closeCart } = useCart();
 
   const formatPrice = (price) => {
@@ -41,8 +43,8 @@ const CartDrawer = () => {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🛒</span>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Giỏ Hàng</h2>
-                  <p className="text-sm text-gray-500">{cartCount} sản phẩm</p>
+                  <h2 className="text-xl font-bold text-gray-900">{t('cart.title')}</h2>
+                  <p className="text-sm text-gray-500">{cartCount} {t('cart.items').split('(')[0].trim()}</p>
                 </div>
               </div>
               <button
@@ -71,17 +73,17 @@ const CartDrawer = () => {
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <div className="text-6xl mb-4">🛒</div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Giỏ hàng trống
+                    {t('cart.empty.title')}
                   </h3>
                   <p className="text-gray-600 mb-6">
-                    Thêm sản phẩm vào giỏ để thuê
+                    {t('cart.empty.message')}
                   </p>
                   <Link
                     to={ROUTES.PRODUCTS}
                     onClick={closeCart}
                     className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
                   >
-                    Khám Phá Sản Phẩm
+                    {t('cart.empty.browseButton')}
                   </Link>
                 </div>
               ) : (
@@ -99,19 +101,19 @@ const CartDrawer = () => {
                 {/* Subtotal */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-gray-600">
-                    <span>Tạm tính</span>
+                    <span>{t('cart.subtotal')}</span>
                     <span>{formatPrice(cartTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-500">
-                    <span>Phí dịch vụ</span>
-                    <span>Tính khi thanh toán</span>
+                    <span>{t('cart.platformFee')}</span>
+                    <span>{t('common.loading.general')}</span>
                   </div>
                 </div>
 
                 {/* Total */}
                 <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                   <span className="text-lg font-semibold text-gray-900">
-                    Tổng cộng
+                    {t('cart.total')}
                   </span>
                   <span className="text-2xl font-bold text-primary-600">
                     {formatPrice(cartTotal)}
@@ -125,13 +127,13 @@ const CartDrawer = () => {
                     onClick={closeCart}
                     className="block w-full bg-primary-600 hover:bg-primary-700 text-white text-center py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl"
                   >
-                    Xem Giỏ Hàng & Thanh Toán
+                    {t('nav.cart')} & {t('cart.checkout').replace('🚀 ', '')}
                   </Link>
                   <button
                     onClick={closeCart}
                     className="block w-full border-2 border-gray-300 hover:border-gray-400 text-gray-700 text-center py-3 rounded-xl font-semibold transition-all"
                   >
-                    Tiếp Tục Mua Sắm
+                    {t('cart.continueShopping')}
                   </button>
                 </div>
               </div>

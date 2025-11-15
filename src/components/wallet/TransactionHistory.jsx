@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from 'react-i18next';
 import {
   X,
   Clock,
@@ -14,6 +15,7 @@ import { useWallet } from "../../context/WalletContext";
 import Portal from "../common/Portal";
 
 const TransactionHistory = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const { fetchTransactions } = useWallet();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -132,10 +134,10 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     <span className="text-2xl">📊</span>
-                    Transaction History
+                    {t('wallet.transactionHistory.title')}
                   </h3>
                   <p className="text-xs text-gray-600 mt-1">
-                    View all your wallet transactions
+                    {t('wallet.transactionHistory.subtitle')}
                   </p>
                 </div>
                 <button
@@ -156,9 +158,9 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                   <div className="p-12 text-center">
                     <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-gray-600 font-medium">
-                      Loading transactions...
+                      {t('wallet.transactionHistory.loadingTransactions')}
                     </p>
-                    <p className="text-gray-400 text-sm mt-1">Please wait</p>
+                    <p className="text-gray-400 text-sm mt-1">{t('wallet.transactionHistory.pleaseWait')}</p>
                   </div>
                 ) : transactions.length === 0 ? (
                   <div className="p-12 text-center">
@@ -170,16 +172,16 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                       💸
                     </motion.div>
                     <h3 className="text-xl font-bold text-gray-800 mb-2">
-                      No transactions yet
+                      {t('wallet.transactionHistory.noTransactions')}
                     </h3>
                     <p className="text-gray-600 mb-4">
-                      Your transaction history will appear here
+                      {t('wallet.transactionHistory.transactionWillAppear')}
                     </p>
                     <button
                       onClick={onClose}
                       className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
                     >
-                      Close
+                      {t('wallet.transactionHistory.close')}
                     </button>
                   </div>
                 ) : (
@@ -206,7 +208,7 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold text-gray-900 capitalize">
                               {transaction.type === "deposit"
-                                ? "💰 Top Up"
+                                ? t('wallet.transactionHistory.topUp')
                                 : transaction.type}
                             </h4>
                             <span
@@ -223,11 +225,11 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                                 : transaction.status === "failed"
                                 ? "✗"
                                 : "⏳"}{" "}
-                              {transaction.status}
+                              {t(`wallet.transactionHistory.${transaction.status}`)}
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 truncate">
-                            {transaction.description || "Wallet transaction"}
+                            {transaction.description || t('wallet.transactionHistory.walletTransaction')}
                           </p>
                           <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
@@ -247,7 +249,7 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                             {transaction.type === "deposit" ? "+" : "-"}
                             {transaction.amount?.toLocaleString()}
                           </div>
-                          <div className="text-xs text-gray-500">VND</div>
+                          <div className="text-xs text-gray-500">{t('wallet.transactionHistory.vnd')}</div>
                         </div>
                       </motion.div>
                     ))}

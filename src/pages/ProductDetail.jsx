@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { productService } from '../services/product';
 import { reviewService } from '../services/review';
@@ -11,6 +12,7 @@ import { ROUTES } from '../utils/constants'; // Added for route constants
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const { addToCart: addToCartContext, loading: cartLoading } = useCart();
   const { user } = useAuth(); // Added to get current user
   const [product, setProduct] = useState(null);
@@ -399,6 +401,30 @@ export default function ProductDetail() {
     };
   }, [isLightboxOpen]);
 
+  /**
+   * Helper function to get localized text from product translations
+   * Falls back to default language (vi) if current locale is not available
+   */
+  const getLocalizedText = (field) => {
+    if (!product?.translations) return product?.[field] || '';
+    
+    const currentLocale = i18n.language || 'vi';
+    const translation = product.translations[currentLocale];
+    
+    if (translation && translation[field]) {
+      return translation[field];
+    }
+    
+    // Fallback to Vietnamese
+    const viTranslation = product.translations.vi;
+    if (viTranslation && viTranslation[field]) {
+      return viTranslation[field];
+    }
+    
+    // Ultimate fallback to product base field
+    return product?.[field] || '';
+  };
+
   const fetchProduct = async () => {
     try {
       setLoading(true);
@@ -621,7 +647,7 @@ export default function ProductDetail() {
               📦 Sản phẩm
             </Link>
             <span className="text-gray-400">›</span>
-            <span className="text-gray-900 font-semibold">{product.title}</span>
+            <span className="text-gray-900 font-semibold">{getLocalizedText('title')}</span>
           </nav>
         </div>
       </div>
@@ -637,7 +663,7 @@ export default function ProductDetail() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
             <div>
               <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-                {product.title}
+                {getLocalizedText('title')}
               </h1>
               <div className="flex flex-wrap items-center gap-6 text-gray-600">
                 <div className="flex items-center gap-2">
@@ -882,7 +908,7 @@ export default function ProductDetail() {
                       <h3 className="text-2xl font-bold text-gray-900 mb-6">Chi tiết sản phẩm</h3>
                       <div className="prose prose-lg max-w-none">
                         <p className="text-gray-600 leading-relaxed text-lg">
-                          {product.description || 'Máy ảnh chuyên nghiệp với tính năng vượt trội, phù hợp cho nhiếp ảnh gia và người yêu thích chụp ảnh. Thiết bị được bảo trì định kỳ, đảm bảo chất lượng hình ảnh tốt nhất.'}
+                          {getLocalizedText('description')}
                         </p>
                       </div>
                     </motion.div>

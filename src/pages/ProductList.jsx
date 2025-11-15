@@ -5,6 +5,7 @@ import { productService } from "../services/product";
 import { categoryApi } from "../services/category.Api";
 import ProductCard from "../components/common/ProductCard";
 import { GoTriangleDown, GoTriangleRight } from "react-icons/go";
+import { useTranslation } from 'react-i18next';
 
 // === ACCORDION COMPONENT ===
 const Accordion = ({ title, children, defaultOpen = false }) => {
@@ -42,6 +43,7 @@ const CategoryFilter = ({
   onSubClick,
   onAllClick,
 }) => {
+  const { t } = useTranslation();
   // Check if selected category is a subcategory
   const isSubcategorySelected = (subcategoryId) => selectedCategory === subcategoryId;
   
@@ -62,7 +64,7 @@ const CategoryFilter = ({
             : "text-gray-600 hover:bg-gray-50"
         }`}
       >
-        Tất cả danh mục
+        {t('productList.filters.allCategories')}
       </button>
 
       {parentCategories.map((cat) => (
@@ -80,14 +82,14 @@ const CategoryFilter = ({
             ) : (
               <GoTriangleRight className="w-3.5 h-3.5" />
             )}
-            {cat.name}
+            {cat.translatedName || cat.name}
             {/* Show indicator if this category or its subcategories are filtered */}
             {isParentCategoryActive(cat._id) && (
               <span className="ml-auto text-green-600 text-xs">●</span>
             )}
           </button>
 
-          {expandedCategory === cat._id && subCategories.length > 0 && (
+              {expandedCategory === cat._id && subCategories.length > 0 && (
             <div className="ml-5 mt-1 space-y-1">
               {subCategories.map((sub) => (
                 <button
@@ -99,7 +101,7 @@ const CategoryFilter = ({
                       : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
-                  • {sub.name}
+                  • {sub.translatedName || t?.(`productList.categoryNames.${sub.slug || sub._id}`, { defaultValue: sub.name })}
                   {/* Show indicator if this subcategory is selected */}
                   {isSubcategorySelected(sub._id) && (
                     <span className="ml-auto text-green-600 text-xs">✓</span>
@@ -116,11 +118,12 @@ const CategoryFilter = ({
 
 // === PRICE FILTER ===
 const PriceFilter = ({ minPrice, maxPrice, onChange }) => {
+  const { t } = useTranslation();
   const ranges = [
-    { label: "Dưới 100k", min: 0, max: 100000 },
-    { label: "100k - 500k", min: 100000, max: 500000 },
-    { label: "500k - 1tr", min: 500000, max: 1000000 },
-    { label: "Trên 1tr", min: 1000000, max: 10000000 },
+    { label: t('productList.filters.priceRanges.under100k'), min: 0, max: 100000 },
+    { label: t('productList.filters.priceRanges.100k_500k'), min: 100000, max: 500000 },
+    { label: t('productList.filters.priceRanges.500k_1m'), min: 500000, max: 1000000 },
+    { label: t('productList.filters.priceRanges.over1m'), min: 1000000, max: 10000000 },
   ];
 
   return (
@@ -128,14 +131,14 @@ const PriceFilter = ({ minPrice, maxPrice, onChange }) => {
       <div className="grid grid-cols-2 gap-2">
         <input
           type="number"
-          placeholder="Từ"
+          placeholder={t('productList.filters.price.from')}
           className="px-3 py-1.5 text-sm border rounded-md focus:border-green-500 focus:outline-none"
           value={minPrice || ""}
           onChange={(e) => onChange(parseInt(e.target.value) || 0, maxPrice)}
         />
         <input
           type="number"
-          placeholder="Đến"
+          placeholder={t('productList.filters.price.to')}
           className="px-3 py-1.5 text-sm border rounded-md focus:border-green-500 focus:outline-none"
           value={maxPrice || ""}
           onChange={(e) => onChange(minPrice, parseInt(e.target.value) || 10000000)}
@@ -162,14 +165,15 @@ const PriceFilter = ({ minPrice, maxPrice, onChange }) => {
 
 // === DISTRICT FILTER ===
 const DistrictFilter = ({ selected, onSelect }) => {
+  const { t } = useTranslation();
   const districts = [
-    { value: "", label: "Tất cả khu vực" },
-    { value: "hai-chau", label: "Hải Châu" },
-    { value: "thanh-khe", label: "Thanh Khê" },
-    { value: "son-tra", label: "Sơn Trà" },
-    { value: "ngu-hanh-son", label: "Ngũ Hành Sơn" },
-    { value: "lien-chieu", label: "Liên Chiểu" },
-    { value: "cam-le", label: "Cẩm Lệ" },
+    { value: "", label: t('productList.filters.districts.all') },
+    { value: "hai-chau", label: t('productList.filters.districts.hai-chau') },
+    { value: "thanh-khe", label: t('productList.filters.districts.thanh-khe') },
+    { value: "son-tra", label: t('productList.filters.districts.son-tra') },
+    { value: "ngu-hanh-son", label: t('productList.filters.districts.ngu-hanh-son') },
+    { value: "lien-chieu", label: t('productList.filters.districts.lien-chieu') },
+    { value: "cam-le", label: t('productList.filters.districts.cam-le') },
   ];
 
   return (
@@ -193,12 +197,13 @@ const DistrictFilter = ({ selected, onSelect }) => {
 
 // === CONDITION FILTER ===
 const ConditionFilter = ({ selected, onSelect }) => {
+  const { t } = useTranslation();
   const conditions = [
-    { value: "", label: "Tất cả tình trạng" },
-    { value: "new", label: "Mới" },
-    { value: "like-new", label: "Như mới" },
-    { value: "good", label: "Tốt" },
-    { value: "fair", label: "Khá" },
+    { value: "", label: t('productList.filters.conditions.all') },
+    { value: "new", label: t('productList.filters.conditions.new') },
+    { value: "like-new", label: t('productList.filters.conditions.like-new') },
+    { value: "good", label: t('productList.filters.conditions.good') },
+    { value: "fair", label: t('productList.filters.conditions.fair') },
   ];
 
   return (
@@ -223,6 +228,7 @@ const ConditionFilter = ({ selected, onSelect }) => {
 // === MAIN COMPONENT ===
 export default function ProductList() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [parentCategories, setParentCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -254,20 +260,97 @@ export default function ProductList() {
     loadProducts();
   }, [filters]);
 
+  // Re-translate categories when language changes or categories load
+  useEffect(() => {
+    if (parentCategories.length > 0) {
+      // Map Vietnamese category names to i18n keys
+      const nameToKeyMap = {
+        'Thiết Bị Du Lịch': 'travel',
+        'Thiết bị du lịch': 'travel',
+        'Máy ảnh & Quay phim': 'camera',
+        'Máy ảnh': 'camera',
+        'Máy Ảnh': 'camera',
+        'máy ảnh': 'camera',
+        'Thiết bị quay': 'camera',
+        'thiết bị quay': 'camera',
+        'Thiết bị cắm trại': 'camping',
+        'Vali & Túi xách': 'luggage',
+        'Thiết bị thể thao': 'sports',
+        'Phụ kiện du lịch': 'accessories',
+        'Đồ điện tử': 'electronics',
+        'Đồ gia dụng': 'home',
+        'Khác': 'other',
+        // English fallback
+        'Travel Equipment': 'travel',
+        'Camera & Film': 'camera',
+        'Camping Gear': 'camping',
+        'Luggage & Bags': 'luggage',
+        'Sports Equipment': 'sports',
+        'Travel Accessories': 'accessories',
+        'Electronics': 'electronics',
+        'Home Appliances': 'home',
+        'Other': 'other'
+      };
+      
+      const categorySlugMap = {
+        'travel': 'travel',
+        'camera': 'camera',
+        'camping': 'camping',
+        'luggage': 'luggage',
+        'sports': 'sports',
+        'accessories': 'accessories',
+        'electronics': 'electronics',
+        'home': 'home',
+        'other': 'other'
+      };
+      
+      const translatedCategories = parentCategories.map(cat => {
+        // heuristic: prefer 'film' when name/slug contains film-related words
+        const lowerName = (cat.name || '').toLowerCase();
+        const lowerSlug = (cat.slug || '').toLowerCase();
+
+        let key = null;
+        if (/quay|phim|film/.test(lowerName) || /quay|phim|film/.test(lowerSlug)) {
+          key = 'film';
+        } else if (/máy|may|ảnh|anh|camera|dslr|mirrorless|action|gopro/.test(lowerName) || /may|anh|camera|dslr|mirrorless|action|gopro/.test(lowerSlug)) {
+          key = 'camera';
+        }
+
+        // Try different ways to find the key if heuristic didn't match
+        const slugKey = key || categorySlugMap[cat._id] || categorySlugMap[cat.slug] || nameToKeyMap[cat.name] || cat.slug || cat._id;
+
+        console.log(`Translating: ${cat.name} (id: ${cat._id}, slug: ${cat.slug}) -> key: ${slugKey}`); // Debug
+
+        return {
+          ...cat,
+          translatedName: t(`productList.categoryNames.${slugKey}`, { defaultValue: cat.name })
+        };
+      });
+      setParentCategories(translatedCategories);
+    }
+  }, [t, parentCategories.length]);
+
   const loadParentCategories = async () => {
     try {
       const res = await categoryApi.getParentCategories();
       if (res.success && res.data) {
-        setParentCategories(res.data);
+        console.log("API Categories:", res.data); // Debug
+        // Store raw data, translation happens in useEffect
+        setParentCategories(res.data.map(cat => ({
+          ...cat,
+          translatedName: cat.name
+        })));
       }
     } catch (error) {
       console.error("Failed to load parent categories:", error);
+      // Fallback categories
       setParentCategories([
-        { _id: "cameras", name: "Máy ảnh & Quay phim" },
-        { _id: "camping", name: "Thiết bị cắm trại" },
-        { _id: "luggage", name: "Vali & Túi xách" },
-        { _id: "sports", name: "Thiết bị thể thao" },
-        { _id: "accessories", name: "Phụ kiện du lịch" },
+        { _id: "travel", slug: "travel", name: "Thiết Bị Du Lịch", translatedName: "Thiết Bị Du Lịch" },
+        { _id: "camera", slug: "camera", name: "Máy ảnh & Quay phim", translatedName: "Máy ảnh & Quay phim" },
+        { _id: "camping", slug: "camping", name: "Thiết bị cắm trại", translatedName: "Thiết bị cắm trại" },
+        { _id: "luggage", slug: "luggage", name: "Vali & Túi xách", translatedName: "Vali & Túi xách" },
+        { _id: "sports", slug: "sports", name: "Thiết bị thể thao", translatedName: "Thiết bị thể thao" },
+        { _id: "accessories", slug: "accessories", name: "Phụ kiện du lịch", translatedName: "Phụ kiện du lịch" },
       ]);
     }
   };
@@ -328,7 +411,7 @@ export default function ProductList() {
       }
     } catch (e) {
       console.error("Error loading products:", e);
-      setError("Không tải được danh sách sản phẩm");
+      setError(t('productList.error.loadFailed'));
       setProducts([]);
     } finally {
       setLoading(false);
@@ -367,11 +450,11 @@ export default function ProductList() {
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
             <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              Khám Phá Thiết Bị Du Lịch
+              {t('productList.title')}
             </h1>
           </div>
           <p className="text-lg sm:text-xl text-gray-600">
-            Thuê những thiết bị tốt nhất cho chuyến đi của bạn
+            {t('productList.subtitle')}
           </p>
         </div>
 
@@ -382,7 +465,7 @@ export default function ProductList() {
               <div className="flex-1 relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm thiết bị du lịch..."
+                  placeholder={t('productList.searchPlaceholder')}
                   className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
                   value={filters.search}
                   onChange={(e) => updateFilters({ search: e.target.value })}
@@ -392,7 +475,7 @@ export default function ProductList() {
                 </svg>
               </div>
 
-              <select
+                <select
                 className="border border-gray-200 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                 value={`${filters.sort}-${filters.order}`}
                 onChange={(e) => {
@@ -400,15 +483,14 @@ export default function ProductList() {
                   updateFilters({ sort, order });
                 }}
               >
-                <option value="createdAt-desc">Mới nhất</option>
-                <option value="price-asc">Giá thấp đến cao</option>
-                <option value="price-desc">Giá cao đến thấp</option>
-                <option value="rating-desc">Đánh giá cao nhất</option>
+                <option value="createdAt-desc">{t('productList.sortOptions.createdAt_desc')}</option>
+                <option value="price-asc">{t('productList.sortOptions.price_asc')}</option>
+                <option value="price-desc">{t('productList.sortOptions.price_desc')}</option>
+                <option value="rating-desc">{t('productList.sortOptions.rating_desc')}</option>
               </select>
 
               <div className="text-gray-600 font-medium bg-green-50 px-4 py-2 rounded-lg">
-                Tìm thấy{" "}
-                <span className="text-green-600 font-bold">{pagination.total || 0}</span> sản phẩm
+                {t('productList.foundProducts', { count: pagination.total || 0 })}
               </div>
             </div>
           </div>
@@ -417,20 +499,20 @@ export default function ProductList() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* === SIDEBAR FILTERS - TỐI ƯU === */}
           <aside className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 sticky top-6">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 sticky top-6">
               <div className="p-5 border-b border-gray-200">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
-                  Bộ lọc
+                  {t('productList.filters.title')}
                 </h3>
               </div>
 
               <div className="p-4 space-y-3">
                 {[
                   {
-                    title: "Danh Mục",
+                    title: t('productList.filters.categories'),
                     content: (
                       <CategoryFilter
                         parentCategories={parentCategories}
@@ -448,7 +530,7 @@ export default function ProductList() {
                     ),
                   },
                   {
-                    title: "Khoảng Giá",
+                    title: t('productList.filters.priceTitle'),
                     content: (
                       <PriceFilter
                         minPrice={filters.minPrice}
@@ -458,11 +540,11 @@ export default function ProductList() {
                     ),
                   },
                   {
-                    title: "Khu Vực",
+                    title: t('productList.filters.districtTitle'),
                     content: <DistrictFilter selected={filters.district} onSelect={(val) => updateFilters({ district: val })} />,
                   },
                   {
-                    title: "Tình Trạng",
+                    title: t('productList.filters.conditionTitle'),
                     content: <ConditionFilter selected={filters.condition} onSelect={(val) => updateFilters({ condition: val })} />,
                   },
                 ].map((section, i) => (
@@ -489,7 +571,7 @@ export default function ProductList() {
                       }}
                       className="w-full text-sm text-red-600 hover:text-red-700 font-medium py-2 rounded-lg hover:bg-red-50 transition-colors"
                     >
-                      Xóa tất cả bộ lọc
+                      {t('productList.filters.clearAll')}
                     </button>
                   </div>
                 )}
@@ -502,7 +584,7 @@ export default function ProductList() {
             {loading && (
               <div className="text-center py-20">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-                <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
+                <p className="mt-4 text-gray-600">{t('common.loading.products')}</p>
               </div>
             )}
 
@@ -512,10 +594,10 @@ export default function ProductList() {
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">📦</div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  Không tìm thấy sản phẩm
+                  {t('productList.noProductsTitle')}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+                  {t('productList.noProductsDesc')}
                 </p>
               </div>
             )}
@@ -544,7 +626,7 @@ export default function ProductList() {
                     onClick={() => handlePageChange(pagination.page - 1)}
                     className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
                   >
-                    Previous
+                    {t('productList.pagination.previous')}
                   </button>
                 )}
 
@@ -570,7 +652,7 @@ export default function ProductList() {
                     onClick={() => handlePageChange(pagination.page + 1)}
                     className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
                   >
-                    Next
+                    {t('productList.pagination.next')}
                   </button>
                 )}
               </div>

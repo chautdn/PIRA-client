@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wallet, Plus, History, RefreshCw, ChevronDown } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 import { useWallet } from "../../context/WalletContext";
 import TopUpModal from "./TopUpModal";
 import TransactionHistory from "./TransactionHistory";
 
 const WalletBalance = () => {
+  const { t } = useTranslation();
   const { balance, loading, fetchBalance } = useWallet();
   const [showTopUp, setShowTopUp] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -39,7 +41,7 @@ const WalletBalance = () => {
 
             <div className="flex flex-col items-start">
               <span className="text-[10px] text-gray-500 font-medium leading-tight">
-                Balance
+                {t('wallet.balance.label')}
               </span>
               <div className="flex items-center gap-1">
                 {loading ? (
@@ -75,7 +77,7 @@ const WalletBalance = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-600 font-medium mb-1">
-                        Current Balance
+                        {t('wallet.balance.currentBalance')}
                       </p>
                       {loading ? (
                         <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
@@ -118,10 +120,10 @@ const WalletBalance = () => {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-semibold">
-                        Transaction History
+                        {t('wallet.transactionHistory.title')}
                       </p>
                       <p className="text-xs text-gray-500">
-                        View all transactions
+                        {t('wallet.balance.viewAllTransactions')}
                       </p>
                     </div>
                   </button>
@@ -139,7 +141,7 @@ const WalletBalance = () => {
           whileTap={{ scale: 0.98 }}
         >
           <Plus className="w-4 h-4" />
-          <span className="text-sm">Top Up</span>
+          <span className="text-sm">{t('wallet.balance.topUp')}</span>
         </motion.button>
       </div>
 

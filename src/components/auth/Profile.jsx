@@ -3,6 +3,7 @@ import userService from "../../services/user.Api";
 import kycService from "../../services/kyc.Api"; // Thêm import này
 import { toast } from "react-hot-toast";
 import { useAuth } from "../../hooks/useAuth";
+import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import KycModal from "../common/KycModal";
 import BankAccountSection from "../wallet/BankAccountSection";
@@ -14,6 +15,7 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
+  const { t } = useTranslation();
 
   // KYC Modal states
   const [showKycModal, setShowKycModal] = useState(false);
@@ -77,7 +79,7 @@ const Profile = () => {
       // **SAU KHI LOAD PROFILE, LOAD KYC STATUS**
       await loadKycStatus();
     } catch (error) {
-      toast.error("Không thể tải thông tin profile");
+      toast.error(t('profile.messages.fetchError'));
     } finally {
       setLoading(false);
     }
@@ -138,9 +140,9 @@ const Profile = () => {
     try {
       setSaving(true);
       const response = await userService.updateProfile(formData);
-      setUser(response.data);
-      setEditing(false);
-      toast.success("Cập nhật thành công!");
+  setUser(response.data);
+  setEditing(false);
+  toast.success(t('profile.messages.updateSuccess'));
     } catch (error) {
       toast.error(error.response?.data?.message || "Có lỗi xảy ra");
     } finally {
@@ -159,12 +161,12 @@ const Profile = () => {
 
     if (file.size > 1 * 1024 * 1024) {
       // 1MB limit
-      toast.error("File quá lớn (tối đa 1MB)");
+      toast.error(t('profile.avatar.fileTooLarge'));
       return;
     }
-
+    
     if (!file.type.match(/\.(jpeg|jpg|png)$/)) {
-      toast.error("Chỉ hỗ trợ định dạng JPEG, PNG");
+      toast.error(t('profile.avatar.invalidFormat'));
       return;
     }
 
@@ -178,9 +180,9 @@ const Profile = () => {
           avatar: response.data.avatarUrl,
         },
       }));
-      toast.success("Cập nhật avatar thành công!");
+      toast.success(t('profile.avatar.uploadSuccess'));
     } catch (error) {
-      toast.error("Không thể upload avatar");
+      toast.error(t('profile.avatar.uploadError'));
     } finally {
       setSaving(false);
     }
@@ -189,9 +191,9 @@ const Profile = () => {
   // Handle KYC Modal
   const handleKycSuccess = async (result) => {
     if (result.skipped) {
-      toast.success("Xác thực KYC thành công!");
+      toast.success(t('profile.kyc.successVerified'));
     } else {
-      toast.success("Xác thực danh tính và cập nhật profile thành công!");
+      toast.success(t('profile.kyc.successUpdate'));
     }
 
     // Reload cả KYC status và profile
@@ -210,7 +212,7 @@ const Profile = () => {
 
     if (isVerified) {
       return {
-        text: "Đã xác thực",
+        text: t('profile.kyc.statusVerified'),
         color: "text-green-600",
         bgColor: "bg-green-100",
         icon: "✅",
@@ -219,7 +221,7 @@ const Profile = () => {
 
     if (hasImages) {
       return {
-        text: "Chờ xác thực",
+        text: t('profile.kyc.statusPending'),
         color: "text-yellow-600",
         bgColor: "bg-yellow-100",
         icon: "⏳",
@@ -227,7 +229,7 @@ const Profile = () => {
     }
 
     return {
-      text: "Chưa xác thực",
+      text: t('profile.kyc.statusNotVerified'),
       color: "text-red-500",
       bgColor: "bg-red-100",
       icon: "❌",
@@ -236,21 +238,21 @@ const Profile = () => {
 
   // Sidebar menu items
   const menuItems = [
-    { id: "notifications", icon: "🔔", label: "Thông Báo" },
+    { id: "notifications", icon: "🔔", label: t('profile.menu.notifications') },
     {
       id: "profile",
       icon: "👤",
-      label: "Tài Khoản Của Tôi",
+      label: t('profile.menu.account'),
       submenu: [
-        { id: "profile", label: "Hồ Sơ" },
-        { id: "address", label: "Địa Chỉ" },
-        { id: "password", label: "Đổi Mật Khẩu" },
-        { id: "verification", label: "Xác Minh Tài Khoản" },
-        { id: "banking", label: "Tài Khoản Ngân Hàng" },
+        { id: "profile", label: t('profile.menu.profile') },
+        { id: "address", label: t('profile.menu.address') },
+        { id: "password", label: t('profile.menu.password') },
+        { id: "verification", label: t('profile.menu.verification') },
+        { id: "banking", label: t('profile.menu.banking') },
       ],
     },
-    { id: "orders", icon: "📋", label: "Đơn Thuê" },
-    { id: "vouchers", icon: "🎫", label: "Kho Voucher" },
+    { id: "orders", icon: "📋", label: t('profile.menu.orders') },
+    { id: "vouchers", icon: "🎫", label: t('profile.menu.vouchers') },
   ];
 
   if (loading) {
@@ -262,7 +264,7 @@ const Profile = () => {
           animate={{ opacity: 1 }}
         >
           <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 font-medium">Đang tải thông tin...</p>
+          <p className="text-gray-600 font-medium">{t('profile.messages.loading')}</p>
         </motion.div>
       </div>
     );
@@ -294,7 +296,7 @@ const Profile = () => {
                 </p>
                 <p className="text-sm text-gray-500 flex items-center">
                   <span className="w-3 h-3 mr-1">✏️</span>
-                  Sửa Hồ Sơ
+                  {t('profile.edit')}
                 </p>
               </div>
             </div>
@@ -344,18 +346,18 @@ const Profile = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <h1 className="text-xl font-semibold text-gray-900">
-                      {activeSection === "profile" && "Hồ Sơ Của Tôi"}
-                      {activeSection === "address" && "Địa Chỉ"}
-                      {activeSection === "verification" && "Xác Minh Tài Khoản"}
-                      {activeSection === "password" && "Đổi Mật Khẩu"}
-                      {activeSection === "banking" && "Tài Khoản Ngân Hàng"}
+                      {activeSection === "profile" && t('profile.header.profileTitle')}
+                      {activeSection === "address" && t('profile.header.addressTitle')}
+                      {activeSection === "verification" && t('profile.header.verificationTitle')}
+                      {activeSection === "password" && t('profile.header.passwordTitle')}
+                      {activeSection === "banking" && t('profile.header.bankingTitle')}
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">
                       {activeSection === "verification"
-                        ? "Xác minh danh tính để nâng cao độ tin cậy tài khoản"
+                        ? t('profile.header.verificationDesc')
                         : activeSection === "banking"
-                        ? "Quản lý tài khoản ngân hàng để rút tiền"
-                        : "Quản lý thông tin hồ sơ để bảo mật tài khoản"}
+                        ? t('profile.header.bankingDesc')
+                        : t('profile.header.profileDesc')}
                     </p>
                   </div>
                 </div>
@@ -374,10 +376,10 @@ const Profile = () => {
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-900">
-                              Xác thực Email
+                              {t('profile.kyc.emailVerification')}
                             </h3>
                             <p className="text-sm text-gray-500">
-                              Xác nhận địa chỉ email của bạn
+                              {t('profile.kyc.emailDesc')}
                             </p>
                           </div>
                         </div>
@@ -390,8 +392,8 @@ const Profile = () => {
                             }`}
                           >
                             {user?.verification?.emailVerified
-                              ? "✅ Đã xác thực"
-                              : "❌ Chưa xác thực"}
+                              ? t('profile.kyc.emailVerified')
+                              : t('profile.kyc.emailNotVerified')}
                           </span>
                           {!user?.verification?.emailVerified && (
                             <button className="ml-3 px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
@@ -409,12 +411,12 @@ const Profile = () => {
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-900">
-                              Xác thực Danh tính (KYC)
+                              {t('profile.kyc.title')}
                             </h3>
                             <p className="text-sm text-gray-500">
                               {user?.cccd?.isVerified
-                                ? "Danh tính của bạn đã được xác minh"
-                                : "Upload CCCD/CMND để xác minh danh tính"}
+                                ? t('profile.kyc.kycDescVerified')
+                                : t('profile.kyc.kycDescNotVerified')}
                             </p>
                           </div>
                         </div>
@@ -436,8 +438,8 @@ const Profile = () => {
                             }`}
                           >
                             {user?.cccd?.isVerified
-                              ? "👁️ Xem thông tin"
-                              : "🔐 Xác thực ngay"}
+                              ? `👁️ ${t('profile.kyc.viewInfo')}`
+                              : `🔐 ${t('profile.kyc.verifyNow')}`}
                           </button>
                         </div>
                       </div>
@@ -446,7 +448,7 @@ const Profile = () => {
                       <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                         <h3 className="font-medium text-gray-900 mb-4 flex items-center">
                           <span className="mr-2">🛡️</span>
-                          Mức độ bảo mật tài khoản
+                          {t('profile.security.title')}
                         </h3>
 
                         <div className="flex items-center mb-4">
@@ -462,15 +464,16 @@ const Profile = () => {
                             ></div>
                           </div>
                           <span className="ml-3 text-sm font-medium text-gray-600">
-                            {(user?.verification?.emailVerified ? 1 : 0) +
-                              (user?.cccd?.isVerified ? 1 : 0)}
-                            /2 Hoàn thành
+                            {t('profile.security.completion', {
+                              count:
+                                (user?.verification?.emailVerified ? 1 : 0) +
+                                (user?.cccd?.isVerified ? 1 : 0),
+                            })}
                           </span>
                         </div>
 
                         <p className="text-sm text-gray-600">
-                          Hoàn thành tất cả các bước xác minh để đảm bảo tài
-                          khoản của bạn được bảo mật tốt nhất.
+                          {t('profile.security.helpText') || t('profile.header.profileDesc')}
                         </p>
 
                         {(user?.verification?.emailVerified ? 1 : 0) +
@@ -479,8 +482,7 @@ const Profile = () => {
                           <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
                             <p className="text-sm text-green-800 flex items-center">
                               <span className="mr-2">🎉</span>
-                              Chúc mừng! Tài khoản của bạn đã được xác minh hoàn
-                              toàn.
+                              {t('profile.security.completeMessage')}
                             </p>
                           </div>
                         )}
@@ -496,7 +498,7 @@ const Profile = () => {
                       {/* Name */}
                       <div className="flex items-center">
                         <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Tên
+                          {t('profile.fields.name')}
                         </label>
                         <div className="flex-1">
                           {editing ? (
@@ -511,18 +513,18 @@ const Profile = () => {
                                 )
                               }
                               className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                              placeholder="Nhập tên"
+                              placeholder={t('profile.placeholders.enterName')}
                             />
                           ) : (
                             <div className="flex items-center">
                               <span className="text-gray-900">
-                                {user?.profile?.firstName || "Chưa cập nhật"}
+                                {user?.profile?.firstName || t('profile.fields.notUpdated')}
                               </span>
                               <button
                                 onClick={() => setEditing(true)}
                                 className="ml-2 text-blue-600 hover:text-blue-700 text-sm"
                               >
-                                Thay Đổi
+                                {t('profile.fields.change')}
                               </button>
                             </div>
                           )}
@@ -532,7 +534,7 @@ const Profile = () => {
                       {/* Email */}
                       <div className="flex items-center">
                         <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Email
+                          {t('profile.fields.email')}
                         </label>
                         <div className="flex-1">
                           <div className="flex items-center">
@@ -542,7 +544,7 @@ const Profile = () => {
                                 : "N/A"}
                             </span>
                             <button className="text-blue-600 hover:text-blue-700 text-sm">
-                              Thay Đổi
+                              {t('profile.fields.change')}
                             </button>
                           </div>
                         </div>
@@ -551,7 +553,7 @@ const Profile = () => {
                       {/* Phone */}
                       <div className="flex items-center">
                         <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Số điện thoại
+                          {t('profile.fields.phone')}
                         </label>
                         <div className="flex-1">
                           {editing ? (
@@ -562,20 +564,20 @@ const Profile = () => {
                                 handleDirectChange("phone", e.target.value)
                               }
                               className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                              placeholder="Nhập số điện thoại"
+                              placeholder={t('profile.placeholders.enterPhone')}
                             />
                           ) : (
                             <div className="flex items-center">
                               <span className="text-gray-900 mr-2">
                                 {user?.phone
                                   ? `*******${user.phone.slice(-2)}`
-                                  : "Chưa cập nhật"}
+                                  : t('profile.fields.notUpdated')}
                               </span>
                               <button
                                 onClick={() => setEditing(true)}
                                 className="text-blue-600 hover:text-blue-700 text-sm"
                               >
-                                Thay Đổi
+                                {t('profile.fields.change')}
                               </button>
                             </div>
                           )}
@@ -585,7 +587,7 @@ const Profile = () => {
                       {/* Gender */}
                       <div className="flex items-center">
                         <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Giới tính
+                          {t('profile.fields.gender')}
                         </label>
                         <div className="flex-1">
                           {editing ? (
@@ -605,7 +607,7 @@ const Profile = () => {
                                   }
                                   className="mr-2"
                                 />
-                                Nam
+                                {t('profile.genders.male')}
                               </label>
                               <label className="flex items-center">
                                 <input
@@ -622,7 +624,7 @@ const Profile = () => {
                                   }
                                   className="mr-2"
                                 />
-                                Nữ
+                                {t('profile.genders.female')}
                               </label>
                               <label className="flex items-center">
                                 <input
@@ -639,18 +641,18 @@ const Profile = () => {
                                   }
                                   className="mr-2"
                                 />
-                                Khác
+                                {t('profile.genders.other')}
                               </label>
                             </div>
                           ) : (
                             <span className="text-gray-900">
                               {user?.profile?.gender === "MALE"
-                                ? "Nam"
+                                ? t('profile.genders.male')
                                 : user?.profile?.gender === "FEMALE"
-                                ? "Nữ"
+                                ? t('profile.genders.female')
                                 : user?.profile?.gender === "OTHER"
-                                ? "Khác"
-                                : "Chưa cập nhật"}
+                                ? t('profile.genders.other')
+                                : t('profile.fields.notUpdated')}
                             </span>
                           )}
                         </div>
@@ -659,7 +661,7 @@ const Profile = () => {
                       {/* Date of Birth */}
                       <div className="flex items-center">
                         <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Ngày sinh
+                          {t('profile.fields.dob')}
                         </label>
                         <div className="flex-1">
                           {editing ? (
@@ -680,7 +682,7 @@ const Profile = () => {
                               {user?.profile?.dateOfBirth
                                 ? new Date(
                                     user.profile.dateOfBirth
-                                  ).toLocaleDateString("vi-VN")
+                                  ).toLocaleDateString()
                                 : "*/*/1998"}
                             </span>
                           )}
@@ -697,13 +699,13 @@ const Profile = () => {
                               disabled={saving}
                               className="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
                             >
-                              {saving ? "Đang lưu..." : "Lưu"}
+                              {saving ? t('profile.fields.saving') : t('profile.fields.save')}
                             </button>
                             <button
                               onClick={handleCancel}
                               className="px-6 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
                             >
-                              Hủy
+                              {t('profile.fields.cancel')}
                             </button>
                           </div>
                         </div>
@@ -732,12 +734,12 @@ const Profile = () => {
                           onChange={handleAvatarUpload}
                           className="hidden"
                         />
-                        Chọn Ảnh
+                        {t('profile.avatar.choose')}
                       </label>
 
                       <div className="text-xs text-gray-500 mt-2 text-center">
-                        <p>Dung lượng file tối đa 1 MB</p>
-                        <p>Định dạng: .JPEG, .PNG</p>
+                        <p>{t('profile.avatar.fileSize')}</p>
+                        <p>{t('profile.avatar.formats')}</p>
                       </div>
                     </div>
                   </div>
@@ -746,13 +748,13 @@ const Profile = () => {
                 {activeSection === "address" && (
                   <div className="max-w-2xl">
                     <h2 className="text-lg font-medium mb-6">
-                      Địa chỉ của tôi
+                      {t('profile.header.addressTitle')}
                     </h2>
 
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Địa chỉ cụ thể
+                          {t('profile.fields.streetAddress')}
                         </label>
                         <input
                           type="text"
@@ -765,14 +767,14 @@ const Profile = () => {
                             )
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Số nhà, tên đường"
+                          placeholder={t('profile.placeholders.streetAddress')}
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Quận/Huyện
+                            {t('profile.fields.district')}
                           </label>
                           <input
                             type="text"
@@ -785,13 +787,13 @@ const Profile = () => {
                               )
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                            placeholder="Quận/Huyện"
+                            placeholder={t('profile.placeholders.district')}
                           />
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Thành phố
+                            {t('profile.fields.city')}
                           </label>
                           <input
                             type="text"
@@ -804,14 +806,14 @@ const Profile = () => {
                               )
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                            placeholder="Thành phố"
+                            placeholder={t('profile.placeholders.city')}
                           />
                         </div>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Tỉnh/Thành phố
+                          {t('profile.fields.province')}
                         </label>
                         <input
                           type="text"
@@ -824,7 +826,7 @@ const Profile = () => {
                             )
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Tỉnh/Thành phố"
+                          placeholder={t('profile.placeholders.province')}
                         />
                       </div>
 
@@ -833,7 +835,7 @@ const Profile = () => {
                         disabled={saving}
                         className="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
                       >
-                        {saving ? "Đang lưu..." : "Lưu địa chỉ"}
+                        {saving ? t('profile.fields.saving') : t('profile.address.saveButton')}
                       </button>
                     </div>
                   </div>
@@ -841,44 +843,44 @@ const Profile = () => {
 
                 {activeSection === "password" && (
                   <div className="max-w-lg">
-                    <h2 className="text-lg font-medium mb-6">Đổi mật khẩu</h2>
+                    <h2 className="text-lg font-medium mb-6">{t('profile.header.passwordTitle')}</h2>
 
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mật khẩu hiện tại
+                          {t('profile.password.currentLabel')}
                         </label>
                         <input
                           type="password"
                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập mật khẩu hiện tại"
+                          placeholder={t('profile.password.placeholderCurrent')}
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mật khẩu mới
+                          {t('profile.password.newLabel')}
                         </label>
                         <input
                           type="password"
                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập mật khẩu mới"
+                          placeholder={t('profile.password.placeholderNew')}
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Xác nhận mật khẩu mới
+                          {t('profile.password.confirmLabel')}
                         </label>
                         <input
                           type="password"
                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập lại mật khẩu mới"
+                          placeholder={t('profile.password.placeholderConfirm')}
                         />
                       </div>
 
                       <button className="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
-                        Cập nhật mật khẩu
+                        {t('profile.password.updateButton')}
                       </button>
                     </div>
                   </div>
@@ -898,7 +900,7 @@ const Profile = () => {
         visible={showKycModal}
         onClose={() => setShowKycModal(false)}
         onSuccess={handleKycSuccess}
-        title="Xác thực danh tính (KYC)"
+        title={t('profile.kyc.modalTitle')}
       />
     </div>
   );

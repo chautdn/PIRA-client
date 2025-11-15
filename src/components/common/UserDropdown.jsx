@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { useAuth } from "../../hooks/useAuth";
 import { ROUTES } from "../../utils/constants";
 
 const UserDropdown = () => {
+  const { t } = useTranslation();
   const { user, logout, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
@@ -130,7 +132,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <span className="mr-3 text-lg">👤</span>
-              Profile
+              {t('wallet.user.profile')}
             </Link>
 
             <Link
@@ -139,7 +141,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <span className="mr-3 text-lg">📦</span>
-              My Products
+              {t('wallet.user.myProducts')}
             </Link>
 
             <Link
@@ -148,7 +150,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <span className="mr-3 text-lg">📋</span>
-              My Bookings
+              {t('wallet.user.myBookings')}
             </Link>
 
             <Link
@@ -157,7 +159,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <span className="mr-3 text-lg">💰</span>
-              Withdrawals
+              {t('wallet.user.withdrawals')}
             </Link>
 
             <Link
@@ -166,7 +168,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <span className="mr-3 text-lg">⚙️</span>
-              Settings
+              {t('wallet.user.settings')}
             </Link>
           </div>
 
@@ -178,7 +180,7 @@ const UserDropdown = () => {
               className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
             >
               <span className="mr-3 text-lg">🚪</span>
-              {logoutLoading ? "Logging out..." : "Logout"}
+              {logoutLoading ? t('wallet.user.loggingOut') : t('wallet.user.logout')}
             </button>
           </div>
         </div>
