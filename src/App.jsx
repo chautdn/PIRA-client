@@ -41,6 +41,9 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
+import AdminProductDetail from "./pages/admin/AdminProductDetail";
+import OrderManagement from "./pages/admin/OrderManagement";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import ReportManagement from "./pages/admin/ReportManagement";
 import AdminReportDetail from "./pages/admin/AdminReportDetail";
 import MyReports from "./pages/auth/MyReports";
@@ -289,14 +292,13 @@ export default function App() {
                   <Route path="users" element={<UserManagement />} />
                   <Route path="users/:userId" element={<UserDetail />} />
                   <Route path="products" element={<ProductManagement />} />
+                  <Route path="products/:productId" element={<AdminProductDetail />} />
                   <Route
                     path="categories"
                     element={<div>Category Management - Coming Soon</div>}
                   />
-                  <Route
-                    path="orders"
-                    element={<div>Order Management - Coming Soon</div>}
-                  />
+                  <Route path="orders" element={<OrderManagement />} />
+                  <Route path="orders/:orderId" element={<AdminOrderDetail />} />
                   <Route
                     path="reports"
                     element={<ReportManagement />} 

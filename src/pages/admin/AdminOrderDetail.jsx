@@ -28,10 +28,11 @@ const AdminOrderDetail = () => {
         return;
       }
       
-      const response = await adminService.getOrderById(orderId);
+      const orderData = await adminService.getOrderById(orderId);
+      console.log('Fetched order data:', orderData);
       
-      if (response && response.success && response.data) {
-        setOrder(response.data);
+      if (orderData) {
+        setOrder(orderData);
       } else {
         setError('Không tìm thấy đơn hàng');
       }
@@ -187,7 +188,7 @@ const AdminOrderDetail = () => {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                   <span className="text-3xl">📋</span>
-                  Chi tiết đơn hàng #{order.orderNumber || order._id?.slice(-6)}
+                  Chi tiết đơn hàng #{order.masterOrderNumber || order._id?.slice(-6)}
                 </h1>
                 <p className="text-sm text-gray-600 mt-1">
                   Tạo lúc: {formatDate(order.createdAt)}
@@ -196,7 +197,6 @@ const AdminOrderDetail = () => {
             </div>
             <div className="flex items-center space-x-3">
               {getStatusBadge(order.status)}
-              {getPaymentStatusBadge(order.paymentStatus)}
             </div>
           </div>
         </div>
@@ -209,109 +209,170 @@ const AdminOrderDetail = () => {
               <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <span>👤</span>
-                  Thông tin khách hàng
+                  Thông tin người thuê
                 </h3>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Người thuê</h4>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-900 font-medium">
-                        {order.renter?.cccd?.fullName || order.renter?.profile?.firstName + ' ' + order.renter?.profile?.lastName || 'N/A'}
-                      </p>
-                      <p className="text-sm text-gray-600">{order.renter?.email || 'N/A'}</p>
-                      <p className="text-sm text-gray-600">{order.renter?.phone || 'N/A'}</p>
-                      
-                      {/* Địa chỉ thường trú của renter */}
-                      {order.renter?.address && (
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <h5 className="text-xs font-medium text-blue-800 mb-1">🏠 Địa chỉ thường trú</h5>
-                          <p className="text-xs text-blue-700">{formatAddress(order.renter.address)}</p>
-                        </div>
-                      )}
-                      
-                      {/* Địa chỉ trên CCCD của renter */}
-                      {order.renter?.cccd?.address && (
-                        <div className="mt-2 p-3 bg-green-50 rounded-lg border border-green-200">
-                          <h5 className="text-xs font-medium text-green-800 mb-1">🆔 Địa chỉ trên CCCD</h5>
-                          <p className="text-xs text-green-700">{order.renter.cccd.address}</p>
-                        </div>
-                      )}
-                    </div>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-gray-600 min-w-[100px]">Họ và tên:</span>
+                    <p className="text-sm text-gray-900 font-medium">
+                      {order.renter?.profile?.firstName && order.renter?.profile?.lastName
+                        ? `${order.renter.profile.firstName} ${order.renter.profile.lastName}`
+                        : order.renter?.username || 'N/A'}
+                    </p>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Chủ sở hữu</h4>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-900 font-medium">
-                        {order.owner?.cccd?.fullName || order.owner?.profile?.firstName + ' ' + order.owner?.profile?.lastName || 'N/A'}
-                      </p>
-                      <p className="text-sm text-gray-600">{order.owner?.email || 'N/A'}</p>
-                      <p className="text-sm text-gray-600">{order.owner?.phone || 'N/A'}</p>
-                      
-                      {/* Địa chỉ thường trú của owner */}
-                      {order.owner?.address && (
-                        <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                          <h5 className="text-xs font-medium text-purple-800 mb-1">🏠 Địa chỉ thường trú</h5>
-                          <p className="text-xs text-purple-700">{formatAddress(order.owner.address)}</p>
-                        </div>
-                      )}
-                      
-                      {/* Địa chỉ trên CCCD của owner */}
-                      {order.owner?.cccd?.address && (
-                        <div className="mt-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                          <h5 className="text-xs font-medium text-orange-800 mb-1">🆔 Địa chỉ trên CCCD</h5>
-                          <p className="text-xs text-orange-700">{order.owner.cccd.address}</p>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-gray-600 min-w-[100px]">Email:</span>
+                    <p className="text-sm text-gray-900">{order.renter?.email || 'N/A'}</p>
                   </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-gray-600 min-w-[100px]">Số điện thoại:</span>
+                    <p className="text-sm text-gray-900">{order.renter?.phone || 'N/A'}</p>
+                  </div>
+                  
+                  {/* Địa chỉ thường trú của renter */}
+                  {order.renter?.address && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm text-gray-600 min-w-[100px]">Địa chỉ:</span>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-900">{formatAddress(order.renter.address)}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Product Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <span>📦</span>
-                  Thông tin sản phẩm
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="flex items-start space-x-4">
-                  {order.product?.images?.length > 0 && (
-                    <div className="flex-shrink-0">
-                      <img
-                        src={order.product.images[0]}
-                        alt={order.product.title}
-                        className="w-24 h-24 object-cover rounded-lg border border-gray-200"
-                      />
+            {/* SubOrders - Products by Owner */}
+            {order.subOrders && order.subOrders.length > 0 && (
+              <div className="space-y-4">
+                {order.subOrders.map((subOrder, index) => (
+                  <div key={subOrder._id || index} className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                          <span>🏪</span>
+                          Đơn con #{subOrder.subOrderNumber || index + 1}
+                        </h3>
+                        <span className="text-xs text-gray-500">
+                          {subOrder.products?.length || 0} sản phẩm
+                        </span>
+                      </div>
+                      {/* Owner info - Brief */}
+                      <div className="mt-3 flex items-center gap-2 text-sm">
+                        <span className="text-gray-600">Chủ cho thuê:</span>
+                        <span className="font-medium text-purple-700">
+                          {subOrder.owner?.profile?.firstName && subOrder.owner?.profile?.lastName
+                            ? `${subOrder.owner.profile.firstName} ${subOrder.owner.profile.lastName}`
+                            : subOrder.owner?.username || subOrder.owner?.email || 'N/A'}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">
-                      {order.product?.title || order.product?.name || 'N/A'}
-                    </h4>
-                    <p className="text-sm text-gray-600 mb-3">
-                      {order.product?.description || 'Không có mô tả'}
-                    </p>
-                    <div className="flex items-center space-x-4">
-                      {order.product?.category && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full border border-blue-200">
-                          📁 {order.product.category.name}
-                        </span>
-                      )}
-                      {order.product?.condition && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full border border-green-200">
-                          ⭐ {order.product.condition}
-                        </span>
-                      )}
+                    
+                    {/* Owner Full Information */}
+                    <div className="px-6 py-4 bg-purple-50 border-b border-purple-100">
+                      <h4 className="text-sm font-semibold text-purple-900 mb-3">📋 Thông tin chủ sở hữu</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-purple-700 min-w-[80px]">Họ và tên:</span>
+                            <p className="text-xs text-purple-900 font-medium">
+                              {subOrder.owner?.profile?.firstName && subOrder.owner?.profile?.lastName
+                                ? `${subOrder.owner.profile.firstName} ${subOrder.owner.profile.lastName}`
+                                : subOrder.owner?.username || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-purple-700 min-w-[80px]">Email:</span>
+                            <p className="text-xs text-purple-900">{subOrder.owner?.email || 'N/A'}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-purple-700 min-w-[80px]">Số điện thoại:</span>
+                            <p className="text-xs text-purple-900">{subOrder.owner?.phone || 'N/A'}</p>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-purple-700 min-w-[80px]">Địa chỉ:</span>
+                            <p className="text-xs text-purple-900">{formatAddress(subOrder.owner?.address) || 'N/A'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Products in this subOrder */}
+                    <div className="p-6">
+                      <div className="space-y-4">
+                        {subOrder.products && subOrder.products.map((item, idx) => (
+                          <div key={item._id || idx} className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            {item.product?.images?.[0] && (
+                              <div className="flex-shrink-0">
+                                <img
+                                  src={item.product.images[0]}
+                                  alt={item.product.title}
+                                  className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-base font-medium text-gray-900 mb-1">
+                                {item.product?.title || 'N/A'}
+                              </h4>
+                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                {item.product?.description || 'Không có mô tả'}
+                              </p>
+                              <div className="flex items-center gap-3 flex-wrap">
+                                {item.product?.category?.name && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                                    📁 {item.product.category.name}
+                                  </span>
+                                )}
+                                <span className="text-xs text-gray-600">
+                                  Số lượng: <span className="font-semibold">{item.quantity || 1}</span>
+                                </span>
+                                {item.rentalRate && (
+                                  <span className="text-xs text-green-600 font-medium">
+                                    💰 {formatCurrency(item.rentalRate)}
+                                  </span>
+                                )}
+                                {item.confirmationStatus && (
+                                  <span className={`text-xs px-2 py-1 rounded-full ${
+                                    item.confirmationStatus === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
+                                    item.confirmationStatus === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                    'bg-yellow-100 text-yellow-700'
+                                  }`}>
+                                    {item.confirmationStatus}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* SubOrder totals */}
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Tổng tiền thuê:</span>
+                          <span className="font-semibold text-gray-900">
+                            {formatCurrency(subOrder.totalRentalAmount || 0)}
+                          </span>
+                        </div>
+                        {subOrder.totalDepositAmount > 0 && (
+                          <div className="flex justify-between text-sm mt-1">
+                            <span className="text-gray-600">Tiền cọc:</span>
+                            <span className="font-semibold text-orange-600">
+                              {formatCurrency(subOrder.totalDepositAmount)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            </div>
+            )}
 
             {/* Delivery Information */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -327,12 +388,17 @@ const AdminOrderDetail = () => {
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Phương thức giao hàng</h4>
                     <div className="space-y-2">
                       <p className="text-sm text-gray-900">
-                        {order.delivery?.method === 'DELIVERY' ? '🚚 Giao hàng tận nơi' : 
-                         order.delivery?.method === 'PICKUP' ? '🏪 Tự lấy' : 'N/A'}
+                        {order.deliveryMethod === 'DELIVERY' ? '🚚 Giao hàng tận nơi' : 
+                         order.deliveryMethod === 'PICKUP' ? '🏪 Tự lấy' : 'N/A'}
                       </p>
-                      {order.delivery?.contactPhone && (
+                      {order.deliveryAddress?.contactPhone && (
                         <p className="text-sm text-gray-600">
-                          📞 SĐT liên hệ: {order.delivery.contactPhone}
+                          📞 SĐT liên hệ: {order.deliveryAddress.contactPhone}
+                        </p>
+                      )}
+                      {order.deliveryAddress?.contactName && (
+                        <p className="text-sm text-gray-600">
+                          👤 Người nhận: {order.deliveryAddress.contactName}
                         </p>
                       )}
                     </div>
@@ -340,18 +406,18 @@ const AdminOrderDetail = () => {
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Chi phí</h4>
                     <p className="text-sm text-gray-900 font-medium text-green-600">
-                      💰 Phí giao hàng: {formatCurrency(order.pricing?.deliveryFee)}
+                      💰 Phí giao hàng: {formatCurrency(order.totalShippingFee || 0)}
                     </p>
                   </div>
                 </div>
                 
                 {/* Địa chỉ nhận hàng */}
-                {order.delivery?.address && (
+                {order.deliveryAddress && order.deliveryMethod === 'DELIVERY' && (
                   <div className="mt-6">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">📍 Địa chỉ nhận hàng</h4>
                     <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                       <p className="text-sm text-yellow-800 font-medium">
-                        {formatAddress(order.delivery.address)}
+                        {formatAddress(order.deliveryAddress)}
                       </p>
                       <p className="text-xs text-yellow-600 mt-1">
                         * Đây là địa chỉ mà người thuê yêu cầu giao hàng đến
@@ -360,67 +426,7 @@ const AdminOrderDetail = () => {
                   </div>
                 )}
                 
-                {/* So sánh với địa chỉ thường trú */}
-                {order.delivery?.address && order.renter?.address && (
-                  <div className="mt-4">
-                    <div className="flex items-start space-x-2 p-3 bg-gray-50 rounded-lg">
-                      <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <p className="text-xs text-gray-600">
-                          <strong>So sánh:</strong> Địa chỉ nhận hàng {
-                            formatAddress(order.delivery.address) === formatAddress(order.renter.address) 
-                              ? '✅ trùng khớp' 
-                              : '⚠️ khác với địa chỉ thường trú'
-                          } với địa chỉ thường trú của người thuê
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Địa chỉ lấy hàng từ owner */}
-                {order.owner?.address && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">🏠 Địa chỉ lấy hàng (Chủ sở hữu)</h4>
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                      <div className="space-y-2">
-                        <p className="text-sm text-green-800 font-medium">
-                          {formatAddress(order.owner.address)}
-                        </p>
-                        <div className="flex items-center space-x-4 text-xs text-green-600">
-                          <span>👤 {order.owner?.fullName || order.owner?.name || 'N/A'}</span>
-                          {order.owner?.phone && (
-                            <span>📞 {order.owner.phone}</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-green-600 mt-2">
-                          * Đây là địa chỉ của chủ sở hữu, nơi có thể lấy/trả hàng
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Địa chỉ CCCD của owner (nếu có) */}
-                {order.owner?.cccd?.address && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">🆔 Địa chỉ trên CCCD (Chủ sở hữu)</h4>
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-800">
-                        {formatAddress(order.owner.cccd.address)}
-                      </p>
-                      <div className="flex items-center space-x-2 mt-2">
-                        {formatAddress(order.owner.address) === formatAddress(order.owner.cccd.address) ? (
-                          <span className="text-xs text-green-600">✅ Trùng khớp với địa chỉ thường trú</span>
-                        ) : (
-                          <span className="text-xs text-orange-600">⚠️ Khác với địa chỉ thường trú</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
+
               </div>
             </div>
 
@@ -476,25 +482,27 @@ const AdminOrderDetail = () => {
               </div>
               <div className="p-6 space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Giá thuê:</span>
-                  <span className="font-medium">{formatCurrency(order.pricing?.rentalRate)}</span>
+                  <span className="text-gray-600">Tổng tiền thuê:</span>
+                  <span className="font-medium">{formatCurrency(order.totalAmount || 0)}</span>
                 </div>
-                {order.pricing?.deposit && (
+                {order.totalDepositAmount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tiền cọc:</span>
-                    <span className="font-medium text-orange-600">{formatCurrency(order.pricing.deposit)}</span>
+                    <span className="text-gray-600">Tổng tiền cọc:</span>
+                    <span className="font-medium text-orange-600">{formatCurrency(order.totalDepositAmount)}</span>
                   </div>
                 )}
-                {order.pricing?.deliveryFee && (
+                {order.totalShippingFee > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Phí giao hàng:</span>
-                    <span className="font-medium">{formatCurrency(order.pricing.deliveryFee)}</span>
+                    <span className="font-medium">{formatCurrency(order.totalShippingFee)}</span>
                   </div>
                 )}
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between">
-                    <span className="text-base font-medium text-gray-900">Tổng cộng:</span>
-                    <span className="text-lg font-bold text-green-600">{formatCurrency(order.pricing?.total)}</span>
+                    <span className="text-base font-medium text-gray-900">Tổng thanh toán:</span>
+                    <span className="text-lg font-bold text-green-600">
+                      {formatCurrency((order.totalAmount || 0) + (order.totalDepositAmount || 0) + (order.totalShippingFee || 0))}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -509,24 +517,22 @@ const AdminOrderDetail = () => {
                 </h3>
               </div>
               <div className="p-6 space-y-4">
-                <div>
-                  <span className="text-sm text-gray-600">Thời lượng:</span>
-                  <p className="font-medium">
-                    {order.rentalPeriod?.duration || 'N/A'} {
-                      order.rentalPeriod?.unit === 'DAY' ? 'ngày' : 
-                      order.rentalPeriod?.unit === 'WEEK' ? 'tuần' : 
-                      order.rentalPeriod?.unit === 'MONTH' ? 'tháng' : ''
-                    }
+                {order.rentalPeriod?.startDate && order.rentalPeriod?.endDate ? (
+                  <>
+                    <div>
+                      <span className="text-sm text-gray-600">Ngày bắt đầu:</span>
+                      <p className="font-medium">{formatDate(order.rentalPeriod.startDate)}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-600">Ngày kết thúc:</span>
+                      <p className="font-medium">{formatDate(order.rentalPeriod.endDate)}</p>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    Thời gian thuê được quy định riêng cho từng sản phẩm trong đơn con
                   </p>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">Ngày bắt đầu:</span>
-                  <p className="font-medium">{formatDate(order.rentalPeriod?.startDate)}</p>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">Ngày kết thúc:</span>
-                  <p className="font-medium">{formatDate(order.rentalPeriod?.endDate)}</p>
-                </div>
+                )}
               </div>
             </div>
           </div>
