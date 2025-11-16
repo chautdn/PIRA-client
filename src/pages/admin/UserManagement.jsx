@@ -15,10 +15,16 @@ const UserManagement = () => {
     sortBy: 'createdAt',
     sortOrder: 'desc'
   });
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalUsers, setTotalUsers] = useState(0);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    total: 0,
+    limit: 10
+  });
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   // Show notification function
   const showNotification = (message, type = 'success') => {
@@ -30,7 +36,15 @@ const UserManagement = () => {
 
   useEffect(() => {
     loadUsers();
-  }, [filters]);
+  }, [filters]); // Use filters directly instead of loadUsers
+
+  // Sync searchQuery with filters.search when filters change externally
+  useEffect(() => {
+    // Only sync if search query is different and not in typing mode
+    if (!searchTimeout && filters.search !== searchQuery) {
+      setSearchQuery(filters.search);
+    }
+  }, [filters.search, searchQuery, searchTimeout]);
 
   const loadUsers = async () => {
     try {
@@ -40,38 +54,80 @@ const UserManagement = () => {
       // Safe check for response structure
       if (response && typeof response === 'object') {
         setUsers(response.users || response.data?.users || []);
-        setTotalPages(response.totalPages || response.data?.totalPages || 1);
-        setTotalUsers(response.total || response.data?.total || 0);
+        setPagination({
+          currentPage: filters.page,
+          totalPages: response.totalPages || response.data?.totalPages || 1,
+          total: response.total || response.data?.total || 0,
+          limit: filters.limit
+        });
       } else {
         // Fallback for unexpected response structure
         setUsers([]);
-        setTotalPages(1);
-        setTotalUsers(0);
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          total: 0,
+          limit: 10
+        });
       }
     } catch (err) {
       setError('Không thể tải danh sách users');
       console.error('Load users error:', err);
       // Set default values on error
       setUsers([]);
-      setTotalPages(1);
-      setTotalUsers(0);
+      setPagination({
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+        limit: 10
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-      page: key !== 'page' ? 1 : value // Reset page when other filters change
-    }));
+    if (key === 'search') {
+      // Update search query immediately (for UI)
+      setSearchQuery(value);
+      
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      // Set new timeout to update actual filter
+      const newTimeout = setTimeout(() => {
+        setFilters(prev => ({
+          ...prev,
+          search: value,
+          page: 1
+        }));
+      }, 500);
+
+      setSearchTimeout(newTimeout);
+    } else {
+      // For other filters, update immediately
+      setFilters(prev => ({
+        ...prev,
+        [key]: value,
+        page: key === 'page' ? value : 1
+      }));
+    }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    loadUsers();
+  const handlePageChange = (page) => {
+    handleFilterChange('page', page);
   };
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   const handleUserStatusChange = async (userId, newStatus) => {
     try {
@@ -273,8 +329,22 @@ const UserManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý Users</h1>
-          <p className="text-gray-600">Tổng cộng {totalUsers} users</p>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <span className="text-blue-600">👥</span>
+            Quản lý Users
+          </h1>
+          <div className="flex items-center gap-6 mt-2">
+            <p className="text-gray-600 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-md">
+                📊 Tổng cộng: {(pagination?.total || 0).toLocaleString('vi-VN')} users
+              </span>
+            </p>
+            <p className="text-gray-600 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md">
+                📄 Trang {pagination?.currentPage || 1}/{pagination?.totalPages || 1}
+              </span>
+            </p>
+          </div>
         </div>
         <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
           Export CSV
@@ -282,65 +352,123 @@ const UserManagement = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <span>🔍</span>
+            Bộ lọc & Tìm kiếm
+          </h2>
+          <button
+            onClick={() => {
+              setFilters({ search: '', role: '', status: '', page: 1, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' });
+              setSearchQuery('');
+              if (searchTimeout) {
+                clearTimeout(searchTimeout);
+                setSearchTimeout(null);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+          >
+            <span>🗑️</span>
+            Xóa bộ lọc
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Tên, email, số điện thoại..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>🔍</span>
+                Tìm kiếm
+              </span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Tên, email, số điện thoại..."
+                value={searchQuery}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+              {searchTimeout && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Role */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>👥</span>
+                Vai trò
+              </span>
+            </label>
             <select
               value={filters.role}
               onChange={(e) => handleFilterChange('role', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả vai trò</option>
-              <option value="RENTER">Người thuê</option>
-              <option value="OWNER">Chủ sở hữu</option>
-              <option value="SHIPPER">Shipper</option>
-              <option value="ADMIN">Admin</option>
+              <option value="RENTER">💼 Người thuê</option>
+              <option value="OWNER">🏠 Chủ sở hữu</option>
+              <option value="SHIPPER">🚚 Shipper</option>
+              <option value="ADMIN">⚙️ Admin</option>
             </select>
           </div>
+
+          {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>📋</span>
+                Trạng thái
+              </span>
+            </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="INACTIVE">Không hoạt động</option>
-              <option value="SUSPENDED">Tạm khóa</option>
-              <option value="PENDING">Chờ xác thực</option>
+              <option value="ACTIVE">✅ Hoạt động</option>
+              <option value="INACTIVE">❌ Không hoạt động</option>
+              <option value="SUSPENDED">⏸️ Tạm khóa</option>
+              <option value="PENDING">⏳ Chờ xác thực</option>
             </select>
           </div>
+
+          {/* Sort */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sắp xếp</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <span>↕️</span>
+                Sắp xếp
+              </span>
+            </label>
             <select
               value={`${filters.sortBy}-${filters.sortOrder}`}
               onChange={(e) => {
                 const [sortBy, sortOrder] = e.target.value.split('-');
-                handleFilterChange('sortBy', sortBy);
-                handleFilterChange('sortOrder', sortOrder);
+                setFilters(prev => ({
+                  ...prev,
+                  sortBy,
+                  sortOrder,
+                  page: 1
+                }));
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
-              <option value="createdAt-desc">Mới nhất</option>
-              <option value="createdAt-asc">Cũ nhất</option>
-              <option value="firstName-asc">Tên A-Z</option>
-              <option value="firstName-desc">Tên Z-A</option>
-              <option value="email-asc">Email A-Z</option>
+              <option value="createdAt-desc">🆕 Mới nhất</option>
+              <option value="createdAt-asc">🔼 Cũ nhất</option>
+              <option value="firstName-asc">🔤 Tên A-Z</option>
+              <option value="firstName-desc">🔥 Tên Z-A</option>
+              <option value="email-asc">📧 Email A-Z</option>
             </select>
           </div>
-        </form>
+        </div>
       </div>
 
       {/* Bulk Actions */}
@@ -481,72 +609,148 @@ const UserManagement = () => {
         </div>
 
         {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button
-              onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
-              disabled={filters.page === 1}
-              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-            >
-              Trước
-            </button>
-            <button
-              onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page + 1))}
-              disabled={filters.page === totalPages}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-            >
-              Sau
-            </button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Hiển thị <span className="font-medium">{(filters.page - 1) * filters.limit + 1}</span> đến{' '}
-                <span className="font-medium">{Math.min(filters.page * filters.limit, totalUsers)}</span> trong{' '}
-                <span className="font-medium">{totalUsers}</span> kết quả
-              </p>
+        {pagination.totalPages > 1 && (
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 1}
+                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  pagination.currentPage === 1
+                    ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                    : 'text-gray-700 bg-white hover:bg-gray-50'
+                }`}
+              >
+                Trước
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={pagination.currentPage === pagination.totalPages}
+                className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+                  pagination.currentPage === pagination.totalPages
+                    ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                    : 'text-gray-700 bg-white hover:bg-gray-50'
+                }`}
+              >
+                Sau
+              </button>
             </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                <button
-                  onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
-                  disabled={filters.page === 1}
-                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Trước
-                </button>
-                {[...Array(totalPages)].map((_, index) => {
-                  const page = index + 1;
-                  if (page === 1 || page === totalPages || (page >= filters.page - 2 && page <= filters.page + 2)) {
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => handleFilterChange('page', page)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          page === filters.page
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  } else if (page === filters.page - 3 || page === filters.page + 3) {
-                    return <span key={page} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>;
-                  }
-                  return null;
-                })}
-                <button
-                  onClick={() => handleFilterChange('page', Math.min(totalPages, filters.page + 1))}
-                  disabled={filters.page === totalPages}
-                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Sau
-                </button>
-              </nav>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Hiển thị <span className="font-medium">{(pagination.currentPage - 1) * pagination.limit + 1}</span> đến{' '}
+                  <span className="font-medium">
+                    {Math.min(pagination.currentPage * pagination.limit, pagination.total)}
+                  </span>{' '}
+                  trong <span className="font-medium">{pagination.total}</span> kết quả
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  {/* Previous Button */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={pagination.currentPage === 1}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
+                      pagination.currentPage === 1
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        : 'text-gray-500 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="sr-only">Previous</span>
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+
+                  {/* Page Numbers */}
+                  {(() => {
+                    const pages = [];
+                    const totalPages = pagination.totalPages;
+                    const currentPage = pagination.currentPage;
+                    
+                    // Logic hiển thị pages giống ReportManagement
+                    if (totalPages <= 7) {
+                      // Nếu tổng số trang <= 7, hiển thị tất cả
+                      for (let i = 1; i <= totalPages; i++) {
+                        pages.push(i);
+                      }
+                    } else {
+                      // Luôn hiển thị trang đầu
+                      pages.push(1);
+                      
+                      if (currentPage > 3) {
+                        pages.push('...');
+                      }
+                      
+                      // Hiển thị các trang xung quanh trang hiện tại
+                      const start = Math.max(2, currentPage - 1);
+                      const end = Math.min(totalPages - 1, currentPage + 1);
+                      
+                      for (let i = start; i <= end; i++) {
+                        if (!pages.includes(i)) {
+                          pages.push(i);
+                        }
+                      }
+                      
+                      if (currentPage < totalPages - 2) {
+                        pages.push('...');
+                      }
+                      
+                      // Luôn hiển thị trang cuối
+                      if (!pages.includes(totalPages)) {
+                        pages.push(totalPages);
+                      }
+                    }
+
+                    return pages.map((page, index) => {
+                      if (page === '...') {
+                        return (
+                          <span
+                            key={`ellipsis-${index}`}
+                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                          >
+                            ...
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            page === currentPage
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    });
+                  })()}
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={pagination.currentPage === pagination.totalPages}
+                    className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
+                      pagination.currentPage === pagination.totalPages
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        : 'text-gray-500 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="sr-only">Next</span>
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </nav>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {error && (
