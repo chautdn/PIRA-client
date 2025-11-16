@@ -505,6 +505,17 @@ const RentalOrdersPage = () => {
                             </div>
                             
                             {/* Action Buttons for SHIPPED status */}
+                            {(() => {
+                              const debugInfo = {
+                                subOrderId: subOrder._id,
+                                status: subOrder.status,
+                                isShipped: subOrder.status === 'SHIPPED',
+                                hasDispute: subOrderDisputes[subOrder._id],
+                                shouldShowButton: subOrder.status === 'SHIPPED' && !subOrderDisputes[subOrder._id]
+                              };
+                              console.log('🔍 [RentalOrders] SubOrder:', subOrder._id, 'Status:', subOrder.status, 'HasDispute:', subOrderDisputes[subOrder._id], 'ShouldShow:', debugInfo.shouldShowButton);
+                              return null;
+                            })()}
                             {subOrder.status === 'SHIPPED' && !subOrderDisputes[subOrder._id] && (
                               <button
                                 onClick={() => {

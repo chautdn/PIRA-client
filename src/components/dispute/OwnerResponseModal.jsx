@@ -46,10 +46,7 @@ const OwnerResponseModal = ({ dispute, isOpen, onClose, onSuccess }) => {
       return;
     }
 
-    if (formData.photos.length === 0) {
-      toast.error('Vui lòng tải lên ít nhất 1 ảnh bằng chứng');
-      return;
-    }
+    // No photo upload validation - owner references shipper pickup photos
 
     try {
       setLoading(true);
@@ -93,6 +90,11 @@ const OwnerResponseModal = ({ dispute, isOpen, onClose, onSuccess }) => {
 
   if (!isOpen || !dispute) return null;
 
+  // Debug log
+  console.log('🔍 [OwnerResponseModal] Dispute data:', dispute);
+  console.log('📸 [OwnerResponseModal] Shipper evidence:', dispute.shipperEvidence);
+  console.log('📷 [OwnerResponseModal] Delivery photos:', dispute.shipperEvidence?.deliveryPhotos);
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -129,9 +131,24 @@ const OwnerResponseModal = ({ dispute, isOpen, onClose, onSuccess }) => {
                 <span className="font-semibold">Lý do từ chối của người thuê:</span>
                 <p className="mt-1 text-gray-700">{dispute.description}</p>
               </div>
+              {dispute.shipperEvidence?.deliveryPhotos?.length > 0 && (
+                <div>
+                  <span className="font-semibold">Ảnh shipper chụp khi giao hàng (tại nhà người thuê):</span>
+                  <div className="grid grid-cols-3 gap-3 mt-2">
+                    {dispute.shipperEvidence.deliveryPhotos.map((photo, idx) => (
+                      <img
+                        key={idx}
+                        src={photo}
+                        alt={`Shipper photo ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border-2 border-blue-300"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
               {dispute.evidence?.renter?.photos?.length > 0 && (
                 <div>
-                  <span className="font-semibold">Ảnh bằng chứng từ shipper (tại nhà người thuê):</span>
+                  <span className="font-semibold">Ảnh bằng chứng từ người thuê:</span>
                   <div className="grid grid-cols-3 gap-3 mt-2">
                     {dispute.evidence.renter.photos.map((photo, idx) => (
                       <img
@@ -226,51 +243,41 @@ const OwnerResponseModal = ({ dispute, isOpen, onClose, onSuccess }) => {
 
                 <div>
                   <label className="block font-semibold mb-2">
-                    Ảnh bằng chứng <span className="text-red-500">*</span>
+                    Ảnh bằng chứng từ Shipper khi lấy hàng tại nhà bạn
                   </label>
                   <p className="text-sm text-gray-600 mb-3">
-                    Upload ảnh chụp sản phẩm khi đóng gói, ảnh từ shipper tại nhà bạn, hoặc bất kỳ bằng chứng nào chứng minh sản phẩm đúng như mô tả
+                    Đây là ảnh shipper chụp khi nhận hàng từ bạn (pickup). Ảnh này chứng minh tình trạng sản phẩm thực tế khi xuất kho.
                   </p>
                   
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <label className="cursor-pointer">
-                      <span className="text-blue-600 hover:text-blue-700 font-semibold">
-                        Chọn ảnh
-                      </span>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </label>
-                    <p className="text-sm text-gray-500 mt-2">
-                      PNG, JPG, GIF tối đa 10MB
-                    </p>
-                  </div>
-
-                  {formData.photos.length > 0 && (
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                      {formData.photos.map((photo, idx) => (
-                        <div key={idx} className="relative group">
+                  {dispute.shipperEvidence?.pickupPhotos?.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-4">
+                      {dispute.shipperEvidence.pickupPhotos.map((photo, idx) => (
+                        <div key={idx} className="relative">
                           <img
                             src={photo}
-                            alt={`Upload ${idx + 1}`}
-                            className="w-full h-32 object-cover rounded-lg border-2 border-gray-300"
+                            alt={`Pickup photo ${idx + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border-2 border-green-300"
                           />
-                          <button
-                            type="button"
-                            onClick={() => removePhoto(idx)}
-                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                          <div className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                            Pickup #{idx + 1}
+                          </div>
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
+                      <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-yellow-800">
+                        Không có ảnh pickup từ shipper. Vui lòng liên hệ admin để xác minh.
+                      </p>
+                    </div>
                   )}
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>Lưu ý:</strong> Ảnh này do shipper chụp và không thể chỉnh sửa. Nếu bạn cho rằng ảnh không phản ánh đúng thực tế, vui lòng giải thích chi tiết trong phần mô tả bên dưới.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end space-x-4 pt-4 border-t">
@@ -285,7 +292,7 @@ const OwnerResponseModal = ({ dispute, isOpen, onClose, onSuccess }) => {
                   <button
                     type="submit"
                     className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={loading || !formData.explanation || formData.photos.length === 0}
+                    disabled={loading || !formData.explanation}
                   >
                     {loading ? 'Đang gửi...' : 'Gửi khiếu nại'}
                   </button>

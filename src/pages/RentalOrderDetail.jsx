@@ -422,6 +422,15 @@ const RentalOrderDetailPage = () => {
                               </div>
                             )}
                             
+                            {console.log('🔍 [RentalOrderDetail] Button Check:', {
+                              subOrderId: subOrder._id,
+                              isRenter,
+                              status: subOrder.status,
+                              isShipped: subOrder.status === 'SHIPPED',
+                              hasDispute: subOrderDisputes[subOrder._id],
+                              allDisputes: subOrderDisputes,
+                              shouldShow: isRenter && subOrder.status === 'SHIPPED' && !subOrderDisputes[subOrder._id]
+                            })}
                             {isRenter && subOrder.status === 'SHIPPED' && !subOrderDisputes[subOrder._id] && (
                               <button
                                 onClick={() => navigate(`/disputes/create?subOrderId=${subOrder._id}&type=delivery-refusal`)}

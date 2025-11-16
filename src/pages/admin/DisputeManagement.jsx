@@ -281,6 +281,9 @@ const DisputeManagement = () => {
                   
                   <button
                     onClick={() => {
+                      console.log('🔍 [DisputeManagement] Selected dispute:', dispute);
+                      console.log('🔍 [DisputeManagement] Dispute type:', dispute.type);
+                      console.log('🔍 [DisputeManagement] Is TH1/TH2?', ['WRONG_PRODUCT_DELIVERY', 'MISSING_ACCESSORIES'].includes(dispute.type));
                       setSelectedDispute(dispute);
                       setShowResolveModal(true);
                     }}
@@ -299,7 +302,7 @@ const DisputeManagement = () => {
       {showResolveModal && selectedDispute && (
         <>
           {/* TH1, TH2: Delivery Disputes - Use specialized modal */}
-          {(['WRONG_PRODUCT_DELIVERY', 'MISSING_ACCESSORIES'].includes(selectedDispute.type)) ? (
+          {(['DELIVERY_REFUSAL', 'DELIVERY_REFUSAL_RETURN', 'WRONG_PRODUCT_DELIVERY', 'MISSING_ACCESSORIES'].includes(selectedDispute.type)) ? (
             <DeliveryDisputeResolveModal
               dispute={selectedDispute}
               onResolve={handleResolve}

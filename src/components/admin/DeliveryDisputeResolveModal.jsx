@@ -116,32 +116,37 @@ const DeliveryDisputeResolveModal = ({ dispute, onResolve, onClose }) => {
 
           {/* Evidence Comparison */}
           <div className="grid grid-cols-2 gap-6 mb-6">
-            {/* Shipper Photos at Owner */}
+            {/* Shipper Photos at Owner (Pickup) */}
             <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
               <h3 className="font-medium text-gray-900 mb-3 flex items-center">
                 <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Ảnh sản phẩm tại Owner (trước khi giao)
+                Ảnh sản phẩm tại Owner (shipper chụp khi pickup)
               </h3>
-              {dispute.ownerEvidence?.photos?.length > 0 ? (
+              {dispute.shipperEvidence?.pickupPhotos?.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
-                  {dispute.ownerEvidence.photos.map((photo, index) => (
-                    <img
-                      key={index}
-                      src={photo}
-                      alt={`Owner ${index + 1}`}
-                      className="w-full aspect-square object-cover rounded-lg border-2 border-blue-300 cursor-pointer hover:opacity-90"
-                      onClick={() => window.open(photo, '_blank')}
-                    />
+                  {dispute.shipperEvidence.pickupPhotos.map((photo, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={photo}
+                        alt={`Pickup ${index + 1}`}
+                        className="w-full aspect-square object-cover rounded-lg border-2 border-blue-300 cursor-pointer hover:opacity-90"
+                        onClick={() => window.open(photo, '_blank')}
+                      />
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                        Pickup #{index + 1}
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-gray-500 italic">Không có ảnh từ owner</div>
+                <div className="text-sm text-gray-500 italic">Không có ảnh pickup từ shipper</div>
               )}
               {dispute.ownerEvidence?.reason && (
                 <div className="mt-3 p-3 bg-white rounded border border-blue-200">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Giải thích từ Owner:</p>
                   <p className="text-sm text-gray-700">{dispute.ownerEvidence.reason}</p>
                 </div>
               )}

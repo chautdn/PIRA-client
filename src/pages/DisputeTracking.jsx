@@ -217,20 +217,16 @@ const DisputeTracking = () => {
               console.log('👤 Current user:', user);
               
               // Debug owner response button visibility
-              const isOwner = dispute.owner?._id?.toString() === user?.id?.toString();
+              const ownerIdStr = dispute.owner?._id?.toString();
+              const userIdStr = (user?._id || user?.id)?.toString();
+              const isOwner = ownerIdStr === userIdStr;
               const isRightStatus = dispute.status === 'PENDING' || dispute.status === 'PENDING_OWNER_RESPONSE';
-              const isRightType = dispute.type === 'WRONG_PRODUCT_DELIVERY' || dispute.type === 'MISSING_ACCESSORIES';
+              const isRightType = ['WRONG_PRODUCT_DELIVERY', 'MISSING_ACCESSORIES', 'DELIVERY_REFUSAL', 'DELIVERY_REFUSAL_RETURN'].includes(dispute.type);
               const isBeforeDeadline = dispute.ownerResponseDeadline ? new Date(dispute.ownerResponseDeadline) > new Date() : true;
               
               const shouldShowOwnerResponse = isOwner && isRightStatus && isRightType && isBeforeDeadline;
               
-              console.log('🔘 Button visibility check for', dispute.disputeId, {
-                isOwner,
-                isRightStatus,
-                isRightType,
-                isBeforeDeadline,
-                shouldShow: shouldShowOwnerResponse
-              });
+              console.log(`🔘 [${dispute.disputeId}] Owner: ${ownerIdStr}, User: ${userIdStr}, Match: ${isOwner}, Status: ${dispute.status} (${isRightStatus}), Type: ${dispute.type} (${isRightType}), Deadline OK: ${isBeforeDeadline}, SHOW: ${shouldShowOwnerResponse}`);
               
               if (shouldShowOwnerResponse) {
                 console.log('✅ Should show owner response button for dispute:', dispute.disputeId);
