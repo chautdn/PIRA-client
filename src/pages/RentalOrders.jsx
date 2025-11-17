@@ -104,7 +104,8 @@ const RentalOrdersPage = () => {
       'CONTRACT_SIGNED': 'bg-green-100 text-green-800',
       'ACTIVE': 'bg-green-100 text-green-800',
       'COMPLETED': 'bg-gray-100 text-gray-800',
-      'CANCELLED': 'bg-red-100 text-red-800'
+      'CANCELLED': 'bg-red-100 text-red-800',
+      'DELIVERY_FAILED_BOOM': 'bg-red-600 text-white' // Đơn bị boom
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -122,7 +123,8 @@ const RentalOrdersPage = () => {
       'CONTRACT_SIGNED': 'Đã ký HĐ',
       'ACTIVE': 'Đang thuê',
       'COMPLETED': 'Hoàn thành',
-      'CANCELLED': 'Đã hủy'
+      'CANCELLED': 'Đã hủy',
+      'DELIVERY_FAILED_BOOM': 'Đơn bị Boom' // Renter không nhận hàng
     };
     return texts[status] || status;
   };

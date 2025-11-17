@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import disputeService from '../../services/dispute';
 import DeliveryDisputeResolveModal from '../../components/admin/DeliveryDisputeResolveModal';
+import BoomDisputeResolveModal from '../../components/admin/BoomDisputeResolveModal';
 
 const DisputeManagement = () => {
   const [disputes, setDisputes] = useState([]);
@@ -34,6 +35,7 @@ const DisputeManagement = () => {
   const disputeTypes = {
     'DELIVERY_REFUSAL': 'Shipper từ chối giao',
     'DELIVERY_REFUSAL_RETURN': 'Shipper từ chối nhận trả',
+    'DELIVERY_BOOM': '🚫 Renter không nhận hàng (Boom)',
     'WRONG_PRODUCT_DELIVERY': 'Giao sai sản phẩm',
     'MISSING_ACCESSORIES': 'Thiếu phụ kiện',
     'SHIPPER_DAMAGE': 'Shipper làm hỏng',
@@ -301,14 +303,22 @@ const DisputeManagement = () => {
       {/* Resolve Modal - Conditional rendering based on dispute type */}
       {showResolveModal && selectedDispute && (
         <>
-          {/* TH1, TH2: Delivery Disputes - Use specialized modal */}
-          {(['DELIVERY_REFUSAL', 'DELIVERY_REFUSAL_RETURN', 'WRONG_PRODUCT_DELIVERY', 'MISSING_ACCESSORIES'].includes(selectedDispute.type)) ? (
-            <DeliveryDisputeResolveModal
+          {/* DELIVERY_BOOM: Boom Orders - Use BoomDisputeResolveModal */}
+          {selectedDispute.type === 'DELIVERY_BOOM' ? (
+            <BoomDisputeResolveModal
               dispute={selectedDispute}
               onResolve={handleResolve}
               onClose={() => setShowResolveModal(false)}
             />
           ) : (
+            /* TH1, TH2: Delivery Disputes - Use specialized modal */
+            ['DELIVERY_REFUSAL', 'DELIVERY_REFUSAL_RETURN', 'WRONG_PRODUCT_DELIVERY', 'MISSING_ACCESSORIES'].includes(selectedDispute.type) ? (
+              <DeliveryDisputeResolveModal
+                dispute={selectedDispute}
+                onResolve={handleResolve}
+                onClose={() => setShowResolveModal(false)}
+              />
+            ) : (
             /* Generic Resolve Modal for other dispute types */
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <motion.div
@@ -430,6 +440,7 @@ const DisputeManagement = () => {
             </div>
           </motion.div>
         </div>
+            )
           )}
         </>
       )}
