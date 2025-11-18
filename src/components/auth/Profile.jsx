@@ -269,55 +269,72 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-6">
           {/* Sidebar */}
           <motion.div
-            className="w-64 bg-white rounded-lg shadow-sm border border-gray-200 h-fit sticky top-6"
+            className="w-72 bg-white rounded-2xl shadow-xl border border-gray-100 h-fit sticky top-6 overflow-hidden"
             variants={fadeInUp}
             initial="initial"
             animate="animate"
           >
-            {/* User Info Header */}
-            <div className="flex items-center p-4 border-b border-gray-100">
-              <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-lg">
-                {user?.profile?.firstName?.charAt(0) ||
-                  user?.email?.charAt(0) ||
-                  "A"}
+            {/* User Info Header with Gradient */}
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6">
+              <div className="flex items-center">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden ring-4 ring-white/30">
+                    {user?.profile?.avatar ? (
+                      <img
+                        src={user.profile.avatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        {user?.profile?.firstName?.charAt(0) ||
+                          user?.email?.charAt(0) ||
+                          "A"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+                </div>
+                <div className="ml-4 flex-1">
+                  <p className="font-bold text-white text-lg">
+                    {user?.profile?.firstName && user?.profile?.lastName
+                      ? `${user.profile.firstName} ${user.profile.lastName}`
+                      : user?.email?.split("@")[0] || "User"}
+                  </p>
+                  <p className="text-blue-100 text-sm flex items-center mt-1">
+                    <span className="mr-1">✏️</span>
+                    Sửa Hồ Sơ
+                  </p>
+                </div>
               </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">
-                  {user?.profile?.firstName && user?.profile?.lastName
-                    ? `${user.profile.firstName} ${user.profile.lastName}`
-                    : user?.email?.split("@")[0] || "User"}
-                </p>
-                <p className="text-sm text-gray-500 flex items-center">
-                  <span className="w-3 h-3 mr-1">✏️</span>
-                  Sửa Hồ Sơ
-                </p>
-              </div>
+              
+              
             </div>
 
             {/* Menu Items */}
-            <div className="py-2">
+            <div className="py-3">
               {menuItems.map((item) => (
                 <div key={item.id}>
-                  <button className="w-full flex items-center px-4 py-3 text-left hover:bg-gray-50 transition-colors">
-                    <span className="w-5 h-5 mr-3">{item.icon}</span>
-                    <span className="text-gray-700">{item.label}</span>
+                  <button className="w-full flex items-center px-5 py-3 text-left hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 group">
+                    <span className="text-2xl mr-3 group-hover:scale-110 transition-transform duration-200">{item.icon}</span>
+                    <span className="text-gray-700 font-medium group-hover:text-gray-900">{item.label}</span>
                   </button>
 
                   {item.submenu && (
-                    <div className="ml-8">
+                    <div className="ml-10 mt-1 space-y-1">
                       {item.submenu.map((subItem) => (
                         <button
                           key={subItem.id}
                           onClick={() => setActiveSection(subItem.id)}
-                          className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 rounded-lg ${
                             activeSection === subItem.id
-                              ? "text-orange-500 bg-orange-50"
-                              : "text-gray-600 hover:text-gray-900"
+                              ? "bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold shadow-md transform scale-105"
+                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                           }`}
                         >
                           {subItem.label}
@@ -338,19 +355,26 @@ const Profile = () => {
             animate="animate"
             transition={{ delay: 0.1 }}
           >
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              {/* Header */}
-              <div className="p-6 border-b border-gray-200">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+              {/* Header with Gradient */}
+              <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-red-500 p-8">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h1 className="text-xl font-semibold text-gray-900">
+                    <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                      <span className="text-4xl">
+                        {activeSection === "profile" && "👤"}
+                        {activeSection === "address" && "📍"}
+                        {activeSection === "verification" && "🆔"}
+                        {activeSection === "password" && "🔐"}
+                        {activeSection === "banking" && "🏦"}
+                      </span>
                       {activeSection === "profile" && "Hồ Sơ Của Tôi"}
                       {activeSection === "address" && "Địa Chỉ"}
                       {activeSection === "verification" && "Xác Minh Tài Khoản"}
                       {activeSection === "password" && "Đổi Mật Khẩu"}
                       {activeSection === "banking" && "Tài Khoản Ngân Hàng"}
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-orange-100 mt-2 text-lg">
                       {activeSection === "verification"
                         ? "Xác minh danh tính để nâng cao độ tin cậy tài khoản"
                         : activeSection === "banking"
@@ -367,26 +391,26 @@ const Profile = () => {
                   <div className="max-w-2xl">
                     <div className="space-y-6">
                       {/* Email Verification */}
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                            <span className="text-blue-600">📧</span>
+                          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mr-5 shadow-lg">
+                            <span className="text-3xl">📧</span>
                           </div>
                           <div>
-                            <h3 className="font-medium text-gray-900">
+                            <h3 className="font-bold text-gray-900 text-lg">
                               Xác thực Email
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-600 mt-1">
                               Xác nhận địa chỉ email của bạn
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-3">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
                               user?.verification?.emailVerified
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
+                                ? "bg-green-500 text-white"
+                                : "bg-gray-200 text-gray-700"
                             }`}
                           >
                             {user?.verification?.emailVerified
@@ -394,33 +418,33 @@ const Profile = () => {
                               : "❌ Chưa xác thực"}
                           </span>
                           {!user?.verification?.emailVerified && (
-                            <button className="ml-3 px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
-                              Xác thực
+                            <button className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                              Xác thực ngay
                             </button>
                           )}
                         </div>
                       </div>
 
                       {/* KYC Verification */}
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-2 border-purple-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                            <span className="text-purple-600">🆔</span>
+                          <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mr-5 shadow-lg">
+                            <span className="text-3xl">🆔</span>
                           </div>
                           <div>
-                            <h3 className="font-medium text-gray-900">
+                            <h3 className="font-bold text-gray-900 text-lg">
                               Xác thực Danh tính (KYC)
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-600 mt-1">
                               {user?.cccd?.isVerified
                                 ? "Danh tính của bạn đã được xác minh"
                                 : "Upload CCCD/CMND để xác minh danh tính"}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-3">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
                               getKycStatusDisplay().bgColor
                             } ${getKycStatusDisplay().color}`}
                           >
@@ -429,10 +453,10 @@ const Profile = () => {
                           </span>
                           <button
                             onClick={() => setShowKycModal(true)}
-                            className={`ml-3 px-4 py-2 text-sm rounded hover:opacity-90 transition-colors ${
+                            className={`px-5 py-2.5 text-sm font-semibold rounded-lg shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 ${
                               user?.cccd?.isVerified
-                                ? "bg-green-600 text-white"
-                                : "bg-purple-600 text-white"
+                                ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
+                                : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                             }`}
                           >
                             {user?.cccd?.isVerified
@@ -443,16 +467,16 @@ const Profile = () => {
                       </div>
 
                       {/* Security Level */}
-                      <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                        <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                          <span className="mr-2">🛡️</span>
+                      <div className="mt-8 p-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 rounded-2xl border-2 border-indigo-200 shadow-xl">
+                        <h3 className="font-bold text-gray-900 mb-6 flex items-center text-xl">
+                          <span className="text-3xl mr-3">🛡️</span>
                           Mức độ bảo mật tài khoản
                         </h3>
 
-                        <div className="flex items-center mb-4">
-                          <div className="flex-1 bg-gray-200 rounded-full h-3">
+                        <div className="flex items-center mb-6">
+                          <div className="flex-1 bg-gray-300 rounded-full h-4 shadow-inner">
                             <div
-                              className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-500"
+                              className="bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 h-4 rounded-full transition-all duration-500 shadow-lg"
                               style={{
                                 width: `${
                                   (user?.verification?.emailVerified ? 50 : 0) +
@@ -461,14 +485,14 @@ const Profile = () => {
                               }}
                             ></div>
                           </div>
-                          <span className="ml-3 text-sm font-medium text-gray-600">
+                          <span className="ml-4 text-base font-bold text-gray-700 bg-white px-4 py-2 rounded-full shadow-md">
                             {(user?.verification?.emailVerified ? 1 : 0) +
                               (user?.cccd?.isVerified ? 1 : 0)}
                             /2 Hoàn thành
                           </span>
                         </div>
 
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-700 bg-white/60 p-4 rounded-lg">
                           Hoàn thành tất cả các bước xác minh để đảm bảo tài
                           khoản của bạn được bảo mật tốt nhất.
                         </p>
@@ -476,9 +500,9 @@ const Profile = () => {
                         {(user?.verification?.emailVerified ? 1 : 0) +
                           (user?.cccd?.isVerified ? 1 : 0) ===
                           2 && (
-                          <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
-                            <p className="text-sm text-green-800 flex items-center">
-                              <span className="mr-2">🎉</span>
+                          <div className="mt-6 p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl shadow-lg">
+                            <p className="text-base text-white font-semibold flex items-center">
+                              <span className="text-2xl mr-3">🎉</span>
                               Chúc mừng! Tài khoản của bạn đã được xác minh hoàn
                               toàn.
                             </p>
@@ -492,7 +516,7 @@ const Profile = () => {
                 {activeSection === "profile" && (
                   <div className="flex gap-8">
                     {/* Form Fields */}
-                    <div className="flex-1 max-w-lg space-y-6">
+                    <div className="flex-1 max-w-lg space-y-5">
                       {/* Name */}
                       <div className="flex items-center">
                         <label className="w-24 text-sm text-gray-600 text-right mr-4">
@@ -689,21 +713,21 @@ const Profile = () => {
 
                       {/* Save Button */}
                       {editing && (
-                        <div className="flex items-center">
+                        <div className="flex items-center mt-8">
                           <div className="w-24 mr-4"></div>
                           <div className="flex space-x-3">
                             <button
                               onClick={handleSave}
                               disabled={saving}
-                              className="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+                              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-pink-600 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
                             >
-                              {saving ? "Đang lưu..." : "Lưu"}
+                              {saving ? "⏳ Đang lưu..." : "💾 Lưu thay đổi"}
                             </button>
                             <button
                               onClick={handleCancel}
-                              className="px-6 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+                              className="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 shadow-md transition-all duration-200"
                             >
-                              Hủy
+                              ❌ Hủy
                             </button>
                           </div>
                         </div>
@@ -711,33 +735,40 @@ const Profile = () => {
                     </div>
 
                     {/* Avatar Section */}
-                    <div className="w-px bg-gray-200"></div>
+                    <div className="w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
                     <div className="w-64 flex flex-col items-center py-8">
-                      <div className="w-24 h-24 rounded-full bg-gray-200 mb-4 overflow-hidden">
-                        <img
-                          src={
-                            user?.profile?.avatar ||
-                            user?.avatar ||
-                            "/api/placeholder/120/120"
-                          }
-                          alt="Avatar"
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="relative group">
+                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 p-1 mb-6 overflow-hidden shadow-2xl transform group-hover:scale-105 transition-transform duration-300">
+                          <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                            <img
+                              src={
+                                user?.profile?.avatar ||
+                                user?.avatar ||
+                                "/api/placeholder/120/120"
+                              }
+                              alt="Avatar"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                        <div className="absolute bottom-4 right-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-transform duration-200">
+                          <span className="text-white text-lg">📷</span>
+                        </div>
                       </div>
 
-                      <label className="px-4 py-2 border border-gray-300 text-gray-700 rounded cursor-pointer hover:bg-gray-50 text-sm">
+                      <label className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl cursor-pointer hover:from-blue-600 hover:to-purple-600 text-sm shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleAvatarUpload}
                           className="hidden"
                         />
-                        Chọn Ảnh
+                        📸 Chọn Ảnh Mới
                       </label>
 
-                      <div className="text-xs text-gray-500 mt-2 text-center">
-                        <p>Dung lượng file tối đa 1 MB</p>
-                        <p>Định dạng: .JPEG, .PNG</p>
+                      <div className="text-xs text-gray-500 mt-4 text-center bg-gray-50 p-3 rounded-lg">
+                        <p className="font-medium">💾 Dung lượng: Tối đa 1 MB</p>
+                        <p className="mt-1">🖼️ Định dạng: JPEG, PNG</p>
                       </div>
                     </div>
                   </div>
@@ -745,11 +776,12 @@ const Profile = () => {
 
                 {activeSection === "address" && (
                   <div className="max-w-2xl">
-                    <h2 className="text-lg font-medium mb-6">
+                    <h2 className="text-2xl font-bold mb-8 flex items-center text-gray-900">
+                      <span className="text-3xl mr-3">📍</span>
                       Địa chỉ của tôi
                     </h2>
 
-                    <div className="space-y-4">
+                    <div className="space-y-5 bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-xl border border-gray-200 shadow-lg">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Địa chỉ cụ thể
@@ -831,9 +863,9 @@ const Profile = () => {
                       <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+                        className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-pink-600 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
                       >
-                        {saving ? "Đang lưu..." : "Lưu địa chỉ"}
+                        {saving ? "⏳ Đang lưu..." : "💾 Lưu địa chỉ"}
                       </button>
                     </div>
                   </div>
@@ -841,7 +873,10 @@ const Profile = () => {
 
                 {activeSection === "password" && (
                   <div className="max-w-lg">
-                    <h2 className="text-lg font-medium mb-6">Đổi mật khẩu</h2>
+                    <h2 className="text-2xl font-bold mb-8 flex items-center text-gray-900">
+                      <span className="text-3xl mr-3">🔐</span>
+                      Đổi mật khẩu
+                    </h2>
 
                     <div className="space-y-4">
                       <div>
@@ -877,8 +912,8 @@ const Profile = () => {
                         />
                       </div>
 
-                      <button className="px-6 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
-                        Cập nhật mật khẩu
+                      <button className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-pink-600 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                        🔒 Cập nhật mật khẩu
                       </button>
                     </div>
                   </div>
