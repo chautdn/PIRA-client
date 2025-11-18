@@ -73,19 +73,6 @@ const UserDetail = () => {
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!confirm('Bạn có chắc chắn muốn xóa user này? Hành động này không thể hoàn tác!')) return;
-    
-    try {
-      await adminService.deleteUser(userId);
-      showNotification('Xóa user thành công!', 'success');
-      setTimeout(() => navigate('/admin/users'), 1500); // Wait for notification before redirect
-    } catch (err) {
-      console.error('Delete user error:', err);
-      showNotification('Có lỗi xảy ra khi xóa user!', 'error');
-    }
-  };
-
   const getUserStatusBadge = (status) => {
     const statusClasses = {
       ACTIVE: 'bg-green-100 text-green-800',
@@ -472,15 +459,6 @@ const UserDetail = () => {
                   <option value="ADMIN">Admin</option>
                 </select>
               </div>
-
-              <hr className="my-4" />
-
-              <button
-                onClick={handleDeleteUser}
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Xóa User
-              </button>
             </div>
           </div>
 

@@ -61,7 +61,6 @@ const AdminProductDetail = () => {
       
       const statusMessages = {
         'ACTIVE': 'kích hoạt',
-        'SUSPENDED': 'tạm khóa',
         'INACTIVE': 'vô hiệu hóa',
         'PENDING': 'đưa về chờ duyệt'
       };
@@ -75,25 +74,7 @@ const AdminProductDetail = () => {
     }
   };
 
-  const handleDeleteProduct = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
 
-    try {
-      setActionLoading(true);
-      
-      console.log('Deleting product:', productId);
-      await adminService.deleteProduct(productId);
-      console.log('Product deleted successfully');
-      
-      alert('Đã xóa sản phẩm thành công!');
-      navigate('/admin/products');
-    } catch (err) {
-      alert(err.message || 'Có lỗi xảy ra khi xóa sản phẩm');
-      console.error('Delete product error:', err);
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const fetchReviews = async () => {
     try {
@@ -319,18 +300,18 @@ const AdminProductDetail = () => {
             
             {product.status === 'ACTIVE' && (
               <button
-                onClick={() => handleStatusChange('SUSPENDED')}
+                onClick={() => handleStatusChange('INACTIVE')}
                 disabled={actionLoading}
-                className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 disabled:opacity-50 font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg"
+                className="px-6 py-3 bg-gradient-to-r from-orange-600 to-yellow-600 text-white rounded-xl hover:from-orange-700 hover:to-yellow-700 disabled:opacity-50 font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Tạm khóa
+                Vô hiệu hóa
               </button>
             )}
             
-            {product.status === 'SUSPENDED' && (
+            {(product.status === 'INACTIVE' || product.status === 'SUSPENDED') && (
               <button
                 onClick={() => handleStatusChange('ACTIVE')}
                 disabled={actionLoading}
@@ -339,20 +320,9 @@ const AdminProductDetail = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                 </svg>
-                Mở khóa
+                Kích hoạt
               </button>
             )}
-            
-            <button
-              onClick={handleDeleteProduct}
-              disabled={actionLoading}
-              className="px-6 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl hover:from-red-700 hover:to-pink-700 disabled:opacity-50 font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Xóa sản phẩm
-            </button>
           </div>
         </div>
 

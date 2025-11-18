@@ -215,20 +215,7 @@ const ProductManagement = () => {
     loadProducts();
   };
 
-  // Removed approval actions - only keep delete functionality
-
-  const handleDeleteProduct = async (productId) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
-    
-    try {
-      await adminService.deleteProduct(productId);
-      loadProducts();
-      alert('Xóa sản phẩm thành công!');
-    } catch (err) {
-      console.error('Delete product error:', err);
-      alert('Có lỗi xảy ra khi xóa sản phẩm!');
-    }
-  };
+  // Product selection handlers (no delete functionality)
 
   const handleSelectProduct = (productId) => {
     setSelectedProducts(prev => 
@@ -243,28 +230,6 @@ const ProductManagement = () => {
       setSelectedProducts([]);
     } else {
       setSelectedProducts(products.map(product => product._id));
-    }
-  };
-
-  const handleBulkAction = async (action) => {
-    if (selectedProducts.length === 0) {
-      alert('Vui lòng chọn ít nhất một sản phẩm');
-      return;
-    }
-
-    try {
-      if (action === 'delete') {
-        if (!confirm('Bạn có chắc chắn muốn xóa các sản phẩm đã chọn?')) return;
-        for (const productId of selectedProducts) {
-          await adminService.deleteProduct(productId);
-        }
-        alert('Xóa thành công!');
-        setSelectedProducts([]);
-        loadProducts();
-      }
-    } catch (err) {
-      console.error('Bulk action error:', err);
-      alert('Có lỗi xảy ra khi thực hiện thao tác!');
     }
   };
 
@@ -375,50 +340,80 @@ const ProductManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <span className="text-blue-600">📦</span>
-            Quản lý Sản phẩm
-          </h1>
-          <div className="flex items-center gap-6 mt-2">
-            <p className="text-gray-600 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-md">
-                📊 Tổng cộng: {pagination.totalProducts.toLocaleString('vi-VN')} sản phẩm
-              </span>
-            </p>
-            <p className="text-gray-600 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md">
-                📄 Trang {pagination.currentPage}/{pagination.totalPages} ({pagination.limit} sản phẩm/trang)
-              </span>
-            </p>
+    <div className="space-y-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
+      {/* Header with Gradient */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
+              <span className="text-5xl">📦</span>
+              Quản lý Sản phẩm
+            </h1>
+            <p className="text-blue-100 text-lg">Quản lý và theo dõi toàn bộ sản phẩm cho thuê trong hệ thống</p>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => {
-              console.log('DEBUG - Current state:');
-              console.log('filters:', filters);
-              console.log('pagination:', pagination);
-              console.log('products.length:', products.length);
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-          >
-            Debug
-          </button>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
+            <span>📥</span>
             Export CSV
           </button>
         </div>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Tổng Sản phẩm</p>
+              <p className="text-3xl font-bold text-gray-900">{pagination.totalProducts.toLocaleString('vi-VN')}</p>
+            </div>
+            <div className="bg-blue-100 p-4 rounded-full">
+              <span className="text-3xl">📦</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Đang hoạt động</p>
+              <p className="text-3xl font-bold text-gray-900">{products.filter(p => p.status === 'ACTIVE').length}</p>
+            </div>
+            <div className="bg-green-100 p-4 rounded-full">
+              <span className="text-3xl">✅</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Chờ duyệt</p>
+              <p className="text-3xl font-bold text-gray-900">{products.filter(p => p.status === 'PENDING').length}</p>
+            </div>
+            <div className="bg-yellow-100 p-4 rounded-full">
+              <span className="text-3xl">⏳</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Trang hiện tại</p>
+              <p className="text-3xl font-bold text-gray-900">{pagination.currentPage}<span className="text-lg text-gray-500">/{pagination.totalPages}</span></p>
+            </div>
+            <div className="bg-purple-100 p-4 rounded-full">
+              <span className="text-3xl">📄</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span>🔍</span>
+      <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span className="text-2xl">🔍</span>
             Bộ lọc & Tìm kiếm
           </h2>
           <button
@@ -438,7 +433,7 @@ const ProductManagement = () => {
                 setSearchTimeout(null);
               }
             }}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             <span>🗑️</span>
             Xóa bộ lọc
@@ -543,70 +538,49 @@ const ProductManagement = () => {
         </div>
       </div>
 
-      {/* Bulk Actions */}
-      {selectedProducts.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      {/* Products Table */}
+      <div className="bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-red-800">
-              Đã chọn {selectedProducts.length} sản phẩm
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleBulkAction('delete')}
-                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
-              >
-                Xóa các sản phẩm đã chọn
-              </button>
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <span className="text-2xl">📦</span>
+              Danh sách sản phẩm
+              <span className="ml-2 px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-full">
+                {products.length}
+              </span>
+            </h3>
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">Hiển thị trên trang này</span>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-r from-gray-100 to-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedProducts.length === products.length && products.length > 0}
-                    onChange={handleSelectAll}
-                    className="rounded border-gray-300"
-                  />
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  📦 Sản phẩm
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sản phẩm
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  👤 Chủ sở hữu
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Chủ sở hữu
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  💰 Giá thuê
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giá thuê
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  🔔 Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  📅 Ngày đăng
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày đăng
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  ⚙️ Thao tác
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {products.map((product) => (
-                <tr key={product._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedProducts.includes(product._id)}
-                      onChange={() => handleSelectProduct(product._id)}
-                      className="rounded border-gray-300"
-                    />
-                  </td>
+                <tr key={product._id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-gray-300 rounded-lg flex-shrink-0">
@@ -704,19 +678,13 @@ const ProductManagement = () => {
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {formatDate(product.createdAt)}
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium space-x-2">
+                  <td className="px-6 py-4 text-sm font-medium">
                     <Link
                       to={`/admin/products/${product._id}`}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 inline-flex"
                     >
-                      Chi tiết
+                      <span>👁️</span> Chi tiết
                     </Link>
-                    <button
-                      onClick={() => handleDeleteProduct(product._id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Xóa
-                    </button>
                   </td>
                 </tr>
               ))}
