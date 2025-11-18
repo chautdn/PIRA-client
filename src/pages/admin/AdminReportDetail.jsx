@@ -61,24 +61,7 @@ const AdminReportDetail = () => {
     }
   };
 
-  const handleDeleteReport = async () => {
-    if (!confirm('Bạn có chắc chắn muốn xóa báo cáo này? Hành động này không thể hoàn tác.')) {
-      return;
-    }
 
-    try {
-      await adminService.deleteReport(reportId);
-      setSuccessMessage('Xóa báo cáo thành công! Đang chuyển hướng...');
-      setShowSuccessMessage(true);
-      setTimeout(() => {
-        navigate('/admin/reports');
-      }, 2000);
-    } catch (err) {
-      console.error('Error deleting report:', err);
-      setSuccessMessage('Có lỗi xảy ra khi xóa báo cáo!');
-      setShowSuccessMessage(true);
-    }
-  };
 
   const handleDeleteProduct = async () => {
     if (!report.reportedItem?._id) {
@@ -291,15 +274,7 @@ const AdminReportDetail = () => {
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={handleDeleteReport}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-          >
-            <span>🗑️</span>
-            Xóa báo cáo
-          </button>
-        </div>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

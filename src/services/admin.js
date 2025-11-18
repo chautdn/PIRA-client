@@ -619,20 +619,6 @@ class AdminService {
     }
   }
 
-  async deleteReport(reportId) {
-    try {
-      const response = await api.delete(`/admin/reports/${reportId}`);
-      
-      if (response.data.success) {
-        return response.data;
-      }
-      return response.data.metadata || response.data;
-    } catch (error) {
-      console.error('Error deleting report:', error);
-      throw error;
-    }
-  }
-
   async deleteReportedProduct(reportId, productId) {
     try {
       const response = await api.delete(`/admin/reports/${reportId}/product`, {

@@ -24,6 +24,13 @@ const OrderManagement = () => {
     total: 0,
     limit: 10
   });
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    pending: 0,
+    completed: 0,
+    cancelled: 0
+  });
 
   useEffect(() => {
     fetchOrders();
@@ -63,24 +70,30 @@ const OrderManagement = () => {
       
       // Handle different response structures
       if (response && response.success && response.data) {
-        const { orders: ordersData, total, totalPages, currentPage } = response.data;
+        const { orders: ordersData, pagination: paginationData, stats: statsData } = response.data;
         
         setOrders(ordersData || []);
         setPagination({
-          currentPage: currentPage || 1,
-          totalPages: totalPages || 1,
-          total: total || 0,
-          limit: 10
+          currentPage: paginationData?.currentPage || 1,
+          totalPages: paginationData?.totalPages || 1,
+          total: paginationData?.totalOrders || 0,
+          limit: paginationData?.limit || 10
         });
+        if (statsData) {
+          setStats(statsData);
+        }
       } else if (response && response.orders) {
         // Direct orders response
         setOrders(response.orders || []);
         setPagination({
-          currentPage: response.currentPage || 1,
-          totalPages: response.totalPages || 1,
-          total: response.total || 0,
-          limit: 10
+          currentPage: response.pagination?.currentPage || response.currentPage || 1,
+          totalPages: response.pagination?.totalPages || response.totalPages || 1,
+          total: response.pagination?.totalOrders || response.total || 0,
+          limit: response.pagination?.limit || 10
         });
+        if (response.stats) {
+          setStats(response.stats);
+        }
       } else {
         setOrders([]);
         setPagination({
@@ -272,34 +285,80 @@ const OrderManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <span className="text-blue-600">📋</span>
-            Quản lý Đơn hàng
-          </h1>
-          <div className="flex items-center gap-6 mt-2">
-            <p className="text-gray-600 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-md">
-                📊 Tổng cộng: {(pagination?.total || 0).toLocaleString('vi-VN')} đơn hàng
-              </span>
-            </p>
-            <p className="text-gray-600 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md">
-                📄 Trang {pagination?.currentPage || 1}/{pagination?.totalPages || 1}
-              </span>
-            </p>
+    <div className="space-y-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
+      {/* Header with Gradient */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
+              <span className="text-5xl">📋</span>
+              Quản lý Đơn hàng
+            </h1>
+            <p className="text-blue-100 text-lg">Quản lý và theo dõi toàn bộ đơn hàng thuê trong hệ thống</p>
+          </div>
+          <button className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
+            <span>📥</span>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Tổng Đơn hàng</p>
+              <p className="text-3xl font-bold text-gray-900">{(stats?.total || 0).toLocaleString('vi-VN')}</p>
+            </div>
+            <div className="bg-blue-100 p-4 rounded-full">
+              <span className="text-3xl">📋</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Đang hoạt động</p>
+              <p className="text-3xl font-bold text-gray-900">{(stats?.active || 0).toLocaleString('vi-VN')}</p>
+            </div>
+            <div className="bg-green-100 p-4 rounded-full">
+              <span className="text-3xl">🟢</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Chờ xử lý</p>
+              <p className="text-3xl font-bold text-gray-900">{(stats?.pending || 0).toLocaleString('vi-VN')}</p>
+            </div>
+            <div className="bg-yellow-100 p-4 rounded-full">
+              <span className="text-3xl">⏳</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Hoàn thành</p>
+              <p className="text-3xl font-bold text-gray-900">{(stats?.completed || 0).toLocaleString('vi-VN')}</p>
+            </div>
+            <div className="bg-purple-100 p-4 rounded-full">
+              <span className="text-3xl">✅</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span>🔍</span>
+      <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span className="text-2xl">🔍</span>
             Bộ lọc & Tìm kiếm
           </h2>
           <button
@@ -311,7 +370,7 @@ const OrderManagement = () => {
                 setSearchTimeout(null);
               }
             }}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             <span>🗑️</span>
             Xóa bộ lọc
@@ -410,59 +469,67 @@ const OrderManagement = () => {
       )}
 
       {/* Orders Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span>📋</span>
-            Danh sách đơn hàng ({orders.length})
-          </h3>
+      <div className="bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <span className="text-2xl">📋</span>
+              Danh sách đơn hàng
+              <span className="ml-2 px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-full">
+                {orders.length}
+              </span>
+            </h3>
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">Hiển thị trên trang này</span>
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-r from-gray-100 to-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đơn hàng
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  📋 Đơn hàng
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Khách hàng
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  👤 Khách hàng
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sản phẩm
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  📦 Sản phẩm
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giá trị
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  💰 Giá trị
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  🔔 Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thời gian thuê
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  📅 Thời gian thuê
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  ⚙️ Thao tác
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {orders.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-12 text-center">
                     <div className="text-gray-500">
-                      <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      <div className="mx-auto h-16 w-16 text-gray-400 mb-4">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-full h-full">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
                       </div>
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">Không có đơn hàng</h3>
+                      <h3 className="mt-2 text-lg font-bold text-gray-900">Không có đơn hàng</h3>
                       <p className="mt-1 text-sm text-gray-500">Chưa có đơn hàng nào trong hệ thống.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr key={order._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={order._id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200">
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
@@ -544,9 +611,9 @@ const OrderManagement = () => {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => navigate(`/admin/orders/${order._id}`)}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                       >
-                        👁️ Xem chi tiết
+                        <span>👁️</span> Xem chi tiết
                       </button>
                     </td>
                   </tr>

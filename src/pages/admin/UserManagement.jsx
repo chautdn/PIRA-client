@@ -21,6 +21,15 @@ const UserManagement = () => {
     total: 0,
     limit: 10
   });
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    suspended: 0,
+    owners: 0,
+    renters: 0,
+    admins: 0
+  });
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,13 +62,25 @@ const UserManagement = () => {
       
       // Safe check for response structure
       if (response && typeof response === 'object') {
-        setUsers(response.users || response.data?.users || []);
-        setPagination({
-          currentPage: filters.page,
-          totalPages: response.totalPages || response.data?.totalPages || 1,
-          total: response.total || response.data?.total || 0,
-          limit: filters.limit
-        });
+        // Handle nested response.data structure
+        const data = response.data || response;
+        
+        setUsers(data.users || []);
+        
+        // Update pagination from backend
+        if (data.pagination) {
+          setPagination({
+            currentPage: data.pagination.currentPage || filters.page,
+            totalPages: data.pagination.totalPages || 1,
+            total: data.pagination.totalUsers || 0,
+            limit: data.pagination.limit || filters.limit
+          });
+        }
+        
+        // Update stats from backend
+        if (data.stats) {
+          setStats(data.stats);
+        }
       } else {
         // Fallback for unexpected response structure
         setUsers([]);
@@ -333,7 +354,7 @@ const UserManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium mb-1">Tổng Users</p>
-              <p className="text-3xl font-bold text-gray-900">{(pagination?.total || 0).toLocaleString('vi-VN')}</p>
+              <p className="text-3xl font-bold text-gray-900">{(stats?.total || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-blue-100 p-4 rounded-full">
               <span className="text-3xl">👥</span>
@@ -345,7 +366,7 @@ const UserManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium mb-1">Đang hoạt động</p>
-              <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.status === 'ACTIVE').length}</p>
+              <p className="text-3xl font-bold text-gray-900">{(stats?.active || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-green-100 p-4 rounded-full">
               <span className="text-3xl">✅</span>
@@ -357,7 +378,7 @@ const UserManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm font-medium mb-1">Chủ sở hữu</p>
-              <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.role === 'OWNER').length}</p>
+              <p className="text-3xl font-bold text-gray-900">{(stats?.owners || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-orange-100 p-4 rounded-full">
               <span className="text-3xl">🏠</span>
@@ -368,11 +389,11 @@ const UserManagement = () => {
         <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm font-medium mb-1">Trang hiện tại</p>
-              <p className="text-3xl font-bold text-gray-900">{pagination?.currentPage || 1}<span className="text-lg text-gray-500">/{pagination?.totalPages || 1}</span></p>
+              <p className="text-gray-500 text-sm font-medium mb-1">Người thuê</p>
+              <p className="text-3xl font-bold text-gray-900">{(stats?.renters || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">📄</span>
+              <span className="text-3xl">👤</span>
             </div>
           </div>
         </div>

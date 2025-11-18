@@ -132,19 +132,7 @@ const ReportManagement = () => {
     }
   };
 
-  const handleDeleteReport = async (reportId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa báo cáo này?')) {
-      return;
-    }
 
-    try {
-      await adminService.deleteReport(reportId);
-      fetchReports(); // Refresh list
-    } catch (error) {
-      console.error('Error deleting report:', error);
-      setError('Lỗi khi xóa báo cáo');
-    }
-  };
 
   const handleSelectReport = (reportId) => {
     setSelectedReports(prev => 
@@ -169,13 +157,7 @@ const ReportManagement = () => {
     }
 
     try {
-      if (action === 'delete') {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa các báo cáo đã chọn?')) return;
-        for (const reportId of selectedReports) {
-          await adminService.deleteReport(reportId);
-        }
-        alert('Xóa thành công!');
-      } else if (action === 'resolve') {
+      if (action === 'resolve') {
         if (!window.confirm('Bạn có chắc chắn muốn đánh dấu các báo cáo đã chọn là đã giải quyết?')) return;
         for (const reportId of selectedReports) {
           await adminService.updateReportStatus(reportId, 'RESOLVED', 'Giải quyết hàng loạt');
@@ -289,34 +271,80 @@ const ReportManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <span className="text-red-600">🚨</span>
-            Quản lý Báo cáo
-          </h1>
-          <div className="flex items-center gap-6 mt-2">
-            <p className="text-gray-600 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-md">
-                📊 Tổng cộng: {(pagination?.total || 0).toLocaleString('vi-VN')} báo cáo
-              </span>
-            </p>
-            <p className="text-gray-600 flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md">
-                📄 Trang {pagination?.currentPage || 1}/{pagination?.totalPages || 1}
-              </span>
-            </p>
+    <div className="space-y-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
+      {/* Header with Gradient */}
+      <div className="bg-gradient-to-r from-red-600 via-orange-600 to-pink-600 rounded-2xl shadow-2xl p-8 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
+              <span className="text-5xl">🚨</span>
+              Quản lý Báo cáo
+            </h1>
+            <p className="text-orange-100 text-lg">Quản lý và xử lý các báo cáo vi phạm trong hệ thống</p>
+          </div>
+          <button className="px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
+            <span>📥</span>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Tổng Báo cáo</p>
+              <p className="text-3xl font-bold text-gray-900">{(pagination?.total || 0).toLocaleString('vi-VN')}</p>
+            </div>
+            <div className="bg-red-100 p-4 rounded-full">
+              <span className="text-3xl">🚨</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Chờ xử lý</p>
+              <p className="text-3xl font-bold text-gray-900">{reports.filter(r => r.status === 'PENDING').length}</p>
+            </div>
+            <div className="bg-yellow-100 p-4 rounded-full">
+              <span className="text-3xl">⏳</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Đã giải quyết</p>
+              <p className="text-3xl font-bold text-gray-900">{reports.filter(r => r.status === 'RESOLVED').length}</p>
+            </div>
+            <div className="bg-green-100 p-4 rounded-full">
+              <span className="text-3xl">✅</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm font-medium mb-1">Trang hiện tại</p>
+              <p className="text-3xl font-bold text-gray-900">{pagination?.currentPage || 1}<span className="text-lg text-gray-500">/{pagination?.totalPages || 1}</span></p>
+            </div>
+            <div className="bg-purple-100 p-4 rounded-full">
+              <span className="text-3xl">📄</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span>🔍</span>
+      <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span className="text-2xl">🔍</span>
             Bộ lọc & Tìm kiếm
           </h2>
           <button
@@ -328,7 +356,7 @@ const ReportManagement = () => {
                 setSearchTimeout(null);
               }
             }}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             <span>🗑️</span>
             Xóa bộ lọc
@@ -405,29 +433,31 @@ const ReportManagement = () => {
 
       {/* Bulk Actions */}
       {selectedReports.length > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-xl p-5 shadow-lg animate-fade-in">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-orange-800">
-              Đã chọn {selectedReports.length} báo cáo
-            </span>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              <div className="bg-orange-500 text-white p-2 rounded-lg">
+                <span className="text-xl">📋</span>
+              </div>
+              <div>
+                <span className="text-lg text-orange-900 font-bold">
+                  Đã chọn {selectedReports.length} báo cáo
+                </span>
+                <p className="text-sm text-orange-700">Chọn hành động để áp dụng hàng loạt</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
               <button
                 onClick={() => handleBulkAction('resolve')}
-                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 flex items-center gap-1"
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-emerald-600 flex items-center gap-2 font-semibold transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                ✅ Giải quyết tất cả
+                <span className="text-lg">✅</span> Giải quyết tất cả
               </button>
               <button
                 onClick={() => handleBulkAction('dismiss')}
-                className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex items-center gap-1"
+                className="px-4 py-2 bg-gradient-to-r from-gray-500 to-slate-500 text-white text-sm rounded-lg hover:from-gray-600 hover:to-slate-600 flex items-center gap-2 font-semibold transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                ❌ Bác bỏ tất cả
-              </button>
-              <button
-                onClick={() => handleBulkAction('delete')}
-                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 flex items-center gap-1"
-              >
-                🗑️ Xóa tất cả
+                <span className="text-lg">❌</span> Bác bỏ tất cả
               </button>
             </div>
           </div>
@@ -452,70 +482,78 @@ const ReportManagement = () => {
       )}
 
       {/* Reports Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <span>🚨</span>
-            Danh sách báo cáo ({reports.length})
-          </h3>
+      <div className="bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-red-50">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <span className="text-2xl">🚨</span>
+              Danh sách báo cáo
+              <span className="ml-2 px-3 py-1 bg-red-500 text-white text-sm font-semibold rounded-full">
+                {reports.length}
+              </span>
+            </h3>
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">Hiển thị trên trang này</span>
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-r from-gray-100 to-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left">
+                <th className="px-6 py-4 text-left">
                   <input
                     type="checkbox"
                     checked={selectedReports.length === reports.length && reports.length > 0}
                     onChange={handleSelectAll}
-                    className="rounded border-gray-300"
+                    className="rounded border-gray-300 w-4 h-4 text-red-600 focus:ring-2 focus:ring-red-500 cursor-pointer"
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Báo cáo
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  🚨 Báo cáo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Người báo cáo
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  👤 Người báo cáo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sản phẩm bị báo cáo
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  📦 Sản phẩm bị báo cáo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Loại báo cáo
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  🎭 Loại báo cáo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trạng thái
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  🔔 Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  ⚙️ Thao tác
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {reports.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-12 text-center">
                     <div className="text-gray-500">
-                      <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <div className="mx-auto h-16 w-16 text-gray-400 mb-4">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-full h-full">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">Không có báo cáo</h3>
+                      <h3 className="mt-2 text-lg font-bold text-gray-900">Không có báo cáo</h3>
                       <p className="mt-1 text-sm text-gray-500">Chưa có báo cáo nào trong hệ thống.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 reports.map((report) => (
-                  <tr key={report._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={report._id} className="hover:bg-gradient-to-r hover:from-red-50 hover:to-orange-50 transition-all duration-200">
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={selectedReports.includes(report._id)}
                         onChange={() => handleSelectReport(report._id)}
-                        className="rounded border-gray-300"
+                        className="rounded border-gray-300 w-4 h-4 text-red-600 focus:ring-2 focus:ring-red-500 cursor-pointer"
                       />
                     </td>
                     <td className="px-6 py-4">
@@ -586,14 +624,14 @@ const ReportManagement = () => {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => navigate(`/admin/reports/${report._id}`)}
-                          className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors duration-200 flex items-center gap-1"
+                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                         >
-                          👁️ Xem
+                          <span>👁️</span> Xem chi tiết
                         </button>
                         {report.status === 'PENDING' && (
                           <select
                             onChange={(e) => handleStatusChange(report._id, e.target.value)}
-                            className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-green-500"
+                            className="px-3 py-2 border-2 border-gray-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all cursor-pointer"
                             defaultValue=""
                           >
                             <option value="" disabled>Cập nhật</option>
@@ -602,12 +640,6 @@ const ReportManagement = () => {
                             <option value="DISMISSED">❌ Hủy bỏ</option>
                           </select>
                         )}
-                        <button
-                          onClick={() => handleDeleteReport(report._id)}
-                          className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors duration-200 flex items-center gap-1"
-                        >
-                          🗑️ Xóa
-                        </button>
                       </div>
                     </td>
                   </tr>
