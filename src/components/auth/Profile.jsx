@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import userService from "../../services/user.Api";
 import kycService from "../../services/kyc.Api"; // Thêm import này
 import { toast } from "react-hot-toast";
@@ -7,9 +8,12 @@ import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import KycModal from "../common/KycModal";
 import BankAccountSection from "../wallet/BankAccountSection";
+import MapSelector from "../common/MapSelector";
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -34,6 +38,10 @@ const Profile = () => {
       district: "",
       city: "",
       province: "",
+      coordinates: {
+        latitude: null,
+        longitude: null,
+      },
     },
   });
 
@@ -44,10 +52,44 @@ const Profile = () => {
     transition: { duration: 0.4, ease: "easeOut" },
   };
 
+  // Handle location selection from MapSelector
+  const handleLocationSelect = (locationData) => {
+    console.log("Selected location:", locationData);
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        streetAddress:
+          locationData.streetAddress || locationData.fullAddress || "",
+        ward: locationData.ward || "",
+        district: locationData.district || prev.address.district,
+        city: locationData.city || prev.address.city,
+        province: locationData.province || prev.address.province,
+        coordinates: {
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+        },
+      },
+    }));
+    toast.success("Đã cập nhật vị trí địa chỉ!");
+  };
+
   // Fetch user profile
   useEffect(() => {
     fetchProfile();
     loadKycStatus();
+
+    // Show notification if coming from product creation
+    if (location.state?.fromProductCreate) {
+      toast("📍 Cập nhật địa chỉ để tiếp tục tạo sản phẩm", {
+        icon: "💡",
+        duration: 4000,
+        style: {
+          background: "#3B82F6",
+          color: "#fff",
+        },
+      });
+    }
   }, []);
 
   const fetchProfile = async () => {
@@ -73,6 +115,10 @@ const Profile = () => {
           district: userData.address?.district || "",
           city: userData.address?.city || "",
           province: userData.address?.province || "",
+          coordinates: {
+            latitude: userData.address?.coordinates?.latitude || null,
+            longitude: userData.address?.coordinates?.longitude || null,
+          },
         },
       });
 
@@ -140,9 +186,19 @@ const Profile = () => {
     try {
       setSaving(true);
       const response = await userService.updateProfile(formData);
-  setUser(response.data);
-  setEditing(false);
-  toast.success(t('profile.messages.updateSuccess'));
+      setUser(response.data);
+      setEditing(false);
+      toast.success("Cập nhật thành công!");
+
+      // Check if came from product creation page
+      if (location.state?.fromProductCreate) {
+        toast.success("🔄 Quay lại trang tạo sản phẩm...", { duration: 2000 });
+        setTimeout(() => {
+          navigate("/owner/products/create", {
+            state: { fromProfile: true },
+          });
+        }, 1500);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Có lỗi xảy ra");
     } finally {
@@ -754,7 +810,28 @@ const Profile = () => {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {t('profile.fields.streetAddress')}
+                          Chọn địa chỉ trên bản đồ (để tính khoảng cách chính
+                          xác)
+                        </label>
+                        <MapSelector
+                          onLocationSelect={handleLocationSelect}
+                          initialAddress={formData.address.streetAddress}
+                          placeholder="Nhấn để chọn địa chỉ trên bản đồ VietMap..."
+                          className="mb-4"
+                        />
+                        {formData.address.latitude &&
+                          formData.address.longitude && (
+                            <div className="text-sm text-green-600 bg-green-50 p-2 rounded mb-2">
+                              ✅ Đã có tọa độ:{" "}
+                              {formData.address.latitude.toFixed(6)},{" "}
+                              {formData.address.longitude.toFixed(6)}
+                            </div>
+                          )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Địa chỉ cụ thể (tự điền từ bản đồ)
                         </label>
                         <input
                           type="text"
@@ -767,7 +844,8 @@ const Profile = () => {
                             )
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder={t('profile.placeholders.streetAddress')}
+                          placeholder="Số nhà, tên đường"
+                          readOnly
                         />
                       </div>
 

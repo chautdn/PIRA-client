@@ -410,7 +410,7 @@ export default function Home() {
                 whileTap={{ scale: 0.95 }}
               >
                 <Link
-                  to={ROUTES.REGISTER}
+                  to={ROUTES.OWNER_CREATE_PRODUCT}
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all"
                 >
                   <MdAirplanemodeActive className="mr-2 text-xl" />

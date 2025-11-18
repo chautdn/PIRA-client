@@ -261,105 +261,50 @@ const RentalOrdersPage = () => {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <div key={order._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold">{t('orders.myOrders')} #{order.masterOrderNumber}</h3>
-                        <p className="text-sm text-gray-600">
-                          {t('orders.createdAt')} {formatDate(order.createdAt)}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                          {getStatusText(order.status)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                        <div>
-                          <p className="text-sm text-gray-600">{t('orders.rentalTime')}</p>
-                          <p className="font-medium">{calculateDuration(order.rentalPeriod.startDate, order.rentalPeriod.endDate)} {t('orders.days')}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Package className="w-5 h-5 text-green-600" />
-                        <div>
-                          <p className="text-sm text-gray-600">{t('orders.productCount')}</p>
-                          <p className="font-medium">{order.subOrders?.reduce((sum, sub) => sum + sub.products?.length || 0, 0) || 0}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="w-5 h-5 text-red-600" />
-                        <div>
-                          <p className="text-sm text-gray-600">{t('orders.delivery')}</p>
-                          <p className="font-medium">{order.deliveryMethod === 'PICKUP' ? t('orders.deliveryPickup') : t('orders.deliveryShip')}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <DollarSign className="w-5 h-5 text-orange-600" />
-                        <div>
-                          <p className="text-sm text-gray-600">{t('orders.total')}</p>
-                          <p className="font-medium text-orange-600">
-                            {formatCurrency(order.totalAmount + order.totalDepositAmount + order.totalShippingFee)}{currencySuffix}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Sub Orders Preview */}
-                    {order.subOrders && order.subOrders.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">{t('orders.owner')} ({order.subOrders.length})</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {order.subOrders.map((subOrder) => (
-                            <div key={subOrder._id} className="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-                              <span className="text-sm">{subOrder.owner?.profile?.firstName || t('orders.ownerUnknown')}</span>
-                              <span className={`px-2 py-1 rounded text-xs ${getStatusColor(subOrder.status)}`}>
-                                {getStatusText(subOrder.status)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                      <div className="text-sm text-gray-600">
-                        <Clock className="w-4 h-4 inline mr-1" />
-                        {t('orders.updateAt')} {new Date(order.updatedAt).toLocaleString(localeForFormat)}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleViewDetail(order)}
-                          className="flex items-center space-x-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span>{t('orders.viewDetail')}</span>
-                        </button>
-                        
+          <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số mục</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giao hàng</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredOrders.map((order) => (
+                  <tr key={order._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.masterOrderNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(order.createdAt)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{order.subOrders?.reduce((sum, sub) => sum + (sub.products?.length || 0), 0) || 0}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {order.rentalPeriod?.startDate && order.rentalPeriod?.endDate ? (
+                        <span>{calculateDuration(order.rentalPeriod.startDate, order.rentalPeriod.endDate)} ngày</span>
+                      ) : (
+                        <span className="text-sm text-blue-600">Nhiều thời gian</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{order.deliveryMethod === 'PICKUP' ? 'Nhận trực tiếp' : 'Giao tận nơi'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-orange-600">{((order.totalAmount || 0) + (order.totalDepositAmount || 0) + (order.totalShippingFee || 0)).toLocaleString('vi-VN')}đ</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>{getStatusText(order.status)}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center space-x-2">
+                        <button onClick={() => handleViewDetail(order)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Xem</button>
                         {order.status === 'READY_FOR_CONTRACT' && (
-                          <button
-                            onClick={() => navigate('/rental-orders/contracts')}
-                            className="flex items-center space-x-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                          >
-                            <FileText className="w-4 h-4" />
-                            <span>{t('orders.signContract')}</span>
-                          </button>
+                          <button onClick={() => navigate('/rental-orders/contracts')} className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ký HĐ</button>
                         )}
                       </div>
-                    </div>
-                  </div>
-              </div>
-            ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
@@ -396,8 +341,10 @@ const RentalOrdersPage = () => {
 
         {/* Detail Modal */}
         {showDetailModal && selectedOrder && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" 
+               onClick={closeDetailModal}>
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" 
+                 onClick={(e) => e.stopPropagation()}>
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
@@ -421,11 +368,17 @@ const RentalOrdersPage = () => {
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-5 h-5 text-blue-600" />
                       <div>
-                        <p className="text-sm text-gray-600">{t('orders.rentalTime')}</p>
-                        <p className="font-medium">{calculateDuration(selectedOrder.rentalPeriod.startDate, selectedOrder.rentalPeriod.endDate)} {t('orders.days')}</p>
-                        <p className="text-xs text-gray-500">
-                          {formatDate(selectedOrder.rentalPeriod.startDate)} - {formatDate(selectedOrder.rentalPeriod.endDate)}
-                        </p>
+                        <p className="text-sm text-gray-600">Thời gian thuê</p>
+                        {selectedOrder.rentalPeriod?.startDate && selectedOrder.rentalPeriod?.endDate ? (
+                          <>
+                            <p className="font-medium">{calculateDuration(selectedOrder.rentalPeriod.startDate, selectedOrder.rentalPeriod.endDate)} ngày</p>
+                            <p className="text-xs text-gray-500">
+                              {formatDate(selectedOrder.rentalPeriod.startDate)} - {formatDate(selectedOrder.rentalPeriod.endDate)}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="font-medium text-blue-600">Nhiều thời gian khác nhau</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -503,8 +456,8 @@ const RentalOrdersPage = () => {
                             <div>
                               <h4 className="font-medium mb-3">{t('orders.product')} ({subOrder.products.length})</h4>
                               <div className="space-y-3">
-                                {subOrder.products.map((productItem) => (
-                                  <div key={productItem.product._id} className="flex items-center space-x-4 bg-white border rounded p-3">
+                                {subOrder.products.map((productItem, productIndex) => (
+                                  <div key={`${productItem.product._id}-${productIndex}`} className="flex items-start space-x-4 bg-white border rounded p-3">
                                     <img
                                       src={productItem.product.images?.[0].url || '/placeholder.jpg'}
                                       alt={productItem.product.name}
@@ -514,8 +467,23 @@ const RentalOrdersPage = () => {
                                       <h5 className="font-medium">{productItem.product.name}</h5>
                                       <p className="text-sm text-gray-600">{t('orders.quantity')}: {productItem.quantity}</p>
                                       <p className="text-sm text-gray-600">
-                                        {t('orders.price')}: {formatCurrency(productItem.product.pricing?.rentalPrice)}{currencySuffix}{t('common.perDay')}
+                                        Giá thuê: {productItem.rentalRate?.toLocaleString('vi-VN')}đ/ngày
                                       </p>
+                                      {/* Hiển thị rental period riêng của sản phẩm */}
+                                      {productItem.rentalPeriod && (
+                                        <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
+                                          <div className="flex items-center space-x-1 text-blue-700">
+                                            <Calendar className="w-4 h-4" />
+                                            <span className="font-medium">Thời gian thuê:</span>
+                                          </div>
+                                          <p className="text-blue-600 mt-1">
+                                            {formatDate(productItem.rentalPeriod.startDate)} - {formatDate(productItem.rentalPeriod.endDate)}
+                                          </p>
+                                          <p className="text-blue-600 text-xs">
+                                            ({productItem.rentalPeriod.duration?.value || calculateDuration(productItem.rentalPeriod.startDate, productItem.rentalPeriod.endDate)} ngày)
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
                                     <div className="text-right">
                                       <p className="font-medium text-blue-600">
