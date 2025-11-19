@@ -518,196 +518,227 @@ const Profile = () => {
                     {/* Form Fields */}
                     <div className="flex-1 max-w-lg space-y-5">
                       {/* Name */}
-                      <div className="flex items-center">
-                        <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Tên
-                        </label>
-                        <div className="flex-1">
-                          {editing ? (
-                            <input
-                              type="text"
-                              value={formData.profile.firstName}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "profile",
-                                  "firstName",
-                                  e.target.value
-                                )
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                              placeholder="Nhập tên"
-                            />
-                          ) : (
-                            <div className="flex items-center">
-                              <span className="text-gray-900">
-                                {user?.profile?.firstName || "Chưa cập nhật"}
-                              </span>
-                              <button
-                                onClick={() => setEditing(true)}
-                                className="ml-2 text-blue-600 hover:text-blue-700 text-sm"
-                              >
-                                Thay Đổi
-                              </button>
-                            </div>
-                          )}
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-100 hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-center">
+                          <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
+                            <span className="text-xl">👤</span>
+                            Tên:
+                          </label>
+                          <div className="flex-1">
+                            {editing ? (
+                              <input
+                                type="text"
+                                value={formData.profile.firstName}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "profile",
+                                    "firstName",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
+                                placeholder="Nhập tên của bạn"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-900 font-medium">
+                                  {user?.profile?.firstName || "Chưa cập nhật"}
+                                </span>
+                                <button
+                                  onClick={() => setEditing(true)}
+                                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
+                                >
+                                  ✏️ Thay Đổi
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Email */}
-                      <div className="flex items-center">
-                        <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Email
-                        </label>
-                        <div className="flex-1">
-                          <div className="flex items-center">
-                            <span className="text-gray-900 mr-2">
-                              {user?.email
-                                ? `${user.email.slice(0, 3)}*********@gmail.com`
-                                : "N/A"}
-                            </span>
-                            <button className="text-blue-600 hover:text-blue-700 text-sm">
-                              Thay Đổi
-                            </button>
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-100 hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-center">
+                          <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
+                            <span className="text-xl">📧</span>
+                            Email:
+                          </label>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-900 font-medium">
+                                {user?.email
+                                  ? `${user.email.slice(0, 3)}*********@gmail.com`
+                                  : "N/A"}
+                              </span>
+                              <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200">
+                                ✏️ Thay Đổi
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       {/* Phone */}
-                      <div className="flex items-center">
-                        <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Số điện thoại
-                        </label>
-                        <div className="flex-1">
-                          {editing ? (
-                            <input
-                              type="tel"
-                              value={formData.phone}
-                              onChange={(e) =>
-                                handleDirectChange("phone", e.target.value)
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                              placeholder="Nhập số điện thoại"
-                            />
-                          ) : (
-                            <div className="flex items-center">
-                              <span className="text-gray-900 mr-2">
-                                {user?.phone
-                                  ? `*******${user.phone.slice(-2)}`
-                                  : "Chưa cập nhật"}
-                              </span>
-                              <button
-                                onClick={() => setEditing(true)}
-                                className="text-blue-600 hover:text-blue-700 text-sm"
-                              >
-                                Thay Đổi
-                              </button>
-                            </div>
-                          )}
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-100 hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-center">
+                          <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
+                            <span className="text-xl">📱</span>
+                            Số điện thoại:
+                          </label>
+                          <div className="flex-1">
+                            {editing ? (
+                              <input
+                                type="tel"
+                                value={formData.phone}
+                                onChange={(e) =>
+                                  handleDirectChange("phone", e.target.value)
+                                }
+                                className="w-full px-4 py-3 border-2 border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200"
+                                placeholder="Nhập số điện thoại"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-900 font-medium">
+                                  {user?.phone
+                                    ? `*******${user.phone.slice(-2)}`
+                                    : "Chưa cập nhật"}
+                                </span>
+                                <button
+                                  onClick={() => setEditing(true)}
+                                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
+                                >
+                                  ✏️ Thay Đổi
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Gender */}
-                      <div className="flex items-center">
-                        <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Giới tính
-                        </label>
-                        <div className="flex-1">
-                          {editing ? (
-                            <div className="flex space-x-6">
-                              <label className="flex items-center">
-                                <input
-                                  type="radio"
-                                  name="gender"
-                                  value="MALE"
-                                  checked={formData.profile.gender === "MALE"}
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      "profile",
-                                      "gender",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                Nam
-                              </label>
-                              <label className="flex items-center">
-                                <input
-                                  type="radio"
-                                  name="gender"
-                                  value="FEMALE"
-                                  checked={formData.profile.gender === "FEMALE"}
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      "profile",
-                                      "gender",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                Nữ
-                              </label>
-                              <label className="flex items-center">
-                                <input
-                                  type="radio"
-                                  name="gender"
-                                  value="OTHER"
-                                  checked={formData.profile.gender === "OTHER"}
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      "profile",
-                                      "gender",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="mr-2"
-                                />
-                                Khác
-                              </label>
-                            </div>
-                          ) : (
-                            <span className="text-gray-900">
-                              {user?.profile?.gender === "MALE"
-                                ? "Nam"
-                                : user?.profile?.gender === "FEMALE"
-                                ? "Nữ"
-                                : user?.profile?.gender === "OTHER"
-                                ? "Khác"
-                                : "Chưa cập nhật"}
-                            </span>
-                          )}
+                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-5 rounded-xl border-2 border-orange-100 hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-center">
+                          <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
+                            <span className="text-xl">♀️♂️</span>
+                            Giới tính:
+                          </label>
+                          <div className="flex-1">
+                            {editing ? (
+                              <div className="flex space-x-4">
+                                <label className="flex items-center px-4 py-3 bg-white border-2 border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors duration-200 has-[:checked]:bg-blue-100 has-[:checked]:border-blue-500">
+                                  <input
+                                    type="radio"
+                                    name="gender"
+                                    value="MALE"
+                                    checked={formData.profile.gender === "MALE"}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        "profile",
+                                        "gender",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="mr-2 w-4 h-4 text-blue-600"
+                                  />
+                                  <span className="font-medium">👨 Nam</span>
+                                </label>
+                                <label className="flex items-center px-4 py-3 bg-white border-2 border-pink-200 rounded-lg cursor-pointer hover:bg-pink-50 transition-colors duration-200 has-[:checked]:bg-pink-100 has-[:checked]:border-pink-500">
+                                  <input
+                                    type="radio"
+                                    name="gender"
+                                    value="FEMALE"
+                                    checked={formData.profile.gender === "FEMALE"}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        "profile",
+                                        "gender",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="mr-2 w-4 h-4 text-pink-600"
+                                  />
+                                  <span className="font-medium">👩 Nữ</span>
+                                </label>
+                                <label className="flex items-center px-4 py-3 bg-white border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors duration-200 has-[:checked]:bg-purple-100 has-[:checked]:border-purple-500">
+                                  <input
+                                    type="radio"
+                                    name="gender"
+                                    value="OTHER"
+                                    checked={formData.profile.gender === "OTHER"}
+                                    onChange={(e) =>
+                                      handleInputChange(
+                                        "profile",
+                                        "gender",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="mr-2 w-4 h-4 text-purple-600"
+                                  />
+                                  <span className="font-medium">🧑 Khác</span>
+                                </label>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-900 font-medium">
+                                  {user?.profile?.gender === "MALE"
+                                    ? "👨 Nam"
+                                    : user?.profile?.gender === "FEMALE"
+                                    ? "👩 Nữ"
+                                    : user?.profile?.gender === "OTHER"
+                                    ? "🧑 Khác"
+                                    : "Chưa cập nhật"}
+                                </span>
+                                <button
+                                  onClick={() => setEditing(true)}
+                                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
+                                >
+                                  ✏️ Thay Đổi
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
                       {/* Date of Birth */}
-                      <div className="flex items-center">
-                        <label className="w-24 text-sm text-gray-600 text-right mr-4">
-                          Ngày sinh
-                        </label>
-                        <div className="flex-1">
-                          {editing ? (
-                            <input
-                              type="date"
-                              value={formData.profile.dateOfBirth}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "profile",
-                                  "dateOfBirth",
-                                  e.target.value
-                                )
-                              }
-                              className="px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                            />
-                          ) : (
-                            <span className="text-gray-900">
-                              {user?.profile?.dateOfBirth
-                                ? new Date(
-                                    user.profile.dateOfBirth
-                                  ).toLocaleDateString("vi-VN")
-                                : "*/*/1998"}
-                            </span>
-                          )}
+                      <div className="bg-gradient-to-r from-rose-50 to-red-50 p-5 rounded-xl border-2 border-rose-100 hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-center">
+                          <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
+                            <span className="text-xl">🎂</span>
+                            Ngày sinh:
+                          </label>
+                          <div className="flex-1">
+                            {editing ? (
+                              <input
+                                type="date"
+                                value={formData.profile.dateOfBirth}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "profile",
+                                    "dateOfBirth",
+                                    e.target.value
+                                  )
+                                }
+                                className="px-4 py-3 border-2 border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white shadow-sm transition-all duration-200"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-900 font-medium">
+                                  {user?.profile?.dateOfBirth
+                                    ? new Date(
+                                        user.profile.dateOfBirth
+                                      ).toLocaleDateString("vi-VN")
+                                    : "*/*/1998"}
+                                </span>
+                                <button
+                                  onClick={() => setEditing(true)}
+                                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
+                                >
+                                  ✏️ Thay Đổi
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -775,15 +806,12 @@ const Profile = () => {
                 )}
 
                 {activeSection === "address" && (
-                  <div className="max-w-2xl">
-                    <h2 className="text-2xl font-bold mb-8 flex items-center text-gray-900">
-                      <span className="text-3xl mr-3">📍</span>
-                      Địa chỉ của tôi
-                    </h2>
-
-                    <div className="space-y-5 bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-xl border border-gray-200 shadow-lg">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="max-w-3xl">
+                    <div className="space-y-6">
+                      {/* Street Address */}
+                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-100 hover:shadow-xl transition-all duration-300">
+                        <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
+                          <span className="text-2xl">🏠</span>
                           Địa chỉ cụ thể
                         </label>
                         <input
@@ -796,14 +824,16 @@ const Profile = () => {
                               e.target.value
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Số nhà, tên đường"
+                          className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                          placeholder="📍 Nhập số nhà, tên đường..."
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {/* District and City */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-100 hover:shadow-xl transition-all duration-300">
+                          <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
+                            <span className="text-2xl">🏛️</span>
                             Quận/Huyện
                           </label>
                           <input
@@ -816,13 +846,14 @@ const Profile = () => {
                                 e.target.value
                               )
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                            placeholder="Quận/Huyện"
+                            className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                            placeholder="📍 Nhập quận/huyện..."
                           />
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-100 hover:shadow-xl transition-all duration-300">
+                          <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
+                            <span className="text-2xl">🌇</span>
                             Thành phố
                           </label>
                           <input
@@ -835,14 +866,16 @@ const Profile = () => {
                                 e.target.value
                               )
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                            placeholder="Thành phố"
+                            className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                            placeholder="📍 Nhập thành phố..."
                           />
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {/* Province */}
+                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6 rounded-xl border-2 border-orange-100 hover:shadow-xl transition-all duration-300">
+                        <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
+                          <span className="text-2xl">🗺️</span>
                           Tỉnh/Thành phố
                         </label>
                         <input
@@ -855,66 +888,104 @@ const Profile = () => {
                               e.target.value
                             )
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Tỉnh/Thành phố"
+                          className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                          placeholder="📍 Nhập tỉnh/thành phố..."
                         />
                       </div>
 
-                      <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-pink-600 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-                      >
-                        {saving ? "⏳ Đang lưu..." : "💾 Lưu địa chỉ"}
-                      </button>
+                      {/* Save Button */}
+                      <div className="flex justify-end pt-4">
+                        <button
+                          onClick={handleSave}
+                          disabled={saving}
+                          className="px-10 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white text-lg font-bold rounded-xl hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 disabled:opacity-50 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300"
+                        >
+                          {saving ? "⏳ Đang lưu..." : "💾 Lưu Địa Chỉ"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {activeSection === "password" && (
-                  <div className="max-w-lg">
-                    <h2 className="text-2xl font-bold mb-8 flex items-center text-gray-900">
-                      <span className="text-3xl mr-3">🔐</span>
-                      Đổi mật khẩu
-                    </h2>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="max-w-2xl">
+                    <div className="space-y-6">
+                      {/* Current Password */}
+                      <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border-2 border-red-100 hover:shadow-xl transition-all duration-300">
+                        <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
+                          <span className="text-2xl">🔑</span>
                           Mật khẩu hiện tại
                         </label>
-                        <input
-                          type="password"
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập mật khẩu hiện tại"
-                        />
+                        <div className="relative">
+                          <input
+                            type="password"
+                            className="w-full px-4 py-3 pl-12 border-2 border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                            placeholder=" Nhập mật khẩu hiện tại..."
+                          />
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔐</span>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {/* New Password */}
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-100 hover:shadow-xl transition-all duration-300">
+                        <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
+                          <span className="text-2xl">🆕</span>
                           Mật khẩu mới
                         </label>
-                        <input
-                          type="password"
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập mật khẩu mới"
-                        />
+                        <div className="relative">
+                          <input
+                            type="password"
+                            className="w-full px-4 py-3 pl-12 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                            placeholder=" Nhập mật khẩu mới..."
+                          />
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔑</span>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {/* Confirm Password */}
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-100 hover:shadow-xl transition-all duration-300">
+                        <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
+                          <span className="text-2xl">✅</span>
                           Xác nhận mật khẩu mới
                         </label>
-                        <input
-                          type="password"
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập lại mật khẩu mới"
-                        />
+                        <div className="relative">
+                          <input
+                            type="password"
+                            className="w-full px-4 py-3 pl-12 border-2 border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                            placeholder=" Nhập lại mật khẩu mới..."
+                          />
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔓</span>
+                        </div>
                       </div>
 
-                      <button className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-pink-600 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                        🔒 Cập nhật mật khẩu
-                      </button>
+                      {/* Security Tips */}
+                      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-5 rounded-xl border-2 border-yellow-200">
+                        <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
+                          <span className="text-xl">💡</span>
+                          Mẹo bảo mật
+                        </h4>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          <li className="flex items-center gap-2">
+                            <span>✅</span>
+                            <span>Sử dụng ít nhất 8 ký tự</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span>✅</span>
+                            <span>Kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span>✅</span>
+                            <span>Không sử dụng thông tin cá nhân dễ đoán</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      {/* Update Button */}
+                      <div className="flex justify-end pt-4">
+                        <button className="px-10 py-4 bg-gradient-to-r from-red-500 via-orange-500 to-pink-500 text-white text-lg font-bold rounded-xl hover:from-red-600 hover:via-orange-600 hover:to-pink-600 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300">
+                          🔒 Cập Nhật Mật Khẩu
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
