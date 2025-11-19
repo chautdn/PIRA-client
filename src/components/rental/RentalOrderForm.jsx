@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useRentalOrder } from '../../context/RentalOrderContext';
 import { useAuth } from "../../hooks/useAuth";
@@ -16,13 +16,21 @@ const RentalOrderForm = () => {
     const rentalOrderContext = useRentalOrder();
     const { createDraftOrder, createPaidOrder, calculateShipping, isCreatingDraft, isCalculatingShipping, shippingCalculation } = rentalOrderContext;
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Check if this is a direct rental (from product detail)
+    const directRentalData = location.state?.directRental ? location.state : null;
+    // Check if there are selected items from cart
+    const selectedItems = location.state?.selectedItems || null;
+    const fromCart = location.state?.fromCart || false;
 
     // Debug effect - only runs once
     useEffect(() => {
       console.log('RentalOrderForm: Component mounted');
       console.log('RentalOrderForm: User loaded:', user ? 'Yes' : 'No');
       console.log('RentalOrderForm: Cart loaded:', cartItems ? cartItems.length : 'No cart');
-      console.log('RentalOrderForm: Cart items data:', cartItems);
+      console.log('RentalOrderForm: Selected items:', selectedItems);
+      console.log('RentalOrderForm: From cart:', fromCart);
       console.log('RentalOrderForm: RentalOrder context loaded:', !!rentalOrderContext);
     }, []);
 
@@ -64,18 +72,38 @@ const RentalOrderForm = () => {
     }
   }, [user]);
 
-  // Group products by owner and set rental dates from cart
+  // Group products by owner and set rental dates from cart OR direct rental
   useEffect(() => {
-    if (!cartItems || !Array.isArray(cartItems)) return;
+    let sourceItems = [];
+    
+    // Priority: direct rental > selected items > all cart items
+    if (directRentalData) {
+      console.log('🎯 Using direct rental data:', directRentalData);
+      // Convert direct rental to cart-like structure
+      sourceItems = [{
+        _id: 'direct-rental-item',
+        product: directRentalData.product,
+        quantity: directRentalData.quantity,
+        rental: directRentalData.rental
+      }];
+    } else if (selectedItems && Array.isArray(selectedItems) && selectedItems.length > 0) {
+      console.log('🎯 Using selected items from cart:', selectedItems);
+      sourceItems = selectedItems;
+    } else if (cartItems && Array.isArray(cartItems)) {
+      console.log('🎯 Using all cart items:', cartItems);
+      sourceItems = cartItems;
+    } else {
+      return;
+    }
     
     const grouped = {};
     let earliestStart = null;
     let latestEnd = null;
     
-    cartItems.forEach(item => {
+    sourceItems.forEach(item => {
       // Validate item structure
       if (!item?.product?.owner?._id) {
-        console.warn('Cart item missing owner data:', item);
+        console.warn('Item missing owner data:', item);
         return;
       }
       
@@ -89,7 +117,7 @@ const RentalOrderForm = () => {
       }
       grouped[ownerId].products.push(item);
       
-      // Track rental period from cart items
+      // Track rental period from items
       if (item.rental?.startDate && item.rental?.endDate) {
         const itemStart = new Date(item.rental.startDate);
         const itemEnd = new Date(item.rental.endDate);
@@ -106,7 +134,7 @@ const RentalOrderForm = () => {
     setGroupedProducts(grouped);
     console.log('RentalOrderForm: Grouped products:', grouped);
     
-    // Set rental dates from cart items
+    // Set rental dates from items
     if (earliestStart && latestEnd) {
       setOrderData(prev => ({
         ...prev,
@@ -116,7 +144,7 @@ const RentalOrderForm = () => {
         }
       }));
     }
-  }, [cartItems]);
+  }, [cartItems, directRentalData, selectedItems]);
 
   // Calculate rental duration
   const calculateDuration = () => {
@@ -433,8 +461,14 @@ const RentalOrderForm = () => {
       // Process payment based on selected method
       switch (paymentMethod) {
         case 'WALLET':
-          // Deduct from user wallet automatically
-          paymentResult = await processWalletPayment(totals.grandTotal);
+          // For wallet payment, let the order creation handle the deduction
+          // No separate payment processing needed - avoid double deduction
+          console.log('💳 Wallet payment selected - skipping separate payment processing to avoid double deduction');
+          paymentResult = { 
+            method: 'WALLET', 
+            status: 'PENDING',
+            message: 'Thanh toán từ ví sẽ được xử lý khi tạo đơn hàng' 
+          };
           break;
           
         case 'BANK_TRANSFER':
@@ -519,33 +553,8 @@ const RentalOrderForm = () => {
     }
   };
 
-  // Process wallet payment with real API
-  const processWalletPayment = async (amount) => {
-    try {
-      console.log('💳 Processing wallet payment for amount:', amount);
-      
-      const orderData = {
-        totalAmount: amount,
-        orderNumber: `ORD-${Date.now()}`,
-        description: 'Thanh toán đơn thuê bằng ví điện tử'
-      };
-
-      const result = await paymentService.processWalletPayment(orderData);
-      
-      return {
-        method: 'WALLET',
-        status: 'SUCCESS',
-        transactionId: result.metadata?.transactionId,
-        message: 'Thanh toán từ ví thành công'
-      };
-    } catch (error) {
-      return {
-        method: 'WALLET',
-        status: 'FAILED',
-        message: error.message || 'Lỗi thanh toán từ ví'
-      };
-    }
-  };
+  // Note: Wallet payment processing removed to avoid double deduction
+  // The wallet deduction is now handled directly in the order creation process
 
   // Process PayOS payment with real API
   const processPayOSPayment = async (method, amount) => {
@@ -616,12 +625,22 @@ const RentalOrderForm = () => {
     orderData.deliveryAddress.longitude
   ]);
 
-  if (!cartItems || cartItems.length === 0) {
+  // Check if we have products (from cart or direct rental)
+  const hasProducts = directRentalData || (cartItems && cartItems.length > 0);
+  
+  if (!hasProducts) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Giỏ thuê trống</h2>
-          <p className="text-gray-600 mb-4">Vui lòng thêm sản phẩm vào giỏ trước khi tạo đơn thuê</p>
+          <h2 className="text-2xl font-bold mb-4">
+            {directRentalData ? 'Lỗi dữ liệu thuê' : 'Giỏ thuê trống'}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {directRentalData 
+              ? 'Dữ liệu thuê không hợp lệ. Vui lòng thử lại.'
+              : 'Vui lòng thêm sản phẩm vào giỏ trước khi tạo đơn thuê'
+            }
+          </p>
           <button
             onClick={() => navigate('/products')}
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
@@ -636,7 +655,16 @@ const RentalOrderForm = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Tạo Đơn Thuê</h1>
+        <div className="flex items-center gap-3 mb-8">
+          <h1 className="text-3xl font-bold">
+            {directRentalData ? 'Thuê Ngay' : 'Tạo Đơn Thuê'}
+          </h1>
+          {directRentalData && (
+            <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+              ⚡ Thuê trực tiếp
+            </span>
+          )}
+        </div>
 
 
 
@@ -1208,7 +1236,12 @@ const RentalOrderForm = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Số sản phẩm:</span>
-                  <span>{cartItems?.length || 0}</span>
+                  <span>
+                    {directRentalData 
+                      ? directRentalData.quantity || 1
+                      : cartItems?.length || 0
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Thời gian thuê:</span>

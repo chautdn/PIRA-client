@@ -491,19 +491,63 @@ export default function ProductDetail() {
     }
   };
 
-  const handleRentNow = () => {
+  const handleRentNow = async () => {
+    if (!user) {
+      alert('⚠️ Vui lòng đăng nhập để thuê sản phẩm');
+      navigate('/auth/login', { state: { from: `/products/${id}` } });
+      return;
+    }
+
     if (!deliveryDate || !returnDate) {
-      alert('Vui lòng chọn ngày giao và trả hàng');
+      alert('⚠️ Vui lòng chọn ngày giao và trả hàng');
+      return;
+    }
+
+    // Validation
+    const maxStock = product.availability?.quantity || 0;
+    if (quantity < 1) {
+      alert('⚠️ Số lượng phải lớn hơn 0');
       return;
     }
     
-    console.log('Rent now:', {
-      product: product.id,
-      quantity,
-      deliveryDate,
-      returnDate,
-      rentalDays: getRentalDays(),
-      totalPrice: getTotalPrice()
+    if (quantity > maxStock) {
+      alert(`⚠️ Số lượng không được vượt quá ${maxStock} cái`);
+      return;
+    }
+
+    const rentalData = {
+      startDate: new Date(deliveryDate),
+      endDate: new Date(returnDate),
+      duration: getRentalDays()
+    };
+
+    // Create a direct rental order (bypass cart)
+    const directRentalData = {
+      products: [{
+        product: product._id,
+        owner: product.owner._id,
+        quantity: quantity,
+        rental: rentalData,
+        pricing: {
+          dailyRate: product.pricing.dailyRate,
+          totalRental: product.pricing.dailyRate * quantity * getRentalDays(),
+          totalDeposit: (product.pricing.deposit || 0) * quantity
+        }
+      }],
+      rentalPeriod: rentalData,
+      deliveryMethod: 'PICKUP', // Default to pickup for direct rental
+      totalAmount: getTotalPrice()
+    };
+
+    // Navigate to rental order form with pre-filled data
+    navigate('/rental-order/create', { 
+      state: { 
+        directRental: true,
+        orderData: directRentalData,
+        product: product,
+        quantity: quantity,
+        rental: rentalData
+      } 
     });
   };
 
