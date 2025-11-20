@@ -7,6 +7,7 @@ import { reviewService } from '../services/review';
 import { useCart } from '../context/CartContext';
 import { cartApiService } from '../services/cartApi';
 import { useAuth } from '../hooks/useAuth'; // Added for authentication
+import { useRentalOrder } from '../context/RentalOrderContext';
 import { ROUTES } from '../utils/constants'; // Added for route constants
 
 export default function ProductDetail() {
@@ -15,6 +16,7 @@ export default function ProductDetail() {
   const { i18n } = useTranslation();
   const { addToCart: addToCartContext, loading: cartLoading } = useCart();
   const { user } = useAuth(); // Added to get current user
+  const { createDraftOrder, isCreatingDraft } = useRentalOrder();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -517,20 +519,52 @@ export default function ProductDetail() {
     }
   };
 
-  const handleRentNow = () => {
-    if (!deliveryDate || !returnDate) {
-      alert('Vui lòng chọn ngày giao và trả hàng');
-      return;
+  const handleRentNow = async () => {
+    try {
+      if (!user) {
+        navigate(ROUTES.LOGIN);
+        return;
+      }
+
+      if (!deliveryDate || !returnDate) {
+        alert('Vui lòng chọn ngày giao và trả hàng');
+        return;
+      }
+
+      // Prepare rental period for the cart item
+      const rentalData = {
+        startDate: new Date(deliveryDate),
+        endDate: new Date(returnDate),
+        duration: getRentalDays()
+      };
+
+      // Add the product to cart first
+      const addResult = await addToCartContext(product, quantity, rentalData);
+
+      if (!addResult || !addResult.success) {
+        if (addResult && addResult.requireLogin) {
+          navigate(ROUTES.LOGIN);
+          return;
+        }
+        alert(addResult.error || 'Không thể thêm sản phẩm để thuê');
+        return;
+      }
+
+      // Decide delivery method: prefer OWNER_DELIVERY when available to avoid requiring renter address
+      const deliveryMethod = product.location?.deliveryOptions?.delivery ? 'OWNER_DELIVERY' : 'PICKUP';
+
+      // Create draft order from cart on backend
+      const masterOrder = await createDraftOrder({
+        rentalPeriod: { startDate: deliveryDate, endDate: returnDate },
+        deliveryMethod
+      });
+
+      // Navigate to cart so user can proceed
+      navigate(ROUTES.CART);
+    } catch (err) {
+      console.error('Error during Rent Now flow:', err);
+      alert(err.message || 'Không thể thực hiện thao tác thuê ngay');
     }
-    
-    console.log('Rent now:', {
-      product: product.id,
-      quantity,
-      deliveryDate,
-      returnDate,
-      rentalDays: getRentalDays(),
-      totalPrice: getTotalPrice()
-    });
   };
 
   const handleMessageOwner = async () => {
