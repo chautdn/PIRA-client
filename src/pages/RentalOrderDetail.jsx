@@ -29,6 +29,7 @@ const RentalOrderDetailPage = () => {
     isLoading, 
     confirmOwnerOrder,
     rejectOwnerOrder,
+    renterConfirmSubOrder,
     loadOrderDetail 
   } = useRentalOrder();
 
@@ -140,10 +141,31 @@ const RentalOrderDetailPage = () => {
   };
 
   const isOwner = currentOrder.subOrders?.some(subOrder => 
-    subOrder.owner?._id === user._id
+    subOrder.owner?._id?.toString() === user._id?.toString()
   );
   
-  const isRenter = currentOrder.renter?._id === user._id;
+  const isRenter = currentOrder.renter?._id?.toString() === user._id?.toString();
+
+  // Debug logs
+  React.useEffect(() => {
+    if (currentOrder && user) {
+      console.log('DEBUG RentalOrderDetail:', {
+        isOwner,
+        isRenter,
+        userId: user._id,
+        userIdStr: user._id?.toString(),
+        renterId: currentOrder.renter?._id,
+        renterIdStr: currentOrder.renter?._id?.toString(),
+        subOrdersCount: currentOrder.subOrders?.length,
+        subOrderStatuses: currentOrder.subOrders?.map(so => ({
+          id: so._id,
+          status: so.status,
+          ownerId: so.owner?._id,
+          ownerIdStr: so.owner?._id?.toString()
+        }))
+      });
+    }
+  }, [currentOrder, user, isOwner, isRenter]);
 
   const handleOwnerAction = async (action, subOrderId, reason = null) => {
     try {
@@ -380,7 +402,7 @@ const RentalOrderDetailPage = () => {
                               {getStatusText(subOrder.status)}
                             </span>
                             
-                            {isOwner && subOrder.owner?._id === user._id && subOrder.status === 'PENDING_OWNER_CONFIRMATION' && (
+                            {isOwner && subOrder.owner?._id?.toString() === user._id?.toString() && subOrder.status === 'PENDING_OWNER_CONFIRMATION' && (
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => setConfirmAction(`confirm-${subOrder._id}`)}
@@ -395,6 +417,28 @@ const RentalOrderDetailPage = () => {
                                 >
                                   <XCircle className="w-4 h-4" />
                                   <span>Từ chối</span>
+                                </button>
+                              </div>
+                            )}
+                            {/* Renter confirm action shown to renter when owner already confirmed */}
+                            {isRenter && subOrder.status === 'OWNER_CONFIRMED' && (
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      if (!window.confirm('Bạn có chắc muốn xác nhận lựa chọn của chủ cho thuê cho sản phẩm này?')) return;
+                                      await renterConfirmSubOrder(subOrder._id);
+                                      await loadOrderDetail(id);
+                                      alert('Bạn đã xác nhận thành công');
+                                    } catch (err) {
+                                      console.error('Renter confirm error', err);
+                                      alert('Có lỗi khi xác nhận, vui lòng thử lại');
+                                    }
+                                  }}
+                                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center space-x-1"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Xác nhận (Người thuê)</span>
                                 </button>
                               </div>
                             )}

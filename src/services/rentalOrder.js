@@ -85,6 +85,21 @@ class RentalOrderService {
     }
   }
 
+  // Người thuê xác nhận SubOrder (sau khi chủ đã xác nhận)
+  async renterConfirmOrder(subOrderId, confirmationData = {}) {
+    try {
+      const response = await api.post(
+        `/rental-orders/sub-orders/${subOrderId}/renter-confirm`,
+        confirmationData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể xác nhận bởi người thuê"
+      );
+    }
+  }
+
   // Bước 5: Tạo hợp đồng
   async generateContracts(masterOrderId) {
     try {

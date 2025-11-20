@@ -438,6 +438,21 @@ export const RentalOrderProvider = ({ children }) => {
     }
   };
 
+  const renterConfirmSubOrder = async (subOrderId, confirmationData = {}) => {
+    try {
+      dispatch({ type: RENTAL_ORDER_ACTIONS.CONFIRM_ORDER_START });
+      const response = await rentalOrderService.renterConfirmOrder(subOrderId, confirmationData);
+      // Reload order detail if we have a current draft or master id
+      if (response && response.metadata && response.metadata.subOrder && response.metadata.subOrder.masterOrder) {
+        await loadOrderDetail(response.metadata.subOrder.masterOrder);
+      }
+      return response;
+    } catch (error) {
+      dispatch({ type: RENTAL_ORDER_ACTIONS.CONFIRM_ORDER_ERROR, payload: error.message });
+      throw error;
+    }
+  };
+
   const clearError = () => {
     dispatch({ type: RENTAL_ORDER_ACTIONS.CLEAR_ERROR });
   };
@@ -459,6 +474,7 @@ export const RentalOrderProvider = ({ children }) => {
     createPaidOrder,
     confirmOrder,
     processPayment,
+    renterConfirmSubOrder,
     loadMyOrders,
     loadOwnerOrders,
     loadOrderDetail,
