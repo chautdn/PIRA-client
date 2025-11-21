@@ -225,6 +225,18 @@ export const ownerProductApi = {
     }
   },
 
+  // Alias for backward compatibility: some components call getOwnerSubOrders
+  getOwnerSubOrders: async (params) => {
+    try {
+      const response = await api.get("/owner-products/rental-requests", {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // POST /api/owner-products/rental-requests/:subOrderId/items/:itemIndex/confirm
   confirmProductItem: async (subOrderId, itemIndex) => {
     try {

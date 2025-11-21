@@ -453,6 +453,28 @@ export const RentalOrderProvider = ({ children }) => {
     }
   };
 
+  const confirmOwnerOrder = async (subOrderId, confirmationData = {}) => {
+    try {
+      dispatch({ type: RENTAL_ORDER_ACTIONS.CONFIRM_ORDER_START });
+      const response = await rentalOrderService.confirmOwnerOrder(subOrderId, confirmationData);
+      return response;
+    } catch (error) {
+      dispatch({ type: RENTAL_ORDER_ACTIONS.CONFIRM_ORDER_ERROR, payload: error.message });
+      throw error;
+    }
+  };
+
+  const rejectOwnerOrder = async (subOrderId, rejectionReason) => {
+    try {
+      dispatch({ type: RENTAL_ORDER_ACTIONS.CONFIRM_ORDER_START });
+      const response = await rentalOrderService.rejectOwnerOrder(subOrderId, rejectionReason);
+      return response;
+    } catch (error) {
+      dispatch({ type: RENTAL_ORDER_ACTIONS.CONFIRM_ORDER_ERROR, payload: error.message });
+      throw error;
+    }
+  };
+
   const clearError = () => {
     dispatch({ type: RENTAL_ORDER_ACTIONS.CLEAR_ERROR });
   };
@@ -474,6 +496,8 @@ export const RentalOrderProvider = ({ children }) => {
     createPaidOrder,
     confirmOrder,
     processPayment,
+    confirmOwnerOrder,
+    rejectOwnerOrder,
     renterConfirmSubOrder,
     loadMyOrders,
     loadOwnerOrders,

@@ -85,6 +85,36 @@ class RentalOrderService {
     }
   }
 
+  // Chủ xác nhận SubOrder
+  async confirmOwnerOrder(subOrderId, confirmationData = {}) {
+    try {
+      const response = await api.post(
+        `/rental-orders/sub-orders/${subOrderId}/owner-confirm`,
+        { status: 'CONFIRMED', ...confirmationData }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể xác nhận đơn hàng"
+      );
+    }
+  }
+
+  // Chủ từ chối SubOrder
+  async rejectOwnerOrder(subOrderId, rejectionReason) {
+    try {
+      const response = await api.post(
+        `/rental-orders/sub-orders/${subOrderId}/owner-confirm`,
+        { status: 'REJECTED', rejectionReason }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể từ chối đơn hàng"
+      );
+    }
+  }
+
   // Người thuê xác nhận SubOrder (sau khi chủ đã xác nhận)
   async renterConfirmOrder(subOrderId, confirmationData = {}) {
     try {
