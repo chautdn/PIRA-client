@@ -13,6 +13,7 @@ const OwnerRentalRequests = () => {
   const [filter, setFilter] = useState('ALL'); // ALL, DRAFT, CONFIRMED, REJECTED
   const [showContractSigning, setShowContractSigning] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState(null);
+  const [selectedSubOrder, setSelectedSubOrder] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -24,7 +25,7 @@ const OwnerRentalRequests = () => {
     try {
       setLoading(true);
       // API để lấy các SubOrder của owner
-      const response = await ownerProductApi.getSubOrders({
+      const response = await ownerProductApi.getRentalRequests({
         status: filter === 'ALL' ? undefined : filter
       });
 
@@ -70,41 +71,114 @@ const OwnerRentalRequests = () => {
 
       const subOrdersList = extractSubOrders(response);
       setSubOrders(subOrdersList);
+      return subOrdersList; // Return để có thể sử dụng trong refreshSubOrderData
     } catch (error) {
       console.error('Lỗi tải danh sách yêu cầu thuê:', error);
       toast.error('Không thể tải danh sách yêu cầu thuê');
       setSubOrders([]); // Đảm bảo luôn là array
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConfirmSubOrder = async (subOrderId) => {
+  // Hàm để refresh dữ liệu và cập nhật selectedSubOrder
+  const refreshSubOrderData = async (subOrderId) => {
     try {
-      await ownerProductApi.confirmSubOrder(subOrderId);
-      toast.success('Đã xác nhận yêu cầu thuê');
-      fetchSubOrders(); // Refresh list
+      const updatedSubOrders = await fetchSubOrders();
+      
+      // Cập nhật selectedSubOrder nếu đang mở
+      if (selectedSubOrder && selectedSubOrder._id === subOrderId) {
+        const updatedSubOrder = updatedSubOrders.find(s => s._id === subOrderId);
+        if (updatedSubOrder) {
+          setSelectedSubOrder(updatedSubOrder);
+        }
+      }
     } catch (error) {
-      console.error('Lỗi xác nhận yêu cầu:', error);
-      toast.error('Không thể xác nhận yêu cầu thuê');
+      console.error('Lỗi refresh dữ liệu:', error);
     }
   };
 
-  const handleRejectSubOrder = async (subOrderId, reason) => {
+  const handleConfirmProductItem = async (subOrderId, itemIndex) => {
     try {
-      await ownerProductApi.rejectSubOrder(subOrderId, { reason });
-      toast.success('Đã từ chối yêu cầu thuê');
+      await ownerProductApi.confirmProductItem(subOrderId, itemIndex);
+      toast.success('Đã xác nhận sản phẩm');
+      
+      // Refresh list và cập nhật selectedSubOrder
+      await refreshSubOrderData(subOrderId);
+      
+      // Kiểm tra xem có cần tự động ký hợp đồng không
+      await checkAndAutoSignContract(subOrderId);
+    } catch (error) {
+      console.error('Lỗi xác nhận sản phẩm:', error);
+      toast.error(error.message || 'Không thể xác nhận sản phẩm');
+    }
+  };
+
+  const handleRejectProductItem = async (subOrderId, itemIndex, reason) => {
+    try {
+      await ownerProductApi.rejectProductItem(subOrderId, itemIndex, reason);
+      toast.success('Đã từ chối sản phẩm');
+      
+      // Refresh list và cập nhật selectedSubOrder
+      await refreshSubOrderData(subOrderId);
+      
+      // Kiểm tra xem có cần tự động ký hợp đồng không
+      await checkAndAutoSignContract(subOrderId);
+    } catch (error) {
+      console.error('Lỗi từ chối sản phẩm:', error);
+      toast.error(error.message || 'Không thể từ chối sản phẩm');
+    }
+  };
+
+  // Xác nhận tất cả sản phẩm trong một subOrder
+  const handleConfirmAllProducts = async (subOrderId) => {
+    try {
+      await ownerProductApi.confirmAllProductItems(subOrderId);
+      toast.success('Đã xác nhận tất cả sản phẩm trong đơn');
       fetchSubOrders(); // Refresh list
     } catch (error) {
-      console.error('Lỗi từ chối yêu cầu:', error);
-      toast.error('Không thể từ chối yêu cầu thuê');
+      console.error('Lỗi xác nhận tất cả sản phẩm:', error);
+      toast.error(error.message || 'Không thể xác nhận tất cả sản phẩm');
+    }
+  };
+
+  // Xác nhận subOrder và tự động ký hợp đồng nếu có
+  const handleConfirmSubOrderAndSign = async (subOrder) => {
+    try {
+      // Bước 1: Xác nhận subOrder
+      await ownerProductApi.confirmSubOrder(subOrder._id);
+      toast.success('Đã xác nhận đơn thuê');
+      
+      // Bước 2: Kiểm tra xem có hợp đồng để ký không
+      const masterOrderId = subOrder.masterOrder?._id || subOrder.masterOrder;
+      if (masterOrderId) {
+        // Tạo hợp đồng nếu chưa có
+        const contractResponse = await rentalOrderService.generateContracts(masterOrderId);
+        
+        if (contractResponse?.contract) {
+          // Tự động ký hợp đồng cho chủ
+          const contractId = contractResponse.contract._id || contractResponse.contract;
+          await rentalOrderService.signContractAsOwner(contractId, {
+            ownerSignature: `Owner-${user._id}-${Date.now()}`,
+            signedAt: new Date().toISOString()
+          });
+          
+          toast.success('Đã xác nhận và ký hợp đồng thành công!');
+        }
+      }
+      
+      fetchSubOrders(); // Refresh list
+    } catch (error) {
+      console.error('Lỗi xác nhận và ký hợp đồng:', error);
+      toast.error(error.message || 'Không thể hoàn tất xác nhận và ký hợp đồng');
     }
   };
 
   const handleGenerateContract = async (masterOrderId) => {
     try {
       const response = await rentalOrderService.generateContracts(masterOrderId);
-      toast.success('Hợp đồng đã được tạo thành công - Giờ bạn có thể ký hợp đồng');
+      toast.success('Hợp đồng đã được tạo thành công');
       fetchSubOrders(); // Refresh list to show updated status
       console.log('Generated contracts:', response);
     } catch (error) {
@@ -113,7 +187,43 @@ const OwnerRentalRequests = () => {
     }
   };
 
-
+  // Kiểm tra và tự động ký hợp đồng nếu tất cả sản phẩm đã được xác nhận
+  const checkAndAutoSignContract = async (subOrderId) => {
+    try {
+      // Đợi một chút để server cập nhật xong
+      setTimeout(async () => {
+        try {
+          // Lấy dữ liệu mới từ server
+          const response = await ownerProductApi.getOwnerSubOrders(filter === 'ALL' ? undefined : filter);
+          const updatedSubOrders = response.data || response;
+          
+          // Tìm subOrder đã được cập nhật
+          const currentSubOrder = updatedSubOrders.find(s => s._id === subOrderId);
+          if (!currentSubOrder) return;
+          
+          // Kiểm tra xem tất cả sản phẩm đã được xác nhận hay từ chối hết chưa
+          const pendingItems = currentSubOrder.products?.filter(item => item.confirmationStatus === 'PENDING') || [];
+          
+          if (pendingItems.length === 0) {
+            // Tất cả sản phẩm đã được xử lý
+            const confirmedItems = currentSubOrder.products?.filter(item => item.confirmationStatus === 'CONFIRMED') || [];
+            
+            if (confirmedItems.length > 0) {
+              // Có ít nhất 1 sản phẩm được xác nhận -> tự động chuyển sang trạng thái OWNER_CONFIRMED
+              toast.success('Tất cả sản phẩm đã được xử lý! Đơn hàng chuyển sang trạng thái chờ ký hợp đồng.');
+            } else {
+              // Tất cả sản phẩm đều bị từ chối
+              toast.info('Tất cả sản phẩm đã bị từ chối. Đơn hàng sẽ được hủy và hoàn tiền tự động.');
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi kiểm tra tự động:', error);
+        }
+      }, 500); // Đợi 500ms để server cập nhật
+    } catch (error) {
+      console.error('Lỗi kiểm tra tự động ký hợp đồng:', error);
+    }
+  };
 
   const handleSignContract = async (contractId, signatureData) => {
     try {
@@ -167,93 +277,264 @@ const OwnerRentalRequests = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Yêu cầu thuê sản phẩm</h1>
-        
-        {/* Filter */}
-        <div className="flex space-x-2">
-          {['ALL', 'PENDING_OWNER_CONFIRMATION', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].map((status) => (
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Quản lý yêu cầu thuê</h1>
+            <p className="text-gray-600">Theo dõi và xác nhận các yêu cầu thuê sản phẩm từ khách hàng</p>
+          </div>
+          <div className="flex space-x-2">
             <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === status
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              onClick={() => fetchSubOrders()}
+              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
             >
-              {status === 'ALL' ? 'Tất cả' : 
-               status === 'PENDING_OWNER_CONFIRMATION' ? 'Chờ xác nhận' :
-               status === 'OWNER_CONFIRMED' ? 'Đã xác nhận' : 'Đã từ chối'}
+              🔄 Reload
             </button>
-          ))}
+          </div>
         </div>
+
+        {/* Filter Card */}
+        <div className="bg-white rounded-lg shadow-md mb-6">
+          <div className="border-b border-gray-200">
+            <div className="px-6 py-4">
+              <h2 className="text-xl font-semibold text-blue-600">
+                Yêu cầu thuê sản phẩm ({(subOrders || []).length})
+              </h2>
+            </div>
+          </div>
+          
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-gray-700">Lọc theo trạng thái:</span>
+              <div className="flex space-x-2">
+                {['ALL', 'PENDING_OWNER_CONFIRMATION', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setFilter(status)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      filter === status
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {status === 'ALL' ? 'Tất cả' : 
+                     status === 'PENDING_OWNER_CONFIRMATION' ? 'Chờ xác nhận' :
+                     status === 'OWNER_CONFIRMED' ? 'Đã xác nhận' : 'Đã từ chối'}
+                  </button>
+                ))}
+              </div>
+              <div className="text-sm text-gray-600 ml-auto">
+                {(subOrders || []).length} yêu cầu
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {!Array.isArray(subOrders) || subOrders.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="text-gray-400 text-6xl mb-4">📦</div>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">
+              Không có yêu cầu thuê nào
+            </h3>
+            <p className="text-gray-500">
+              {filter === 'ALL' 
+                ? 'Chưa có ai yêu cầu thuê sản phẩm của bạn'
+                : `Không có yêu cầu thuê nào ở trạng thái "${filter}"`
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn chính</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người thuê</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {subOrders.map((s) => (
+                  <tr key={s._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{s.subOrderNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.masterOrder?.masterOrderNumber}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.masterOrder?.renter?.profile?.firstName || ''} {s.masterOrder?.renter?.profile?.lastName || ''} </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{(s.products || []).length}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {s.rentalPeriod?.startDate && s.rentalPeriod?.endDate ? (
+                        <span>{new Date(s.rentalPeriod.startDate).toLocaleDateString('vi-VN')} → {new Date(s.rentalPeriod.endDate).toLocaleDateString('vi-VN')}</span>
+                      ) : (
+                        <span className="text-sm text-blue-600">Nhiều thời gian</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600">{formatCurrency(((s.pricing?.subtotalRental || 0) + (s.pricing?.subtotalDeposit || 0) + (s.pricing?.shippingFee || 0)))}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(s.status)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center space-x-2">
+                        <button onClick={() => setSelectedSubOrder(s)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Chi tiết</button>
+                        {s.status === 'OWNER_CONFIRMED' && (
+                          <button onClick={() => { setSelectedContractId(s.contract?._id || s.contract || `contract-${s.masterOrder?._id || ''}`); setShowContractSigning(true); }} className="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600">Ký HĐ</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Selected sub-order detail */}
+            {selectedSubOrder && (
+              <div className="mt-6">
+                <SubOrderCard 
+                  subOrder={selectedSubOrder}
+                  onConfirmItem={handleConfirmProductItem}
+                  onRejectItem={handleRejectProductItem}
+                  onGenerateContract={handleGenerateContract}
+                  getStatusBadge={getStatusBadge}
+                  setSelectedContractId={setSelectedContractId}
+                  setShowContractSigning={setShowContractSigning}
+                  refreshSubOrderData={refreshSubOrderData}
+                />
+                <div className="flex justify-end mt-3">
+                  <button onClick={() => setSelectedSubOrder(null)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Đóng</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Contract Signing Modal */}
+        {showContractSigning && (
+          <ContractSigningModal
+            contractId={selectedContractId}
+            onSign={handleSignContract}
+            onClose={() => {
+              setShowContractSigning(false);
+              setSelectedContractId(null);
+            }}
+          />
+        )}
       </div>
-
-      {!Array.isArray(subOrders) || subOrders.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">📦</div>
-          <h3 className="text-xl font-medium text-gray-900 mb-2">
-            Không có yêu cầu thuê nào
-          </h3>
-          <p className="text-gray-500">
-            {filter === 'ALL' 
-              ? 'Chưa có ai yêu cầu thuê sản phẩm của bạn'
-              : `Không có yêu cầu thuê nào ở trạng thái "${filter}"`
-            }
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {Array.isArray(subOrders) && subOrders.map((subOrder) => (
-            <SubOrderCard 
-              key={subOrder._id}
-              subOrder={subOrder}
-              onConfirm={handleConfirmSubOrder}
-              onReject={handleRejectSubOrder}
-              onGenerateContract={handleGenerateContract}
-              getStatusBadge={getStatusBadge}
-              setSelectedContractId={setSelectedContractId}
-              setShowContractSigning={setShowContractSigning}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Contract Signing Modal */}
-      {showContractSigning && (
-        <ContractSigningModal
-          contractId={selectedContractId}
-          onSign={handleSignContract}
-          onClose={() => {
-            setShowContractSigning(false);
-            setSelectedContractId(null);
-          }}
-        />
-      )}
     </div>
   );
 };
 
 const SubOrderCard = ({ 
   subOrder, 
-  onConfirm, 
-  onReject, 
+  onConfirmItem, 
+  onRejectItem, 
   onGenerateContract, 
   getStatusBadge,
   setSelectedContractId,
-  setShowContractSigning
+  setShowContractSigning,
+  refreshSubOrderData
 }) => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [selectedItemIndex, setSelectedItemIndex] = useState(null);
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [showBulkRejectModal, setShowBulkRejectModal] = useState(false);
+  const [bulkRejectReason, setBulkRejectReason] = useState('');
 
   const handleReject = () => {
-    if (rejectReason.trim()) {
-      onReject(subOrder._id, rejectReason);
+    if (rejectReason.trim() && selectedItemIndex !== null) {
+      onRejectItem(subOrder._id, selectedItemIndex, rejectReason);
       setShowRejectModal(false);
       setRejectReason('');
+      setSelectedItemIndex(null);
     }
   };
+
+  // Handle checkbox toggle
+  const handleItemSelect = (itemIndex, isChecked) => {
+    const newSelected = new Set(selectedItems);
+    if (isChecked) {
+      newSelected.add(itemIndex);
+    } else {
+      newSelected.delete(itemIndex);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  // Handle select all checkbox
+  const handleSelectAll = (isChecked) => {
+    if (isChecked) {
+      const pendingItems = new Set();
+      (subOrder.products || []).forEach((item, index) => {
+        if (item.confirmationStatus === 'PENDING') {
+          pendingItems.add(index);
+        }
+      });
+      setSelectedItems(pendingItems);
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  // Handle bulk confirm
+  const handleBulkConfirm = async () => {
+    try {
+      const itemCount = selectedItems.size;
+      
+      // Disable các hàm refresh tạm thời để tránh multiple calls
+      for (const itemIndex of selectedItems) {
+        // Gọi API trực tiếp
+        await ownerProductApi.confirmProductItem(subOrder._id, itemIndex);
+      }
+      
+      setSelectedItems(new Set());
+      toast.success(`Đã xác nhận ${itemCount} sản phẩm`);
+      
+      // Refresh data một lần sau khi hoàn thành tất cả
+      if (refreshSubOrderData) {
+        await refreshSubOrderData(subOrder._id);
+      }
+    } catch (error) {
+      console.error('Lỗi bulk confirm:', error);
+      toast.error('Có lỗi khi xác nhận sản phẩm');
+    }
+  };
+
+  // Handle bulk reject
+  const handleBulkReject = async () => {
+    if (bulkRejectReason.trim()) {
+      try {
+        const itemCount = selectedItems.size;
+        
+        // Disable các hàm refresh tạm thời để tránh multiple calls
+        for (const itemIndex of selectedItems) {
+          // Gọi API trực tiếp
+          await ownerProductApi.rejectProductItem(subOrder._id, itemIndex, bulkRejectReason);
+        }
+        
+        setSelectedItems(new Set());
+        setShowBulkRejectModal(false);
+        setBulkRejectReason('');
+        toast.success(`Đã từ chối ${itemCount} sản phẩm`);
+        
+        // Refresh data một lần sau khi hoàn thành tất cả
+        if (refreshSubOrderData) {
+          await refreshSubOrderData(subOrder._id);
+        }
+      } catch (error) {
+        console.error('Lỗi bulk reject:', error);
+        toast.error('Có lỗi khi từ chối sản phẩm');
+      }
+    }
+  };
+
+  // Get pending items count
+  const pendingItems = (subOrder.products || []).filter(item => item.confirmationStatus === 'PENDING');
+  const allPendingSelected = pendingItems.length > 0 && pendingItems.every((_, index) => {
+    const actualIndex = (subOrder.products || []).findIndex(p => p.confirmationStatus === 'PENDING' && p === pendingItems[index]);
+    return selectedItems.has(actualIndex);
+  });
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString('vi-VN', {
@@ -264,81 +545,256 @@ const SubOrderCard = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Mã đơn: {subOrder.subOrderNumber}
-          </h3>
-          <p className="text-sm text-gray-600">
-            Đơn chính: {subOrder.masterOrder?.masterOrderNumber}
-          </p>
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold">Yêu cầu thuê #{subOrder.subOrderNumber}</h3>
+            <p className="text-sm text-gray-600">
+              Đơn chính: {subOrder.masterOrder?.masterOrderNumber}
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            {getStatusBadge(subOrder.status)}
+          </div>
         </div>
-        {getStatusBadge(subOrder.status)}
-      </div>
 
-      {/* Thông tin người thuê */}
-      <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-        <h4 className="font-medium text-gray-900 mb-2">Thông tin người thuê</h4>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Tên:</span>{' '}
-            <span className="font-medium">{subOrder.masterOrder?.renter?.profile?.firstName}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 text-blue-600">👤</div>
+            <div>
+              <p className="text-sm text-gray-600">Người thuê</p>
+              <p className="font-medium">{subOrder.masterOrder?.renter?.profile?.firstName} {subOrder.masterOrder?.renter?.profile?.lastName}</p>
+              <p className="text-xs text-gray-500">{subOrder.masterOrder?.renter?.phone}</p>
+            </div>
           </div>
-          <div>
-            <span className="text-gray-600">SĐT:</span>{' '}
-            <span className="font-medium">{subOrder.masterOrder?.renter?.phone}</span>
+
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 text-green-600">📅</div>
+            <div>
+              <p className="text-sm text-gray-600">Thời gian thuê</p>
+              {subOrder.rentalPeriod?.startDate && subOrder.rentalPeriod?.endDate ? (
+                <>
+                  <p className="font-medium">
+                    {Math.ceil((new Date(subOrder.rentalPeriod.endDate) - new Date(subOrder.rentalPeriod.startDate)) / (1000 * 60 * 60 * 24))} ngày
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatDate(subOrder.rentalPeriod.startDate)} - {formatDate(subOrder.rentalPeriod.endDate)}
+                  </p>
+                </>
+              ) : (
+                <p className="font-medium text-blue-600">Nhiều thời gian khác nhau</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 text-orange-600">📦</div>
+            <div>
+              <p className="text-sm text-gray-600">Số sản phẩm</p>
+              <p className="font-medium">{(subOrder.products || []).length} sản phẩm</p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <div className="w-5 h-5 text-purple-600">💰</div>
+            <div>
+              <p className="text-sm text-gray-600">Tổng tiền</p>
+              <p className="font-medium text-green-600">
+                {formatCurrency(
+                  (subOrder.pricing?.subtotalRental || 0) + 
+                  (subOrder.pricing?.subtotalDeposit || 0) + 
+                  (subOrder.pricing?.shippingFee || 0)
+                )}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Thời gian thuê */}
       <div className="mb-4">
         <h4 className="font-medium text-gray-900 mb-2">Thời gian thuê</h4>
-        <div className="flex items-center space-x-4 text-sm">
-          <div>
-            <span className="text-gray-600">Từ:</span>{' '}
-            <span className="font-medium">{formatDate(subOrder.rentalPeriod.startDate)}</span>
+        {subOrder.rentalPeriod?.startDate && subOrder.rentalPeriod?.endDate ? (
+          <div className="flex items-center space-x-4 text-sm">
+            <div>
+              <span className="text-gray-600">Từ:</span>{' '}
+              <span className="font-medium">{formatDate(subOrder.rentalPeriod.startDate)}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Đến:</span>{' '}
+              <span className="font-medium">{formatDate(subOrder.rentalPeriod.endDate)}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Số ngày:</span>{' '}
+              <span className="font-medium">
+                {Math.ceil((new Date(subOrder.rentalPeriod.endDate) - new Date(subOrder.rentalPeriod.startDate)) / (1000 * 60 * 60 * 24))} ngày
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-gray-600">Đến:</span>{' '}
-            <span className="font-medium">{formatDate(subOrder.rentalPeriod.endDate)}</span>
-          </div>
-          <div>
-            <span className="text-gray-600">Số ngày:</span>{' '}
-            <span className="font-medium">
-              {Math.ceil((new Date(subOrder.rentalPeriod.endDate) - new Date(subOrder.rentalPeriod.startDate)) / (1000 * 60 * 60 * 24))} ngày
-            </span>
-          </div>
-        </div>
+        ) : (
+          <p className="text-sm text-blue-600 font-medium">Mỗi sản phẩm có thời gian thuê riêng (xem chi tiết bên dưới)</p>
+        )}
       </div>
 
       {/* Danh sách sản phẩm */}
       <div className="mb-4">
-        <h4 className="font-medium text-gray-900 mb-2">Sản phẩm thuê</h4>
-        <div className="space-y-2">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-medium text-gray-900">Sản phẩm thuê</h4>
+          {pendingItems.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`selectAll-${subOrder._id}`}
+                checked={allPendingSelected}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor={`selectAll-${subOrder._id}`} className="text-sm text-gray-700">
+                Chọn tất cả sản phẩm chờ xác nhận ({pendingItems.length})
+              </label>
+            </div>
+          )}
+        </div>
+        <div className="space-y-3">
           {(subOrder.products || []).map((item, index) => (
-            <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-              <div className="flex items-center space-x-3">
-                <img 
-                  src={item.product?.images?.[0].url} 
-                  alt={item.product?.name}
-                  className="w-12 h-12 object-cover rounded"
-                />
-                <div>
-                  <p className="font-medium">{item.product?.name}</p>
-                  <p className="text-sm text-gray-600">Số lượng: {item.product?.availability?.quantity}</p>
+            <div key={index} className="p-3 bg-gray-50 rounded border">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center space-x-3">
+                  {/* Checkbox chỉ hiển thị cho sản phẩm PENDING */}
+                  {item.confirmationStatus === 'PENDING' && (
+                    <input
+                      type="checkbox"
+                      id={`product-${subOrder._id}-${index}`}
+                      checked={selectedItems.has(index)}
+                      onChange={(e) => handleItemSelect(index, e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  )}
+                  <img 
+                    src={item.product?.images?.[0]?.url || '/placeholder.jpg'} 
+                    alt={item.product?.title}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                  <div>
+                    <p className="font-medium">{item.product?.title}</p>
+                    <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
+                    <p className="text-sm text-gray-600">
+                      Giá: {formatCurrency(item.rentalRate)}/ngày
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-blue-600">
+                    {formatCurrency(item.totalRental)}
+                  </p>
+                  <p className="text-xs text-gray-500">Tiền thuê</p>
+                  {item.totalDeposit > 0 && (
+                    <p className="text-sm text-orange-600">
+                      +{formatCurrency(item.totalDeposit)} cọc
+                    </p>
+                  )}
                 </div>
               </div>
-              <div className="text-right">
+              
+              {/* Hiển thị rental period riêng */}
+              {item.rentalPeriod && (
+                <div className="mt-2 p-2 bg-blue-100 rounded text-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-blue-700 font-medium">🗓️ Thời gian thuê:</span>
+                      <div className="text-blue-600 mt-1">
+                        {formatDate(item.rentalPeriod.startDate)} → {formatDate(item.rentalPeriod.endDate)}
+                      </div>
+                    </div>
+                    <span className="text-blue-700 font-medium">
+                      {item.rentalPeriod.duration?.value || Math.ceil((new Date(item.rentalPeriod.endDate) - new Date(item.rentalPeriod.startDate)) / (1000 * 60 * 60 * 24))} ngày
+                    </span>
+                  </div>
+                </div>
+              )}
 
-                <p className="text-sm text-gray-600">
-                  {formatCurrency(item.product?.pricing?.dailyRate)}/ngày
-                </p>
+              {/* Confirmation Status & Actions */}
+              <div className="mt-3 flex items-center justify-between">
+                <div>
+                  {item.confirmationStatus === 'PENDING' && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      ⏳ Chờ xác nhận
+                    </span>
+                  )}
+                  {item.confirmationStatus === 'CONFIRMED' && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      ✅ Đã xác nhận
+                    </span>
+                  )}
+                  {item.confirmationStatus === 'REJECTED' && (
+                    <div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        ❌ Đã từ chối
+                      </span>
+                      {item.rejectionReason && (
+                        <div className="text-xs text-red-600 mt-1">
+                          Lý do: {item.rejectionReason}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons cho từng item */}
+                {item.confirmationStatus === 'PENDING' && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => onConfirmItem(subOrder._id, index)}
+                      className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+                    >
+                      ✓ Xác nhận
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedItemIndex(index);
+                        setShowRejectModal(true);
+                      }}
+                      className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                    >
+                      ✗ Từ chối
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
+
+        {/* Action Bar - chỉ hiện khi có sản phẩm được chọn */}
+        {selectedItems.size > 0 && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-blue-700">
+                Đã chọn <span className="font-semibold">{selectedItems.size}</span> sản phẩm
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleBulkConfirm}
+                  className="px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  ✓ Xác nhận tất cả đã chọn
+                </button>
+                <button
+                  onClick={() => setShowBulkRejectModal(true)}
+                  className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  ✗ Từ chối tất cả đã chọn
+                </button>
+                <button
+                  onClick={() => setSelectedItems(new Set())}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Bỏ chọn
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tổng tiền */}
@@ -375,23 +831,22 @@ const SubOrderCard = ({
         </div>
       </div>
 
-      {/* Action buttons */}
-      {subOrder.status === 'PENDING_OWNER_CONFIRMATION' && (
-        <div className="flex space-x-4">
-          <button
-            onClick={() => onConfirm(subOrder._id)}
-            className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
-          >
-            ✅ Xác nhận thuê
-          </button>
-          <button
-            onClick={() => setShowRejectModal(true)}
-            className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
-          >
-            ❌ Từ chối
-          </button>
+      {/* Overall SubOrder Status */}
+      <div className="mt-4 p-3 bg-gray-50 rounded">
+        <div className="text-sm font-medium text-gray-700">
+          Trạng thái đơn hàng: {getStatusBadge(subOrder.status)}
         </div>
-      )}
+        {/* Show summary if there are mixed confirmation statuses */}
+        {subOrder.products && subOrder.products.length > 0 && (
+          <div className="mt-2 text-xs text-gray-600">
+            <div className="flex space-x-4">
+              <span>Đã xác nhận: {subOrder.products.filter(p => p.confirmationStatus === 'CONFIRMED').length}</span>
+              <span>Chờ xử lý: {subOrder.products.filter(p => p.confirmationStatus === 'PENDING').length}</span>
+              <span>Đã từ chối: {subOrder.products.filter(p => p.confirmationStatus === 'REJECTED').length}</span>
+            </div>
+          </div>
+        )}
+      </div>
 
       {subOrder.status === 'OWNER_CONFIRMED' && (
         <div className="flex justify-center">
@@ -410,10 +865,18 @@ const SubOrderCard = ({
       )}
 
       {/* Reject Modal */}
-      {showRejectModal && (
+      {showRejectModal && selectedItemIndex !== null && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Lý do từ chối</h3>
+            <h3 className="text-lg font-semibold mb-4">Từ chối sản phẩm</h3>
+            {subOrder.products[selectedItemIndex] && (
+              <div className="mb-4 p-3 bg-gray-50 rounded">
+                <div className="font-medium">{subOrder.products[selectedItemIndex].product?.name}</div>
+                <div className="text-sm text-gray-600">
+                  Số lượng: {subOrder.products[selectedItemIndex].quantity}
+                </div>
+              </div>
+            )}
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
@@ -438,6 +901,55 @@ const SubOrderCard = ({
           </div>
         </div>
       )}
+
+      {/* Bulk Reject Modal */}
+      {showBulkRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Từ chối các sản phẩm đã chọn</h3>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Bạn đang từ chối <span className="font-semibold">{selectedItems.size}</span> sản phẩm:
+              </p>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {Array.from(selectedItems).map(itemIndex => {
+                  const item = subOrder.products[itemIndex];
+                  return (
+                    <div key={itemIndex} className="text-sm p-2 bg-gray-50 rounded">
+                      {item?.product?.title} (x{item?.quantity})
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <textarea
+              value={bulkRejectReason}
+              onChange={(e) => setBulkRejectReason(e.target.value)}
+              placeholder="Nhập lý do từ chối chung cho tất cả sản phẩm đã chọn..."
+              className="w-full p-3 border rounded-lg resize-none h-24 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            />
+            <div className="flex space-x-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowBulkRejectModal(false);
+                  setBulkRejectReason('');
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleBulkReject}
+                disabled={!bulkRejectReason.trim()}
+                className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Từ chối {selectedItems.size} sản phẩm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 };

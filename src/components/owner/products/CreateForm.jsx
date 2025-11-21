@@ -7,6 +7,7 @@ import CategoryStep from "./steps/CategoryStep";
 import ImagesStep from "./steps/ImagesStep";
 import PricingStep from "./steps/PricingStep";
 import LocationStep from "./steps/LocationStep";
+import DeliveryStep from "./steps/DeliveryStep";
 import PromotionStep from "./steps/PromotionStep";
 import FormNavigation from "./steps/FormNavigation";
 
@@ -31,6 +32,7 @@ const CreateForm = () => {
     handlePrevious,
     handleStepClick,
     handleSubmit,
+    saveDraft,
     TOTAL_STEPS,
   } = useProductForm();
 
@@ -80,10 +82,20 @@ const CreateForm = () => {
             formData={formData}
             errors={errors}
             handleInputChange={handleInputChange}
+            onSaveDraft={saveDraft}
           />
         );
 
       case 6:
+        return (
+          <DeliveryStep
+            formData={formData}
+            errors={errors}
+            handleInputChange={handleInputChange}
+          />
+        );
+
+      case 7:
         return (
           <PromotionStep
             formData={formData}

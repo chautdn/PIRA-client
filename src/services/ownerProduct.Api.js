@@ -101,6 +101,66 @@ export const ownerProductApi = {
     }
   },
 
+  // GET /api/owner/products/:id/rental-status - Check rental status
+  checkRentalStatus: async (productId) => {
+    try {
+      const response = await api.get(
+        `/owner-products/${productId}/rental-status`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PUT /api/owner/products/:id/hide - Hide product
+  hideProduct: async (productId) => {
+    try {
+      const response = await api.put(`/owner-products/${productId}/hide`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PUT /api/owner/products/:id/unhide - Unhide product
+  unhideProduct: async (productId) => {
+    try {
+      const response = await api.put(`/owner-products/${productId}/unhide`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // DELETE /api/owner/products/:id/soft-delete - Soft delete product
+  softDeleteProduct: async (productId) => {
+    try {
+      const response = await api.delete(
+        `/owner-products/${productId}/soft-delete`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PUT /api/owner/products/:id/safe-update - Update safe fields only
+  updateProductSafeFields: async (productId, updateData) => {
+    try {
+      const response = await api.put(
+        `/owner-products/${productId}/safe-update`,
+        updateData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // === RENTAL ORDER MANAGEMENT ===
 
   // GET /api/rental-orders/owner-suborders - Get SubOrders for owner
@@ -146,6 +206,43 @@ export const ownerProductApi = {
       const response = await api.post(
         `/rental-orders/suborders/${subOrderId}/create-contract`,
         contractData
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // GET /api/owner-products/rental-requests - Get rental requests for owner
+  getRentalRequests: async (params) => {
+    try {
+      const response = await api.get("/owner-products/rental-requests", {
+        params,
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // POST /api/owner-products/rental-requests/:subOrderId/items/:itemIndex/confirm
+  confirmProductItem: async (subOrderId, itemIndex) => {
+    try {
+      const response = await api.post(
+        `/owner-products/rental-requests/${subOrderId}/items/${itemIndex}/confirm`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // POST /api/owner-products/rental-requests/:subOrderId/items/:itemIndex/reject
+  rejectProductItem: async (subOrderId, itemIndex, reason) => {
+    try {
+      const response = await api.post(
+        `/owner-products/rental-requests/${subOrderId}/items/${itemIndex}/reject`,
+        { reason }
       );
       return response.data;
     } catch (error) {

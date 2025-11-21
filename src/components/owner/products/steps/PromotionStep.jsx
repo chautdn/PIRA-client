@@ -452,6 +452,45 @@ const PromotionStep = ({
           </p>
         </div>
       )}
+
+      {/* Terms and Conditions Agreement */}
+      <div className="bg-gray-50 border-2 border-gray-300 rounded-2xl p-6 mt-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <icons.BiInfoCircle className="w-5 h-5 mr-2 text-gray-700" />
+          Điều Khoản và Điều Kiện
+        </h3>
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="agreedToTerms"
+            checked={formData.agreedToTerms || false}
+            onChange={(e) =>
+              handleInputChange({
+                target: {
+                  name: "agreedToTerms",
+                  value: e.target.checked,
+                },
+              })
+            }
+            className="mt-1 w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 cursor-pointer"
+          />
+          <label
+            htmlFor="agreedToTerms"
+            className="text-gray-700 leading-relaxed cursor-pointer"
+          >
+            Tôi đã đọc và đồng ý với{" "}
+            <a
+              href="/terms-and-conditions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:text-primary-700 font-semibold underline"
+            >
+              Điều Khoản và Điều Kiện
+            </a>{" "}
+            của PIRA khi đăng sản phẩm cho thuê trên nền tảng.
+          </label>
+        </div>
+      </div>
     </motion.div>
   );
 };

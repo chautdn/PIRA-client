@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useRentalOrder } from '../../context/RentalOrderContext';
 import { useAuth } from "../../hooks/useAuth";
-import { Calendar, MapPin, Truck, CreditCard, Clock } from 'lucide-react';
+import { Calendar, MapPin, Truck, CreditCard, Clock, Package } from 'lucide-react';
 import MapSelector from '../common/MapSelector';
 import PaymentMethodSelector from '../common/PaymentMethodSelector';
 import { toast } from '../common/Toast';
@@ -164,7 +164,7 @@ const RentalOrderForm = () => {
     };
   };
 
-  // Calculate shipping for all owners
+  // Calculate shipping using delivery batch system
   const handleCalculateShipping = async () => {
     if (orderData.deliveryMethod === 'PICKUP') {
       setTotalShipping(0);
@@ -175,8 +175,13 @@ const RentalOrderForm = () => {
     const hasMapLocation = orderData.deliveryAddress.latitude && orderData.deliveryAddress.longitude;
     const hasManualAddress = !!orderData.deliveryAddress.streetAddress;
     
-    if ((!hasMapLocation && !hasManualAddress) || !orderData.deliveryAddress.contactPhone) {
-      alert('Vui lòng chọn địa chỉ trên bản đồ hoặc nhập địa chỉ thủ công, và số điện thoại trước khi tính phí ship');
+    if (!orderData.deliveryAddress.contactPhone) {
+      alert('Vui lòng nhập số điện thoại liên hệ trước khi tính phí ship');
+      return;
+    }
+    
+    if (!hasMapLocation && !hasManualAddress) {
+      alert('Vui lòng chọn địa chỉ trên bản đồ hoặc nhập địa chỉ thủ công trước khi tính phí ship');
       return;
     }
 
@@ -185,60 +190,118 @@ const RentalOrderForm = () => {
 
     for (const [ownerId, group] of Object.entries(groupedProducts)) {
       try {
-        const ownerAddress = {
-          streetAddress: group.owner.address?.streetAddress || '',
-          ward: group.owner.address?.ward || '',
-          district: group.owner.address?.district || '',
-          city: group.owner.address?.city || '',
-
+        const ownerLocation = {
+          latitude: group.owner.address?.coordinates?.latitude || null,
+          longitude: group.owner.address?.coordinates?.longitude || null
         };
 
-        const deliveryAddress = {
-          streetAddress: orderData.deliveryAddress.streetAddress,
-          ward: orderData.deliveryAddress.ward || '',
-          district: orderData.deliveryAddress.district || '',
-          city: orderData.deliveryAddress.city || 'Hồ Chí Minh',
-          province: orderData.deliveryAddress.province || 'Hồ Chí Minh'
+        const userLocation = {
+          latitude: orderData.deliveryAddress.latitude || null,
+          longitude: orderData.deliveryAddress.longitude || null
         };
 
-        // Debug log
-        console.log('Owner Address:', ownerAddress);
-        console.log('Delivery Address:', deliveryAddress);
-
-        const shippingData = {
-          ownerAddress,
-          deliveryAddress
-        };
-
-        // Validate addresses have minimum required fields
-        if (!ownerAddress.streetAddress) {
-          throw new Error(`Chủ cho thuê ${group.owner.profile?.firstName || 'này'} chưa cập nhật địa chỉ`);
+        // Kiểm tra tọa độ - nếu không có thì dùng phí mặc định
+        const hasOwnerCoords = ownerLocation.latitude && ownerLocation.longitude;
+        const hasUserCoords = userLocation.latitude && userLocation.longitude;
+        
+        if (!hasOwnerCoords) {
+          console.warn(`⚠️ Chủ cho thuê ${group.owner.profile?.firstName || group.owner.profile?.fullName || 'này'} chưa cập nhật tọa độ địa chỉ`);
+          toast(`⚠️ Chủ cho thuê ${group.owner.profile?.firstName || group.owner.profile?.fullName || 'này'} chưa cập nhật tọa độ. Sử dụng phí ship mặc định 50.000đ`, { duration: 4000 });
+          
+          // Sử dụng phí ship mặc định khi không có tọa độ
+          const defaultShippingFee = 50000;
+          
+          setGroupedProducts(prev => ({
+            ...prev,
+            [ownerId]: {
+              ...prev[ownerId],
+              shippingFee: defaultShippingFee,
+              deliveryInfo: {
+                deliveryCount: 1,
+                distance: 'Chưa xác định',
+                deliveryBatches: [{
+                  deliveryDate: new Date().toISOString().split('T')[0],
+                  deliveryBatch: 1,
+                  batchSize: group.products.length,
+                  batchQuantity: group.products.reduce((sum, p) => sum + p.quantity, 0),
+                  deliveryFee: defaultShippingFee
+                }],
+                summary: {
+                  totalProducts: group.products.length,
+                  totalQuantity: group.products.reduce((sum, p) => sum + p.quantity, 0),
+                  totalDeliveries: 1,
+                  averageFeePerDelivery: defaultShippingFee,
+                  note: 'Phí ship mặc định - chủ chưa cập nhật tọa độ'
+                }
+              }
+            }
+          }));
+          
+          continue; // Bỏ qua owner này và tiếp tục với owner khác
+        }
+        
+        if (!hasUserCoords) {
+          throw new Error('Vui lòng chọn địa chỉ giao hàng trên bản đồ để có tọa độ chính xác');
         }
 
-        const shipping = await calculateShipping(shippingData);
-        console.log('Shipping response:', shipping);
+        // Prepare products with rental periods for delivery batch calculation
+        const products = group.products.map(item => ({
+          product: item.product._id,
+          quantity: item.quantity,
+          rentalPeriod: {
+            startDate: item.rental?.startDate || orderData.rentalPeriod.startDate,
+            endDate: item.rental?.endDate || orderData.rentalPeriod.endDate
+          }
+        }));
+
+        const shippingData = {
+          subOrderId: `temp-${ownerId}`, // Temporary ID for calculation
+          ownerLocation,
+          userLocation,
+          products
+        };
+
+        console.log(`🚚 Tính phí ship cho chủ ${group.owner.profile?.firstName || group.owner.profile?.fullName}:`);
+        console.log('- Products:', products.length, 'items');
+        console.log('- Owner location:', ownerLocation);
+        console.log('- User location:', userLocation);
+        console.log('- Has coordinates: Owner=' + hasOwnerCoords + ', User=' + hasUserCoords);
+
+        // Use the new product shipping calculation API
+        const shippingResponse = await rentalOrderContext.calculateProductShipping(shippingData);
+        console.log('Delivery batch shipping response:', shippingResponse);
         
-        // Handle multiple possible response structures
-        let shippingFee = 15000; // default fallback
+        let shippingFee = 20000; // default fallback
+        let deliveryInfo = null;
         
-        if (shipping?.fee?.calculatedFee) {
-          shippingFee = shipping.fee.calculatedFee;
-        } else if (shipping?.calculatedFee) {
-          shippingFee = shipping.calculatedFee;
-        } else if (shipping?.breakdown?.total) {
-          shippingFee = shipping.breakdown.total;
-        } else if (typeof shipping === 'number') {
-          shippingFee = shipping;
+        if (shippingResponse?.metadata?.shipping) {
+          const shipping = shippingResponse.metadata.shipping;
+          shippingFee = shipping.totalShippingFee || shipping.shipping?.totalShippingFee || 20000;
+          
+          // Store delivery batch information
+          deliveryInfo = {
+            deliveryCount: shipping.deliveryCount || shipping.shipping?.deliveryCount || 1,
+            deliveryBatches: shipping.deliveryBatches || shipping.shipping?.deliveryBatches || [],
+            distance: shipping.distance || shipping.shipping?.distance,
+            summary: shipping.summary || shipping.shipping?.summary
+          };
         }
         
         updatedGroups[ownerId].shippingFee = shippingFee;
+        updatedGroups[ownerId].deliveryInfo = deliveryInfo;
         total += shippingFee;
       } catch (error) {
         const ownerName = group.owner?.profile?.fullName || 'Không rõ';
-        console.error(`Lỗi tính phí ship cho chủ ${ownerName}:`, error);
+        console.error(`❌ Lỗi tính phí ship cho chủ ${ownerName}:`, error);
+        toast.error(`Lỗi tính phí ship cho chủ ${ownerName}: ${error.message}`);
         // Fallback: phí cố định
-        updatedGroups[ownerId].shippingFee = 15000;
-        total += 15000;
+        updatedGroups[ownerId].shippingFee = 20000;
+        updatedGroups[ownerId].deliveryInfo = {
+          deliveryCount: 1,
+          deliveryBatches: [],
+          error: error.message
+        };
+        total += 20000;
       }
     }
 
@@ -537,7 +600,7 @@ const RentalOrderForm = () => {
                     
                     {/* Products in this group */}  
                     <div className="space-y-4 mb-4">
-                      {group.products.map(item => {
+                      {group.products.map((item, itemIndex) => {
                         // Calculate individual item rental duration
                         let itemDuration = 1;
                         let itemStartDate = null;
@@ -551,7 +614,7 @@ const RentalOrderForm = () => {
                         }
                         
                         return (
-                          <div key={item.product._id} className="bg-gray-50 rounded-lg p-4">
+                          <div key={`${ownerId}-${item.product._id}-${itemIndex}`} className="bg-gray-50 rounded-lg p-4">
                             <div className="flex items-start space-x-4">
                               <img 
                                 src={item.product.images?.[0].url || '/placeholder.jpg'} 
@@ -607,6 +670,95 @@ const RentalOrderForm = () => {
                         );
                       })}
                     </div>
+                    
+                    {/* Delivery Batch Shipping Information */}
+                    {orderData.deliveryMethod === 'DELIVERY' && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <h4 className="font-medium text-blue-800 mb-2">🚚 Thông tin vận chuyển</h4>
+                        
+                        {/* Total Shipping Cost */}
+                        <div className="mb-3 p-2 bg-white rounded border">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-700 font-medium">Tổng phí vận chuyển:</span>
+                            <span className="font-bold text-blue-700 text-lg">
+                              {(group.shippingFee || 0).toLocaleString('vi-VN')}đ
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Delivery Batch Details */}
+                        {group.deliveryInfo ? (
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                              <div>
+                                <span className="text-gray-600">Số lần giao:</span>
+                                <span className="ml-2 font-semibold text-green-700">
+                                  {group.deliveryInfo.deliveryCount || 1} lần
+                                </span>
+                              </div>
+                              {group.deliveryInfo.distance && (
+                                <div>
+                                  <span className="text-gray-600">Khoảng cách:</span>
+                                  <span className="ml-2 text-gray-800">
+                                    {group.deliveryInfo.distance.km || group.deliveryInfo.distance}km
+                                  </span>
+                                </div>
+                              )}
+                              {group.deliveryInfo.summary && (
+                                <div>
+                                  <span className="text-gray-600">Trung bình/lần:</span>
+                                  <span className="ml-2 text-gray-800">
+                                    {Math.round((group.shippingFee || 0) / (group.deliveryInfo.deliveryCount || 1)).toLocaleString('vi-VN')}đ
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Delivery Batches Breakdown */}
+                            {group.deliveryInfo.deliveryBatches && group.deliveryInfo.deliveryBatches.length > 0 && (
+                              <div className="mt-3 border-t pt-2">
+                                <div className="text-xs text-gray-600 mb-2 flex items-center">
+                                  <Package className="w-3 h-3 mr-1" />
+                                  Chi tiết giao hàng theo ngày:
+                                </div>
+                                <div className="space-y-1 max-h-24 overflow-y-auto">
+                                  {group.deliveryInfo.deliveryBatches.map((batch, index) => (
+                                    <div key={index} className="text-xs bg-white p-2 rounded border">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-gray-700">
+                                          Ngày {new Date(batch.deliveryDate).toLocaleDateString('vi-VN')}
+                                        </span>
+                                        <span className="font-medium text-blue-600">
+                                          {batch.deliveryFee?.toLocaleString('vi-VN')}đ
+                                        </span>
+                                      </div>
+                                      <div className="text-gray-500 mt-1">
+                                        {batch.batchSize || batch.products?.length || 0} sản phẩm, 
+                                        {batch.batchQuantity || 0} món
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Error Display */}
+                            {group.deliveryInfo.error && (
+                              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+                                ⚠️ {group.deliveryInfo.error}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          // Fallback display when no delivery info
+                          <div className="text-sm text-gray-600">
+                            <div className="flex items-center">
+                              <span>💡 Nhấn "Tính phí ship" để xem chi tiết giao hàng theo ngày</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -640,7 +792,16 @@ const RentalOrderForm = () => {
   />
   <span>Nhận trực tiếp (Miễn phí)</span>
 </label>
-
+<label className="flex items-center space-x-3 cursor-pointer">
+  <input
+    type="radio"
+    value="OWNER_DELIVERY"
+    checked={orderData.deliveryMethod === 'OWNER_DELIVERY'}
+    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
+    className="w-4 h-4 text-blue-500"
+  />
+  <span>Chủ của sản phẩm vận chuyển (Phí ship phụ thuộc vào chủ)</span>
+</label>
 <label className="flex items-center space-x-3 cursor-pointer">
   <input
     type="radio"
@@ -653,6 +814,27 @@ const RentalOrderForm = () => {
 </label>
               </div>
             </div>
+
+            {orderData.deliveryMethod === 'OWNER_DELIVERY' && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-6 flex items-center">
+                  <MapPin className="w-5 h-5 mr-2" />
+                  Địa chỉ giao hàng
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Địa chỉ chi tiết</label>
+                    <MapSelector
+                      onLocationSelect={handleAddressSelect}
+                      initialAddress={orderData.deliveryAddress.streetAddress}
+                      placeholder="Chọn địa chỉ trên bản đồ..."
+                      className={errors.streetAddress ? 'border-red-500' : ''}
+                    />
+                    {errors.streetAddress && <p className="text-red-500 text-sm mt-1">{errors.streetAddress}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Delivery Address */}
             {orderData.deliveryMethod === 'DELIVERY' && (

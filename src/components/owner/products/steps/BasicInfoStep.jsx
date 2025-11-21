@@ -115,6 +115,35 @@ const BasicInfoStep = ({ formData, errors, handleInputChange }) => {
           <p className="text-sm text-red-600 mt-1">{errors.condition}</p>
         )}
       </div>
+
+      {/* Quantity */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Số Lượng Sản Phẩm <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <input
+            type="number"
+            name="quantity"
+            value={formData.quantity}
+            onChange={handleInputChange}
+            min="1"
+            placeholder="Nhập số lượng sản phẩm có sẵn"
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all ${
+              errors.quantity
+                ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                : "border-gray-200 focus:border-primary-500 focus:ring-primary-200"
+            }`}
+          />
+        </div>
+        {errors.quantity && (
+          <p className="text-sm text-red-600 mt-1">{errors.quantity}</p>
+        )}
+        <p className="text-xs text-gray-500 mt-1 flex items-center">
+          <icons.BiInfoCircle className="w-3 h-3 mr-1" />
+          Số lượng sản phẩm giống nhau mà bạn có thể cho thuê cùng lúc
+        </p>
+      </div>
     </motion.div>
   );
 };

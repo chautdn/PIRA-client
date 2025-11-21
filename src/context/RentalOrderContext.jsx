@@ -420,6 +420,24 @@ export const RentalOrderProvider = ({ children }) => {
     }
   };
 
+  const calculateProductShipping = async (shippingData) => {
+    dispatch({ type: RENTAL_ORDER_ACTIONS.CALCULATE_SHIPPING_START });
+    try {
+      const response = await rentalOrderService.calculateProductShipping(shippingData);
+      dispatch({ 
+        type: RENTAL_ORDER_ACTIONS.CALCULATE_SHIPPING_SUCCESS, 
+        payload: response.metadata 
+      });
+      return response;
+    } catch (error) {
+      dispatch({ 
+        type: RENTAL_ORDER_ACTIONS.CALCULATE_SHIPPING_ERROR, 
+        payload: error.message 
+      });
+      throw error;
+    }
+  };
+
   const clearError = () => {
     dispatch({ type: RENTAL_ORDER_ACTIONS.CLEAR_ERROR });
   };
@@ -446,6 +464,7 @@ export const RentalOrderProvider = ({ children }) => {
     loadOrderDetail,
     loadContracts,
     calculateShipping,
+    calculateProductShipping,
     clearError
   };
 

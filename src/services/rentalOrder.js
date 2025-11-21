@@ -217,6 +217,36 @@ class RentalOrderService {
       );
     }
   }
+
+  // Tính phí ship chi tiết cho từng product
+  async calculateProductShipping(shippingData) {
+    try {
+      const response = await api.post(
+        "/rental-orders/calculate-product-shipping",
+        shippingData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể tính phí ship cho sản phẩm"
+      );
+    }
+  }
+
+  // Cập nhật phí ship cho SubOrder
+  async updateSubOrderShipping(subOrderId, shippingData) {
+    try {
+      const response = await api.put(
+        `/rental-orders/suborders/${subOrderId}/shipping`,
+        shippingData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể cập nhật phí ship"
+      );
+    }
+  }
 }
 
 export default new RentalOrderService();
