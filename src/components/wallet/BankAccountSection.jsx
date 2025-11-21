@@ -102,63 +102,134 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
     );
   }
 
+  // Get status display
+  const getStatusDisplay = () => {
+    const status = bankAccount?.status?.toUpperCase() || 'PENDING';
+    
+    switch (status) {
+      case 'VERIFIED':
+        return {
+          text: 'Đã xác minh',
+          color: 'text-green-700',
+          bgColor: 'bg-green-100',
+          borderColor: 'border-green-300',
+          icon: '✅'
+        };
+      case 'REJECTED':
+        return {
+          text: 'Bị từ chối',
+          color: 'text-red-700',
+          bgColor: 'bg-red-100',
+          borderColor: 'border-red-300',
+          icon: '❌'
+        };
+      default:
+        return {
+          text: 'Chờ xác minh',
+          color: 'text-yellow-700',
+          bgColor: 'bg-yellow-100',
+          borderColor: 'border-yellow-300',
+          icon: '⏳'
+        };
+    }
+  };
+
+  const statusDisplay = getStatusDisplay();
+
   // Show existing bank account
   return (
     <div className="space-y-6">
       {/* Bank Account Card */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 shadow-sm">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-blue-500 rounded-lg">
-              <Building2 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {bankAccount.bankName}
-              </h3>
-              <p className="text-sm text-gray-600">{bankAccount.bankCode}</p>
+      <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+        {/* Header with Bank Info */}
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl shadow-lg">
+                <Building2 className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-1">
+                  {bankAccount.bankName}
+                </h3>
+                <p className="text-blue-100 text-sm font-medium">{bankAccount.bankCode}</p>
+              </div>
             </div>
           </div>
-          {bankAccount.isVerified && (
-            <div className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-              <CheckCircle className="w-4 h-4" />
-              <span>Đã xác minh</span>
+        </div>
+
+        {/* Account Details */}
+        <div className="p-6 space-y-4">
+          {/* Status Badge */}
+          <div className="flex items-center justify-between pb-4 border-b-2 border-gray-100">
+            <span className="text-sm font-medium text-gray-600">Trạng thái</span>
+            <div className={`flex items-center gap-2 px-4 py-2 ${statusDisplay.bgColor} ${statusDisplay.borderColor} border-2 rounded-lg`}>
+              <span className="text-lg">{statusDisplay.icon}</span>
+              <span className={`font-bold text-sm ${statusDisplay.color}`}>
+                {statusDisplay.text}
+              </span>
+            </div>
+          </div>
+
+          {/* Account Number */}
+          <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-xl border border-gray-200">
+            <p className="text-xs text-gray-600 mb-1 font-medium">Số tài khoản</p>
+            <p className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
+              {bankAccount.accountNumber}
+            </p>
+          </div>
+
+          {/* Account Holder */}
+          <div className="bg-gradient-to-r from-gray-50 to-purple-50 p-4 rounded-xl border border-gray-200">
+            <p className="text-xs text-gray-600 mb-1 font-medium">Chủ tài khoản</p>
+            <p className="text-lg font-bold text-gray-900">
+              {bankAccount.accountHolderName}
+            </p>
+          </div>
+
+          {/* Metadata Row */}
+          <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <span>📅</span>
+              <span>Đã thêm: {new Date(bankAccount.addedAt).toLocaleDateString("vi-VN")}</span>
+            </div>
+            {bankAccount.verifiedAt && (
+              <div className="flex items-center gap-1 text-green-600">
+                <span>✓</span>
+                <span>Xác minh: {new Date(bankAccount.verifiedAt).toLocaleDateString("vi-VN")}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Rejection Info */}
+          {bankAccount.status === 'REJECTED' && bankAccount.rejectionReason && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+              <p className="text-sm font-semibold text-red-800 mb-1">Lý do từ chối:</p>
+              <p className="text-sm text-red-700">{bankAccount.rejectionReason}</p>
+            </div>
+          )}
+
+          {/* Admin Note */}
+          {bankAccount.status === 'VERIFIED' && bankAccount.adminNote && (
+            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+              <p className="text-sm font-semibold text-green-800 mb-1">Ghi chú từ Admin:</p>
+              <p className="text-sm text-green-700">{bankAccount.adminNote}</p>
             </div>
           )}
         </div>
 
-        <div className="space-y-3 mb-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Số tài khoản</p>
-            <p className="text-xl font-mono font-bold text-gray-900">
-              {bankAccount.accountNumber}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Chủ tài khoản</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {bankAccount.accountHolderName}
-            </p>
-          </div>
-        </div>
-
-        <div className="text-xs text-gray-500 mb-4">
-          Đã thêm vào:{" "}
-          {new Date(bankAccount.addedAt).toLocaleDateString("vi-VN")}
-        </div>
-
         {/* Action Buttons */}
-        <div className="flex space-x-3 pt-4 border-t border-blue-200">
+        <div className="px-6 pb-6 flex gap-3">
           <button
             onClick={() => setIsEditing(true)}
-            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-white text-blue-600 border-2 border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
           >
             <Edit2 className="w-4 h-4" />
             <span>Chỉnh sửa</span>
           </button>
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-white text-red-600 border-2 border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-red-600 border-2 border-red-300 font-semibold rounded-xl hover:bg-red-50 shadow-md transition-all duration-200"
           >
             <Trash2 className="w-4 h-4" />
             <span>Xóa</span>
@@ -167,12 +238,16 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
       </div>
 
       {/* Important Note */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-sm text-yellow-800">
-          <strong>⚠️ Lưu ý quan trọng:</strong> Tài khoản ngân hàng này sẽ được
-          sử dụng để rút tiền. Vui lòng đảm bảo thông tin chính xác để tránh trì
-          hoãn trong quá trình xử lý.
-        </p>
+      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-5 shadow-md">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">⚠️</span>
+          <div>
+            <p className="font-bold text-yellow-900 mb-1">Lưu ý quan trọng</p>
+            <p className="text-sm text-yellow-800">
+              Tài khoản ngân hàng này sẽ được sử dụng để rút tiền. Vui lòng đảm bảo thông tin chính xác để tránh trì hoãn trong quá trình xử lý.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}

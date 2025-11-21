@@ -46,6 +46,8 @@ import OrderManagement from "./pages/admin/OrderManagement";
 import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
 import ReportManagement from "./pages/admin/ReportManagement";
 import AdminReportDetail from "./pages/admin/AdminReportDetail";
+import BankManagement from "./pages/admin/BankManagement";
+import AdminBankDetail from "./pages/admin/AdminBankDetail";
 import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
@@ -306,6 +308,14 @@ export default function App() {
                   <Route
                     path="reports/:reportId"
                     element={<AdminReportDetail />} 
+                  />
+                  <Route
+                    path="bank-accounts"
+                    element={<BankManagement />}
+                  />
+                  <Route
+                    path="bank-accounts/:userId"
+                    element={<AdminBankDetail />}
                   />
                   <Route
                     path="settings"

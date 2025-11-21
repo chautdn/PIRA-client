@@ -634,6 +634,92 @@ class AdminService {
       throw error;
     }
   }
+
+  // ========== BANK ACCOUNT VERIFICATION ==========
+  async getAllBankAccounts(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await api.get(`/admin/bank-accounts?${queryParams.toString()}`);
+      
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error fetching bank accounts:', error);
+      throw error;
+    }
+  }
+
+  async getBankAccountById(userId) {
+    try {
+      const response = await api.get(`/admin/bank-accounts/${userId}`);
+      
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error fetching bank account detail:', error);
+      throw error;
+    }
+  }
+
+  async verifyBankAccount(userId, adminNote) {
+    try {
+      const response = await api.patch(`/admin/bank-accounts/${userId}/verify`, {
+        adminNote
+      });
+      
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error verifying bank account:', error);
+      throw error;
+    }
+  }
+
+  async rejectBankAccount(userId, rejectionReason) {
+    try {
+      const response = await api.patch(`/admin/bank-accounts/${userId}/reject`, {
+        rejectionReason
+      });
+      
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error rejecting bank account:', error);
+      throw error;
+    }
+  }
+
+  async updateBankAccountStatus(userId, status, note) {
+    try {
+      const response = await api.patch(`/admin/bank-accounts/${userId}/status`, {
+        status,
+        note
+      });
+      
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error updating bank account status:', error);
+      throw error;
+    }
+  }
 }
 
 // Create and export admin service instance

@@ -48,6 +48,11 @@ const AdminLayout = () => {
       icon: '🚨'
     },
     {
+      name: 'Xác minh Ngân hàng',
+      path: '/admin/bank-accounts',
+      icon: '🏦'
+    },
+    {
       name: 'Báo cáo & Thống kê',
       path: '/admin/analytics',
       icon: '📈'
