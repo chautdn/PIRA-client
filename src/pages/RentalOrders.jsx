@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
+import { useCart } from '../context/CartContext';
 import { toast } from '../components/common/Toast';
 import { useAuth } from "../hooks/useAuth";
 import { useTranslation } from 'react-i18next';
@@ -29,8 +30,11 @@ const RentalOrdersPage = () => {
     myOrders, 
     isLoadingOrders, 
     pagination,
-    loadMyOrders
+    loadMyOrders,
+    renterCancelSubOrder
   } = useRentalOrder();
+
+  const { addToCart } = useCart();
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -298,6 +302,27 @@ const RentalOrdersPage = () => {
                         <button onClick={() => handleViewDetail(order)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Xem</button>
                         {order.status === 'READY_FOR_CONTRACT' && (
                           <button onClick={() => navigate('/rental-orders/contracts')} className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ký HĐ</button>
+                        )}
+                        {/* Button Hủy đơn cho renter nếu có subOrder OWNER_CONFIRMED và chưa ký HĐ/CANCELLED */}
+                        {user?.role === 'RENTER' && order.subOrders?.some(so => so.status === 'OWNER_CONFIRMED') && order.status !== 'CONTRACT_SIGNED' && order.status !== 'CANCELLED' && (
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm('Bạn có chắc muốn hủy đơn này? Sản phẩm sẽ được trả về giỏ hàng.')) return;
+                              for (const so of order.subOrders) {
+                                if (so.status === 'OWNER_CONFIRMED') {
+                                  await renterCancelSubOrder(so._id);
+                                  if (so.products && so.products.length > 0) {
+                                    for (const productItem of so.products) {
+                                      await addToCart(productItem.product, productItem.quantity, productItem.rental);
+                                    }
+                                  }
+                                }
+                              }
+                              await loadMyOrders();
+                              toast.success('Đã hủy đơn và trả sản phẩm về giỏ hàng');
+                            }}
+                            className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                          >Hủy đơn</button>
                         )}
                       </div>
                     </td>

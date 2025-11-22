@@ -90,6 +90,10 @@ const RENTAL_ORDER_ACTIONS = {
   CANCEL_ORDER_START: 'CANCEL_ORDER_START',
   CANCEL_ORDER_SUCCESS: 'CANCEL_ORDER_SUCCESS',
   CANCEL_ORDER_ERROR: 'CANCEL_ORDER_ERROR',
+
+    CANCEL_SUBORDER_START: 'CANCEL_SUBORDER_START',
+    CANCEL_SUBORDER_SUCCESS: 'CANCEL_SUBORDER_SUCCESS',
+    CANCEL_SUBORDER_ERROR: 'CANCEL_SUBORDER_ERROR',
   
   // Clear Error
   CLEAR_ERROR: 'CLEAR_ERROR'
@@ -453,6 +457,22 @@ export const RentalOrderProvider = ({ children }) => {
     }
   };
 
+    // Người thuê hủy SubOrder (sau khi chủ đã xác nhận)
+    const renterCancelSubOrder = async (subOrderId, reason = '') => {
+      try {
+        dispatch({ type: RENTAL_ORDER_ACTIONS.CANCEL_SUBORDER_START });
+        const response = await rentalOrderService.renterCancelSubOrder(subOrderId, reason);
+        if (response && response.metadata && response.metadata.subOrder && response.metadata.subOrder.masterOrder) {
+          await loadOrderDetail(response.metadata.subOrder.masterOrder);
+        }
+        dispatch({ type: RENTAL_ORDER_ACTIONS.CANCEL_SUBORDER_SUCCESS });
+        return response;
+      } catch (error) {
+        dispatch({ type: RENTAL_ORDER_ACTIONS.CANCEL_SUBORDER_ERROR, payload: error.message });
+        throw error;
+      }
+    };
+
   const confirmOwnerOrder = async (subOrderId, confirmationData = {}) => {
     try {
       dispatch({ type: RENTAL_ORDER_ACTIONS.CONFIRM_ORDER_START });
@@ -499,6 +519,7 @@ export const RentalOrderProvider = ({ children }) => {
     confirmOwnerOrder,
     rejectOwnerOrder,
     renterConfirmSubOrder,
+      renterCancelSubOrder,
     loadMyOrders,
     loadOwnerOrders,
     loadOrderDetail,

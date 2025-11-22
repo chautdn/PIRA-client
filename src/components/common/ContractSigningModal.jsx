@@ -14,8 +14,8 @@ const ContractSigningModal = ({ contractId, onSign, onClose }) => {
     try {
       await onSign(contractId, {
         signature: signature.trim(),
-        agreementConfirmed: true,
-        signedAt: new Date()
+        signedAt: new Date(),
+        terms_agreed: true
       });
       onClose();
     } catch (error) {

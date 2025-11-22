@@ -208,13 +208,50 @@ const RentalOrderDetailPage = () => {
               {getStatusText(currentOrder.status)}
             </span>
             
+            {/* Hành động: Chi tiết, Ký HĐ, Hủy đơn (renter) */}
+            <button
+              onClick={() => navigate(`/rental-orders/${id}`)}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+            >
+              <FileText className="w-5 h-5" />
+              <span>Chi tiết</span>
+            </button>
             {currentOrder.status === 'READY_FOR_CONTRACT' && isRenter && (
               <button
                 onClick={() => navigate('/rental-orders/contracts')}
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
+                className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 flex items-center space-x-2"
               >
                 <FileText className="w-5 h-5" />
-                <span>Ký hợp đồng</span>
+                <span>Ký HĐ</span>
+              </button>
+            )}
+            {/* Button Hủy đơn cho renter nếu có subOrder OWNER_CONFIRMED và chưa ký HĐ */}
+            {isRenter && currentOrder.subOrders?.some(so => so.status === 'OWNER_CONFIRMED') && currentOrder.status !== 'CONTRACT_SIGNED' && currentOrder.status !== 'CANCELLED' && (
+              <button
+                onClick={async () => {
+                  try {
+                    if (!window.confirm('Bạn có chắc muốn hủy đơn này? Sản phẩm sẽ được trả về giỏ hàng.')) return;
+                    for (const so of currentOrder.subOrders) {
+                      if (so.status === 'OWNER_CONFIRMED') {
+                        await renterCancelSubOrder(so._id);
+                        if (so.products && so.products.length > 0) {
+                          for (const productItem of so.products) {
+                            await addToCart(productItem.product, productItem.quantity, productItem.rental);
+                          }
+                        }
+                      }
+                    }
+                    await loadOrderDetail(id);
+                    alert('Đã hủy đơn và trả sản phẩm về giỏ hàng');
+                  } catch (err) {
+                    console.error('Renter cancel error', err);
+                    alert('Có lỗi khi hủy, vui lòng thử lại');
+                  }
+                }}
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 flex items-center space-x-2"
+              >
+                <XCircle className="w-5 h-5" />
+                <span>Hủy đơn</span>
               </button>
             )}
           </div>
@@ -420,25 +457,85 @@ const RentalOrderDetailPage = () => {
                                 </button>
                               </div>
                             )}
-                            {/* Renter confirm action shown to renter when master is PENDING_CONFIRMATION and owner already confirmed */}
-                            {isRenter && currentOrder.status === 'PENDING_CONFIRMATION' && subOrder.status === 'OWNER_CONFIRMED' && (
+                            {/* Renter actions: confirm and cancel allowed if subOrder.status is OWNER_CONFIRMED and master order is not CONTRACT_SIGNED or CANCELLED */}
+                            {isRenter && subOrder.status === 'OWNER_CONFIRMED' && currentOrder.status !== 'CONTRACT_SIGNED' && currentOrder.status !== 'CANCELLED' && (
                               <div className="flex items-center space-x-2">
+                                {/* Confirm button only if master is PENDING_CONFIRMATION */}
+                                {currentOrder.status === 'PENDING_CONFIRMATION' && (
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        if (!window.confirm('Bạn có chắc muốn xác nhận lựa chọn của chủ cho thuê cho sản phẩm này?')) return;
+                                        await renterConfirmSubOrder(subOrder._id);
+                                        await loadOrderDetail(id);
+                                        alert('Bạn đã xác nhận thành công');
+                                      } catch (err) {
+                                        console.error('Renter confirm error', err);
+                                        alert('Có lỗi khi xác nhận, vui lòng thử lại');
+                                      }
+                                    }}
+                                    className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center space-x-1"
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>Xác nhận (Người thuê)</span>
+                                  </button>
+                                )}
+                                {/* Cancel button always shown if not CONTRACT_SIGNED or CANCELLED */}
                                 <button
                                   onClick={async () => {
                                     try {
-                                      if (!window.confirm('Bạn có chắc muốn xác nhận lựa chọn của chủ cho thuê cho sản phẩm này?')) return;
-                                      await renterConfirmSubOrder(subOrder._id);
+                                      if (!window.confirm('Bạn có chắc muốn hủy đơn này? Sản phẩm sẽ được trả về giỏ hàng.')) return;
+                                      await renterCancelSubOrder(subOrder._id);
+                                      // Trả sản phẩm về cart
+                                      if (subOrder.products && subOrder.products.length > 0) {
+                                        for (const productItem of subOrder.products) {
+                                          await addToCart(productItem.product, productItem.quantity, productItem.rental);
+                                        }
+                                      }
                                       await loadOrderDetail(id);
-                                      alert('Bạn đã xác nhận thành công');
+                                      alert('Đã hủy đơn và trả sản phẩm về giỏ hàng');
                                     } catch (err) {
-                                      console.error('Renter confirm error', err);
-                                      alert('Có lỗi khi xác nhận, vui lòng thử lại');
+                                      console.error('Renter cancel error', err);
+                                      alert('Có lỗi khi hủy, vui lòng thử lại');
                                     }
                                   }}
-                                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center space-x-1"
+                                  className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 flex items-center space-x-1"
                                 >
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span>Xác nhận (Người thuê)</span>
+                                  <XCircle className="w-4 h-4" />
+                                  <span>Hủy đơn (Người thuê)</span>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Fallback: show cancel button in header if not visible in subOrder list */}
+                            {isRenter && currentOrder.subOrders?.some(so => so.status === 'OWNER_CONFIRMED') && currentOrder.status !== 'CONTRACT_SIGNED' && currentOrder.status !== 'CANCELLED' && (
+                              <div className="mt-4">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      if (!window.confirm('Bạn có chắc muốn hủy đơn này? Sản phẩm sẽ được trả về giỏ hàng.')) return;
+                                      // Hủy tất cả subOrder OWNER_CONFIRMED
+                                      for (const so of currentOrder.subOrders) {
+                                        if (so.status === 'OWNER_CONFIRMED') {
+                                          await renterCancelSubOrder(so._id);
+                                          if (so.products && so.products.length > 0) {
+                                            for (const productItem of so.products) {
+                                              await addToCart(productItem.product, productItem.quantity, productItem.rental);
+                                            }
+                                          }
+                                        }
+                                      }
+                                      await loadOrderDetail(id);
+                                      alert('Đã hủy đơn và trả sản phẩm về giỏ hàng');
+                                    } catch (err) {
+                                      console.error('Renter cancel error', err);
+                                      alert('Có lỗi khi hủy, vui lòng thử lại');
+                                    }
+                                  }}
+                                  className="bg-red-500 text-white px-4 py-2 rounded text-sm hover:bg-red-600 flex items-center space-x-1"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                  <span>Hủy đơn (Người thuê)</span>
                                 </button>
                               </div>
                             )}

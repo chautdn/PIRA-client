@@ -4,6 +4,20 @@ import api from "./api.js";
  * Service for Rental Order operations
  */
 class RentalOrderService {
+    // Người thuê hủy SubOrder (sau khi chủ đã xác nhận)
+    async renterCancelSubOrder(subOrderId, reason = '') {
+      try {
+        const response = await api.put(
+          `/rental-orders/sub-orders/${subOrderId}/renter-cancel`,
+          { reason }
+        );
+        return response.data;
+      } catch (error) {
+        throw new Error(
+          error.response?.data?.message || 'Không thể hủy SubOrder'
+        );
+      }
+    }
   // Bước 1: Tạo đơn thuê từ giỏ hàng
   async createDraftOrder(orderData) {
     try {
