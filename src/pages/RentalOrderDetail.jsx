@@ -420,8 +420,8 @@ const RentalOrderDetailPage = () => {
                                 </button>
                               </div>
                             )}
-                            {/* Renter confirm action shown to renter when owner already confirmed */}
-                            {isRenter && subOrder.status === 'OWNER_CONFIRMED' && (
+                            {/* Renter confirm action shown to renter when master is PENDING_CONFIRMATION and owner already confirmed */}
+                            {isRenter && currentOrder.status === 'PENDING_CONFIRMATION' && subOrder.status === 'OWNER_CONFIRMED' && (
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={async () => {
