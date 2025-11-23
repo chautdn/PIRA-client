@@ -187,16 +187,15 @@ class RentalOrderService {
     }
   }
 
-  // Bước 6: Ký hợp đồng
-  async signContract(contractId, signatureData) {
+  // Lấy chi tiết hợp đồng để ký
+  async getContractDetail(contractId) {
     try {
-      const response = await api.post(
-        `/rental-orders/contracts/${contractId}/sign`,
-        signatureData
-      );
+      const response = await api.get(`/rental-orders/contracts/${contractId}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || "Không thể ký hợp đồng");
+      throw new Error(
+        error.response?.data?.message || "Không thể lấy chi tiết hợp đồng"
+      );
     }
   }
 
@@ -303,6 +302,51 @@ class RentalOrderService {
     } catch (error) {
       throw new Error(
         error.response?.data?.message || "Không thể cập nhật phí ship"
+      );
+    }
+  }
+
+  // Early return - Gửi yêu cầu trả hàng sớm
+  async requestEarlyReturn(subOrderId, returnData) {
+    try {
+      const response = await api.post(
+        `/rental-orders/sub-orders/${subOrderId}/request-early-return`,
+        returnData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể gửi yêu cầu trả hàng"
+      );
+    }
+  }
+
+  // Early return - Chủ xác nhận yêu cầu trả hàng sớm
+  async approveEarlyReturn(subOrderId, approvalData) {
+    try {
+      const response = await api.post(
+        `/rental-orders/sub-orders/${subOrderId}/approve-early-return`,
+        approvalData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể xác nhận yêu cầu trả hàng"
+      );
+    }
+  }
+
+  // Early return - Người thuê xác nhận đã trả hàng
+  async confirmEarlyReturn(subOrderId, confirmData = {}) {
+    try {
+      const response = await api.post(
+        `/rental-orders/sub-orders/${subOrderId}/confirm-early-return`,
+        confirmData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể xác nhận trả hàng"
       );
     }
   }

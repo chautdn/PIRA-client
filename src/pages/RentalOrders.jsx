@@ -5,6 +5,8 @@ import { useCart } from '../context/CartContext';
 import { toast } from '../components/common/Toast';
 import { useAuth } from "../hooks/useAuth";
 import { useTranslation } from 'react-i18next';
+import ExtensionRequestModal from '../components/rental/ExtensionRequestModal';
+import ExtensionRequestsModal from '../components/rental/ExtensionRequestsModal';
 import {
   Package,
   Calendar,
@@ -40,6 +42,9 @@ const RentalOrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [selectedSubOrder, setSelectedSubOrder] = useState(null);
+  const [isOwnerView, setIsOwnerView] = useState(false);
 
   // Load orders on mount and status change
   useEffect(() => {
@@ -300,6 +305,36 @@ const RentalOrdersPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <button onClick={() => handleViewDetail(order)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Xem</button>
+                        {/* Extension Button - For ACTIVE SubOrders (Renter) */}
+                        {user?.role === 'RENTER' && order.status === 'ACTIVE' && order.subOrders?.some(so => so.status === 'ACTIVE') && (
+                          <button
+                            onClick={() => {
+                              const activeSubOrder = order.subOrders.find(so => so.status === 'ACTIVE');
+                              setSelectedSubOrder(activeSubOrder);
+                              setIsOwnerView(false);
+                              setShowExtensionModal(true);
+                            }}
+                            className="text-sm bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600"
+                            title="Gửi yêu cầu gia hạn"
+                          >
+                            ⏳ Gia hạn
+                          </button>
+                        )}
+                        {/* Extension Requests Button - For ACTIVE SubOrders (Owner) */}
+                        {user?.role === 'OWNER' && order.status === 'ACTIVE' && order.subOrders?.some(so => so.status === 'ACTIVE' && so.owner?._id?.toString() === user._id?.toString()) && (
+                          <button
+                            onClick={() => {
+                              const activeSubOrder = order.subOrders.find(so => so.status === 'ACTIVE' && so.owner?._id?.toString() === user._id?.toString());
+                              setSelectedSubOrder(activeSubOrder);
+                              setIsOwnerView(true);
+                              setShowExtensionModal(true);
+                            }}
+                            className="text-sm bg-teal-500 text-white px-3 py-1 rounded hover:bg-teal-600"
+                            title="Xem yêu cầu gia hạn"
+                          >
+                            📄 Yêu cầu gia hạn
+                          </button>
+                        )}
                         {order.status === 'READY_FOR_CONTRACT' && (
                           <button onClick={() => navigate('/rental-orders/contracts')} className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ký HĐ</button>
                         )}
@@ -307,10 +342,17 @@ const RentalOrdersPage = () => {
                         {user?.role === 'RENTER' && order.subOrders?.some(so => so.status === 'OWNER_CONFIRMED') && order.status !== 'CONTRACT_SIGNED' && order.status !== 'CANCELLED' && (
                           <button
                             onClick={async () => {
-                              if (!window.confirm('Bạn có chắc muốn hủy đơn này? Sản phẩm sẽ được trả về giỏ hàng.')) return;
+                              if (!window.confirm('Bạn có chắc muốn hủy đơn này? Sản phẩm sẽ được trả về giỏ hàng và hoàn tiền vào ví nếu có.')) return;
+                              let refundAmount = 0;
                               for (const so of order.subOrders) {
                                 if (so.status === 'OWNER_CONFIRMED') {
-                                  await renterCancelSubOrder(so._id);
+                                  // Gọi API hủy subOrder
+                                  const response = await renterCancelSubOrder(so._id);
+                                  // Nếu backend trả về thông tin hoàn tiền
+                                  if (response?.metadata?.subOrder?.refundAmount) {
+                                    refundAmount += response.metadata.subOrder.refundAmount;
+                                  }
+                                  // Trả sản phẩm về giỏ hàng bằng API addToCart
                                   if (so.products && so.products.length > 0) {
                                     for (const productItem of so.products) {
                                       await addToCart(productItem.product, productItem.quantity, productItem.rental);
@@ -319,7 +361,11 @@ const RentalOrdersPage = () => {
                                 }
                               }
                               await loadMyOrders();
-                              toast.success('Đã hủy đơn và trả sản phẩm về giỏ hàng');
+                              let msg = 'Đã hủy đơn và trả sản phẩm về giỏ hàng';
+                              if (refundAmount > 0) {
+                                msg += `. Hoàn lại ${refundAmount.toLocaleString('vi-VN')}đ vào ví.`;
+                              }
+                              toast.success(msg);
                             }}
                             className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                           >Hủy đơn</button>
@@ -623,6 +669,37 @@ const RentalOrdersPage = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Extension Request Modal - For Renter */}
+        {selectedSubOrder && !isOwnerView && (
+          <ExtensionRequestModal
+            isOpen={showExtensionModal}
+            onClose={() => {
+              setShowExtensionModal(false);
+              setSelectedSubOrder(null);
+            }}
+            subOrder={selectedSubOrder}
+            onSuccess={() => {
+              loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+              alert('Yêu cầu gia hạn đã được gửi cho chủ cho thuê');
+            }}
+          />
+        )}
+
+        {/* Extension Requests Modal - For Owner */}
+        {selectedSubOrder && isOwnerView && (
+          <ExtensionRequestsModal
+            isOpen={showExtensionModal}
+            onClose={() => {
+              setShowExtensionModal(false);
+              setSelectedSubOrder(null);
+            }}
+            subOrder={selectedSubOrder}
+            onSuccess={() => {
+              loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+            }}
+          />
         )}
       </div>
     </div>

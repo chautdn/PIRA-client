@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
 import { useAuth } from "../hooks/useAuth";
+import ExtensionRequestModal from '../components/rental/ExtensionRequestModal';
+import ExtensionRequestsModal from '../components/rental/ExtensionRequestsModal';
 import { 
   ArrowLeft,
   Package, 
@@ -17,7 +19,8 @@ import {
   XCircle,
   AlertCircle,
   Star,
-  MessageCircle
+  MessageCircle,
+  Clock as ClockIcon
 } from 'lucide-react';
 
 const RentalOrderDetailPage = () => {
@@ -36,6 +39,10 @@ const RentalOrderDetailPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [confirmAction, setConfirmAction] = useState(null); // 'confirm' or 'reject'
   const [rejectReason, setRejectReason] = useState('');
+  const [isExtensionRequestModalOpen, setIsExtensionRequestModalOpen] = useState(false);
+  const [isExtensionRequestsModalOpen, setIsExtensionRequestsModalOpen] = useState(false);
+  const [selectedSubOrder, setSelectedSubOrder] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
     if (id) {
@@ -236,11 +243,13 @@ const RentalOrderDetailPage = () => {
                         await renterCancelSubOrder(so._id);
                         if (so.products && so.products.length > 0) {
                           for (const productItem of so.products) {
-                            await addToCart(productItem.product, productItem.quantity, productItem.rental);
+                            const result = await addToCart(productItem.product, productItem.quantity, productItem.rental);
+                            console.log('Add to cart result:', result, productItem);
                           }
                         }
                       }
                     }
+                    await refreshCart();
                     await loadOrderDetail(id);
                     alert('Đã hủy đơn và trả sản phẩm về giỏ hàng');
                   } catch (err) {
@@ -252,6 +261,36 @@ const RentalOrderDetailPage = () => {
               >
                 <XCircle className="w-5 h-5" />
                 <span>Hủy đơn</span>
+              </button>
+            )}
+            
+            {/* Button Gia hạn thuê cho renter khi status ACTIVE */}
+            {isRenter && currentOrder.status === 'ACTIVE' && currentOrder.subOrders?.some(so => so.status === 'ACTIVE') && (
+              <button
+                onClick={() => {
+                  const activeSubOrder = currentOrder.subOrders.find(so => so.status === 'ACTIVE');
+                  setSelectedSubOrder(activeSubOrder);
+                  setIsExtensionRequestModalOpen(true);
+                }}
+                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
+              >
+                <ClockIcon className="w-5 h-5" />
+                <span>Gia hạn thuê</span>
+              </button>
+            )}
+            
+            {/* Button Xem yêu cầu gia hạn cho owner khi status ACTIVE */}
+            {!isRenter && currentOrder.status === 'ACTIVE' && currentOrder.subOrders?.some(so => so.status === 'ACTIVE') && (
+              <button
+                onClick={() => {
+                  const activeSubOrder = currentOrder.subOrders.find(so => so.status === 'ACTIVE');
+                  setSelectedSubOrder(activeSubOrder);
+                  setIsExtensionRequestsModalOpen(true);
+                }}
+                className="bg-teal-500 text-white px-6 py-2 rounded-lg hover:bg-teal-600 flex items-center space-x-2"
+              >
+                <FileText className="w-5 h-5" />
+                <span>Xem yêu cầu gia hạn</span>
               </button>
             )}
           </div>
@@ -489,9 +528,11 @@ const RentalOrderDetailPage = () => {
                                       // Trả sản phẩm về cart
                                       if (subOrder.products && subOrder.products.length > 0) {
                                         for (const productItem of subOrder.products) {
-                                          await addToCart(productItem.product, productItem.quantity, productItem.rental);
+                                          const result = await addToCart(productItem.product, productItem.quantity, productItem.rental);
+                                          console.log('Add to cart result:', result, productItem);
                                         }
                                       }
+                                      await refreshCart();
                                       await loadOrderDetail(id);
                                       alert('Đã hủy đơn và trả sản phẩm về giỏ hàng');
                                     } catch (err) {
@@ -812,6 +853,49 @@ const RentalOrderDetailPage = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Extension Request Modal - For Renter */}
+      {selectedSubOrder && (
+        <ExtensionRequestModal
+          isOpen={isExtensionRequestModalOpen}
+          onClose={() => {
+            setIsExtensionRequestModalOpen(false);
+            setSelectedSubOrder(null);
+          }}
+          subOrder={selectedSubOrder}
+          onSuccess={(result) => {
+            setSuccessMessage(result);
+            loadOrderDetail(id);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          }}
+        />
+      )}
+
+      {/* Extension Requests Modal - For Owner */}
+      {selectedSubOrder && (
+        <ExtensionRequestsModal
+          isOpen={isExtensionRequestsModalOpen}
+          onClose={() => {
+            setIsExtensionRequestsModalOpen(false);
+            setSelectedSubOrder(null);
+          }}
+          subOrder={selectedSubOrder}
+          onSuccess={(result) => {
+            setSuccessMessage(result);
+            loadOrderDetail(id);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          }}
+        />
+      )}
+
+      {/* Success Message Toast */}
+      {successMessage && (
+        <div className={`fixed bottom-4 right-4 p-4 rounded-lg text-white shadow-lg ${
+          successMessage.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`}>
+          {successMessage.message}
         </div>
       )}
     </div>

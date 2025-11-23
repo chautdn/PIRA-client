@@ -16,6 +16,10 @@ const OwnerRentalRequests = () => {
   const [showContractSigning, setShowContractSigning] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState(null);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnModalAction, setReturnModalAction] = useState('APPROVE'); // APPROVE | REJECT
+  const [returnModalNotes, setReturnModalNotes] = useState('');
+  const [returnModalSubOrderId, setReturnModalSubOrderId] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -186,6 +190,73 @@ const OwnerRentalRequests = () => {
     } catch (error) {
       console.error('Lỗi tạo hợp đồng:', error);
       toast.error('Không thể tạo hợp đồng');
+    }
+  };
+
+  // Owner: Approve or Reject early return request
+  const handleApproveReturnRequest = async (subOrderId, notes = '') => {
+    try {
+      const resp = await rentalOrderService.approveEarlyReturn(subOrderId, { status: 'APPROVED', notes });
+      toast.success('Đã chấp nhận yêu cầu trả hàng sớm');
+      await refreshSubOrderData(subOrderId);
+    } catch (error) {
+      console.error('Lỗi khi chấp nhận yêu cầu trả hàng:', error);
+      toast.error(error.message || 'Không thể chấp nhận yêu cầu trả hàng');
+    }
+  };
+
+  const handleRejectReturnRequest = async (subOrderId, rejectionReason = '') => {
+    try {
+      const resp = await rentalOrderService.approveEarlyReturn(subOrderId, { status: 'REJECTED', notes: rejectionReason });
+      toast.success('Đã từ chối yêu cầu trả hàng sớm');
+      await refreshSubOrderData(subOrderId);
+    } catch (error) {
+      console.error('Lỗi khi từ chối yêu cầu trả hàng:', error);
+      toast.error(error.message || 'Không thể từ chối yêu cầu trả hàng');
+    }
+  };
+
+  // Owner confirms that the item has been returned (finalize and trigger refund)
+  const handleOwnerConfirmReturned = async (subOrderId) => {
+    try {
+      const resp = await rentalOrderService.confirmEarlyReturn(subOrderId, { by: 'OWNER' });
+      toast.success('Đã xác nhận trả hàng — Hoàn tiền sẽ được xử lý');
+      await refreshSubOrderData(subOrderId);
+    } catch (error) {
+      console.error('Lỗi khi xác nhận trả hàng bởi chủ:', error);
+      toast.error(error.message || 'Không thể xác nhận trả hàng');
+    }
+  };
+
+  const openReturnModal = (subOrderId, action = 'APPROVE') => {
+    setReturnModalSubOrderId(subOrderId);
+    setReturnModalAction(action);
+    setReturnModalNotes('');
+    setShowReturnModal(true);
+  };
+
+  const closeReturnModal = () => {
+    setShowReturnModal(false);
+    setReturnModalSubOrderId(null);
+    setReturnModalNotes('');
+  };
+
+  const submitReturnDecision = async () => {
+    if (!returnModalSubOrderId) return;
+    if (returnModalAction === 'REJECT' && !returnModalNotes.trim()) {
+      toast.error('Vui lòng nhập lý do từ chối');
+      return;
+    }
+
+    try {
+      if (returnModalAction === 'APPROVE') {
+        await handleApproveReturnRequest(returnModalSubOrderId, returnModalNotes.trim());
+      } else {
+        await handleRejectReturnRequest(returnModalSubOrderId, returnModalNotes.trim());
+      }
+      closeReturnModal();
+    } catch (error) {
+      console.error('Lỗi submit quyết định trả hàng:', error);
     }
   };
 
@@ -372,6 +443,15 @@ const OwnerRentalRequests = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <button onClick={() => setSelectedSubOrder(s)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Chi tiết</button>
+                        {s.returnRequest && s.returnRequest.status === 'PENDING' && (
+                          <>
+                            <button onClick={() => openReturnModal(s._id, 'APPROVE')} className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Chấp nhận trả</button>
+                            <button onClick={() => openReturnModal(s._id, 'REJECT')} className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Từ chối trả</button>
+                          </>
+                        )}
+                        {s.returnRequest && s.returnRequest.status === 'APPROVED' && (
+                          <button onClick={() => handleOwnerConfirmReturned(s._id)} className="text-sm bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Xác nhận trả hàng</button>
+                        )}
                         {s.status === 'OWNER_CONFIRMED' && (
                           <button onClick={() => { setSelectedContractId(s.contract?._id || s.contract || `contract-${s.masterOrder?._id || ''}`); setShowContractSigning(true); }} className="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600">Ký HĐ</button>
                         )}
@@ -843,6 +923,25 @@ const SubOrderCard = ({
         )}
       </div>
 
+      {/* Return Request Details (if any) */}
+      {subOrder.returnRequest && (
+        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+          <h4 className="font-medium text-gray-900 mb-2">Yêu cầu trả hàng sớm</h4>
+          <div className="text-sm text-gray-700 space-y-1">
+            <div><strong>Trạng thái:</strong> {subOrder.returnRequest.status}</div>
+            <div><strong>Yêu cầu lúc:</strong> {subOrder.returnRequest.requestedAt ? new Date(subOrder.returnRequest.requestedAt).toLocaleString('vi-VN') : '—'}</div>
+            <div><strong>Lý do:</strong> {subOrder.returnRequest.reason || '—'}</div>
+            <div><strong>Phương thức:</strong> {subOrder.returnRequest.returnMethod || '—'}</div>
+            {subOrder.returnRequest.ownerApproval && (
+              <div><strong>Quyết định Chủ:</strong> {subOrder.returnRequest.ownerApproval.notes || subOrder.returnRequest.ownerApproval.approvedBy || '—'}</div>
+            )}
+            {subOrder.returnRequest.refundCalculation && (
+              <div><strong>Ước tính hoàn:</strong> {formatCurrency(subOrder.returnRequest.refundCalculation.refundAmount || 0)}</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {subOrder.status === 'OWNER_CONFIRMED' && (
         <div className="flex justify-center">
           <button
@@ -856,6 +955,35 @@ const SubOrderCard = ({
           >
             ✍️ Ký hợp đồng
           </button>
+        </div>
+      )}
+      {/* Return Decision Modal */}
+      {showReturnModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">{returnModalAction === 'APPROVE' ? 'Chấp nhận yêu cầu trả hàng' : 'Từ chối yêu cầu trả hàng'}</h3>
+            <p className="text-sm text-gray-600 mb-3">Vui lòng nhập ghi chú (tùy chọn) cho quyết định này:</p>
+            <textarea
+              value={returnModalNotes}
+              onChange={(e) => setReturnModalNotes(e.target.value)}
+              placeholder={returnModalAction === 'APPROVE' ? 'Ghi chú khi chấp nhận (ví dụ: hẹn ngày lấy)...' : 'Nhập lý do từ chối (bắt buộc)'}
+              className="w-full p-3 border rounded-lg resize-none h-28 focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex space-x-3 mt-4">
+              <button
+                onClick={closeReturnModal}
+                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={submitReturnDecision}
+                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                {returnModalAction === 'APPROVE' ? 'Chấp nhận' : 'Từ chối'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
