@@ -10,9 +10,12 @@ const ExtensionRequestsModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
   const [processStatus, setProcessStatus] = useState(null);
 
   useEffect(() => {
+    console.log('🔄 Modal state changed:', { isOpen, subOrderId: subOrder?._id });
     if (isOpen) {
+      console.log('📂 Modal opened, fetching requests...');
       fetchRequests();
     } else {
+      console.log('📂 Modal closed, clearing data');
       setRequests([]);
       setExpandedRequest(null);
       setRejectingRequest(null);
@@ -23,14 +26,39 @@ const ExtensionRequestsModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching requests for subOrder:', subOrder?._id);
+      
       const res = await extensionService.getOwnerExtensionRequests({ page: 1, limit: 50 });
-      const all = res.requests || [];
+      console.log('📋 Full API Response:', res);
+      
+      // API returns: { status: 'success', message: '...', metadata: { requests, pagination } }
+      const all = res?.metadata?.requests || res?.requests || [];
+      console.log('📦 All requests from API:', all);
+      
+      if (!subOrder) {
+        console.warn('⚠️ subOrder is null/undefined');
+        setRequests([]);
+        return;
+      }
+      
       // Filter requests for this subOrder
-      const filtered = all.filter(r => r.subOrder && (r.subOrder._id === subOrder._id || r.subOrder === subOrder._id));
+      const filtered = all.filter(r => {
+        const rSubOrderId = r.subOrder?._id || r.subOrder;
+        const match = rSubOrderId === subOrder._id;
+        console.log('🔎 Checking request:', { 
+          requestId: r._id, 
+          rSubOrderId,
+          targetSubOrderId: subOrder._id,
+          match
+        });
+        return match;
+      });
+      
+      console.log('✅ Filtered requests count:', filtered.length, 'Filtered data:', filtered);
       setRequests(filtered);
     } catch (err) {
-      console.error('Fetch owner extension requests error', err);
-      alert('Không thể lấy yêu cầu gia hạn');
+      console.error('❌ Fetch owner extension requests error:', err);
+      alert('Không thể lấy yêu cầu gia hạn: ' + (err.message || err.toString()));
     } finally {
       setLoading(false);
     }
@@ -90,7 +118,12 @@ const ExtensionRequestsModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
     );
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('🚫 Modal not open, not rendering');
+    return null;
+  }
+
+  console.log('✅ Modal rendering:', { isOpen, subOrderId: subOrder?._id, requestsCount: requests.length });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
