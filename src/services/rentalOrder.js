@@ -247,6 +247,60 @@ class RentalOrderService {
       );
     }
   }
+
+  // Calculate deposit for current cart
+  async calculateDeposit() {
+    try {
+      console.log("📤 Calculating deposit from cart...");
+      const response = await api.get("/rental-orders/calculate-deposit");
+      console.log("✅ Deposit calculation response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "❌ Deposit calculation error:",
+        error.response?.data || error.message
+      );
+      throw new Error(
+        error.response?.data?.message || "Không thể tính toán tiền cọc"
+      );
+    }
+  }
+
+  // Get product availability calendar
+  async getProductAvailabilityCalendar(productId, startDate, endDate) {
+    try {
+      console.log(
+        `📤 Getting availability calendar for product ${productId}...`
+      );
+      console.log(`📅 Date range: ${startDate} to ${endDate}`);
+
+      const response = await api.get(
+        `/rental-orders/products/${productId}/availability-calendar`,
+        {
+          params: { startDate, endDate },
+        }
+      );
+
+      console.log("✅ Availability calendar response:", response.data);
+      console.log("🔍 Response structure check:", {
+        status: response.data.status,
+        hasData: !!response.data.data,
+        hasMetadata: !!response.data.data?.metadata,
+        hasCalendar: !!response.data.data?.metadata?.calendar,
+        calendarLength: response.data.data?.metadata?.calendar?.length,
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error(
+        "❌ Availability calendar error:",
+        error.response?.data || error.message
+      );
+      throw new Error(
+        error.response?.data?.message || "Không thể lấy lịch availability"
+      );
+    }
+  }
 }
 
 export default new RentalOrderService();

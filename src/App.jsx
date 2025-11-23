@@ -31,6 +31,13 @@ import TopUpSuccess from "./pages/wallet/TopUpSuccess";
 import TopUpCancel from "./pages/wallet/TopUpCancel";
 import Withdrawals from "./pages/Withdrawals";
 
+// Payment result pages
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
+import PaymentCancelled from "./pages/payment/PaymentCancelled";
+import PaymentPending from "./pages/payment/PaymentPending";
+import PaymentError from "./pages/payment/PaymentError";
+import RentalPaymentReturn from "./pages/rental/RentalPaymentReturn";
+
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
 import ProductChatContainer from "./components/chat/ProductChatContainer";
@@ -208,6 +215,12 @@ export default function App() {
                 />
                 <Route path="/wallet/topup-cancel" element={<TopUpCancel />} />
                 <Route path="/withdrawals" element={<Withdrawals />} />
+
+                {/* Payment result routes */}
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/cancelled" element={<PaymentCancelled />} />
+                <Route path="/payment/pending" element={<PaymentPending />} />
+                <Route path="/payment/error" element={<PaymentError />} />
 
                 
                 {/* Rental Order routes */}

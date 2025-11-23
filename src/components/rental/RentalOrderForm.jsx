@@ -8,6 +8,7 @@ import MapSelector from '../common/MapSelector';
 import PaymentMethodSelector from '../common/PaymentMethodSelector';
 import { toast } from '../common/Toast';
 import paymentService from '../../services/payment';
+import rentalOrderService from '../../services/rentalOrder';
 
 const RentalOrderForm = () => {
   try {
@@ -57,6 +58,8 @@ const RentalOrderForm = () => {
   const [totalShipping, setTotalShipping] = useState(0);
   const [showPaymentSelector, setShowPaymentSelector] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositModalData, setDepositModalData] = useState(null);
 
   // Update contact info when user changes
   useEffect(() => {
@@ -478,12 +481,8 @@ const RentalOrderForm = () => {
           break;
           
         case 'COD':
-          // Cash on delivery - no immediate payment needed
-          paymentResult = { 
-            method: 'COD', 
-            status: 'PENDING',
-            message: 'Thanh toán khi nhận hàng' 
-          };
+          // COD requires mandatory deposit payment
+          paymentResult = await processCODWithDeposit(totals);
           break;
           
         default:
@@ -500,7 +499,13 @@ const RentalOrderForm = () => {
         paymentMethod: paymentMethod,
         totalAmount: totals.grandTotal,
         paymentTransactionId: paymentResult.transactionId,
-        paymentMessage: paymentResult.message
+        paymentMessage: paymentResult.message,
+        // COD specific fields
+        ...(paymentMethod === 'COD' && {
+          depositAmount: paymentResult.depositAmount,
+          depositPaymentMethod: paymentResult.depositPaymentMethod,
+          depositTransactionId: paymentResult.depositTransactionId
+        })
       };
 
       console.log('📤 Creating order after successful payment:', orderWithPayment);
@@ -508,6 +513,40 @@ const RentalOrderForm = () => {
       
       if (!paidOrder || !paidOrder._id) {
         throw new Error('Không nhận được thông tin đơn hàng hợp lệ từ server');
+      }
+
+      // Check if need to redirect to PayOS payment
+      if ((paymentMethod === 'PAYOS' || paymentMethod === 'BANK_TRANSFER') && 
+          paidOrder.paymentInfo?.paymentDetails?.paymentUrl) {
+        console.log('🔗 Redirecting to PayOS payment:', paidOrder.paymentInfo.paymentDetails.paymentUrl);
+        
+        // Save order info to sessionStorage for later use
+        sessionStorage.setItem('pendingPaymentOrder', JSON.stringify({
+          orderId: paidOrder._id,
+          orderNumber: paidOrder.masterOrderNumber,
+          orderCode: paidOrder.paymentInfo.orderCode
+        }));
+
+        // Redirect to PayOS payment page
+        window.location.href = paidOrder.paymentInfo.paymentDetails.paymentUrl;
+        return; // Stop execution here
+      }
+
+      // For COD with PayOS deposit
+      if (paymentMethod === 'COD' && 
+          paidOrder.paymentInfo?.paymentDetails?.depositPaymentUrl) {
+        console.log('🔗 Redirecting to PayOS deposit payment:', paidOrder.paymentInfo.paymentDetails.depositPaymentUrl);
+        
+        // Save order info to sessionStorage
+        sessionStorage.setItem('pendingPaymentOrder', JSON.stringify({
+          orderId: paidOrder._id,
+          orderNumber: paidOrder.masterOrderNumber,
+          orderCode: paidOrder.paymentInfo.paymentDetails.depositOrderCode
+        }));
+
+        // Redirect to PayOS payment page
+        window.location.href = paidOrder.paymentInfo.paymentDetails.depositPaymentUrl;
+        return; // Stop execution here
       }
       
       // Clear cart after successful payment and order creation
@@ -553,44 +592,176 @@ const RentalOrderForm = () => {
     }
   };
 
-  // Note: Wallet payment processing removed to avoid double deduction
-  // The wallet deduction is now handled directly in the order creation process
+  // Process COD with mandatory deposit payment
+  const processCODWithDeposit = async (totals) => {
+    try {
+      console.log('💵 Processing COD with mandatory deposit');
+      console.log('📊 Current totals:', totals);
+      
+      // Calculate total deposit from all items via backend API
+      const totalDeposit = await calculateTotalDeposit();
+      console.log('💰 Total deposit calculated:', {
+        amount: totalDeposit,
+        formatted: totalDeposit.toLocaleString('vi-VN') + 'đ',
+        isValid: totalDeposit > 0
+      });
+      
+      if (!totalDeposit || totalDeposit <= 0) {
+        console.error('❌ Invalid deposit amount:', totalDeposit);
+        throw new Error(`Không thể tính được tiền cọc cho đơn hàng này. Deposit calculated: ${totalDeposit}`);
+      }
+      
+      // Show deposit payment method selection
+      const depositPaymentMethod = await showDepositPaymentModal(totalDeposit, totals.grandTotal);
+      
+      if (!depositPaymentMethod) {
+        throw new Error('Cần chọn phương thức thanh toán cọc');
+      }
+      
+      // Process deposit payment
+      let depositResult;
+      if (depositPaymentMethod === 'WALLET') {
+        // Process wallet deposit payment (will be handled by backend)
+        depositResult = {
+          status: 'SUCCESS',
+          transactionId: `DEP_${Date.now()}`,
+          method: 'WALLET'
+        };
+      } else {
+        // Process PayOS deposit payment
+        depositResult = await processPayOSPayment(depositPaymentMethod, totalDeposit);
+      }
+      
+      if (depositResult.status !== 'SUCCESS') {
+        throw new Error('Thanh toán cọc thất bại: ' + (depositResult.message || 'Unknown error'));
+      }
+      
+      return {
+        method: 'COD',
+        status: 'SUCCESS',
+        depositAmount: totalDeposit,
+        depositPaymentMethod: depositPaymentMethod,
+        depositTransactionId: depositResult.transactionId,
+        message: `Đã thanh toán cọc ${totalDeposit.toLocaleString('vi-VN')}đ. Còn lại ${(totals.grandTotal - totalDeposit).toLocaleString('vi-VN')}đ thanh toán khi nhận hàng`
+      };
+      
+    } catch (error) {
+      console.error('❌ COD deposit payment error:', error);
+      return {
+        method: 'COD',
+        status: 'FAILED',
+        message: error.message || 'Lỗi thanh toán cọc'
+      };
+    }
+  };
+
+  // Calculate total deposit from backend API (accurate calculation)
+  const calculateTotalDeposit = async () => {
+    try {
+      console.log('💰 Fetching deposit calculation from backend...');
+      
+      // Use rentalOrderService instead of direct fetch
+      const result = await rentalOrderService.calculateDeposit();
+      console.log('💰 Deposit calculation result:', result);
+
+      if (result.success && result.metadata && typeof result.metadata.totalDeposit === 'number') {
+        return result.metadata.totalDeposit;
+      } else {
+        throw new Error('Invalid response format from deposit API');
+      }
+
+    } catch (error) {
+      console.error('❌ Error calculating deposit from API:', error);
+      
+      // Fallback to client-side calculation
+      console.log('🔄 Falling back to client-side deposit calculation');
+      const items = fromCart ? selectedItems : (directRentalData ? [directRentalData] : []);
+      
+      console.log('📋 Items for deposit calculation:', {
+        fromCart,
+        selectedItems: selectedItems?.length || 0,
+        directRentalData: !!directRentalData,
+        totalItems: items.length,
+        cartItems: cartItems?.length || 0
+      });
+
+      // If no items found, try to get from cartItems as last resort
+      const finalItems = items.length > 0 ? items : (cartItems || []);
+
+      if (finalItems.length === 0) {
+        console.error('❌ No items found for deposit calculation in any source');
+        throw new Error('Không có sản phẩm nào để tính tiền cọc');
+      }
+
+      const fallbackDeposit = finalItems.reduce((total, item) => {
+        const deposit = item.product?.pricing?.deposit?.amount || 
+                       item.product?.deposit || 
+                       item.depositRate || 
+                       0;
+        
+        console.log('💳 Item deposit:', {
+          productName: item.product?.title || item.product?.name,
+          quantity: item.quantity,
+          depositPerUnit: deposit,
+          itemTotal: deposit * item.quantity
+        });
+        
+        return total + (deposit * item.quantity);
+      }, 0);
+
+      console.log('💰 Fallback deposit total:', fallbackDeposit);
+      
+      // If still 0, provide a meaningful error
+      if (fallbackDeposit <= 0) {
+        console.error('❌ No deposit found in fallback calculation');
+        console.log('🔍 Debug info:', {
+          finalItems,
+          fromCart,
+          selectedItems,
+          directRentalData,
+          cartItems
+        });
+        // Return a small positive number to avoid blocking the flow
+        return 50000; // 50,000 VND as minimum deposit
+      }
+      
+      return fallbackDeposit;
+    }
+  };
+
+  // Show deposit payment method selection modal
+  const showDepositPaymentModal = (depositAmount, totalAmount) => {
+    return new Promise((resolve) => {
+      setShowDepositModal(true);
+      setDepositModalData({
+        depositAmount,
+        totalAmount,
+        onSelect: (method) => {
+          setShowDepositModal(false);
+          resolve(method);
+        },
+        onCancel: () => {
+          setShowDepositModal(false);
+          resolve(null);
+        }
+      });
+    });
+  };
 
   // Process PayOS payment with real API
   const processPayOSPayment = async (method, amount) => {
     try {
       console.log('🏦 Processing PayOS payment for amount:', amount);
       
-      const orderData = {
-        totalAmount: amount,
-        orderNumber: `ORD-${Date.now()}`,
-        description: 'Thanh toán đơn thuê qua PayOS'
-      };
-
-      const result = await paymentService.createOrderPaymentSession(orderData);
-      
-      // Open PayOS payment page in new window/tab
-      if (result.metadata?.checkoutUrl) {
-        window.open(result.metadata.checkoutUrl, '_blank');
-        
-        // For now, assume success (in real app, would wait for webhook)
-        const confirmed = window.confirm(
-          'Vui lòng hoàn tất thanh toán trên trang PayOS.\n\nNhấn OK khi đã thanh toán thành công, Cancel để hủy.'
-        );
-        
-        if (!confirmed) {
-          throw new Error('Người dùng đã hủy thanh toán');
-        }
-      }
-      
+      // This will be handled by createPaidOrder - just return pending status
+      // The actual PayOS payment link will be in the order response
       return {
         method: method,
-        status: 'SUCCESS',
-        transactionId: result.metadata?.transactionId,
-        orderCode: result.metadata?.orderCode,
-        message: 'Thanh toán PayOS thành công'
+        status: 'PENDING', // Changed from SUCCESS to PENDING
+        message: 'Đang tạo link thanh toán PayOS'
       };
     } catch (error) {
+      console.error('❌ PayOS payment error:', error);
       return {
         method: method,
         status: 'FAILED',
@@ -1284,6 +1455,16 @@ const RentalOrderForm = () => {
           onClose={() => setShowPaymentSelector(false)}
         />
       )}
+
+      {/* Deposit Payment Modal for COD */}
+      {showDepositModal && depositModalData && (
+        <DepositPaymentModal
+          depositAmount={depositModalData.depositAmount}
+          totalAmount={depositModalData.totalAmount}
+          onSelect={depositModalData.onSelect}
+          onCancel={depositModalData.onCancel}
+        />
+      )}
     </div>
   );
   } catch (error) {
@@ -1305,6 +1486,106 @@ const RentalOrderForm = () => {
       </div>
     );
   }
+};
+
+// Deposit Payment Modal Component for COD orders
+const DepositPaymentModal = ({ depositAmount, totalAmount, onSelect, onCancel }) => {
+  const [selectedMethod, setSelectedMethod] = useState('');
+  
+  const depositMethods = [
+    {
+      key: 'WALLET',
+      title: 'Ví điện tử',
+      description: 'Thanh toán cọc từ số dư ví',
+      icon: '💳'
+    },
+    {
+      key: 'PAYOS',
+      title: 'Chuyển khoản ngân hàng',
+      description: 'Thanh toán cọc qua PayOS (QR Code)',
+      icon: '🏦'
+    }
+  ];
+
+  const remainingAmount = totalAmount - depositAmount;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <h2 className="text-xl font-semibold mb-4">💵 Thanh toán cọc - COD</h2>
+        
+        {/* Amount breakdown */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="text-sm space-y-2">
+            <div className="flex justify-between">
+              <span>Tổng đơn hàng:</span>
+              <span className="font-medium">{totalAmount.toLocaleString('vi-VN')}đ</span>
+            </div>
+            <div className="flex justify-between text-orange-600">
+              <span>Cọc cần thanh toán:</span>
+              <span className="font-bold">{depositAmount.toLocaleString('vi-VN')}đ</span>
+            </div>
+            <div className="flex justify-between text-gray-600 border-t pt-2">
+              <span>Còn lại khi nhận hàng:</span>
+              <span>{remainingAmount.toLocaleString('vi-VN')}đ</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-4">
+          Chọn phương thức thanh toán cọc:
+        </p>
+        
+        <div className="space-y-3 mb-6">
+          {depositMethods.map((method) => (
+            <div
+              key={method.key}
+              className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                selectedMethod === method.key
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+              onClick={() => setSelectedMethod(method.key)}
+            >
+              <div className="flex items-start space-x-3">
+                <span className="text-2xl">{method.icon}</span>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="depositMethod"
+                      value={method.key}
+                      checked={selectedMethod === method.key}
+                      onChange={() => setSelectedMethod(method.key)}
+                      className="text-blue-500"
+                    />
+                    <h3 className="font-medium">{method.title}</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{method.description}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={() => selectedMethod && onSelect(selectedMethod)}
+            disabled={!selectedMethod}
+            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Thanh toán cọc
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default RentalOrderForm;

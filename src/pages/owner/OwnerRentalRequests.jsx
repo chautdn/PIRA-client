@@ -829,6 +829,33 @@ const SubOrderCard = ({
             )}</span>
           </div>
         </div>
+        
+        {/* COD Payment Status for Owner */}
+        {subOrder.masterOrder?.paymentMethod === 'COD' && (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="w-4 h-4 text-amber-600">💳</div>
+              <span className="font-medium text-amber-800">Thanh toán khi nhận hàng (COD)</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex justify-between">
+                <span>Đã thanh toán cọc:</span>
+                <span className="font-medium text-green-600">
+                  {formatCurrency(subOrder.pricing?.subtotalDeposit)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Khách còn phải trả:</span>
+                <span className="font-bold text-red-600">
+                  {formatCurrency((subOrder.pricing?.subtotalRental || 0) + (subOrder.pricing?.shippingFee || 0))}
+                </span>
+              </div>
+            </div>
+            <div className="mt-2 text-xs text-gray-600">
+              💡 Khách hàng sẽ thanh toán số tiền còn lại khi nhận hàng
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Overall SubOrder Status */}

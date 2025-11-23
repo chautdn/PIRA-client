@@ -7,6 +7,8 @@ import { useCart } from '../context/CartContext';
 import { cartApiService } from '../services/cartApi';
 import { useAuth } from '../hooks/useAuth'; // Added for authentication
 import { ROUTES } from '../utils/constants'; // Added for route constants
+import rentalOrderService from '../services/rentalOrder';
+
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -36,6 +38,10 @@ export default function ProductDetail() {
   const [menuOpen, setMenuOpen] = useState({});
   const [editingReview, setEditingReview] = useState({});
   const [editingResponse, setEditingResponse] = useState({});
+  const [availableQuantity, setAvailableQuantity] = useState(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [availabilityModalData, setAvailabilityModalData] = useState(null);
 
   // Check if current user is the product owner
   const isOwner = user && product?.owner?._id === user._id;
@@ -56,6 +62,11 @@ export default function ProductDetail() {
       }
     }
   }, [deliveryDate, returnDate]);
+
+  // Check availability when dates change
+  useEffect(() => {
+    checkAvailability();
+  }, [deliveryDate, returnDate, product?._id]);
 
   useEffect(() => {
     // fetch reviews when product loaded and reviews tab active
@@ -439,6 +450,50 @@ export default function ProductDetail() {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
+  const checkAvailability = async () => {
+    if (!product?._id || !deliveryDate || !returnDate) {
+      setAvailableQuantity(null);
+      return;
+    }
+
+    try {
+      setCheckingAvailability(true);
+      
+      const response = await rentalOrderService.getProductAvailabilityCalendar(
+        product._id,
+        deliveryDate,
+        returnDate
+      );
+
+      if (response.status === 'success' && response.data?.metadata?.calendar) {
+        const calendar = response.data.metadata.calendar;
+        
+        // Find minimum available quantity across the selected date range
+        let minAvailable = Infinity;
+        const startDate = new Date(deliveryDate);
+        const endDate = new Date(returnDate);
+        
+        for (let currentDate = new Date(startDate); currentDate < endDate; currentDate.setDate(currentDate.getDate() + 1)) {
+          const dateString = currentDate.toISOString().split('T')[0];
+          const dayInfo = calendar.find(day => day.date === dateString);
+          
+          if (dayInfo) {
+            minAvailable = Math.min(minAvailable, dayInfo.availableQuantity);
+          }
+        }
+        
+        setAvailableQuantity(minAvailable === Infinity ? 0 : minAvailable);
+      } else {
+        setAvailableQuantity(0);
+      }
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      setAvailableQuantity(0);
+    } finally {
+      setCheckingAvailability(false);
+    }
+  };
+
   const getRentalPrice = () => {
     if (!product?.pricing) return 0;
     return product.pricing.dailyRate || 0;
@@ -456,12 +511,83 @@ export default function ProductDetail() {
     }
 
     // Validation
-    const maxStock = product.availability?.quantity || 0;
     if (quantity < 1) {
       alert('⚠️ Số lượng phải lớn hơn 0');
       return;
     }
-    
+
+    // Real-time availability check trước khi add to cart
+    console.log('🔍 Checking real-time availability before adding to cart...');
+    try {
+      const availabilityResponse = await rentalOrderService.getProductAvailabilityCalendar(
+        product._id,
+        deliveryDate,
+        returnDate
+      );
+
+      if (availabilityResponse.status === 'success' && availabilityResponse.data?.metadata?.calendar) {
+        const calendar = availabilityResponse.data.metadata.calendar;
+        
+        // Find minimum available quantity in selected range
+        let minAvailable = Infinity;
+        const startDate = new Date(deliveryDate);
+        const endDate = new Date(returnDate);
+        
+        for (let currentDate = new Date(startDate); currentDate < endDate; currentDate.setDate(currentDate.getDate() + 1)) {
+          const dateString = currentDate.toISOString().split('T')[0];
+          const dayInfo = calendar.find(day => day.date === dateString);
+          
+          if (dayInfo) {
+            minAvailable = Math.min(minAvailable, dayInfo.availableQuantity);
+          }
+        }
+        
+        const currentAvailable = minAvailable === Infinity ? 0 : minAvailable;
+        
+        if (currentAvailable < quantity) {
+          // Tìm ngày có sẵn để gợi ý
+          const availableDates = calendar.filter(day => day.availableQuantity >= quantity);
+          
+          setAvailabilityModalData({
+            productName: product.title,
+            requested: quantity,
+            available: currentAvailable,
+            dateRange: `${new Date(deliveryDate).toLocaleDateString('vi-VN')} - ${new Date(returnDate).toLocaleDateString('vi-VN')}`,
+            unavailableDates: calendar
+              .filter(day => day.availableQuantity < quantity)
+              .map(day => ({
+                date: new Date(day.date).toLocaleDateString('vi-VN'),
+                available: day.availableQuantity,
+                requested: quantity
+              })),
+            suggestedDates: availableDates.slice(0, 5).map(day => ({
+              date: new Date(day.date).toLocaleDateString('vi-VN'),
+              available: day.availableQuantity,
+              rawDate: day.date
+            }))
+          });
+          setShowAvailabilityModal(true);
+          
+          // Cập nhật lại availability hiển thị
+          setAvailableQuantity(currentAvailable);
+          
+          // Tự động giảm quantity xuống available amount
+          if (currentAvailable > 0) {
+            setQuantity(Math.min(quantity, currentAvailable));
+          }
+          return;
+        }
+        
+        console.log(`✅ Real-time check passed: ${currentAvailable} available, requesting ${quantity}`);
+      }
+    } catch (error) {
+      console.error('Error checking real-time availability:', error);
+      alert('⚠️ Không thể kiểm tra tình trạng sản phẩm. Vui lòng thử lại sau.');
+      return;
+    }
+
+    // Fallback check with total stock
+    const maxStock = product.availability?.quantity || 0;
     if (quantity > maxStock) {
       alert(`⚠️ Số lượng không được vượt quá ${maxStock} cái`);
       return;
@@ -1280,6 +1406,36 @@ export default function ProductDetail() {
                     <div className="text-gray-500 mt-1">Tối thiểu 1 ngày thuê</div>
                   </div>
                 </div>
+
+                {/* Availability Info */}
+                {deliveryDate && returnDate && (
+                  <div className="mt-6">
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h5 className="font-semibold text-blue-800 mb-2">📊 Tình trạng sản phẩm</h5>
+                      {checkingAvailability ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          <span className="text-blue-600">Đang kiểm tra availability...</span>
+                        </div>
+                      ) : availableQuantity !== null ? (
+                        <div className="text-lg font-semibold">
+                          {availableQuantity > 0 ? (
+                            <span className="text-green-600">
+                              ✅ Còn lại: {availableQuantity} sản phẩm có sẵn
+                            </span>
+                          ) : (
+                            <span className="text-red-600">
+                              ❌ Hết hàng trong thời gian này
+                            </span>
+                          )}
+                        </div>
+                      ) : null}
+                      <div className="text-sm text-blue-600 mt-1">
+                        Từ {new Date(deliveryDate).toLocaleDateString('vi-VN')} đến {new Date(returnDate).toLocaleDateString('vi-VN')}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Quantity Selector */}
@@ -1298,23 +1454,43 @@ export default function ProductDetail() {
                   </div>
                   <button
                     onClick={() => {
-                      const maxStock = product.availability?.quantity || 0;
+                      const maxStock = deliveryDate && returnDate && availableQuantity !== null 
+                        ? availableQuantity 
+                        : (product.availability?.quantity || 0);
                       if (quantity < maxStock) {
                         setQuantity(quantity + 1);
                       }
                     }}
-                    disabled={quantity >= (product.availability?.quantity || 0)}
+                    disabled={(() => {
+                      const maxStock = deliveryDate && returnDate && availableQuantity !== null 
+                        ? availableQuantity 
+                        : (product.availability?.quantity || 0);
+                      return quantity >= maxStock;
+                    })()}
                     className="w-12 h-12 rounded-lg bg-white hover:bg-gray-100 flex items-center justify-center font-bold text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
                 </div>
                 <div className="mt-2 text-sm text-gray-600 text-center">
-                  Có sẵn: {product.availability?.quantity || 0} cái
-                  {quantity >= (product.availability?.quantity || 0) && (
-                    <div className="text-orange-600 text-xs mt-1">
-                      ⚠️ Đã đạt số lượng tối đa
-                    </div>
+                  {deliveryDate && returnDate && availableQuantity !== null ? (
+                    <>
+                      Có sẵn trong thời gian đã chọn: {availableQuantity} cái
+                      {quantity >= availableQuantity && (
+                        <div className="text-orange-600 text-xs mt-1">
+                          ⚠️ Đã đạt số lượng tối đa có sẵn
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      Có sẵn: {product.availability?.quantity || 0} cái
+                      {quantity >= (product.availability?.quantity || 0) && (
+                        <div className="text-orange-600 text-xs mt-1">
+                          ⚠️ Đã đạt số lượng tối đa
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -1656,6 +1832,125 @@ export default function ProductDetail() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Availability Warning Modal */}
+      {showAvailabilityModal && availabilityModalData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl"
+          >
+            {/* Header */}
+            <div className="bg-red-50 border-b border-red-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 text-xl">⚠️</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-red-800">Không đủ sản phẩm</h3>
+                    <p className="text-sm text-red-600">Sản phẩm không còn đủ số lượng trong thời gian đã chọn</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAvailabilityModal(false)}
+                  className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center transition-colors"
+                >
+                  <span className="text-red-600 font-bold">×</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-4 max-h-96 overflow-y-auto">
+              <div className="border border-red-200 rounded-xl p-4 bg-red-50 mb-4">
+                <h4 className="font-semibold text-red-800 mb-2">{availabilityModalData.productName}</h4>
+                <div className="text-sm text-red-700 mb-2">
+                  <span className="font-medium">Thời gian thuê:</span> {availabilityModalData.dateRange}
+                </div>
+                <div className="text-sm text-red-700 mb-3">
+                  <span className="font-medium">Yêu cầu:</span> {availabilityModalData.requested} sản phẩm • 
+                  <span className="font-medium"> Tối đa có thể thuê:</span> {availabilityModalData.available} sản phẩm
+                </div>
+                
+                {availabilityModalData.unavailableDates && availabilityModalData.unavailableDates.length > 0 && (
+                  <div className="bg-white rounded-lg p-3 border border-red-200 mb-4">
+                    <h5 className="font-medium text-red-800 mb-2">📅 Ngày không đủ số lượng:</h5>
+                    <div className="grid grid-cols-2 gap-2">
+                      {availabilityModalData.unavailableDates.map((dateInfo, dateIndex) => (
+                        <div key={dateIndex} className="flex justify-between items-center text-sm bg-red-50 px-2 py-1 rounded">
+                          <span className="text-red-700">{dateInfo.date}</span>
+                          <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-medium text-xs">
+                            {dateInfo.available}/{dateInfo.requested}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Suggested Available Dates */}
+              {availabilityModalData.suggestedDates && availabilityModalData.suggestedDates.length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <h5 className="font-medium text-green-800 mb-3 flex items-center">
+                    <span className="mr-2">💡</span>
+                    Gợi ý ngày còn hàng ({availabilityModalData.requested} sản phẩm):
+                  </h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availabilityModalData.suggestedDates.map((dateInfo, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          // Auto-fill suggested date as delivery date
+                          setDeliveryDate(dateInfo.rawDate);
+                          setReturnDate('');
+                          setShowAvailabilityModal(false);
+                        }}
+                        className="flex justify-between items-center text-sm bg-white border border-green-200 hover:border-green-400 px-3 py-2 rounded-lg transition-colors group"
+                      >
+                        <span className="text-green-700 group-hover:text-green-800">{dateInfo.date}</span>
+                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-medium text-xs group-hover:bg-green-200">
+                          {dateInfo.available} có sẵn
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-green-600 mt-2 text-center">
+                    👆 Click vào ngày để tự động chọn làm ngày nhận hàng
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 border-t border-gray-200 px-6 py-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowAvailabilityModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-medium transition-colors"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAvailabilityModal(false);
+                    // Scroll to date picker
+                    window.scrollTo({ top: document.querySelector('input[type="date"]')?.offsetTop - 100, behavior: 'smooth' });
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+                >
+                  Chọn ngày khác
+                </button>
+              </div>
+              <div className="mt-3 text-center text-sm text-gray-600">
+                💡 Vui lòng chọn thời gian khác hoặc giảm số lượng để tiếp tục
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
   import { motion } from "framer-motion";
   import { useCart } from "../context/CartContext";
   import { ROUTES } from "../utils/constants";
+  import rentalOrderService from "../services/rentalOrder";
 
   const Cart = () => {
     const { cart, cartTotal, updateQuantityByItemId, updateRental, updateRentalByItemId, removeFromCartById, clearCart, cartData } = useCart();
@@ -10,6 +11,8 @@
     const [editingDates, setEditingDates] = React.useState({});
     const [selectedItems, setSelectedItems] = React.useState(new Set());
     const [selectAll, setSelectAll] = React.useState(false);
+    const [showAvailabilityModal, setShowAvailabilityModal] = React.useState(false);
+    const [availabilityWarnings, setAvailabilityWarnings] = React.useState([]);
 
     const formatPrice = (price) => {
       return new Intl.NumberFormat("vi-VN", {
@@ -237,17 +240,154 @@
       }
     }, [selectAll, cart]);
 
-    // Handle rent selected items  
-    const handleRentSelected = () => {
-      if (selectedItems.size === 0) return;
+    // Check availability for cart items (works for both selected and all items)
+    const checkCartAvailability = async (itemsToCheck) => {
+      console.log('🔍 Checking availability for cart items before checkout...');
+      const unavailableItems = [];
       
+      for (const item of itemsToCheck) {
+        try {
+          // Safety check for rental dates
+          if (!item.rental?.startDate || !item.rental?.endDate) {
+            console.error(`Invalid rental dates for ${item.product?.title}:`, item.rental);
+            unavailableItems.push({
+              productName: item.product?.title || 'Unknown Product',
+              error: true,
+              errorMessage: 'Thiếu thông tin ngày thuê'
+            });
+            continue;
+          }
+
+          const response = await rentalOrderService.getProductAvailabilityCalendar(
+            item.product._id,
+            item.rental.startDate.split('T')[0],
+            item.rental.endDate.split('T')[0]
+          );
+          
+          if (response.status === 'success' && response.data?.metadata?.calendar) {
+            const calendar = response.data.metadata.calendar;
+            
+            // Check each day in the rental period for availability
+            const startDate = new Date(item.rental.startDate);
+            const endDate = new Date(item.rental.endDate);
+            const unavailableDates = [];
+            let minAvailable = Infinity;
+            
+            for (let currentDate = new Date(startDate); currentDate < endDate; currentDate.setDate(currentDate.getDate() + 1)) {
+              const dateString = currentDate.toISOString().split('T')[0];
+              const dayInfo = calendar.find(day => day.date === dateString);
+              
+              if (dayInfo) {
+                minAvailable = Math.min(minAvailable, dayInfo.availableQuantity);
+                
+                // Track specific dates that don't have enough quantity
+                if (dayInfo.availableQuantity < item.quantity) {
+                  unavailableDates.push({
+                    date: new Date(dateString).toLocaleDateString('vi-VN'),
+                    available: dayInfo.availableQuantity,
+                    requested: item.quantity
+                  });
+                }
+              } else {
+                // Date not found in calendar = unavailable
+                unavailableDates.push({
+                  date: new Date(dateString).toLocaleDateString('vi-VN'),
+                  available: 0,
+                  requested: item.quantity
+                });
+              }
+            }
+            
+            const currentAvailable = minAvailable === Infinity ? 0 : minAvailable;
+            
+            if (currentAvailable < item.quantity || unavailableDates.length > 0) {
+              // Tìm ngày có sẵn để gợi ý (trong vòng 30 ngày tiếp theo)
+              const today = new Date();
+              const suggestedDates = [];
+              
+              for (let i = 0; i < 30 && suggestedDates.length < 5; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() + i);
+                const dateString = checkDate.toISOString().split('T')[0];
+                
+                const dayInfo = calendar.find(day => day.date === dateString);
+                if (dayInfo && dayInfo.availableQuantity >= item.quantity) {
+                  suggestedDates.push({
+                    date: checkDate.toLocaleDateString('vi-VN'),
+                    available: dayInfo.availableQuantity,
+                    rawDate: dateString
+                  });
+                }
+              }
+
+              unavailableItems.push({
+                productName: item.product.title,
+                requested: item.quantity,
+                available: currentAvailable,
+                dateRange: `${new Date(item.rental.startDate).toLocaleDateString('vi-VN')} - ${new Date(item.rental.endDate).toLocaleDateString('vi-VN')}`,
+                unavailableDates: unavailableDates,
+                suggestedDates: suggestedDates,
+                itemId: item._id // Để có thể update cart item
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error checking availability for ${item.product.title}:`, error);
+          unavailableItems.push({
+            productName: item.product.title,
+            error: true
+          });
+        }
+      }
+      
+      return unavailableItems;
+    };
+
+    // Handle rent selected items
+    const handleRentSelected = async () => {
       const selectedCartItems = cart.filter(item => selectedItems.has(item._id));
+      if (selectedCartItems.length === 0) return;
+      
+      const unavailableItems = await checkCartAvailability(selectedCartItems);
+      
+      if (unavailableItems.length > 0) {
+        showAvailabilityWarning(unavailableItems);
+        return;
+      }
+      
+      console.log('✅ Selected cart items availability check passed');
       navigate('/rental-orders/create', { 
         state: { 
           selectedItems: selectedCartItems,
           fromCart: true 
         } 
       });
+    };
+
+    // Handle rent all items
+    const handleRentAll = async () => {
+      if (cart.length === 0) return;
+      
+      const unavailableItems = await checkCartAvailability(cart);
+      
+      if (unavailableItems.length > 0) {
+        showAvailabilityWarning(unavailableItems);
+        return;
+      }
+      
+      console.log('✅ All cart items availability check passed');
+      navigate('/rental-orders/create', { 
+        state: { 
+          selectedItems: cart,
+          fromCart: true 
+        } 
+      });
+    };
+
+    // Show detailed availability warning in modal
+    const showAvailabilityWarning = (unavailableItems) => {
+      setAvailabilityWarnings(unavailableItems);
+      setShowAvailabilityModal(true);
     };
 
     if (!cart?.length) {
@@ -584,7 +724,7 @@
                     if (selectedItems.size > 0) {
                       handleRentSelected();
                     } else {
-                      navigate('/rental-orders/create');
+                      handleRentAll();
                     }
                   }}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-4"
@@ -618,7 +758,151 @@
             </div>
           </div>
         </div>
-      </div>
+
+    
+      {showAvailabilityModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl"
+          >
+            {/* Header */}
+            <div className="bg-red-50 border-b border-red-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 text-xl">⚠️</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-red-800">Cảnh báo khả năng sản phẩm</h3>
+                    <p className="text-sm text-red-600">Một số sản phẩm trong giỏ hàng không còn đủ số lượng</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAvailabilityModal(false)}
+                  className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center transition-colors"
+                >
+                  <span className="text-red-600 font-bold">×</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-4 max-h-96 overflow-y-auto">
+              <div className="space-y-4">
+                {availabilityWarnings.map((item, index) => (
+                  <div key={index} className="border border-red-200 rounded-xl p-4 bg-red-50">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center mt-0.5">
+                        <span className="text-red-600 text-sm font-bold">!</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-red-800 mb-2">{item.productName}</h4>
+                        
+                        {item.error ? (
+                          <p className="text-red-600 text-sm">
+                            {item.errorMessage || 'Không thể kiểm tra tình trạng'}
+                          </p>
+                        ) : (
+                          <>
+                            <div className="text-sm text-red-700 mb-2">
+                              <span className="font-medium">Thời gian thuê:</span> {item.dateRange}
+                            </div>
+                            <div className="text-sm text-red-700 mb-3">
+                              <span className="font-medium">Yêu cầu:</span> {item.requested} sản phẩm • 
+                              <span className="font-medium"> Tối đa có thể thuê:</span> {item.available} sản phẩm
+                            </div>
+                            
+                            {item.unavailableDates && item.unavailableDates.length > 0 && (
+                              <div className="bg-white rounded-lg p-3 border border-red-200">
+                                <h5 className="font-medium text-red-800 mb-2">📅 Ngày không đủ số lượng:</h5>
+                                <div className="space-y-1">
+                                  {item.unavailableDates.map((dateInfo, dateIndex) => (
+                                    <div key={dateIndex} className="flex justify-between items-center text-sm">
+                                      <span className="text-red-700">{dateInfo.date}</span>
+                                      <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-medium">
+                                        {dateInfo.available}/{dateInfo.requested}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Suggested Available Dates */}
+                            {item.suggestedDates && item.suggestedDates.length > 0 && (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
+                                <h6 className="font-medium text-green-800 mb-2 flex items-center text-sm">
+                                  <span className="mr-1">💡</span>
+                                  Gợi ý ngày còn {item.requested} sản phẩm:
+                                </h6>
+                                <div className="grid grid-cols-2 gap-1">
+                                  {item.suggestedDates.slice(0, 4).map((dateInfo, index) => (
+                                    <button
+                                      key={index}
+                                      onClick={() => {
+                                        // Update cart item with suggested date
+                                        const newStartDate = new Date(dateInfo.rawDate).toISOString();
+                                        const newEndDate = new Date(dateInfo.rawDate);
+                                        newEndDate.setDate(newEndDate.getDate() + 1);
+                                        
+                                        updateRentalByItemId(item.itemId, {
+                                          startDate: newStartDate,
+                                          endDate: newEndDate.toISOString()
+                                        });
+                                        setShowAvailabilityModal(false);
+                                      }}
+                                      className="flex justify-between items-center text-xs bg-white border border-green-200 hover:border-green-400 px-2 py-1.5 rounded transition-colors group"
+                                    >
+                                      <span className="text-green-700 group-hover:text-green-800">{dateInfo.date}</span>
+                                      <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded font-medium text-xs group-hover:bg-green-200">
+                                        {dateInfo.available}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                                <p className="text-xs text-green-600 mt-1 text-center">
+                                  👆 Click để cập nhật ngày thuê
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 border-t border-gray-200 px-6 py-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowAvailabilityModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-medium transition-colors"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAvailabilityModal(false);
+                    // User có thể edit cart items từ đây
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+                >
+                  Chỉnh sửa giỏ hàng
+                </button>
+              </div>
+              <div className="mt-3 text-center text-sm text-gray-600">
+                💡 Vui lòng cập nhật số lượng hoặc chọn thời gian khác để tiếp tục
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+        </div>
     );
   };
 
