@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import { ownerProductApi } from '../../services/ownerProduct.Api';
 import rentalOrderService from '../../services/rentalOrder';
+import extensionService from '../../services/extension';
 import { toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/constants';
 import ContractSigningModal from '../../components/common/ContractSigningModal';
@@ -20,6 +21,11 @@ const OwnerRentalRequests = () => {
   const [returnModalAction, setReturnModalAction] = useState('APPROVE'); // APPROVE | REJECT
   const [returnModalNotes, setReturnModalNotes] = useState('');
   const [returnModalSubOrderId, setReturnModalSubOrderId] = useState(null);
+  const [extensionRequests, setExtensionRequests] = useState([]);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [selectedSubOrderForExtension, setSelectedSubOrderForExtension] = useState(null);
+  const [extensionRejectReason, setExtensionRejectReason] = useState('');
+  const [extensionRejectingId, setExtensionRejectingId] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -241,6 +247,105 @@ const OwnerRentalRequests = () => {
     setReturnModalNotes('');
   };
 
+  const fetchExtensionRequests = async (subOrderId) => {
+    try {
+      console.log('Fetching extension requests for subOrderId:', subOrderId);
+      const res = await extensionService.getOwnerExtensionRequests({ page: 1, limit: 50 });
+      console.log('Full response:', res);
+      console.log('res.data:', res.data);
+      console.log('res.metadata:', res.metadata);
+      
+      // Server returns: { status, message, data: {...}, metadata: {...} }
+      // We need to find where requests is
+      let all = [];
+      
+      // Check all possible paths
+      if (res.metadata && res.metadata.metadata && res.metadata.metadata.requests) {
+        console.log('Found at res.metadata.metadata.requests');
+        all = res.metadata.metadata.requests;
+      } else if (res.metadata && res.metadata.requests) {
+        console.log('Found at res.metadata.requests');
+        all = res.metadata.requests;
+      } else if (res.data && res.data.metadata && res.data.metadata.requests) {
+        console.log('Found at res.data.metadata.requests');
+        all = res.data.metadata.requests;
+      } else if (res.requests) {
+        console.log('Found at res.requests');
+        all = res.requests;
+      } else if (Array.isArray(res)) {
+        console.log('res is array');
+        all = res;
+      }
+      
+      console.log('All extension requests after extraction:', all);
+      
+      if (!Array.isArray(all)) {
+        console.error('all is not array:', typeof all, all);
+        all = [];
+      }
+      
+      // Filter requests for this subOrder
+      const filtered = all.filter(r => {
+        if (!r || !r.subOrder) return false;
+        const requestSubOrderId = typeof r.subOrder === 'string' ? r.subOrder : r.subOrder._id;
+        const match = String(requestSubOrderId) === String(subOrderId);
+        console.log('Checking request:', r._id, 'subOrder:', requestSubOrderId, 'matches:', match);
+        return match;
+      });
+      
+      console.log('Filtered results:', filtered);
+      setExtensionRequests(filtered);
+      return filtered;
+    } catch (err) {
+      console.error('Fetch owner extension requests error', err);
+      toast.error('Không thể lấy yêu cầu gia hạn: ' + (err.message || err));
+      setExtensionRequests([]);
+      return [];
+    }
+  };
+
+  const handleOpenExtensionModal = async (subOrder) => {
+    console.log('Opening extension modal for subOrder:', subOrder);
+    // Set state first
+    setSelectedSubOrderForExtension(subOrder);
+    setShowExtensionModal(true);
+    
+    // Fetch data after state is set
+    setTimeout(() => {
+      fetchExtensionRequests(subOrder._id);
+    }, 100);
+    
+    alert('Modal should be visible now!');
+  };
+
+  const handleApproveExtension = async (requestId) => {
+    if (!window.confirm('Bạn có chắc muốn chấp nhận yêu cầu gia hạn này?')) return;
+    try {
+      await extensionService.approveExtension(requestId);
+      toast.success('Đã chấp nhận yêu cầu gia hạn');
+      await fetchExtensionRequests(selectedSubOrderForExtension._id);
+      await refreshSubOrderData(selectedSubOrderForExtension._id);
+    } catch (err) {
+      console.error('Approve error', err);
+      toast.error('Không thể chấp nhận yêu cầu');
+    }
+  };
+
+  const handleRejectExtension = async (requestId, rejectionReason) => {
+    if (!rejectionReason.trim()) {
+      toast.error('Vui lòng nhập lý do từ chối');
+      return;
+    }
+    try {
+      await extensionService.rejectExtension(requestId, { rejectionReason });
+      toast.success('Đã từ chối yêu cầu gia hạn');
+      await fetchExtensionRequests(selectedSubOrderForExtension._id);
+    } catch (err) {
+      console.error('Reject error', err);
+      toast.error('Không thể từ chối yêu cầu');
+    }
+  };
+
   const submitReturnDecision = async () => {
     if (!returnModalSubOrderId) return;
     if (returnModalAction === 'REJECT' && !returnModalNotes.trim()) {
@@ -443,14 +548,14 @@ const OwnerRentalRequests = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <button onClick={() => setSelectedSubOrder(s)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Chi tiết</button>
-                        {s.returnRequest && s.returnRequest.status === 'PENDING' && (
-                          <>
-                            <button onClick={() => openReturnModal(s._id, 'APPROVE')} className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Chấp nhận trả</button>
-                            <button onClick={() => openReturnModal(s._id, 'REJECT')} className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Từ chối trả</button>
-                          </>
-                        )}
-                        {s.returnRequest && s.returnRequest.status === 'APPROVED' && (
-                          <button onClick={() => handleOwnerConfirmReturned(s._id)} className="text-sm bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Xác nhận trả hàng</button>
+                        {s.status === 'ACTIVE' && (
+                          <button 
+                            onClick={() => handleOpenExtensionModal(s)} 
+                            className="text-sm bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600"
+                            title="Xem yêu cầu gia hạn"
+                          >
+                            📋 Xem yêu cầu gia hạn
+                          </button>
                         )}
                         {s.status === 'OWNER_CONFIRMED' && (
                           <button onClick={() => { setSelectedContractId(s.contract?._id || s.contract || `contract-${s.masterOrder?._id || ''}`); setShowContractSigning(true); }} className="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600">Ký HĐ</button>
@@ -957,6 +1062,180 @@ const SubOrderCard = ({
           </button>
         </div>
       )}
+      {/* Extension Requests Modal */}
+      {showExtensionModal && selectedSubOrderForExtension && (
+        <>
+        {alert('Extension modal is rendering!')}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Yêu cầu gia hạn - {selectedSubOrderForExtension?.subOrderNumber}</h3>
+              <button 
+                className="text-sm text-gray-600 hover:text-gray-900"
+                onClick={() => setShowExtensionModal(false)}
+              >
+                ✕ Đóng
+              </button>
+            </div>
+
+            {extensionRequests.length === 0 ? (
+              <div className="text-gray-600 text-center py-8">Không có yêu cầu gia hạn nào cho mục này.</div>
+            ) : (
+              <div className="space-y-4">
+                {extensionRequests.map((req) => (
+                  <div key={req._id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-gray-900 mb-3">Chi tiết yêu cầu gia hạn</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600">Người yêu cầu:</p>
+                          <p className="font-medium">{req.renter?.profile?.fullName || req.renter?.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Trạng thái:</p>
+                          <p className={`font-medium px-2 py-1 rounded text-xs inline-block ${
+                            req.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                            req.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                            req.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {req.status}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Ngày kết thúc hiện tại:</p>
+                          <p className="font-medium">{new Date(req.currentEndDate).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Ngày kết thúc mới yêu cầu:</p>
+                          <p className="font-medium">{new Date(req.newEndDate).toLocaleDateString('vi-VN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Số ngày gia hạn:</p>
+                          <p className="font-medium">{req.extensionDays} ngày</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Giá thuê/ngày:</p>
+                          <p className="font-medium">{formatCurrency(req.rentalRate)}/ngày</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Chi phí gia hạn:</p>
+                          <p className="font-medium text-orange-600">{formatCurrency(req.extensionCost)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Tổng chi phí:</p>
+                          <p className="font-medium text-green-600">{formatCurrency(req.totalCost)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Trạng thái thanh toán:</p>
+                          <p className="font-medium">{req.paymentStatus}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Phương thức thanh toán:</p>
+                          <p className="font-medium">{req.paymentMethod}</p>
+                        </div>
+                      </div>
+                      
+                      {req.extensionReason && (
+                        <div className="mt-4">
+                          <p className="text-gray-600">Lý do gia hạn:</p>
+                          <p className="font-medium bg-blue-50 p-2 rounded">{req.extensionReason}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {req.status === 'PENDING' && (
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="flex flex-col space-y-3">
+                          {extensionRejectingId !== req._id ? (
+                            <>
+                              <button 
+                                onClick={() => handleApproveExtension(req._id)}
+                                className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+                              >
+                                ✓ Chấp nhận yêu cầu gia hạn
+                              </button>
+                              <button 
+                                onClick={() => setExtensionRejectingId(req._id)}
+                                className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-medium"
+                              >
+                                ✕ Từ chối yêu cầu gia hạn
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <textarea
+                                value={extensionRejectReason}
+                                onChange={(e) => setExtensionRejectReason(e.target.value)}
+                                placeholder="Nhập lý do từ chối..."
+                                className="w-full p-3 border rounded-lg resize-none h-24"
+                              />
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => {
+                                    setExtensionRejectingId(null);
+                                    setExtensionRejectReason('');
+                                  }}
+                                  className="flex-1 px-3 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                                >
+                                  Hủy
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleRejectExtension(req._id, extensionRejectReason);
+                                    setExtensionRejectingId(null);
+                                    setExtensionRejectReason('');
+                                  }}
+                                  className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                                >
+                                  Xác nhận từ chối
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {req.status === 'APPROVED' && (
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm font-medium text-green-600">✓ Yêu cầu này đã được chấp nhận</p>
+                        <p className="text-xs text-gray-600 mt-1">Ngày kết thúc đã được cập nhật thành: {new Date(req.newEndDate).toLocaleDateString('vi-VN')}</p>
+                      </div>
+                    )}
+
+                    {req.status === 'REJECTED' && (
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm font-medium text-red-600">✕ Yêu cầu này đã bị từ chối</p>
+                        {req.ownerResponse?.rejectionReason && (
+                          <p className="text-xs text-gray-600 mt-1">Lý do: {req.ownerResponse.rejectionReason}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {req.status === 'CANCELLED' && (
+                      <div className="mt-4 pt-4 border-t">
+                        <p className="text-sm font-medium text-gray-600">⊘ Yêu cầu này đã bị hủy</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowExtensionModal(false)}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+        </>
+      )}
+
       {/* Return Decision Modal */}
       {showReturnModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
