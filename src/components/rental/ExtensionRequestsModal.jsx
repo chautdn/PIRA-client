@@ -43,12 +43,15 @@ const ExtensionRequestsModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
       
       // Filter requests for this subOrder
       const filtered = all.filter(r => {
-        const rSubOrderId = r.subOrder?._id || r.subOrder;
-        const match = rSubOrderId === subOrder._id;
+        const rSubOrderId = (r.subOrder?._id || r.subOrder)?.toString?.() || (r.subOrder?._id || r.subOrder);
+        const targetId = subOrder._id?.toString?.() || subOrder._id;
+        const match = rSubOrderId && targetId && rSubOrderId === targetId;
         console.log('🔎 Checking request:', { 
           requestId: r._id, 
           rSubOrderId,
-          targetSubOrderId: subOrder._id,
+          targetId,
+          rSubOrderType: typeof (r.subOrder?._id || r.subOrder),
+          targetType: typeof subOrder._id,
           match
         });
         return match;
