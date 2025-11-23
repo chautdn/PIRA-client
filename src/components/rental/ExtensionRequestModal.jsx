@@ -10,7 +10,8 @@ const ExtensionRequestModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      // Reset form khi mở
       setNewEndDate('');
       setReason('');
       setEstimatedCost(0);
@@ -90,7 +91,9 @@ const ExtensionRequestModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
   }, [newEndDate, subOrder]);
 
   const handleSubmit = async () => {
-    if (!newEndDate) return alert('Vui lòng chọn ngày kết thúc mới');
+    if (!newEndDate || newEndDate.trim() === '') {
+      return alert('Vui lòng chọn ngày kết thúc mới');
+    }
     
     // Get current end date - try multiple paths
     let currentEndDate = null;
