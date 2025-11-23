@@ -45,11 +45,17 @@ class ExtensionService {
   // Owner xem danh sách yêu cầu gia hạn
   async getOwnerExtensionRequests(filters = {}) {
     try {
+      console.log('🔄 API Call: GET /extensions/owner-requests', { filters });
+      const token = localStorage.getItem('accessToken');
+      console.log('� Token exists:', !!token);
+      
       const response = await api.get('/extensions/owner-requests', {
         params: filters
       });
+      console.log('✅ API Response:', response.data);
       return response.data;
     } catch (error) {
+      console.error('❌ API Error:', error.response?.status, error.response?.data);
       throw new Error(
         error.response?.data?.message || 'Không thể lấy danh sách yêu cầu'
       );
