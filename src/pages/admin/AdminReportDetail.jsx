@@ -65,7 +65,7 @@ const AdminReportDetail = () => {
 
   const handleDeleteProduct = async () => {
     if (!report.reportedItem?._id) {
-      setSuccessMessage('Không tìm thấy sản phẩm để xóa!');
+      setSuccessMessage('Không tìm thấy sản phẩm để đình chỉ!');
       setShowSuccessMessage(true);
       return;
     }
@@ -75,65 +75,24 @@ const AdminReportDetail = () => {
   };
 
   const confirmDeleteProduct = async () => {
-    let productDeleted = false;
-    let reportUpdated = false;
-    
     try {
       setDeletingProduct(true);
       setShowDeleteModal(false);
       
-      // Step 1: Delete product
-      try {
-        const deleteResult = await adminService.deleteProduct(report.reportedItem._id);
-        productDeleted = true;
-        console.log('Product deleted successfully:', deleteResult);
-      } catch (deleteError) {
-        console.error('Error deleting product:', deleteError);
-        
-        // Check if error message suggests the product was actually deleted
-        if (deleteError.message && deleteError.message.includes('không tồn tại')) {
-          console.log('Product may already be deleted');
-          productDeleted = true;
-        } else {
-          throw new Error(`Không thể xóa sản phẩm: ${deleteError.message || 'Unknown error'}`);
-        }
-      }
+      // Suspend product (backend handles both product suspension and report update)
+      const result = await adminService.suspendReportedProduct(report._id, report.reportedItem._id);
+      console.log('Product suspended successfully:', result);
       
-      // Step 2: Update report status (if product deletion was successful)
-      if (productDeleted) {
-        try {
-          // Small delay to ensure backend has processed the deletion
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          await adminService.updateReportStatus(report._id, 'RESOLVED', 'Sản phẩm đã bị xóa bởi admin');
-          reportUpdated = true;
-          console.log('Report status updated successfully');
-        } catch (updateError) {
-          console.error('Error updating report status:', updateError);
-          // Don't throw error here - product is already deleted
-          console.warn('Product was deleted but failed to update report status:', updateError.message);
-        }
-      }
+      // Reload report data
+      await loadReportDetail();
       
-      // Step 3: Reload report data (only if report was updated successfully)
-      if (reportUpdated) {
-        try {
-          await loadReportDetail();
-          console.log('Report reloaded successfully');
-        } catch (reloadError) {
-          console.error('Error reloading report:', reloadError);
-          // Don't throw error - just log it
-          console.warn('Product was deleted and report updated but failed to reload');
-        }
-      }
-      
-      // Show simple success message
-      setSuccessMessage('Đã xóa sản phẩm thành công');
+      // Show success message
+      setSuccessMessage('Đã đình chỉ sản phẩm thành công');
       setShowSuccessMessage(true);
       
     } catch (err) {
-      console.error('Critical error in delete process:', err);
-      setSuccessMessage(err.message || 'Có lỗi xảy ra khi xóa sản phẩm');
+      console.error('Error suspending product:', err);
+      setSuccessMessage(err.message || 'Có lỗi xảy ra khi đình chỉ sản phẩm');
       setShowSuccessMessage(true);
     } finally {
       setDeletingProduct(false);
@@ -586,18 +545,18 @@ const AdminReportDetail = () => {
                       <div className="flex gap-3">
                         <button
                           onClick={handleDeleteProduct}
-                          disabled={deletingProduct || report.reportedItem.status === 'DELETED'}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                          disabled={deletingProduct || report.reportedItem.status === 'SUSPENDED'}
+                          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                           {deletingProduct ? (
                             <>
                               <span className="animate-spin">⏳</span>
-                              Đang xóa...
+                              Đang đình chỉ...
                             </>
                           ) : (
                             <>
-                              <span>🗑️</span>
-                              Xóa sản phẩm
+                              <span>⛔</span>
+                              Đình chỉ sản phẩm
                             </>
                           )}
                         </button>
@@ -779,24 +738,25 @@ const AdminReportDetail = () => {
               </div>
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Xóa sản phẩm
+                  Đình chỉ sản phẩm
                 </h3>
                 <div className="mt-2">
                   <p className="text-sm text-gray-500">
-                    Bạn có chắc chắn muốn xóa sản phẩm "<strong>{report?.reportedItem?.title}</strong>"?
+                    Bạn có chắc chắn muốn đình chỉ sản phẩm "<strong>{report?.reportedItem?.title}</strong>"?
                   </p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
-              <div className="text-sm text-red-700">
-                <p className="font-medium mb-2">⚠️ Cảnh báo:</p>
+            <div className="bg-orange-50 border border-orange-200 rounded-md p-4 mb-4">
+              <div className="text-sm text-orange-700">
+                <p className="font-medium mb-2">⚠️ Lưu ý:</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Sản phẩm sẽ bị xóa vĩnh viễn khỏi hệ thống</li>
-                  <li>Hành động này không thể hoàn tác</li>
-                  <li>Ảnh hưởng đến tất cả dữ liệu liên quan</li>
+                  <li>Sản phẩm sẽ bị đình chỉ và ẩn khỏi danh sách</li>
+                  <li>Trạng thái sản phẩm sẽ chuyển thành SUSPENDED</li>
+                  <li>Sản phẩm vẫn được lưu trong database để theo dõi</li>
                   <li>Báo cáo sẽ được đánh dấu là đã giải quyết</li>
+                  <li>Admin có thể xem lại và khôi phục nếu cần</li>
                 </ul>
               </div>
             </div>
@@ -819,10 +779,10 @@ const AdminReportDetail = () => {
                 {deletingProduct ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Đang xóa...
+                    Đang đình chỉ...
                   </div>
                 ) : (
-                  'Xóa sản phẩm'
+                  'Đình chỉ sản phẩm'
                 )}
               </button>
             </div>

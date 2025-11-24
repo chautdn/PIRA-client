@@ -619,10 +619,10 @@ class AdminService {
     }
   }
 
-  async deleteReportedProduct(reportId, productId) {
+  async suspendReportedProduct(reportId, productId) {
     try {
-      const response = await api.delete(`/admin/reports/${reportId}/product`, {
-        data: { productId }
+      const response = await api.patch(`/admin/reports/${reportId}/suspend-product`, {
+        productId
       });
       
       if (response.data.success) {
@@ -630,7 +630,7 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error('Error deleting reported product:', error);
+      console.error('Error suspending reported product:', error);
       throw error;
     }
   }
