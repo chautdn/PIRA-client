@@ -117,11 +117,11 @@ const BankAccountFormInner = ({
         <select
           value={formState.bankCode}
           onChange={(e) => handleChange("bankCode", e.target.value)}
-          disabled={hasExistingAccount || loading}
+          disabled={loading}
           className={`w-full px-4 py-3 border-2 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
             errors.bankCode
               ? "border-red-500 bg-red-50"
-              : hasExistingAccount
+              : loading
               ? "border-gray-200 bg-gray-100 cursor-not-allowed text-gray-500"
               : "border-gray-300 bg-white hover:border-gray-400"
           }`}
@@ -139,6 +139,12 @@ const BankAccountFormInner = ({
             {errors.bankCode}
           </p>
         )}
+        {hasExistingAccount && (
+          <p className="text-orange-600 text-sm mt-1.5 flex items-center">
+            <span className="mr-1">⚠️</span>
+            Thay đổi ngân hàng sẽ yêu cầu xác minh lại từ Admin
+          </p>
+        )}
       </div>
 
       {/* Account Number */}
@@ -153,14 +159,14 @@ const BankAccountFormInner = ({
             const value = e.target.value.replace(/[^0-9]/g, "");
             handleChange("accountNumber", value);
           }}
-          disabled={hasExistingAccount || loading}
+          disabled={loading}
           placeholder="Nhập số tài khoản (chỉ số)"
           maxLength="19"
           autoComplete="off"
           className={`w-full px-4 py-3 border-2 rounded-lg font-mono text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
             errors.accountNumber
               ? "border-red-500 bg-red-50"
-              : hasExistingAccount
+              : loading
               ? "border-gray-200 bg-gray-100 cursor-not-allowed text-gray-500"
               : "border-gray-300 bg-white hover:border-gray-400"
           }`}
@@ -169,6 +175,12 @@ const BankAccountFormInner = ({
           <p className="text-red-600 text-sm mt-1.5 flex items-center">
             <span className="mr-1">⚠</span>
             {errors.accountNumber}
+          </p>
+        )}
+        {hasExistingAccount && !errors.accountNumber && (
+          <p className="text-orange-600 text-sm mt-1.5 flex items-center">
+            <span className="mr-1">⚠️</span>
+            Thay đổi số tài khoản sẽ yêu cầu xác minh lại từ Admin
           </p>
         )}
         {!hasExistingAccount && !errors.accountNumber && (
@@ -230,9 +242,16 @@ const BankAccountFormInner = ({
             />
           </svg>
           <div className="text-sm text-yellow-800">
-            <strong>Lưu ý quan trọng:</strong> Vui lòng đảm bảo thông tin tài
-            khoản ngân hàng chính xác. Thông tin sai có thể dẫn đến thất bại
-            trong quá trình rút tiền.
+            <strong>Lưu ý quan trọng:</strong>
+            <ul className="mt-2 space-y-1 list-disc list-inside">
+              <li>Vui lòng đảm bảo thông tin tài khoản ngân hàng chính xác</li>
+              <li>Thông tin sai có thể dẫn đến thất bại trong quá trình rút tiền</li>
+              {hasExistingAccount && (
+                <li className="text-orange-700 font-semibold">
+                  ⚠️ Khi thay đổi thông tin ngân hàng, tài khoản sẽ cần được Admin xác minh lại
+                </li>
+              )}
+            </ul>
           </div>
         </div>
       </div>

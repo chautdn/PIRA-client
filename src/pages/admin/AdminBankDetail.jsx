@@ -388,51 +388,96 @@ const AdminBankDetail = () => {
           </div>
 
           {/* Verification Timeline */}
-          {(bankAccount?.verifiedAt || bankAccount?.rejectedAt) && (
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="text-2xl">📋</span>
-                Lịch sử xác minh
-              </h2>
-              <div className="space-y-4">
-                {bankAccount?.verifiedAt && (
-                  <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                    <div className="text-3xl">✅</div>
-                    <div className="flex-1">
-                      <p className="font-bold text-green-800">Đã xác minh</p>
-                      <p className="text-sm text-green-600 mt-1">
-                        {new Date(bankAccount.verifiedAt).toLocaleString('vi-VN')}
-                      </p>
-                      {bankAccount?.adminNote && (
-                        <div className="mt-2 p-3 bg-white rounded border border-green-200">
-                          <p className="text-sm font-semibold text-gray-700">Ghi chú của Admin:</p>
-                          <p className="text-sm text-gray-600 mt-1">{bankAccount.adminNote}</p>
-                        </div>
-                      )}
-                    </div>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="text-2xl">📋</span>
+              Lịch sử xác minh
+            </h2>
+            <div className="space-y-3">
+              {/* Added Event */}
+              <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                <div className="text-2xl">➕</div>
+                <div className="flex-1">
+                  <p className="font-bold text-blue-800">Tài khoản được thêm</p>
+                  <p className="text-sm text-blue-600 mt-1">
+                    {new Date(bankAccount?.addedAt).toLocaleString('vi-VN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                  <div className="mt-2 text-xs text-blue-700">
+                    Tài khoản ngân hàng được người dùng đăng ký và chờ xác minh
                   </div>
-                )}
-
-                {bankAccount?.rejectedAt && (
-                  <div className="flex items-start gap-4 p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
-                    <div className="text-3xl">❌</div>
-                    <div className="flex-1">
-                      <p className="font-bold text-red-800">Đã từ chối</p>
-                      <p className="text-sm text-red-600 mt-1">
-                        {new Date(bankAccount.rejectedAt).toLocaleString('vi-VN')}
-                      </p>
-                      {bankAccount?.rejectionReason && (
-                        <div className="mt-2 p-3 bg-white rounded border border-red-200">
-                          <p className="text-sm font-semibold text-gray-700">Lý do từ chối:</p>
-                          <p className="text-sm text-gray-600 mt-1">{bankAccount.rejectionReason}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
+
+              {/* Verified Event */}
+              {bankAccount?.verifiedAt && (
+                <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                  <div className="text-2xl">✅</div>
+                  <div className="flex-1">
+                    <p className="font-bold text-green-800">Đã xác minh</p>
+                    <p className="text-sm text-green-600 mt-1">
+                      {new Date(bankAccount.verifiedAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                    {bankAccount?.adminNote && (
+                      <div className="mt-2 p-3 bg-white rounded border border-green-200">
+                        <p className="text-xs font-semibold text-gray-600 mb-1">💬 Ghi chú của Admin:</p>
+                        <p className="text-sm text-gray-700">{bankAccount.adminNote}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Rejected Event */}
+              {bankAccount?.rejectedAt && (
+                <div className="flex items-start gap-4 p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
+                  <div className="text-2xl">❌</div>
+                  <div className="flex-1">
+                    <p className="font-bold text-red-800">Đã từ chối</p>
+                    <p className="text-sm text-red-600 mt-1">
+                      {new Date(bankAccount.rejectedAt).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                    {bankAccount?.rejectionReason && (
+                      <div className="mt-2 p-3 bg-white rounded border border-red-200">
+                        <p className="text-xs font-semibold text-gray-600 mb-1">⚠️ Lý do từ chối:</p>
+                        <p className="text-sm text-gray-700">{bankAccount.rejectionReason}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Pending Status */}
+              {bankAccount?.status === 'PENDING' && !bankAccount?.verifiedAt && !bankAccount?.rejectedAt && (
+                <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
+                  <div className="text-2xl">⏳</div>
+                  <div className="flex-1">
+                    <p className="font-bold text-yellow-800">Đang chờ xác minh</p>
+                    <p className="text-sm text-yellow-600 mt-1">
+                      Tài khoản đang được chờ Admin xác minh
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Verification Note */}
           {bankAccount?.status === 'PENDING' && (
