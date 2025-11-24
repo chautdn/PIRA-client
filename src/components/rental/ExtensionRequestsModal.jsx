@@ -28,12 +28,21 @@ const ExtensionRequestsModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
       setLoading(true);
       console.log('🔍 Fetching requests for subOrder:', subOrder?._id);
       
-      const res = await extensionService.getOwnerExtensionRequests({ page: 1, limit: 50 });
+      const res = await extensionService.getOwnerExtensionRequests({ page: 1, limit: 50, subOrderId: subOrder?._id });
       console.log('📋 Full API Response:', res);
       
-      // API returns: { status: 'success', message: '...', metadata: { requests, pagination } }
-      const all = res?.metadata?.requests || res?.requests || [];
+      // API now returns with requests at top level
+      const all = res?.requests || [];
       console.log('📦 All requests from API:', all);
+      console.log('📦 All requests length:', all.length);
+      
+      all.forEach((req, idx) => {
+        console.log(`🔎 [${idx}] Request:`, {
+          _id: req._id,
+          subOrder: req.subOrder,
+          status: req.status
+        });
+      });
       
       if (!subOrder) {
         console.warn('⚠️ subOrder is null/undefined');
@@ -41,24 +50,10 @@ const ExtensionRequestsModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
         return;
       }
       
-      // Filter requests for this subOrder
-      const filtered = all.filter(r => {
-        const rSubOrderId = (r.subOrder?._id || r.subOrder)?.toString?.() || (r.subOrder?._id || r.subOrder);
-        const targetId = subOrder._id?.toString?.() || subOrder._id;
-        const match = rSubOrderId && targetId && rSubOrderId === targetId;
-        console.log('🔎 Checking request:', { 
-          requestId: r._id, 
-          rSubOrderId,
-          targetId,
-          rSubOrderType: typeof (r.subOrder?._id || r.subOrder),
-          targetType: typeof subOrder._id,
-          match
-        });
-        return match;
-      });
-      
-      console.log('✅ Filtered requests count:', filtered.length, 'Filtered data:', filtered);
-      setRequests(filtered);
+      // API trả về tất cả requests cho owner, không lọc theo subOrder
+      // Nên không cần lọc lại, chỉ hiển thị tất cả requests
+      console.log('✅ All requests count:', all.length, 'Requests data:', all);
+      setRequests(all);
     } catch (err) {
       console.error('❌ Fetch owner extension requests error:', err);
       alert('Không thể lấy yêu cầu gia hạn: ' + (err.message || err.toString()));

@@ -259,23 +259,9 @@ const OwnerRentalRequests = () => {
       console.log('🔄 Fetching extension requests for subOrder:', subOrderId);
       const res = await extensionService.getOwnerExtensionRequests({ page: 1, limit: 50 });
       console.log('📦 API Response:', res);
-      console.log('📦 API Response data:', res?.data);
-      console.log('📦 API Response data.metadata:', res?.data?.metadata);
       
-      // Handle different response formats
-      let all = [];
-      if (res && res.requests) {
-        all = res.requests;
-      } else if (res && res.data && res.data.metadata && res.data.metadata.requests) {
-        // Backend SuccessResponse wraps in data.metadata
-        all = res.data.metadata.requests;
-      } else if (res && res.data && res.data.requests) {
-        all = res.data.requests;
-      } else if (res && res.metadata && res.metadata.requests) {
-        all = res.metadata.requests;
-      } else if (Array.isArray(res)) {
-        all = res;
-      }
+      // API now returns with requests at top level
+      const all = res?.requests || [];
       
       console.log('📋 All requests:', all);
       
@@ -551,6 +537,19 @@ const OwnerRentalRequests = () => {
             }}
           />
         )}
+        {/* Extension Requests Modal (page-level) */}
+        <ExtensionRequestsModal
+          isOpen={showExtensionModal}
+          onClose={() => setShowExtensionModal(false)}
+          subOrder={selectedSubOrderForExtension}
+          onSuccess={async (result) => {
+            // Refresh extension data and the sub-order list when modal reports success
+            if (selectedSubOrderForExtension) {
+              await fetchExtensionRequests(selectedSubOrderForExtension._id);
+              await refreshSubOrderData(selectedSubOrderForExtension._id);
+            }
+          }}
+        />
       </div>
     </div>
   );
@@ -1014,19 +1013,8 @@ const SubOrderCard = ({
           </button>
         </div>
       )}
-      {/* Extension Requests Modal - Component */}
-      <ExtensionRequestsModal 
-        isOpen={showExtensionModal}
-        onClose={() => setShowExtensionModal(false)}
-        subOrder={selectedSubOrderForExtension}
-        extensionRequests={extensionRequests}
-        refreshData={async () => {
-          if (selectedSubOrderForExtension) {
-            await fetchExtensionRequests(selectedSubOrderForExtension._id);
-            await refreshSubOrderData(selectedSubOrderForExtension._id);
-          }
-        }}
-      />
+      {/* Extension Requests Modal - rendered at page level */}
+      {/* Moved out of SubOrderCard so it mounts even when sub-order details are not open */}
 
       {/* Return Decision Modal */}
       {showReturnModal && (
