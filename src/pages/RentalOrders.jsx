@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
 import { toast } from '../components/common/Toast';
 import { useAuth } from "../hooks/useAuth";
+import { useCart } from '../context/CartContext';
+import api from '../services/api';
 import { 
   Package, 
   Calendar, 
@@ -24,6 +26,7 @@ const RentalOrdersPage = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { clearCart } = useCart();
   const { 
     myOrders, 
     isLoadingOrders, 
@@ -43,6 +46,71 @@ const RentalOrdersPage = () => {
 
   // Check for success messages from navigation state or URL params
   useEffect(() => {
+    // Check for payment return from PayOS
+    const paymentStatus = searchParams.get('payment');
+    const orderCode = searchParams.get('orderCode');
+    const orderId = searchParams.get('orderId');
+    
+    if (paymentStatus === 'success' && orderCode && orderId) {
+      // Verify payment with backend using api service
+      const verifyPayment = async () => {
+        try {
+          // Use api service which automatically includes auth headers
+          const response = await api.post(`/rental-orders/${orderId}/verify-payment`, {
+            orderCode
+          });
+
+          if (response.data.success) {
+            // Clear cart after successful payment
+            clearCart();
+            
+            // Show success notification with rich message
+            const order = response.data.data?.order;
+            const orderNumber = order?.masterOrderNumber || '';
+            
+            toast.success(
+              `🎉 Thanh toán thành công!\n\n` +
+              `Đơn hàng ${orderNumber} đã được xác nhận.\n` +
+              `Chủ sản phẩm sẽ xác nhận trong vòng 24h.`,
+              { 
+                duration: 6000,
+                style: {
+                  maxWidth: '500px',
+                  padding: '16px',
+                }
+              }
+            );
+          } else {
+            toast.error('⚠️ Xác nhận thanh toán thất bại. Vui lòng liên hệ hỗ trợ.', { duration: 5000 });
+          }
+        } catch (error) {
+          // Check if already verified
+          if (error.response?.data?.message?.includes('đã được thanh toán')) {
+            // Clear cart for already verified orders too
+            clearCart();
+            toast.success('✅ Đơn hàng đã được thanh toán thành công!', { duration: 5000 });
+          } else {
+            toast.error('⚠️ Lỗi xác nhận thanh toán. Vui lòng kiểm tra lại đơn hàng.', { duration: 5000 });
+          }
+        } finally {
+          // Reload orders to show updated status
+          loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+          
+          // Clear URL params
+          navigate('/rental-orders', { replace: true });
+        }
+      };
+
+      verifyPayment();
+      return;
+    }
+    
+    if (paymentStatus === 'cancel' && orderCode) {
+      toast.error('❌ Thanh toán đã bị hủy.', { duration: 5000 });
+      navigate('/rental-orders', { replace: true });
+      return;
+    }
+    
     // Check for message from navigation state (from order creation)
     if (location.state?.message && location.state?.justCreated) {
       toast.success(`🎉 ${location.state.message}\n\nĐơn hàng đã được tạo và sẽ hiển thị trong danh sách bên dưới.`, {
@@ -104,6 +172,15 @@ const RentalOrdersPage = () => {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
+  };
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const calculateDuration = (startDate, endDate) => {
@@ -355,7 +432,7 @@ const RentalOrdersPage = () => {
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
                   <h2 className="text-2xl font-bold">Chi tiết đơn thuê #{selectedOrder.masterOrderNumber}</h2>
-                  <p className="text-gray-600">Tạo ngày {formatDate(selectedOrder.createdAt)}</p>
+                  <p className="text-gray-600">Tạo ngày {formatDateTime(selectedOrder.createdAt)}</p>
                 </div>
                 <button
                   onClick={closeDetailModal}
@@ -522,14 +599,39 @@ const RentalOrdersPage = () => {
                                     </span>
                                   </div>
                                 )}
-                                {subOrder.shipping?.fee > 0 && (
+                                {subOrder.pricing?.shippingFee > 0 && (
                                   <div className="flex justify-between items-center">
                                     <span className="font-medium">Phí vận chuyển:</span>
                                     <span className="font-medium">
-                                      {subOrder.shipping?.fee?.toLocaleString('vi-VN')}đ
+                                      {subOrder.pricing?.shippingFee?.toLocaleString('vi-VN')}đ
                                     </span>
                                   </div>
                                 )}
+                                
+                                {/* COD Payment Status */}
+                                {selectedOrder.paymentMethod === 'COD' && (
+                                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <DollarSign className="w-4 h-4 text-amber-600" />
+                                      <span className="font-medium text-amber-800">Thanh toán khi nhận hàng</span>
+                                    </div>
+                                    <div className="space-y-1 text-sm">
+                                      <div className="flex justify-between">
+                                        <span>Đã thanh toán cọc:</span>
+                                        <span className="font-medium text-green-600">
+                                          {subOrder.pricing?.subtotalDeposit?.toLocaleString('vi-VN')}đ
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>Còn phải trả:</span>
+                                        <span className="font-bold text-red-600">
+                                          {((subOrder.pricing?.subtotalRental || 0) + (subOrder.pricing?.shippingFee || 0))?.toLocaleString('vi-VN')}đ
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                                
                                 <div className="border-t pt-2 mt-2">
                                   <div className="flex justify-between items-center">
                                     <span className="font-bold">Tổng thanh toán:</span>

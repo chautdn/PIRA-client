@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
 import { useAuth } from "../hooks/useAuth";
+import toast from 'react-hot-toast';
+import api from '../services/api';
 import { 
   ArrowLeft,
   Package, 
@@ -23,10 +25,11 @@ import {
 const RentalOrderDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { 
     currentOrder, 
-    isLoading, 
+    isLoadingOrderDetail, // Changed from isLoading
     confirmOwnerOrder,
     rejectOwnerOrder,
     loadOrderDetail 
@@ -36,11 +39,67 @@ const RentalOrderDetailPage = () => {
   const [confirmAction, setConfirmAction] = useState(null); // 'confirm' or 'reject'
   const [rejectReason, setRejectReason] = useState('');
 
+  // Check if this is a payment return
+  const payment = searchParams.get('payment');
+  const orderCode = searchParams.get('orderCode');
+
+  // Load order detail first
   useEffect(() => {
     if (id) {
+      console.log('📥 Loading order detail for ID:', id);
       loadOrderDetail(id);
     }
   }, [id]);
+
+  // Then handle payment verification if needed
+  useEffect(() => {
+    const handlePaymentReturn = async () => {
+      if (!payment || !orderCode || !id || !currentOrder) {
+        return;
+      }
+
+      if (payment === 'cancel') {
+        toast.error('Thanh toán đã bị hủy');
+        return;
+      }
+
+      if (payment === 'success') {
+        try {
+          console.log('🔄 Verifying payment return:', { id, orderCode });
+          
+          const response = await api.post(`/rental-orders/${id}/verify-payment`, {
+            orderCode: orderCode
+          });
+
+          if (response.data.success) {
+            toast.success('🎉 Thanh toán thành công! Đơn hàng đã được xác nhận.', {
+              duration: 4000,
+              icon: '✅'
+            });
+
+            // Reload order detail to show updated status
+            setTimeout(() => {
+              loadOrderDetail(id);
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('❌ Payment verification failed:', error);
+          
+          // Only show error if it's not already verified
+          if (!error.response?.data?.message?.includes('đã được thanh toán')) {
+            toast.error('Xác nhận thanh toán thất bại: ' + (error.response?.data?.message || error.message));
+          }
+        }
+      }
+    };
+
+    // Wait a bit for order to load first
+    const timer = setTimeout(() => {
+      handlePaymentReturn();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [payment, orderCode, id, currentOrder]);
 
   if (!user) {
     return (
@@ -58,7 +117,8 @@ const RentalOrderDetailPage = () => {
     );
   }
 
-  if (isLoading) {
+  if (isLoadingOrderDetail || (!currentOrder && id)) {
+    console.log('⏳ Loading state:', { isLoadingOrderDetail, id, hasCurrentOrder: !!currentOrder });
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center">
@@ -70,11 +130,22 @@ const RentalOrderDetailPage = () => {
   }
 
   if (!currentOrder) {
+    console.error('❌ No current order found:', { 
+      id, 
+      isLoadingOrderDetail, 
+      currentOrder,
+      payment,
+      orderCode 
+    });
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-4">Không tìm thấy đơn hàng</h2>
+          <p className="text-gray-600 mb-4">Order ID: {id}</p>
+          <p className="text-sm text-gray-500 mb-4">
+            {payment && `Payment: ${payment}, OrderCode: ${orderCode}`}
+          </p>
           <button
             onClick={() => navigate('/rental-orders')}
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
@@ -85,6 +156,12 @@ const RentalOrderDetailPage = () => {
       </div>
     );
   }
+
+  console.log('✅ Rendering order detail:', {
+    orderId: currentOrder._id,
+    status: currentOrder.status,
+    paymentStatus: currentOrder.paymentStatus
+  });
 
   const getStatusColor = (status) => {
     const colors = {

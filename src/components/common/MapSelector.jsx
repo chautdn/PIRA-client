@@ -106,51 +106,10 @@ const buildDisplayFromProps = (props, lat, lon) => {
 
   // Nếu không có địa chỉ hợp lệ, dùng vị trí ước tính
   if (addressParts.length === 0 || (addressParts.length === 1 && addressParts[0] === "Thành phố Đà Nẵng")) {
-    // Xác định khu vực dựa trên tọa độ
-    const area = getAreaFromCoordinates(lat, lon);
-    return `${area}, Thành phố Đà Nẵng`;
+    return `Vị trí gần (${lat.toFixed(6)}, ${lon.toFixed(6)}), Thành phố Đà Nẵng`;
   }
 
   return addressParts.join(", ");
-};
-
-// Hàm xác định khu vực dựa trên tọa độ
-const getAreaFromCoordinates = (lat, lon) => {
-  // Quận Hải Châu (trung tâm)
-  if (lat >= 16.0450 && lat <= 16.0850 && lon >= 108.2000 && lon <= 108.2400) {
-    if (lat >= 16.0600 && lon >= 108.2200) return "Khu vực trung tâm Hải Châu";
-    return "Quận Hải Châu";
-  }
-  // Quận Thanh Khê
-  else if (lat >= 16.0400 && lat <= 16.0700 && lon >= 108.1700 && lon <= 108.2000) {
-    return "Quận Thanh Khê";
-  }
-  // Quận Sơn Trà
-  else if (lat >= 16.0550 && lat <= 16.1200 && lon >= 108.2200 && lon <= 108.2700) {
-    if (lon >= 108.2500) return "Bán đảo Sơn Trà";
-    return "Quận Sơn Trà";
-  }
-  // Quận Ngũ Hành Sơn
-  else if (lat >= 15.9800 && lat <= 16.0450 && lon >= 108.2000 && lon <= 108.2600) {
-    if (lon >= 108.2300) return "Khu vực biển Ngũ Hành Sơn";
-    return "Quận Ngũ Hành Sơn";
-  }
-  // Quận Liên Chiểu
-  else if (lat >= 16.0500 && lat <= 16.1000 && lon >= 108.1200 && lon <= 108.2000) {
-    return "Quận Liên Chiểu";
-  }
-  // Quận Cẩm Lệ
-  else if (lat >= 16.0000 && lat <= 16.0500 && lon >= 108.1500 && lon <= 108.2000) {
-    return "Quận Cẩm Lệ";
-  }
-  // Huyện Hòa Vang
-  else if (lat <= 16.0000 || (lat >= 16.0000 && lon <= 108.1500)) {
-    return "Huyện Hòa Vang";
-  }
-  // Default fallback
-  else {
-    return "Khu vực Đà Nẵng";
-  }
 };
 
 const isLikelyPlusCode = (s) => {
@@ -340,105 +299,64 @@ const MapSelector = ({
   const performReverse = async (lat, lon, mapInstance = mapRef.current, marker = markerRef.current) => {
     setError(null);
     try {
-      // use layers prioritizing address + street + venue + poi
-      const url =
-        `${VIETMAP_BASE_URL}/reverse?api-version=1.1&apikey=${VIETMAP_API_KEY}` +
-        `&lat=${lat}&lon=${lon}&layers=address,street,venue,poi,locality&country=vn&size=10`;
-
+      const url = `${VIETMAP_BASE_URL}/reverse/v4?apikey=${VIETMAP_API_KEY}&lng=${lon}&lat=${lat}&display_type=1`;
       const resp = await fetch(url);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      // choose best feature that is not plus code-like and has address-like props
-      if (data?.code === "OK" && Array.isArray(data.data?.features) && data.data.features.length > 0) {
-        let best = null;
-        let bestScore = -999;
-        for (const f of data.data.features) {
-          const p = f.properties || {};
-          let score = 0;
-          
-          // Trừ điểm nặng cho Plus Code
-          if (isLikelyPlusCode(p.name)) score -= 50;
-          if (isLikelyPlusCode(p.label)) score -= 30;
-          if (isLikelyPlusCode(p.street)) score -= 40;
-          
-          // Cộng điểm cho các thành phần địa chỉ thực tế
-          if (p.housenumber && p.housenumber.length > 0) score += 10;
-          if (p.street && p.street.length > 3 && !isLikelyPlusCode(p.street)) score += 8;
-          if (p.name && p.name.length > 3 && !isLikelyPlusCode(p.name)) score += 6;
-          if (p.locality && p.locality.length > 0) score += 6;
-          if (p.county && p.county.length > 0) score += 5;
-          if (p.region && p.region.length > 0) score += 3;
-          if (p.label && p.label.length > 15 && !isLikelyPlusCode(p.label)) score += 4;
-          
-          // Thưởng cho các layer tốt
-          if (p.layer === 'address') score += 5;
-          if (p.layer === 'street') score += 3;
-          if (p.layer === 'venue') score += 2;
-          
-          console.log(`Feature: "${p.name || p.label}" | Layer: ${p.layer} | Score: ${score}`);
+      if (data && Array.isArray(data) && data.length > 0) {
+        const item = data[0];
+        const fullAddress = item.display || `${item.name || ""}, ${item.address || "Đà Nẵng"}`.trim();
+        const boundaries = item.boundaries || [];
+        const wardObj = boundaries.find(b => b.type === 2) || {};
+        const cityObj = boundaries.find(b => b.type === 0) || {};
+        const districtObj = boundaries.find(b => b.type === 1) || {}; // Assuming type 1 is district
 
-          if (score > bestScore) {
-            bestScore = score;
-            best = f;
+        const newSel = {
+          lat,
+          lon,
+          fullAddress,
+          streetAddress: item.name || "",
+          ward: wardObj.full_name || wardObj.name || "",
+          district: districtObj.full_name || districtObj.name || "",
+          city: cityObj.full_name || cityObj.name || "Đà Nẵng",
+          province: cityObj.full_name || cityObj.name || "Đà Nẵng",
+          rawFeature: item,
+        };
+        setSelected(newSel);
+        setSearchQuery(newSel.fullAddress);
+        // ensure marker and map are synced
+        try {
+          if (marker && typeof marker.setLngLat === "function") {
+            marker.setLngLat([lon, lat]);
           }
-        }
-
-        console.log(`\ud83c\udfc6 Best feature found with score: ${bestScore}`);
-        console.log('Best feature props:', best?.properties);
-        
-        if (best && bestScore > 0) { // Tăng ngưỡng từ -100 lên 0
-          const props = best.properties || {};
-          const display = buildDisplayFromProps(props, lat, lon);
-          console.log('\ud83d\udccd Built display address:', display);
-          
-          const newSel = {
-            lat,
-            lon,
-            fullAddress: display,
-            streetAddress: props.housenumber ? `${props.housenumber} ${props.street || ""}`.trim() : (props.street || props.name || ""),
-            ward: props.locality || "",
-            district: props.county || "",
-            city: props.region || "Đà Nẵng",
-            province: props.region || "Đà Nẵng",
-            rawFeature: best,
-          };
-          setSelected(newSel);
-          setSearchQuery(newSel.fullAddress);
-          // ensure marker and map are synced
-          try {
-            if (marker && typeof marker.setLngLat === "function") {
-              marker.setLngLat([lon, lat]);
-            }
-            if (mapInstance && typeof mapInstance.flyTo === "function") {
-              mapInstance.flyTo({ center: [lon, lat], zoom: 16, duration: 700 });
-            }
-          } catch (e) {}
-          return newSel;
-        }
+          if (mapInstance && typeof mapInstance.flyTo === "function") {
+            mapInstance.flyTo({ center: [lon, lat], zoom: 16, duration: 700 });
+          }
+        } catch (e) {}
+        return newSel;
       }
 
-      // fallback: không tìm được feature tốt -> dùng khu vực ước tính
-      console.log('\u26a0\ufe0f No good features found, using area-based fallback');
-      const areaGuess = getAreaFromCoordinates(lat, lon);
-      const fallbackAddress = `${areaGuess}, Thành phố Đà Nẵng`;
+      // fallback: không tìm được -> dùng địa chỉ cụ thể
+      console.log('⚠️ No data found, using simple fallback');
+      const fallbackAddress = `Vị trí gần (${lat.toFixed(6)}, ${lon.toFixed(6)}), Thành phố Đà Nẵng`;
       const fallbackSel = {
         lat,
         lon,
         fullAddress: fallbackAddress,
-        streetAddress: areaGuess,
+        streetAddress: "",
         ward: "",
-        district: areaGuess.includes('Quận') ? areaGuess : "",
+        district: "",
         city: "Đà Nẵng",
         province: "Đà Nẵng",
       };
       setSelected(fallbackSel);
       setSearchQuery(fallbackSel.fullAddress);
-      console.log('\ud83c\udfe0 Using fallback address:', fallbackAddress);
+      console.log('🏠 Using fallback address:', fallbackAddress);
       return fallbackSel;
     } catch (err) {
       console.error("Reverse geocode error:", err);
       setError("Không thể lấy địa chỉ từ server.");
-      const fallbackAddress = `Vị trí gần (${lat.toFixed(6)}, ${lon.toFixed(6)})`;
+      const fallbackAddress = `Vị trí gần (${lat.toFixed(6)}, ${lon.toFixed(6)}), Đà Nẵng`;
       const fallbackSel = {
         lat,
         lon,
