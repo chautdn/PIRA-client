@@ -13,6 +13,7 @@ const OwnerCreateProduct = () => {
   const [verificationStatus, setVerificationStatus] = useState({
     cccdVerified: false,
     bankAccountAdded: false,
+    addressComplete: false,
   });
 
   useEffect(() => {
@@ -30,29 +31,40 @@ const OwnerCreateProduct = () => {
 
       const cccdVerified = updatedUser?.cccd?.isVerified || false;
       const bankAccountAdded = !!(
-        updatedUser?.bankAccount?.accountNumber &&
-        updatedUser?.bankAccount?.bankCode
+        (
+          updatedUser?.bankAccount?.accountNumber &&
+          updatedUser?.bankAccount?.bankCode &&
+          updatedUser?.bankAccount?.isVerified
+        ) // Must be verified
+      );
+      const addressComplete = !!(
+        updatedUser?.address?.streetAddress &&
+        updatedUser?.address?.city &&
+        updatedUser?.address?.province
       );
 
       setVerificationStatus({
         cccdVerified,
         bankAccountAdded,
+        addressComplete,
       });
 
-      // If both requirements are not met, show error immediately
-      if (!cccdVerified || !bankAccountAdded) {
-        if (!cccdVerified) {
-          toast.error("❌ Cần xác thực CCCD trước khi đăng sản phẩm!", {
+      // If requirements are not met, show appropriate error
+      if (!cccdVerified) {
+        toast.error("❌ Cần xác thực CCCD trước khi đăng sản phẩm!", {
+          duration: 5000,
+        });
+      } else if (!bankAccountAdded) {
+        toast.error(
+          "❌ Cần xác thực tài khoản ngân hàng trước khi đăng sản phẩm!",
+          {
             duration: 5000,
-          });
-        } else if (!bankAccountAdded) {
-          toast.error(
-            "❌ Cần thêm tài khoản ngân hàng trước khi đăng sản phẩm!",
-            {
-              duration: 5000,
-            }
-          );
-        }
+          }
+        );
+      } else if (!addressComplete) {
+        toast.error("❌ Cần cập nhật địa chỉ đầy đủ trước khi đăng sản phẩm!", {
+          duration: 5000,
+        });
       }
     } catch (error) {
       console.error("Error checking verification status:", error);
@@ -225,7 +237,8 @@ const OwnerCreateProduct = () => {
               </div>
             </div>
           ) : !verificationStatus.cccdVerified ||
-            !verificationStatus.bankAccountAdded ? (
+            !verificationStatus.bankAccountAdded ||
+            !verificationStatus.addressComplete ? (
             // Verification Required Screen
             <motion.div
               className="max-w-3xl mx-auto"
@@ -318,14 +331,14 @@ const OwnerCreateProduct = () => {
                         Tài Khoản Ngân Hàng
                         {verificationStatus.bankAccountAdded && (
                           <span className="text-sm bg-green-500 text-white px-3 py-1 rounded-full">
-                            Đã thêm
+                            Đã xác thực
                           </span>
                         )}
                       </h3>
                       <p className="text-gray-600 mb-4">
                         {verificationStatus.bankAccountAdded
-                          ? "Tài khoản ngân hàng của bạn đã được liên kết thành công."
-                          : "Thêm tài khoản ngân hàng để nhận thanh toán từ việc cho thuê sản phẩm."}
+                          ? "Tài khoản ngân hàng của bạn đã được xác thực thành công."
+                          : "Thêm và xác thực tài khoản ngân hàng để nhận thanh toán từ việc cho thuê sản phẩm."}
                       </p>
                       {!verificationStatus.bankAccountAdded && (
                         <button
@@ -333,7 +346,54 @@ const OwnerCreateProduct = () => {
                           className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
                         >
                           <icons.HiCash className="w-5 h-5" />
-                          Thêm Tài Khoản
+                          Xác Thực Tài Khoản
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Address Verification */}
+                  <div
+                    className={`flex items-start gap-4 p-6 rounded-xl border-2 transition-all ${
+                      verificationStatus.addressComplete
+                        ? "bg-green-50 border-green-300"
+                        : "bg-red-50 border-red-300"
+                    }`}
+                  >
+                    <div
+                      className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                        verificationStatus.addressComplete
+                          ? "bg-green-500"
+                          : "bg-red-500"
+                      }`}
+                    >
+                      {verificationStatus.addressComplete ? (
+                        <icons.FiCheck className="w-6 h-6 text-white" />
+                      ) : (
+                        <icons.BiInfoCircle className="w-6 h-6 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                        Địa Chỉ
+                        {verificationStatus.addressComplete && (
+                          <span className="text-sm bg-green-500 text-white px-3 py-1 rounded-full">
+                            Đã cập nhật
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {verificationStatus.addressComplete
+                          ? "Địa chỉ của bạn đã được cập nhật đầy đủ."
+                          : "Cập nhật địa chỉ đầy đủ (đường, thành phố, tỉnh) để người thuê biết vị trí sản phẩm."}
+                      </p>
+                      {!verificationStatus.addressComplete && (
+                        <button
+                          onClick={() => navigate("/profile")}
+                          className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
+                        >
+                          <icons.BiMap className="w-5 h-5" />
+                          Cập Nhật Địa Chỉ
                         </button>
                       )}
                     </div>
@@ -351,17 +411,28 @@ const OwnerCreateProduct = () => {
                           <li className="flex items-start gap-2">
                             <span>•</span>
                             <span>
-                              Bảo vệ cộng đồng khỏi gian lận và lừa đảo
+                              <strong>CCCD:</strong> Bảo vệ cộng đồng khỏi gian
+                              lận và lừa đảo
                             </span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
-                            <span>Tăng độ tin cậy và uy tín của bạn</span>
+                            <span>
+                              <strong>Ngân hàng:</strong> Đảm bảo thanh toán
+                              nhanh chóng và an toàn
+                            </span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
                             <span>
-                              Đảm bảo thanh toán nhanh chóng và an toàn
+                              <strong>Địa chỉ:</strong> Người thuê biết vị trí
+                              và khoảng cách sản phẩm
+                            </span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span>•</span>
+                            <span>
+                              Tăng độ tin cậy và uy tín của bạn với khách hàng
                             </span>
                           </li>
                           <li className="flex items-start gap-2">

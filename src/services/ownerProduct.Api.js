@@ -101,6 +101,66 @@ export const ownerProductApi = {
     }
   },
 
+  // GET /api/owner/products/:id/rental-status - Check rental status
+  checkRentalStatus: async (productId) => {
+    try {
+      const response = await api.get(
+        `/owner-products/${productId}/rental-status`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PUT /api/owner/products/:id/hide - Hide product
+  hideProduct: async (productId) => {
+    try {
+      const response = await api.put(`/owner-products/${productId}/hide`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PUT /api/owner/products/:id/unhide - Unhide product
+  unhideProduct: async (productId) => {
+    try {
+      const response = await api.put(`/owner-products/${productId}/unhide`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // DELETE /api/owner/products/:id/soft-delete - Soft delete product
+  softDeleteProduct: async (productId) => {
+    try {
+      const response = await api.delete(
+        `/owner-products/${productId}/soft-delete`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PUT /api/owner/products/:id/safe-update - Update safe fields only
+  updateProductSafeFields: async (productId, updateData) => {
+    try {
+      const response = await api.put(
+        `/owner-products/${productId}/safe-update`,
+        updateData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // === RENTAL ORDER MANAGEMENT ===
 
   // GET /api/rental-orders/owner-suborders - Get SubOrders for owner
@@ -160,7 +220,6 @@ export const ownerProductApi = {
         params,
       });
       return response.data;
-      
     } catch (error) {
       throw error.response?.data || error.message;
     }

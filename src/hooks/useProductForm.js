@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { categoryApi } from "../services/category.Api";
 import { ownerProductApi } from "../services/ownerProduct.Api";
@@ -12,6 +12,7 @@ const INITIAL_FORM_DATA = {
   title: "",
   description: "",
   condition: "LIKE_NEW",
+  quantity: 1,
   category: "",
   subCategory: "",
   pricing: {
@@ -33,6 +34,11 @@ const INITIAL_FORM_DATA = {
       lat: 16.0544,
       lng: 108.2022,
     },
+    deliveryOptions: {
+      pickup: true,
+      delivery: false,
+      deliveryFee: 0,
+    },
   },
   promotion: {
     enabled: false,
@@ -40,14 +46,18 @@ const INITIAL_FORM_DATA = {
     duration: 1,
     paymentMethod: "wallet",
   },
+  agreedToTerms: false,
 };
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
+
+const DRAFT_KEY = "pira_product_draft";
 
 export const useProductForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { balance: walletBalance, loading: walletLoading } = useWallet();
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [currentStep, setCurrentStep] = useState(1);
@@ -103,6 +113,63 @@ export const useProductForm = () => {
 
     fetchCategories();
   }, []);
+
+  // Load draft and populate user address on mount
+  useEffect(() => {
+    // Check if returning from profile update
+    const returningFromProfile = location.state?.fromProfile;
+
+    // Try to load draft from localStorage
+    const savedDraft = localStorage.getItem(DRAFT_KEY);
+
+    if (savedDraft && returningFromProfile) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        console.log("📝 Restored draft from localStorage:", draft);
+        setFormData(draft);
+        toast.success("✅ Đã khôi phục bản nháp của bạn!");
+
+        // Clear the draft after restoring
+        localStorage.removeItem(DRAFT_KEY);
+      } catch (error) {
+        console.error("Error loading draft:", error);
+        localStorage.removeItem(DRAFT_KEY);
+      }
+    } else if (user?.address) {
+      // Populate user's address if no draft
+      setFormData((prev) => ({
+        ...prev,
+        location: {
+          ...prev.location,
+          address: {
+            streetAddress: user.address.streetAddress || "",
+          },
+          district: user.address.district || "",
+          ward: "", // Ward needs to be selected manually
+          city: user.address.city || "Đà Nẵng",
+        },
+      }));
+      console.log("📍 Populated user address:", user.address);
+    }
+  }, [user, location.state]);
+
+  // Function to save draft to localStorage
+  const saveDraft = () => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+      console.log("💾 Saved draft to localStorage");
+      return true;
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      return false;
+    }
+  };
+
+  // Function to clear draft
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    console.log("🗑️ Cleared draft from localStorage");
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -181,6 +248,9 @@ export const useProductForm = () => {
         if (!formData.condition) {
           newErrors.condition = "Vui lòng chọn tình trạng sản phẩm";
         }
+        if (!formData.quantity || formData.quantity < 1) {
+          newErrors.quantity = "Số lượng phải lớn hơn 0";
+        }
         break;
 
       case 2: // Category
@@ -225,8 +295,21 @@ export const useProductForm = () => {
         }
         break;
 
-      case 6: // Promotion
-        // Validation handled in navigation component
+      case 6: // Delivery Options
+        if (
+          !formData.location.deliveryOptions.pickup &&
+          !formData.location.deliveryOptions.delivery
+        ) {
+          newErrors.deliveryOptions =
+            "Vui lòng chọn ít nhất một phương thức giao hàng";
+        }
+        break;
+
+      case 7: // Promotion
+        if (!formData.agreedToTerms) {
+          newErrors.agreedToTerms =
+            "Bạn phải đồng ý với điều khoản và điều kiện để tạo sản phẩm";
+        }
         break;
 
       default:
@@ -308,6 +391,7 @@ export const useProductForm = () => {
       formDataToSend.append("title", formData.title.trim());
       formDataToSend.append("description", formData.description.trim());
       formDataToSend.append("condition", formData.condition);
+      formDataToSend.append("quantity", formData.quantity);
       formDataToSend.append("category", formData.category);
 
       if (formData.subCategory) {
@@ -353,6 +437,9 @@ export const useProductForm = () => {
       if (response.success) {
         const createdProduct = response.data;
         toast.success("🎉 Tạo sản phẩm thành công!");
+
+        // Clear draft after successful creation
+        clearDraft();
 
         // Refresh user data to get updated role (RENTER -> OWNER)
         try {
@@ -655,6 +742,8 @@ export const useProductForm = () => {
     handlePrevious,
     handleStepClick,
     handleSubmit,
+    saveDraft,
+    clearDraft,
 
     // Constants
     TOTAL_STEPS,

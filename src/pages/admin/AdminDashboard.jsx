@@ -251,40 +251,211 @@ const AdminDashboard = () => {
         />
       </div>
 
-      {/* Charts and Activities */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Statistics Breakdown */}
+      {/* Charts Section - Full Width */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Users by Role Chart */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Thống kê chi tiết</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Users theo vai trò</h3>
           <div className="space-y-4">
-            {/* Users by Role */}
-            <div>
-              <h4 className="font-medium text-gray-800 mb-2">Users theo vai trò</h4>
-              <div className="space-y-2">
-                {stats.charts.usersByRole.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 capitalize">{item._id || 'Không xác định'}</span>
-                    <span className="text-sm font-medium">{item.count}</span>
+            {stats.charts.usersByRole.length > 0 ? (
+              stats.charts.usersByRole.map((item, index) => {
+                const maxCount = Math.max(...stats.charts.usersByRole.map(i => i.count));
+                const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500'];
+                const bgColors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-orange-100'];
+                
+                return (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 capitalize">
+                        {item._id === 'RENTER' ? '🙋 Người thuê' : 
+                         item._id === 'OWNER' ? '👨‍💼 Chủ sở hữu' : 
+                         item._id === 'ADMIN' ? '👑 Admin' : 
+                         item._id === 'SHIPPER' ? '🚚 Shipper' : 
+                         item._id || 'Không xác định'}
+                      </span>
+                      <span className="text-sm font-bold text-gray-900">{item.count}</span>
+                    </div>
+                    <div className={`w-full ${bgColors[index % bgColors.length]} rounded-full h-8 overflow-hidden`}>
+                      <div 
+                        className={`${colors[index % colors.length]} h-full rounded-full flex items-center justify-end pr-3 transition-all duration-500 ease-out`}
+                        style={{ width: `${percentage}%` }}
+                      >
+                        <span className="text-xs text-white font-semibold">
+                          {percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                ))}
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>Chưa có dữ liệu</p>
               </div>
-            </div>
-            
-            {/* Products by Status */}
-            <div>
-              <h4 className="font-medium text-gray-800 mb-2">Sản phẩm theo trạng thái</h4>
-              <div className="space-y-2">
-                {stats.charts.productsByStatus.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">{item._id || 'Không xác định'}</span>
-                    <span className="text-sm font-medium">{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
+        {/* Products by Status Chart */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Sản phẩm theo trạng thái</h3>
+          <div className="space-y-4">
+            {stats.charts.productsByStatus.length > 0 ? (
+              stats.charts.productsByStatus.map((item, index) => {
+                const maxCount = Math.max(...stats.charts.productsByStatus.map(i => i.count));
+                const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                const statusConfig = {
+                  'ACTIVE': { color: 'bg-green-500', bgColor: 'bg-green-100', icon: '🟢', label: 'Đang hoạt động' },
+                  'PENDING': { color: 'bg-yellow-500', bgColor: 'bg-yellow-100', icon: '⏳', label: 'Chờ duyệt' },
+                  'INACTIVE': { color: 'bg-gray-500', bgColor: 'bg-gray-100', icon: '⚫', label: 'Không hoạt động' },
+                  'SUSPENDED': { color: 'bg-red-500', bgColor: 'bg-red-100', icon: '🔴', label: 'Đã đình chỉ' },
+                  'RENTED': { color: 'bg-blue-500', bgColor: 'bg-blue-100', icon: '🔵', label: 'Đang cho thuê' },
+                  'DRAFT': { color: 'bg-purple-500', bgColor: 'bg-purple-100', icon: '📝', label: 'Bản nháp' }
+                };
+                const config = statusConfig[item._id] || { color: 'bg-gray-500', bgColor: 'bg-gray-100', icon: '📦', label: item._id };
+                
+                return (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <span>{config.icon}</span>
+                        {config.label}
+                      </span>
+                      <span className="text-sm font-bold text-gray-900">{item.count}</span>
+                    </div>
+                    <div className={`w-full ${config.bgColor} rounded-full h-8 overflow-hidden`}>
+                      <div 
+                        className={`${config.color} h-full rounded-full flex items-center justify-end pr-3 transition-all duration-500 ease-out`}
+                        style={{ width: `${percentage}%` }}
+                      >
+                        <span className="text-xs text-white font-semibold">
+                          {percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>Chưa có dữ liệu</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Monthly Charts - Full Width */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Monthly Users Chart */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border border-blue-100">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <span className="text-2xl">👥</span>
+                Người dùng mới theo tháng
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">Tổng: {stats.charts.monthlyUsers.reduce((sum, item) => sum + item.count, 0)} users</p>
+            </div>
+          </div>
+          {stats.charts.monthlyUsers.length > 0 ? (
+            <div className="bg-white rounded-lg p-4 shadow-inner">
+              <div className="flex items-end justify-between gap-3 h-64">
+                {stats.charts.monthlyUsers.map((item, index) => {
+                  const maxCount = Math.max(...stats.charts.monthlyUsers.map(i => i.count));
+                  const height = maxCount > 0 ? (item.count / maxCount) * 100 : 5;
+                  const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+                  
+                  return (
+                    <div key={index} className="flex-1 flex flex-col items-center group">
+                      <div className="w-full flex items-end justify-center h-52 mb-3 relative">
+                        {/* Value label on top of bar */}
+                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                            {item.count} users
+                          </div>
+                        </div>
+                        
+                        {/* Bar */}
+                        <div 
+                          className="w-full max-w-[40px] bg-gradient-to-t from-blue-500 via-blue-400 to-blue-300 rounded-t-xl hover:from-blue-600 hover:via-blue-500 hover:to-blue-400 transition-all duration-300 cursor-pointer shadow-lg group-hover:shadow-2xl group-hover:scale-105 relative overflow-hidden"
+                          style={{ 
+                            height: `${height}%`,
+                            minHeight: '20px'
+                          }}
+                        >
+                          {/* Shine effect */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                          
+                          {/* Count on bar for larger values */}
+                          {height > 30 && (
+                            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs">
+                              {item.count}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Month label */}
+                      <div className="text-xs text-gray-700 font-semibold group-hover:text-blue-600 transition-colors text-center">
+                        T{item._id.month}
+                      </div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">
+                        {item._id.year}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-20 text-gray-500 bg-white rounded-lg">
+              <div className="text-4xl mb-3">📊</div>
+              <p className="font-medium">Chưa có dữ liệu</p>
+            </div>
+          )}
+        </div>
+
+        {/* Monthly Revenue Chart */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Doanh thu theo tháng</h3>
+          {stats.charts.monthlyRevenue.length > 0 ? (
+            <div className="flex items-end justify-between gap-2 h-64">
+              {stats.charts.monthlyRevenue.map((item, index) => {
+                const maxRevenue = Math.max(...stats.charts.monthlyRevenue.map(i => i.revenue));
+                const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
+                const monthNames = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center">
+                    <div className="w-full flex items-end justify-center h-48 mb-2">
+                      <div 
+                        className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t-lg hover:from-green-600 hover:to-green-500 transition-all duration-300 cursor-pointer relative group"
+                        style={{ height: `${height}%` }}
+                      >
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          {item.revenue?.toLocaleString()} đ
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-600 font-medium">
+                      {monthNames[item._id.month - 1]}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-20 text-gray-500">
+              <p>Chưa có dữ liệu</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Activities and Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác nhanh</h3>

@@ -32,11 +32,7 @@ const AdminLayout = () => {
       path: '/admin/products',
       icon: '📦'
     },
-    {
-      name: 'Quản lý Category',
-      path: '/admin/categories',
-      icon: '📁'
-    },
+   
     {
       name: 'Quản lý Đơn hàng',
       path: '/admin/orders',

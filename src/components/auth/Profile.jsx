@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import userService from "../../services/user.Api";
 import kycService from "../../services/kyc.Api"; // Thêm import này
 import { toast } from "react-hot-toast";
@@ -6,9 +7,12 @@ import { useAuth } from "../../hooks/useAuth";
 import { motion } from "framer-motion";
 import KycModal from "../common/KycModal";
 import BankAccountSection from "../wallet/BankAccountSection";
+import MapSelector from "../common/MapSelector";
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -32,6 +36,10 @@ const Profile = () => {
       district: "",
       city: "",
       province: "",
+      coordinates: {
+        latitude: null,
+        longitude: null,
+      },
     },
   });
 
@@ -42,10 +50,44 @@ const Profile = () => {
     transition: { duration: 0.4, ease: "easeOut" },
   };
 
+  // Handle location selection from MapSelector
+  const handleLocationSelect = (locationData) => {
+    console.log("Selected location:", locationData);
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        streetAddress:
+          locationData.streetAddress || locationData.fullAddress || "",
+        ward: locationData.ward || "",
+        district: locationData.district || prev.address.district,
+        city: locationData.city || prev.address.city,
+        province: locationData.province || prev.address.province,
+        coordinates: {
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+        },
+      },
+    }));
+    toast.success("Đã cập nhật vị trí địa chỉ!");
+  };
+
   // Fetch user profile
   useEffect(() => {
     fetchProfile();
     loadKycStatus();
+
+    // Show notification if coming from product creation
+    if (location.state?.fromProductCreate) {
+      toast("📍 Cập nhật địa chỉ để tiếp tục tạo sản phẩm", {
+        icon: "💡",
+        duration: 4000,
+        style: {
+          background: "#3B82F6",
+          color: "#fff",
+        },
+      });
+    }
   }, []);
 
   const fetchProfile = async () => {
@@ -71,6 +113,10 @@ const Profile = () => {
           district: userData.address?.district || "",
           city: userData.address?.city || "",
           province: userData.address?.province || "",
+          coordinates: {
+            latitude: userData.address?.coordinates?.latitude || null,
+            longitude: userData.address?.coordinates?.longitude || null,
+          },
         },
       });
 
@@ -141,6 +187,16 @@ const Profile = () => {
       setUser(response.data);
       setEditing(false);
       toast.success("Cập nhật thành công!");
+
+      // Check if came from product creation page
+      if (location.state?.fromProductCreate) {
+        toast.success("🔄 Quay lại trang tạo sản phẩm...", { duration: 2000 });
+        setTimeout(() => {
+          navigate("/owner/products/create", {
+            state: { fromProfile: true },
+          });
+        }, 1500);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Có lỗi xảy ra");
     } finally {
@@ -806,13 +862,35 @@ const Profile = () => {
                 )}
 
                 {activeSection === "address" && (
-                  <div className="max-w-3xl">
-                    <div className="space-y-6">
-                      {/* Street Address */}
-                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-100 hover:shadow-xl transition-all duration-300">
-                        <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                          <span className="text-2xl">🏠</span>
-                          Địa chỉ cụ thể
+                  <div className="max-w-2xl">
+                    <h2 className="text-lg font-medium mb-6">
+                      Địa chỉ của tôi
+                    </h2>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Chọn địa chỉ trên bản đồ (để tính khoảng cách chính xác)
+                        </label>
+                        <MapSelector
+                          onLocationSelect={handleLocationSelect}
+                          initialAddress={formData.address.streetAddress}
+                          placeholder="Nhấn để chọn địa chỉ trên bản đồ VietMap..."
+                          className="mb-4"
+                        />
+                        {formData.address.coordinates?.latitude &&
+                          formData.address.coordinates?.longitude && (
+                            <div className="text-sm text-green-600 bg-green-50 p-2 rounded mb-2">
+                              ✅ Đã có tọa độ:{" "}
+                              {formData.address.coordinates.latitude.toFixed(6)},{" "}
+                              {formData.address.coordinates.longitude.toFixed(6)}
+                            </div>
+                          )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Địa chỉ cụ thể (tự điền từ bản đồ)
                         </label>
                         <input
                           type="text"
@@ -824,58 +902,51 @@ const Profile = () => {
                               e.target.value
                             )
                           }
-                          className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
-                          placeholder="📍 Nhập số nhà, tên đường..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                          placeholder="Số nhà, tên đường"
                         />
                       </div>
 
-                      {/* District and City */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-100 hover:shadow-xl transition-all duration-300">
-                          <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                            <span className="text-2xl">🏛️</span>
-                            Quận/Huyện
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.address.district}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "address",
-                                "district",
-                                e.target.value
-                              )
-                            }
-                            className="w-full px-4 py-3 border-2 border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
-                            placeholder="📍 Nhập quận/huyện..."
-                          />
-                        </div>
-
-                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-100 hover:shadow-xl transition-all duration-300">
-                          <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                            <span className="text-2xl">🌇</span>
-                            Thành phố
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.address.city}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "address",
-                                "city",
-                                e.target.value
-                              )
-                            }
-                            className="w-full px-4 py-3 border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
-                            placeholder="📍 Nhập thành phố..."
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Quận/Huyện
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.address.district}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "address",
+                              "district",
+                              e.target.value
+                            )
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                          placeholder="Nhập quận/huyện"
+                        />
                       </div>
 
-                      {/* Province */}
-                      <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6 rounded-xl border-2 border-orange-100 hover:shadow-xl transition-all duration-300">
-                        <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                          <span className="text-2xl">🗺️</span>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Thành phố
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.address.city}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "address",
+                              "city",
+                              e.target.value
+                            )
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                          placeholder="Nhập thành phố"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Tỉnh/Thành phố
                         </label>
                         <input
@@ -888,19 +959,18 @@ const Profile = () => {
                               e.target.value
                             )
                           }
-                          className="w-full px-4 py-3 border-2 border-orange-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
-                          placeholder="📍 Nhập tỉnh/thành phố..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                          placeholder="Nhập tỉnh/thành phố"
                         />
                       </div>
 
-                      {/* Save Button */}
                       <div className="flex justify-end pt-4">
                         <button
                           onClick={handleSave}
                           disabled={saving}
-                          className="px-10 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white text-lg font-bold rounded-xl hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 disabled:opacity-50 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300"
+                          className="px-6 py-2 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 disabled:opacity-50"
                         >
-                          {saving ? "⏳ Đang lưu..." : "💾 Lưu Địa Chỉ"}
+                          {saving ? "Đang lưu..." : "Lưu Địa Chỉ"}
                         </button>
                       </div>
                     </div>
