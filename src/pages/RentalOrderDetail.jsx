@@ -4,6 +4,7 @@ import { useRentalOrder } from '../context/RentalOrderContext';
 import { useAuth } from "../hooks/useAuth";
 import ExtensionRequestModal from '../components/rental/ExtensionRequestModal';
 import ExtensionRequestsModal from '../components/rental/ExtensionRequestsModal';
+import extensionService from '../services/extension';
 import { 
   ArrowLeft,
   Package, 
@@ -42,6 +43,7 @@ const RentalOrderDetailPage = () => {
   const [isExtensionRequestModalOpen, setIsExtensionRequestModalOpen] = useState(false);
   const [isExtensionRequestsModalOpen, setIsExtensionRequestsModalOpen] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
+  const [renterExtensionMap, setRenterExtensionMap] = useState({}); // { subOrderId: latestRequest }
   const [successMessage, setSuccessMessage] = useState(null);
 
   useEffect(() => {
@@ -174,6 +176,38 @@ const RentalOrderDetailPage = () => {
     }
   }, [currentOrder, user, isOwner, isRenter]);
 
+  // Load renter's extension requests and map them by subOrder
+  React.useEffect(() => {
+    const loadRenterExtensions = async () => {
+      try {
+        if (!isRenter) return;
+        const resp = await extensionService.getRenterExtensionRequests({ page: 1, limit: 50 });
+        console.log('🔄 Renter extension requests response:', resp);
+        const requests = resp?.requests || [];
+
+        const map = {};
+        requests.forEach(r => {
+          const subId = r.subOrder?._id || r.subOrder;
+          if (!subId) return;
+          if (!map[subId]) map[subId] = [];
+          map[subId].push(r);
+        });
+
+        // Keep only latest request per subOrder
+        const latestMap = {};
+        for (const subId of Object.keys(map)) {
+          const sorted = map[subId].sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+          latestMap[subId] = sorted[0];
+        }
+
+        setRenterExtensionMap(latestMap);
+      } catch (err) {
+        console.error('❌ Error loading renter extension requests:', err);
+      }
+    };
+    loadRenterExtensions();
+  }, [currentOrder, isRenter]);
+
   const handleOwnerAction = async (action, subOrderId, reason = null) => {
     try {
       if (action === 'confirm') {
@@ -266,17 +300,68 @@ const RentalOrderDetailPage = () => {
             
             {/* Button Gia hạn thuê cho renter khi status ACTIVE */}
             {isRenter && currentOrder.status === 'ACTIVE' && currentOrder.subOrders?.some(so => so.status === 'ACTIVE') && (
-              <button
-                onClick={() => {
-                  const activeSubOrder = currentOrder.subOrders.find(so => so.status === 'ACTIVE');
-                  setSelectedSubOrder(activeSubOrder);
-                  setIsExtensionRequestModalOpen(true);
-                }}
-                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
-              >
-                <ClockIcon className="w-5 h-5" />
-                <span>Gia hạn thuê</span>
-              </button>
+              (() => {
+                const activeSubOrder = currentOrder.subOrders.find(so => so.status === 'ACTIVE');
+                const subId = activeSubOrder?._id;
+                const ext = renterExtensionMap[subId];
+
+                if (!ext) {
+                  return (
+                    <button
+                      onClick={() => {
+                        setSelectedSubOrder(activeSubOrder);
+                        setIsExtensionRequestModalOpen(true);
+                      }}
+                      className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
+                    >
+                      <ClockIcon className="w-5 h-5" />
+                      <span>Gia hạn thuê</span>
+                    </button>
+                  );
+                }
+
+                // If there is an extension request, show its status
+                if (ext.status === 'PENDING') {
+                  return (
+                    <button className="bg-yellow-200 text-yellow-800 px-6 py-2 rounded-lg flex items-center space-x-2 cursor-default" disabled>
+                      <ClockIcon className="w-5 h-5" />
+                      <span>Đang chờ xử lý</span>
+                    </button>
+                  );
+                }
+
+                if (ext.status === 'APPROVED') {
+                  return (
+                    <button className="bg-green-100 text-green-800 px-6 py-2 rounded-lg flex items-center space-x-2 cursor-default" disabled>
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Đã chấp nhận</span>
+                    </button>
+                  );
+                }
+
+                if (ext.status === 'REJECTED') {
+                  return (
+                    <button
+                      onClick={() => {
+                        const reason = ext.ownerResponse?.rejectionReason || ext.ownerResponse?.notes || 'Không có lý do';
+                        alert('Lý do từ chối: ' + reason);
+                      }}
+                      className="bg-red-100 text-red-800 px-6 py-2 rounded-lg flex items-center space-x-2"
+                    >
+                      <XCircle className="w-5 h-5" />
+                      <span>Đã từ chối</span>
+                    </button>
+                  );
+                }
+
+                // Fallback: show disabled label with status
+                return (
+                  <button className="bg-gray-100 text-gray-800 px-6 py-2 rounded-lg flex items-center space-x-2 cursor-default" disabled>
+                    <ClockIcon className="w-5 h-5" />
+                    <span>{ext.status}</span>
+                  </button>
+                );
+              })()
             )}
             
             {/* Button Xem yêu cầu gia hạn cho owner khi status ACTIVE */}

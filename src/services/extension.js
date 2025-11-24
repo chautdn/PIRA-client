@@ -22,7 +22,39 @@ class ExtensionService {
       const response = await api.get('/extensions/renter-requests', {
         params: filters
       });
-      return response.data;
+
+      const body = response.data || {};
+      let requests = [];
+      let pagination = {};
+
+      if (Array.isArray(body)) {
+        requests = body;
+      } else if (body.requests && Array.isArray(body.requests)) {
+        requests = body.requests;
+      } else if (body.metadata && Array.isArray(body.metadata.requests)) {
+        requests = body.metadata.requests;
+        pagination = body.metadata.pagination || {};
+      } else if (body.data && Array.isArray(body.data)) {
+        requests = body.data;
+      } else if (body.data && body.data.requests && Array.isArray(body.data.requests)) {
+        requests = body.data.requests;
+        pagination = body.data.pagination || {};
+      }
+
+      if (requests.length === 0) {
+        for (const key of Object.keys(body)) {
+          if (Array.isArray(body[key]) && body[key].length > 0 && body[key][0]._id) {
+            requests = body[key];
+            break;
+          }
+        }
+      }
+
+      return {
+        ...body,
+        requests,
+        pagination
+      };
     } catch (error) {
       throw new Error(
         error.response?.data?.message || 'Không thể lấy danh sách yêu cầu'

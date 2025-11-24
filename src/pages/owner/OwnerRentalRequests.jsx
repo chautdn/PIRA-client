@@ -126,6 +126,41 @@ const OwnerRentalRequests = () => {
     }
   };
 
+  // Hide all products in a subOrder (owner action when subOrder is ACTIVE)
+  const handleHideProducts = async (subOrder) => {
+    try {
+      const ok = window.confirm('Bạn có chắc muốn ẩn các sản phẩm trong đơn này? Khách khác sẽ không thể thuê được chúng trong khi đang cho thuê.');
+      if (!ok) return;
+
+      const products = subOrder.products || [];
+      if (products.length === 0) {
+        toast.error('Không tìm thấy sản phẩm để ẩn');
+        return;
+      }
+
+      for (const item of products) {
+        const productId = item.product?._id || item.product?.id || item.product;
+        if (productId) {
+          try {
+            await ownerProductApi.hideProduct(productId);
+          } catch (err) {
+            console.error('Không thể ẩn sản phẩm', productId, err);
+          }
+        }
+      }
+
+      toast.success('Đã ẩn các sản phẩm trong đơn');
+      // Refresh list and selected sub-order
+      await fetchSubOrders();
+      if (selectedSubOrder && selectedSubOrder._id === subOrder._id) {
+        await refreshSubOrderData(subOrder._id);
+      }
+    } catch (error) {
+      console.error('Lỗi khi ẩn sản phẩm:', error);
+      toast.error('Có lỗi khi ẩn sản phẩm');
+    }
+  };
+
   const handleRejectProductItem = async (subOrderId, itemIndex, reason) => {
     try {
       await ownerProductApi.rejectProductItem(subOrderId, itemIndex, reason);
@@ -485,16 +520,25 @@ const OwnerRentalRequests = () => {
                     <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(s.status)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <button onClick={() => setSelectedSubOrder(s)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Chi tiết</button>
-                        {s.status === 'ACTIVE' && (
-                          <button 
-                            onClick={() => handleOpenExtensionModal(s)} 
-                            className="text-sm bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600"
-                            title="Xem yêu cầu gia hạn"
-                          >
-                            📋 Xem yêu cầu gia hạn
-                          </button>
-                        )}
+                          <button onClick={() => setSelectedSubOrder(s)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Chi tiết</button>
+                          {s.status === 'ACTIVE' && (
+                            <>
+                              <button 
+                                onClick={() => handleOpenExtensionModal(s)} 
+                                className="text-sm bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600"
+                                title="Xem yêu cầu gia hạn"
+                              >
+                                📋 Xem yêu cầu gia hạn
+                              </button>
+                              <button
+                                onClick={() => handleHideProducts(s)}
+                                className="text-sm bg-gray-700 text-white px-3 py-1 rounded hover:bg-gray-800"
+                                title="Ẩn sản phẩm để tránh người khác thuê"
+                              >
+                                🙈 Ẩn sản phẩm
+                              </button>
+                            </>
+                          )}
                         {s.status === 'OWNER_CONFIRMED' && (
                           <button onClick={() => { setSelectedContractId(s.contract?._id || s.contract || `contract-${s.masterOrder?._id || ''}`); setShowContractSigning(true); }} className="text-sm bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600">Ký HĐ</button>
                         )}
@@ -550,6 +594,35 @@ const OwnerRentalRequests = () => {
             }
           }}
         />
+        {/* Return Decision Modal (page-level) */}
+        {showReturnModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">{returnModalAction === 'APPROVE' ? 'Chấp nhận yêu cầu trả hàng' : 'Từ chối yêu cầu trả hàng'}</h3>
+              <p className="text-sm text-gray-600 mb-3">Vui lòng nhập ghi chú (tùy chọn) cho quyết định này:</p>
+              <textarea
+                value={returnModalNotes}
+                onChange={(e) => setReturnModalNotes(e.target.value)}
+                placeholder={returnModalAction === 'APPROVE' ? 'Ghi chú khi chấp nhận (ví dụ: hẹn ngày lấy)...' : 'Nhập lý do từ chối (bắt buộc)'}
+                className="w-full p-3 border rounded-lg resize-none h-28 focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex space-x-3 mt-4">
+                <button
+                  onClick={closeReturnModal}
+                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={submitReturnDecision}
+                  className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  {returnModalAction === 'APPROVE' ? 'Chấp nhận' : 'Từ chối'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1016,35 +1089,7 @@ const SubOrderCard = ({
       {/* Extension Requests Modal - rendered at page level */}
       {/* Moved out of SubOrderCard so it mounts even when sub-order details are not open */}
 
-      {/* Return Decision Modal */}
-      {showReturnModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">{returnModalAction === 'APPROVE' ? 'Chấp nhận yêu cầu trả hàng' : 'Từ chối yêu cầu trả hàng'}</h3>
-            <p className="text-sm text-gray-600 mb-3">Vui lòng nhập ghi chú (tùy chọn) cho quyết định này:</p>
-            <textarea
-              value={returnModalNotes}
-              onChange={(e) => setReturnModalNotes(e.target.value)}
-              placeholder={returnModalAction === 'APPROVE' ? 'Ghi chú khi chấp nhận (ví dụ: hẹn ngày lấy)...' : 'Nhập lý do từ chối (bắt buộc)'}
-              className="w-full p-3 border rounded-lg resize-none h-28 focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="flex space-x-3 mt-4">
-              <button
-                onClick={closeReturnModal}
-                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={submitReturnDecision}
-                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                {returnModalAction === 'APPROVE' ? 'Chấp nhận' : 'Từ chối'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Return Decision Modal moved to page-level (OwnerRentalRequests) to avoid referencing parent-only state here */}
 
       {/* Reject Modal */}
       {showRejectModal && selectedItemIndex !== null && (

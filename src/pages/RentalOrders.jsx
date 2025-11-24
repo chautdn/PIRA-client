@@ -7,6 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTranslation } from 'react-i18next';
 import ExtensionRequestModal from '../components/rental/ExtensionRequestModal';
 import ExtensionRequestsModal from '../components/rental/ExtensionRequestsModal';
+import extensionService from '../services/extension';
 import {
   Package,
   Calendar,
@@ -15,6 +16,8 @@ import {
   Eye,
   FileText,
   Clock,
+  CheckCircle,
+  XCircle,
   Filter,
   Search,
   X,
@@ -45,11 +48,38 @@ const RentalOrdersPage = () => {
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [isOwnerView, setIsOwnerView] = useState(false);
+  const [renterExtensionMap, setRenterExtensionMap] = useState({});
 
   // Load orders on mount and status change
   useEffect(() => {
     loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
   }, [statusFilter]);
+
+  // Load renter extension requests once to determine button states in list
+  useEffect(() => {
+    const loadRenterExtensions = async () => {
+      try {
+        const resp = await extensionService.getRenterExtensionRequests({ page: 1, limit: 200 });
+        const requests = resp?.requests || [];
+        const map = {};
+        requests.forEach(r => {
+          const subId = r.subOrder?._id || r.subOrder;
+          if (!subId) return;
+          if (!map[subId]) map[subId] = [];
+          map[subId].push(r);
+        });
+        const latest = {};
+        for (const subId of Object.keys(map)) {
+          const sorted = map[subId].sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt));
+          latest[subId] = sorted[0];
+        }
+        setRenterExtensionMap(latest);
+      } catch (err) {
+        console.error('Error loading renter extension requests for list:', err);
+      }
+    };
+    loadRenterExtensions();
+  }, []);
 
   // Check for success messages from navigation state or URL params
   useEffect(() => {
@@ -306,20 +336,58 @@ const RentalOrdersPage = () => {
                       <div className="flex items-center justify-center space-x-2">
                         <button onClick={() => handleViewDetail(order)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Xem</button>
                         {/* Extension Button - For ACTIVE SubOrders (Renter) */}
-                        {user?.role === 'RENTER' && order.status === 'ACTIVE' && order.subOrders?.some(so => so.status === 'ACTIVE') && (
-                          <button
-                            onClick={() => {
-                              const activeSubOrder = order.subOrders.find(so => so.status === 'ACTIVE');
-                              setSelectedSubOrder(activeSubOrder);
-                              setIsOwnerView(false);
-                              setShowExtensionModal(true);
-                            }}
-                            className="text-sm bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600"
-                            title="Gửi yêu cầu gia hạn"
-                          >
-                            ⏳ Gia hạn
-                          </button>
-                        )}
+                        {user?.role === 'RENTER' && order.status === 'ACTIVE' && order.subOrders?.some(so => so.status === 'ACTIVE') && (() => {
+                          const activeSubOrder = order.subOrders.find(so => so.status === 'ACTIVE');
+                          const subId = activeSubOrder?._id;
+                          const ext = renterExtensionMap[subId];
+
+                          if (!ext) {
+                            return (
+                              <button
+                                onClick={() => {
+                                  setSelectedSubOrder(activeSubOrder);
+                                  setIsOwnerView(false);
+                                  setShowExtensionModal(true);
+                                }}
+                                className="text-sm bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600"
+                                title="Gửi yêu cầu gia hạn"
+                              >
+                                ⏳ Gia hạn
+                              </button>
+                            );
+                          }
+
+                          if (ext.status === 'PENDING') {
+                            return (
+                              <button className="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded cursor-default" disabled title="Yêu cầu đang chờ xử lý">⏳ Đang chờ</button>
+                            );
+                          }
+
+                          if (ext.status === 'APPROVED') {
+                            return (
+                              <button className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded cursor-default" disabled title="Yêu cầu đã được chấp nhận">✅ Đã chấp nhận</button>
+                            );
+                          }
+
+                          if (ext.status === 'REJECTED') {
+                            return (
+                              <button
+                                onClick={() => {
+                                  const reason = ext.ownerResponse?.rejectionReason || ext.ownerResponse?.notes || 'Không có lý do';
+                                  alert('Lý do từ chối: ' + reason);
+                                }}
+                                className="text-sm bg-red-100 text-red-800 px-3 py-1 rounded"
+                                title="Yêu cầu bị từ chối - nhấn để xem lý do"
+                              >
+                                ❌ Đã từ chối
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <button className="text-sm bg-gray-100 text-gray-800 px-3 py-1 rounded cursor-default" disabled>{ext.status}</button>
+                          );
+                        })()}
                         {/* Extension Requests Button - For ACTIVE SubOrders (Owner) */}
                         {user?.role === 'OWNER' && order.status === 'ACTIVE' && order.subOrders?.some(so => so.status === 'ACTIVE' && so.owner?._id?.toString() === user._id?.toString()) && (
                           <button
