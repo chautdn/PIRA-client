@@ -21,7 +21,6 @@ const ExtensionRequestModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
   useEffect(() => {
     const calc = () => {
       if (!subOrder || !newEndDate) {
-        console.log('🔍 Calc skipped - missing subOrder or newEndDate', { hasSubOrder: !!subOrder, hasNewEndDate: !!newEndDate });
         return setEstimatedCost(0);
       }
       try {
@@ -32,20 +31,18 @@ const ExtensionRequestModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
         let startDate = subOrder.rentalPeriod?.startDate || subOrder.products?.[0]?.rentalPeriod?.startDate;
         
         if (!currentEndDate || !startDate) {
-          console.warn('⚠️ Missing rental period dates', { currentEndDate, startDate });
+          console.warn('Missing rental period dates', { currentEndDate, startDate });
           return setEstimatedCost(0);
         }
 
         const currentEnd = new Date(currentEndDate);
         const newEnd = new Date(newEndDate);
         
-        console.log('🔢 Date calculation:', { currentEnd, newEnd });
         
         const diff = Math.ceil((newEnd - currentEnd) / (1000 * 60 * 60 * 24));
-        console.log('📅 Extension days:', diff);
         
         if (diff <= 0) {
-          console.warn('⚠️ Extension days <= 0');
+          console.warn(' Extension days <= 0');
           return setEstimatedCost(0);
         }
 
@@ -55,21 +52,18 @@ const ExtensionRequestModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
         // Method 1: From pricing
         if (subOrder.pricing?.rentalAmount) {
           rentalAmount = subOrder.pricing.rentalAmount;
-          console.log('💰 Got rentalAmount from pricing:', rentalAmount);
         }
         // Method 2: From products sum
         else if (subOrder.products?.length > 0) {
           rentalAmount = subOrder.products.reduce((sum, p) => sum + (p.rentalRate * p.quantity || 0), 0);
-          console.log('💰 Calculated rentalAmount from products:', rentalAmount);
         }
         // Method 3: From pricing totalRental
         else if (subOrder.pricing?.totalRental) {
           rentalAmount = subOrder.pricing.totalRental;
-          console.log('💰 Got rentalAmount from pricing.totalRental:', rentalAmount);
         }
 
         if (rentalAmount <= 0) {
-          console.warn('⚠️ rentalAmount is 0 or negative, using default calculation');
+          console.warn(' rentalAmount is 0 or negative, using default calculation');
           // Fallback: assume 50k per day if no pricing available
           rentalAmount = 50000;
         }
@@ -78,10 +72,9 @@ const ExtensionRequestModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
         const dailyRate = rentalAmount / originalDays;
         const cost = Math.round(dailyRate * diff);
         
-        console.log('📊 Final calculation:', { rentalAmount, originalDays, dailyRate, diff, cost });
         setEstimatedCost(cost);
       } catch (err) {
-        console.error('❌ Cost calculation error:', err);
+        console.error('Cost calculation error:', err);
         setEstimatedCost(0);
       } finally {
         setCalculating(false);
@@ -110,7 +103,6 @@ const ExtensionRequestModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
     const currentEnd = new Date(currentEndDate).getTime();
     const newEnd = new Date(newEndDate).getTime();
     
-    console.log('🔍 Date check:', { currentEndDate, newEndDate, currentEnd, newEnd });
     
     if (newEnd <= currentEnd) {
       return alert('Ngày kết thúc phải sau ngày kết thúc hiện tại: ' + new Date(currentEndDate).toLocaleString('vi-VN'));
@@ -133,12 +125,11 @@ const ExtensionRequestModal = ({ isOpen, onClose, subOrder, onSuccess }) => {
         paymentMethod
       });
 
-      console.log('✅ Extension request result:', result);
       alert('Yêu cầu gia hạn đã được gửi thành công');
       onSuccess && onSuccess({ type: 'success', message: 'Yêu cầu gia hạn đã được gửi' });
       onClose && onClose();
     } catch (err) {
-      console.error('❌ Extension request error', err);
+      console.error(' Extension request error', err);
       const errorMsg = err.response?.data?.message || err.message || err.toString();
       alert('Có lỗi khi gửi yêu cầu: ' + errorMsg);
     } finally {
