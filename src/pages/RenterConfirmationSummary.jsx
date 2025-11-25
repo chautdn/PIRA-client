@@ -272,7 +272,7 @@ const RenterConfirmationSummary = () => {
                       {subOrder.subOrderNumber}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Chủ đồ: {subOrder.owner?.profile?.firstName || 'N/A' } {subOrder.owner?.profile?.lastName || ''}
+                      Chủ đồ: {subOrder.owner?.profile?.firstName || 'N/A'} {subOrder.owner?.profile?.lastName || ''}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       {confirmedProducts.length}/{subOrder.products.length} sản phẩm đã xác nhận
@@ -488,7 +488,7 @@ const RenterConfirmationSummary = () => {
                   {rejectingSubOrder.subOrderNumber}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Chủ đồ: {rejectingSubOrder.owner?.profile?.fullName}
+                  Chủ đồ: {rejectingSubOrder.owner?.profile?.firstName} {rejectingSubOrder.owner?.profile?.lastName}
                 </p>
               </div>
 
