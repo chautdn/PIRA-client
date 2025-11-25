@@ -33,6 +33,13 @@ import TopUpSuccess from "./pages/wallet/TopUpSuccess";
 import TopUpCancel from "./pages/wallet/TopUpCancel";
 import Withdrawals from "./pages/Withdrawals";
 
+// Payment result pages
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
+import PaymentCancelled from "./pages/payment/PaymentCancelled";
+import PaymentPending from "./pages/payment/PaymentPending";
+import PaymentError from "./pages/payment/PaymentError";
+import RentalPaymentReturn from "./pages/rental/RentalPaymentReturn";
+
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
 import ProductChatContainer from "./components/chat/ProductChatContainer";
@@ -52,6 +59,7 @@ import RentalOrderFormTest from "./components/rental/RentalOrderFormTest";
 import OrderConfirmation from "./components/rental/OrderConfirmation";
 import TransactionHistory from "./pages/TransactionHistory";
 import ContractSigning from "./components/rental/ContractSigning";
+import RenterConfirmationSummary from "./pages/RenterConfirmationSummary";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
 
 // Component to handle scroll to top on route change
@@ -211,60 +219,74 @@ export default function App() {
                     />
                   </Route>
 
-                  {/* Wallet routes */}
-                  <Route
-                    path="/wallet/topup-success"
-                    element={<TopUpSuccess />}
-                  />
-                  <Route
-                    path="/wallet/topup-cancel"
-                    element={<TopUpCancel />}
-                  />
-                  <Route path="/withdrawals" element={<Withdrawals />} />
+                {/* Wallet routes */}
+                <Route
+                  path="/wallet/topup-success"
+                  element={<TopUpSuccess />}
+                />
+                <Route path="/wallet/topup-cancel" element={<TopUpCancel />} />
+                <Route path="/withdrawals" element={<Withdrawals />} />
 
-                  {/* Rental Order routes */}
-                  <Route
-                    path="/rental-orders"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <RentalOrdersPage />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/:id"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <RentalOrderDetailPage />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/create"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["RENTER"]}>
-                        <ErrorBoundary>
-                          <RentalOrderForm />
-                        </ErrorBoundary>
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/confirmation/:id"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <OrderConfirmation />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/contracts"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <ContractSigning />
-                      </RoleProtectedRoute>
-                    }
-                  />
+                {/* Payment result routes */}
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/cancelled" element={<PaymentCancelled />} />
+                <Route path="/payment/pending" element={<PaymentPending />} />
+                <Route path="/payment/error" element={<PaymentError />} />
+
+                
+                {/* Rental Order routes */}
+                <Route 
+                  path="/rental-orders" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <RentalOrdersPage />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/:id" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <RentalOrderDetailPage />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/:masterOrderId/confirmation-summary" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                      <RenterConfirmationSummary />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/create" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["RENTER"]}>
+                      <ErrorBoundary>
+                        <RentalOrderForm />
+                      </ErrorBoundary>
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/confirmation/:id" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <OrderConfirmation />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/rental-orders/contracts" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                      <ContractSigning />
+                    </RoleProtectedRoute>
+                  } 
+                />
+
+
 
                   {/* Transaction History */}
                   <Route

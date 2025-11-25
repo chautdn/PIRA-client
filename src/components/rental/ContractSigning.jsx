@@ -1,64 +1,79 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useRentalOrder } from '../../context/RentalOrderContext';
 import { FileText, Signature, Check, AlertCircle, Download, User } from 'lucide-react';
+import rentalOrderService from '../../services/rentalOrder';
+import { toast } from '../common/Toast';
 
 const ContractSigning = () => {
-  const { contractId } = useParams();
+  const { contractId: paramContractId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Get contractId from either URL param or query string
+  const contractId = React.useMemo(() => {
+    return paramContractId || searchParams.get('contractId');
+  }, [paramContractId, searchParams]);
+  
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [contract, setContract] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [canSign, setCanSign] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigning, setIsSigning] = useState(false);
   const [agreementConfirmed, setAgreementConfirmed] = useState(false);
   const [signatureData, setSignatureData] = useState('');
   const [error, setError] = useState('');
+  const [hasAlreadySigned, setHasAlreadySigned] = useState(false);
+  const [signMessage, setSignMessage] = useState('');
+
+  console.log('🔍 ContractSigning - contractId:', contractId);
 
   // Load contract details
   useEffect(() => {
+    if (!contractId) {
+      setError('Không tìm thấy ID hợp đồng');
+      setIsLoading(false);
+      return;
+    }
+    
     const loadContract = async () => {
       try {
-        // This would be a new API endpoint to get contract details
-        // For now, we'll simulate the data
-        setContract({
-          _id: contractId,
-          contractNumber: 'CT20241120001',
-          owner: {
-            profile: { fullName: 'Nguyễn Văn A' },
-            email: 'owner@example.com'
-          },
-          renter: {
-            profile: { fullName: 'Trần Thị B' },
-            email: 'renter@example.com'
-          },
-          product: {
-            name: 'Máy ảnh Canon EOS R5',
-            images: ['image1.jpg']
-          },
-          terms: {
-            startDate: '2024-12-01T00:00:00Z',
-            endDate: '2024-12-05T00:00:00Z',
-            rentalRate: 2000000,
-            deposit: 5000000
-          },
-          signatures: {
-            owner: { signed: false },
-            renter: { signed: false }
-          },
-          status: 'PENDING_SIGNATURE',
-          content: `HỢP ĐỒNG CHO THUÊ SẢN PHẨM\n\nSố hợp đồng: CT20241120001\nNgày ký: ${new Date().toLocaleDateString('vi-VN')}\n\n...`
-        });
+        console.log('📄 Loading contract:', contractId);
+        
+        const response = await rentalOrderService.getContractDetail(contractId);
+        console.log('✅ Contract loaded - Full response:', response);
+        
+        // Handle nested response structure
+        const actualData = response.data?.metadata || response.metadata || response.data || response;
+        console.log('📦 Extracted data:', actualData);
+        
+        if (!actualData.contract) {
+          console.error('❌ No contract in response:', actualData);
+          throw new Error('Không tìm thấy thông tin hợp đồng trong response');
+        }
+        
+        setContract(actualData.contract);
+        setUserRole(actualData.userRole);
+        setCanSign(actualData.canSign);
+        setSignMessage(actualData.signMessage || '');
+        
+        // Check if user already signed
+        const role = actualData.userRole?.toLowerCase();
+        const alreadySigned = role && actualData.contract.signatures[role]?.signed;
+        setHasAlreadySigned(alreadySigned);
+        
         setIsLoading(false);
+        console.log('✅ Contract set successfully. Already signed:', alreadySigned, 'Message:', actualData.signMessage);
       } catch (error) {
-        setError('Không thể tải thông tin hợp đồng');
+        console.error('❌ Error loading contract:', error);
+        setError(error.message || 'Không thể tải thông tin hợp đồng');
         setIsLoading(false);
       }
     };
 
-    if (contractId) {
-      loadContract();
-    }
+    loadContract();
   }, [contractId]);
 
   // Setup canvas for signature
@@ -117,6 +132,11 @@ const ContractSigning = () => {
   };
 
   const handleSignContract = async () => {
+    if (hasAlreadySigned) {
+      toast.warning('Bạn đã ký hợp đồng này rồi!');
+      return;
+    }
+
     if (!signatureData) {
       setError('Vui lòng ký tên trước khi xác nhận');
       return;
@@ -137,23 +157,89 @@ const ContractSigning = () => {
         signatureMethod: 'ELECTRONIC'
       };
 
-      // This would call the actual API
-      // await rentalOrderService.signContract(contractId, signData);
+      // Call actual API
+      const response = await rentalOrderService.signContract(contractId, signData);
+      console.log('✅ Contract signed:', response);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Update state to reflect signing
+      setHasAlreadySigned(true);
       
-      navigate('/rental-orders/contracts?signed=true');
+      // Reload contract to get updated signatures
+      const updatedResponse = await rentalOrderService.getContractDetail(contractId);
+      const updatedData = updatedResponse.data?.metadata || updatedResponse.metadata || updatedResponse;
+      if (updatedData.contract) {
+        setContract(updatedData.contract);
+      }
+      
+      // Show success message
+      toast.success('✅ Ký hợp đồng thành công! Bạn có thể tải PDF bên dưới.');
+      // Don't navigate away - let user download PDF
     } catch (error) {
+      console.error('❌ Error signing contract:', error);
       setError(error.message || 'Có lỗi xảy ra khi ký hợp đồng');
+      toast.error(error.message || 'Có lỗi xảy ra khi ký hợp đồng');
     } finally {
       setIsSigning(false);
     }
   };
 
-  const downloadContract = () => {
-    // This would generate and download PDF
-    alert('Tính năng tải hợp đồng PDF sẽ được triển khai');
+  const downloadContract = async () => {
+    try {
+      // Create HTML content for PDF
+      const htmlContent = contract.content?.htmlContent || '';
+      
+      // Create a new window with the contract content
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Hợp đồng ${contract.contractNumber}</title>
+            <style>
+              body { font-family: 'Times New Roman', serif; padding: 20px; }
+              @media print {
+                body { margin: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            ${htmlContent}
+            <div style="margin-top: 50px; page-break-before: always;">
+              <h3>CHỮ KÝ ĐIỆN TỬ</h3>
+              <div style="display: flex; justify-content: space-between;">
+                <div>
+                  <p><strong>Chủ cho thuê:</strong></p>
+                  ${contract.signatures.owner.signed ? 
+                    `<img src="${contract.signatures.owner.signature}" style="max-width: 200px; border: 1px solid #ccc;" />` : 
+                    '<p>Chưa ký</p>'
+                  }
+                  <p><small>Ký lúc: ${contract.signatures.owner.signedAt ? new Date(contract.signatures.owner.signedAt).toLocaleString('vi-VN') : 'N/A'}</small></p>
+                </div>
+                <div>
+                  <p><strong>Người thuê:</strong></p>
+                  ${contract.signatures.renter.signed ? 
+                    `<img src="${contract.signatures.renter.signature}" style="max-width: 200px; border: 1px solid #ccc;" />` : 
+                    '<p>Chưa ký</p>'
+                  }
+                  <p><small>Ký lúc: ${contract.signatures.renter.signedAt ? new Date(contract.signatures.renter.signedAt).toLocaleString('vi-VN') : 'N/A'}</small></p>
+                </div>
+              </div>
+            </div>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+        
+        // Auto print dialog
+        setTimeout(() => {
+          printWindow.print();
+        }, 250);
+      }
+    } catch (error) {
+      console.error('Error downloading contract:', error);
+      toast.error('Không thể tải hợp đồng');
+    }
   };
 
   if (isLoading) {
@@ -167,21 +253,28 @@ const ContractSigning = () => {
     );
   }
 
-  if (!contract) {
+  if (error || !contract || !contractId) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Không tìm thấy hợp đồng</h2>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-4 text-red-800">
+            {error || 'Không tìm thấy hợp đồng'}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Contract ID: {contractId || 'Không có'}
+          </p>
           <button
-            onClick={() => navigate('/rental-orders/contracts')}
+            onClick={() => navigate('/rental-orders')}
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
           >
-            Quay về danh sách hợp đồng
+            Quay về danh sách đơn hàng
           </button>
         </div>
       </div>
     );
   }
+    
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -214,9 +307,73 @@ const ContractSigning = () => {
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <h2 className="text-xl font-semibold mb-4">Nội dung hợp đồng</h2>
               <div className="border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto bg-gray-50">
-                <pre className="whitespace-pre-wrap text-sm font-mono">{contract.content}</pre>
+                {contract.content?.htmlContent ? (
+                  <div 
+                    className="text-sm"
+                    dangerouslySetInnerHTML={{ __html: contract.content.htmlContent }}
+                  />
+                ) : (
+                  <pre className="whitespace-pre-wrap text-sm font-mono">
+                    {contract.content || 'Đang tải nội dung hợp đồng...'}
+                  </pre>
+                )}
               </div>
             </div>
+
+            {/* Show existing signatures */}
+            {(contract.signatures.owner.signed || contract.signatures.renter.signed) && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center">
+                  <Signature className="w-5 h-5 mr-2" />
+                  Chữ ký đã có
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Owner Signature */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <p className="font-medium text-gray-700 mb-2">Chủ cho thuê</p>
+                    {contract.signatures.owner.signed ? (
+                      <>
+                        <img 
+                          src={contract.signatures.owner.signature} 
+                          alt="Chữ ký chủ đồ"
+                          className="w-full h-32 object-contain border border-gray-300 rounded bg-white mb-2"
+                        />
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Đã ký lúc: {new Date(contract.signatures.owner.signedAt).toLocaleString('vi-VN')}
+                        </p>
+                      </>
+                    ) : (
+                      <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400">
+                        Chưa ký
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Renter Signature */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <p className="font-medium text-gray-700 mb-2">Người thuê</p>
+                    {contract.signatures.renter.signed ? (
+                      <>
+                        <img 
+                          src={contract.signatures.renter.signature} 
+                          alt="Chữ ký người thuê"
+                          className="w-full h-32 object-contain border border-gray-300 rounded bg-white mb-2"
+                        />
+                        <p className="text-xs text-green-600 flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          Đã ký lúc: {new Date(contract.signatures.renter.signedAt).toLocaleString('vi-VN')}
+                        </p>
+                      </>
+                    ) : (
+                      <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400">
+                        Chưa ký
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Signature Section */}
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -280,24 +437,53 @@ const ContractSigning = () => {
                 </div>
               )}
 
-              {/* Sign Button */}
-              <button
-                onClick={handleSignContract}
-                disabled={isSigning || !signatureData || !agreementConfirmed}
-                className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-              >
-                {isSigning ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Đang ký hợp đồng...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-5 h-5" />
-                    <span>Ký hợp đồng</span>
-                  </>
-                )}
-              </button>
+              {/* Sign Button or Already Signed Message */}
+              {hasAlreadySigned ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                  <Check className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                  <p className="text-green-800 font-medium">✅ Bạn đã ký hợp đồng này rồi</p>
+                  <p className="text-sm text-green-600 mt-1">
+                    Ký lúc: {userRole && contract.signatures[userRole.toLowerCase()]?.signedAt ? 
+                      new Date(contract.signatures[userRole.toLowerCase()].signedAt).toLocaleString('vi-VN') : 'N/A'
+                    }
+                  </p>
+                  <button
+                    onClick={downloadContract}
+                    className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 flex items-center justify-center space-x-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Tải hợp đồng PDF</span>
+                  </button>
+                </div>
+              ) : signMessage ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                  <Clock className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
+                  <p className="text-yellow-800 font-medium">{signMessage}</p>
+                  {signMessage.includes('Chờ chủ đồ') && (
+                    <p className="text-sm text-yellow-600 mt-2">
+                      Chủ đồ cần ký hợp đồng trước khi bạn có thể ký
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={handleSignContract}
+                  disabled={isSigning || !signatureData || !agreementConfirmed}
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {isSigning ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Đang ký hợp đồng...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-5 h-5" />
+                      <span>Ký hợp đồng</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
@@ -313,7 +499,7 @@ const ContractSigning = () => {
                 </div>
                 <div>
                   <label className="block font-medium text-gray-700">Sản phẩm</label>
-                  <p>{contract.product.name}</p>
+                  <p>{contract.product?.name || contract.product?.title || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block font-medium text-gray-700">Thời gian thuê</label>

@@ -19,6 +19,7 @@ export const CartProvider = ({ children }) => {
   const [cartTotal, setCartTotal] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cartData, setCartData] = useState(null); // Full cart data from backend
 
   // Check if user is authenticated
   const isAuthenticated = () => {
@@ -39,15 +40,19 @@ export const CartProvider = ({ children }) => {
       if (isAuthenticated()) {
         try {
           // Try to load from backend
-          cartItems = await cartApiService.getCart();
+          const response = await cartApiService.getCart();
+          cartItems = response.items || [];
+          setCartData(response); // Store full response including expiredItems
         } catch (error) {
           console.error("Error loading cart from backend:", error);
           // If error, set empty cart
           cartItems = [];
+          setCartData(null);
         }
       } else {
         // Guest users have no cart
         cartItems = [];
+        setCartData(null);
       }
 
       setCart(cartItems);
@@ -330,6 +335,47 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Update rental dates by itemId
+  const updateRentalByItemId = async (itemId, rental) => {
+    try {
+      setLoading(true);
+      
+      if (!isAuthenticated()) {
+        return { success: false, error: "Vui lòng đăng nhập" };
+      }
+
+      // Validation rental dates
+      if (!rental || !rental.startDate || !rental.endDate) {
+        return { success: false, error: "Vui lòng chọn ngày thuê hợp lệ" };
+      }
+
+      const startDate = new Date(rental.startDate);
+      const endDate = new Date(rental.endDate);
+
+      if (endDate <= startDate) {
+        return { success: false, error: "Ngày kết thúc phải sau ngày bắt đầu" };
+      }
+
+      let cartItems = [];
+
+      try {
+        cartItems = await cartApiService.updateRentalByItemId(itemId, rental);
+      } catch (error) {
+        console.error("Backend error:", error);
+        return { success: false, error: error.response?.data?.message || "Không thể cập nhật thời gian thuê" };
+      }
+
+      setCart(cartItems);
+      updateCartStats(cartItems);
+      return { success: true };
+    } catch (error) {
+      console.error("Update rental error:", error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Clear cart
   const clearCart = async () => {
     try {
@@ -412,6 +458,7 @@ export const CartProvider = ({ children }) => {
     cart,
     cartCount,
     cartTotal,
+    cartData,
     isCartOpen,
     loading,
     addToCart,
@@ -420,6 +467,7 @@ export const CartProvider = ({ children }) => {
     updateQuantity,
     updateQuantityByItemId,
     updateRental,
+    updateRentalByItemId,
     clearCart,
     syncCart,
     refreshCart,

@@ -85,9 +85,42 @@ const CartDrawer = () => {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {cart.map((item) => (
-                    <CartItem key={item.product._id} item={item} />
+                <div className="space-y-6">
+                  {/* Group items by owner */}
+                  {Object.entries(
+                    cart.reduce((groups, item) => {
+                      const ownerId = item.product.owner?._id || 'unknown';
+                      const ownerName = item.product.owner?.profile?.firstName || 'Chủ không rõ';
+                      
+                      if (!groups[ownerId]) {
+                        groups[ownerId] = {
+                          ownerName,
+                          items: []
+                        };
+                      }
+                      groups[ownerId].items.push(item);
+                      return groups;
+                    }, {})
+                  ).map(([ownerId, group]) => (
+                    <div key={ownerId} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      {/* Owner Header */}
+                      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-300">
+                        <span className="text-blue-600">🏪</span>
+                        <h3 className="font-medium text-gray-900">
+                          Cửa hàng của {group.ownerName}
+                        </h3>
+                        <span className="text-sm text-gray-500">
+                          ({group.items.length} sản phẩm)
+                        </span>
+                      </div>
+                      
+                      {/* Owner's Items */}
+                      <div className="space-y-3">
+                        {group.items.map((item) => (
+                          <CartItem key={`${item.product._id}-${item._id}`} item={item} />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
