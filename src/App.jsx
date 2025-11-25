@@ -27,6 +27,7 @@ import OwnerProducts from "./pages/owner/OwnerProducts";
 import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
+import ActiveRentals from "./pages/owner/ActiveRentals";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
@@ -55,7 +56,6 @@ import ProductManagement from "./pages/admin/ProductManagement";
 import RentalOrdersPage from "./pages/RentalOrders";
 import RentalOrderDetailPage from "./pages/RentalOrderDetail";
 import RentalOrderForm from "./components/rental/RentalOrderForm";
-import RentalOrderFormTest from "./components/rental/RentalOrderFormTest";
 import OrderConfirmation from "./components/rental/OrderConfirmation";
 import TransactionHistory from "./pages/TransactionHistory";
 import ContractSigning from "./components/rental/ContractSigning";
@@ -194,6 +194,14 @@ export default function App() {
                       </RoleProtectedRoute>
                     }
                   />
+                  <Route
+                    path={ROUTES.OWNER_ACTIVE_RENTALS}
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <ActiveRentals />
+                      </RoleProtectedRoute>
+                    }
+                  />
 
                   {/* Chat routes */}
                   <Route path={ROUTES.CHAT} element={<Chat />}>
@@ -219,74 +227,77 @@ export default function App() {
                     />
                   </Route>
 
-                {/* Wallet routes */}
-                <Route
-                  path="/wallet/topup-success"
-                  element={<TopUpSuccess />}
-                />
-                <Route path="/wallet/topup-cancel" element={<TopUpCancel />} />
-                <Route path="/withdrawals" element={<Withdrawals />} />
+                  {/* Wallet routes */}
+                  <Route
+                    path="/wallet/topup-success"
+                    element={<TopUpSuccess />}
+                  />
+                  <Route
+                    path="/wallet/topup-cancel"
+                    element={<TopUpCancel />}
+                  />
+                  <Route path="/withdrawals" element={<Withdrawals />} />
 
-                {/* Payment result routes */}
-                <Route path="/payment/success" element={<PaymentSuccess />} />
-                <Route path="/payment/cancelled" element={<PaymentCancelled />} />
-                <Route path="/payment/pending" element={<PaymentPending />} />
-                <Route path="/payment/error" element={<PaymentError />} />
+                  {/* Payment result routes */}
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route
+                    path="/payment/cancelled"
+                    element={<PaymentCancelled />}
+                  />
+                  <Route path="/payment/pending" element={<PaymentPending />} />
+                  <Route path="/payment/error" element={<PaymentError />} />
 
-                
-                {/* Rental Order routes */}
-                <Route 
-                  path="/rental-orders" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                      <RentalOrdersPage />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/rental-orders/:id" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                      <RentalOrderDetailPage />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/rental-orders/:masterOrderId/confirmation-summary" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
-                      <RenterConfirmationSummary />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/rental-orders/create" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={["RENTER"]}>
-                      <ErrorBoundary>
-                        <RentalOrderForm />
-                      </ErrorBoundary>
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/rental-orders/confirmation/:id" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                      <OrderConfirmation />
-                    </RoleProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/rental-orders/contracts" 
-                  element={
-                    <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                      <ContractSigning />
-                    </RoleProtectedRoute>
-                  } 
-                />
-
-
+                  {/* Rental Order routes */}
+                  <Route
+                    path="/rental-orders"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RentalOrdersPage />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/:id"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RentalOrderDetailPage />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/:masterOrderId/confirmation-summary"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                        <RenterConfirmationSummary />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/create"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["RENTER"]}>
+                        <ErrorBoundary>
+                          <RentalOrderForm />
+                        </ErrorBoundary>
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/confirmation/:id"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <OrderConfirmation />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/contracts"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <ContractSigning />
+                      </RoleProtectedRoute>
+                    }
+                  />
 
                   {/* Transaction History */}
                   <Route
