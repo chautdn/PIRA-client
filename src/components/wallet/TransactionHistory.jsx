@@ -27,7 +27,7 @@ const TransactionHistory = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
-  // Handle ESC key to close modal
+  // Handle ESC key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === "Escape" && isOpen) {
@@ -92,13 +92,28 @@ const TransactionHistory = ({ isOpen, onClose }) => {
         return <ArrowDownLeft className="w-4 h-4 text-green-500" />;
       case "withdrawal":
         return <ArrowUpRight className="w-4 h-4 text-red-500" />;
+      case "refund":
+        return <ArrowDownLeft className="w-4 h-4 text-blue-500" />; // Hoàn tiền
       default:
         return <ArrowDownLeft className="w-4 h-4 text-gray-400" />;
     }
   };
 
+  const getTransactionTitle = (type) => {
+    switch (type) {
+      case "deposit":
+        return "Nạp tiền";
+      case "withdrawal":
+        return "Rút tiền";
+      case "refund":
+        return "Hoàn tiền";
+      default:
+        return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+  };
+
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("en-US", {
+    return new Date(date).toLocaleDateString("vi-VN", {
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -131,17 +146,16 @@ const TransactionHistory = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-2xl sticky top-0 z-10">
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="text-2xl">📊</span>
-                    Transaction History
+                    <span className="text-2xl">Lịch sử giao dịch</span>
                   </h3>
                   <p className="text-xs text-gray-600 mt-1">
-                    View all your wallet transactions
+                    Xem tất cả giao dịch ví của bạn
                   </p>
                 </div>
                 <button
                   onClick={onClose}
                   className="p-2 hover:bg-white/50 rounded-full transition-colors"
-                  aria-label="Close modal"
+                  aria-label="Đóng"
                 >
                   <X className="w-5 h-5 text-gray-600" />
                 </button>
@@ -156,9 +170,9 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                   <div className="p-12 text-center">
                     <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-gray-600 font-medium">
-                      Loading transactions...
+                      Đang tải giao dịch...
                     </p>
-                    <p className="text-gray-400 text-sm mt-1">Please wait</p>
+                    <p className="text-gray-400 text-sm mt-1">Vui lòng đợi</p>
                   </div>
                 ) : transactions.length === 0 ? (
                   <div className="p-12 text-center">
@@ -167,19 +181,19 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                       animate={{ rotate: [0, 10, -10, 0] }}
                       transition={{ duration: 2, repeat: Infinity }}
                     >
-                      💸
+                      Chưa có giao dịch
                     </motion.div>
                     <h3 className="text-xl font-bold text-gray-800 mb-2">
-                      No transactions yet
+                      Chưa có giao dịch nào
                     </h3>
                     <p className="text-gray-600 mb-4">
-                      Your transaction history will appear here
+                      Lịch sử giao dịch sẽ xuất hiện tại đây
                     </p>
                     <button
                       onClick={onClose}
                       className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
                     >
-                      Close
+                      Đóng
                     </button>
                   </div>
                 ) : (
@@ -204,10 +218,8 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                         {/* Transaction Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-gray-900 capitalize">
-                              {transaction.type === "deposit"
-                                ? "💰 Top Up"
-                                : transaction.type}
+                            <h4 className="font-semibold text-gray-900">
+                              {getTransactionTitle(transaction.type)}
                             </h4>
                             <span
                               className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
@@ -219,15 +231,15 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                               }`}
                             >
                               {transaction.status === "success"
-                                ? "✓"
+                                ? "Thành công"
                                 : transaction.status === "failed"
-                                ? "✗"
-                                : "⏳"}{" "}
-                              {transaction.status}
+                                ? "Thất bại"
+                                : "Đang xử lý"}
                             </span>
                           </div>
+
                           <p className="text-sm text-gray-600 truncate">
-                            {transaction.description || "Wallet transaction"}
+                            {transaction.description || "Giao dịch ví"}
                           </p>
                           <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
@@ -239,12 +251,12 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                         <div className="text-right">
                           <div
                             className={`font-bold text-lg ${
-                              transaction.type === "deposit"
+                              transaction.type === "deposit" || transaction.type === "refund"
                                 ? "text-green-600"
                                 : "text-red-600"
                             }`}
                           >
-                            {transaction.type === "deposit" ? "+" : "-"}
+                            {transaction.type === "withdrawal"||transaction.type === "order_payment" ? "-" : "+"}
                             {transaction.amount?.toLocaleString()}
                           </div>
                           <div className="text-xs text-gray-500">VND</div>
@@ -255,30 +267,27 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                 )}
               </div>
 
-              {/* Footer with pagination info */}
+              {/* Footer Pagination */}
               {pagination && pagination.totalItems > 0 && (
                 <div className="px-6 py-4 bg-gradient-to-r from-purple-50 to-blue-50 border-t border-gray-200 rounded-b-2xl sticky bottom-0">
                   <div className="flex items-center justify-between">
-                    {/* Left: Item count */}
                     <div className="text-sm text-gray-600">
                       <span className="font-semibold text-gray-900">
                         {transactions.length}
                       </span>{" "}
-                      of{" "}
+                      trong{" "}
                       <span className="font-semibold text-gray-900">
                         {pagination.totalItems}
                       </span>{" "}
-                      transactions
+                      giao dịch
                     </div>
 
-                    {/* Center: Page info */}
                     {pagination.totalPages > 1 && (
                       <div className="text-sm text-gray-500 font-medium">
-                        Page {pagination.currentPage} of {pagination.totalPages}
+                        Trang {pagination.currentPage} / {pagination.totalPages}
                       </div>
                     )}
 
-                    {/* Right: Pagination controls */}
                     {pagination.totalPages > 1 && (
                       <div className="flex items-center gap-2">
                         <motion.button
@@ -287,7 +296,7 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                           className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          title="Previous page"
+                          title="Trang trước"
                         >
                           <ChevronLeft className="w-4 h-4 text-gray-700" />
                         </motion.button>
@@ -297,7 +306,7 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                           className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          title="Next page"
+                          title="Trang sau"
                         >
                           <ChevronRight className="w-4 h-4 text-gray-700" />
                         </motion.button>

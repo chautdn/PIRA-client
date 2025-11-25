@@ -57,6 +57,7 @@ import RentalOrderFormTest from "./components/rental/RentalOrderFormTest";
 import OrderConfirmation from "./components/rental/OrderConfirmation";
 import TransactionHistory from "./pages/TransactionHistory";
 import ContractSigning from "./components/rental/ContractSigning";
+import RenterConfirmationSummary from "./pages/RenterConfirmationSummary";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
 
 // Component to handle scroll to top on route change
@@ -241,6 +242,14 @@ export default function App() {
                   } 
                 />
                 <Route 
+                  path="/rental-orders/:masterOrderId/confirmation-summary" 
+                  element={
+                    <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                      <RenterConfirmationSummary />
+                    </RoleProtectedRoute>
+                  } 
+                />
+                <Route 
                   path="/rental-orders/create" 
                   element={
                     <RoleProtectedRoute allowedRoles={["RENTER"]}>
@@ -266,6 +275,8 @@ export default function App() {
                     </RoleProtectedRoute>
                   } 
                 />
+
+
 
                 {/* Transaction History */}
                 <Route 

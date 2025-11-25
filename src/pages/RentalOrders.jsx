@@ -143,6 +143,8 @@ const RentalOrdersPage = () => {
       'PENDING_OWNER_CONFIRMATION': 'bg-orange-100 text-orange-800',
       'OWNER_CONFIRMED': 'bg-blue-100 text-blue-800',
       'OWNER_REJECTED': 'bg-red-100 text-red-800',
+      'CONFIRMED': 'bg-green-100 text-green-800',
+      'PARTIALLY_CANCELLED': 'bg-yellow-100 text-yellow-800',
       'READY_FOR_CONTRACT': 'bg-purple-100 text-purple-800',
       'CONTRACT_SIGNED': 'bg-green-100 text-green-800',
       'ACTIVE': 'bg-green-100 text-green-800',
@@ -161,6 +163,8 @@ const RentalOrdersPage = () => {
       'PENDING_OWNER_CONFIRMATION': 'Chờ chủ xác nhận',
       'OWNER_CONFIRMED': 'Chủ đã xác nhận',
       'OWNER_REJECTED': 'Chủ từ chối',
+      'CONFIRMED': 'Đã xác nhận',
+      'PARTIALLY_CANCELLED': 'Xác nhận một phần',
       'READY_FOR_CONTRACT': 'Sẵn sàng ký HĐ',
       'CONTRACT_SIGNED': 'Đã ký HĐ',
       'ACTIVE': 'Đang thuê',
@@ -379,6 +383,14 @@ const RentalOrdersPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <button onClick={() => handleViewDetail(order)} className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Xem</button>
+                        {(order.status === 'CONFIRMED' || order.status === 'PARTIALLY_CANCELLED') && (
+                          <button 
+                            onClick={() => navigate(`/rental-orders/${order._id}/confirmation-summary`)} 
+                            className="text-sm bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                          >
+                            Chi tiết XN
+                          </button>
+                        )}
                         {order.status === 'READY_FOR_CONTRACT' && (
                           <button onClick={() => navigate('/rental-orders/contracts')} className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Ký HĐ</button>
                         )}
