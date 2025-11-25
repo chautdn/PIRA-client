@@ -56,7 +56,6 @@ import ProductManagement from "./pages/admin/ProductManagement";
 import RentalOrdersPage from "./pages/RentalOrders";
 import RentalOrderDetailPage from "./pages/RentalOrderDetail";
 import RentalOrderForm from "./components/rental/RentalOrderForm";
-import RentalOrderFormTest from "./components/rental/RentalOrderFormTest";
 import OrderConfirmation from "./components/rental/OrderConfirmation";
 import TransactionHistory from "./pages/TransactionHistory";
 import ContractSigning from "./components/rental/ContractSigning";
