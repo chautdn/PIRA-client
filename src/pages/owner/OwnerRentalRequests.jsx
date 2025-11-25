@@ -1026,11 +1026,12 @@ const SubOrderCard = ({
     )}
   </span>
 </div>
-          {/* Platform Fee - hiển thị cho OWNER_DELIVERY */}
-          {subOrder.masterOrder?.deliveryMethod === 'OWNER_DELIVERY' && (
+          {/* Platform Fee - hiển thị cho OWNER_DELIVERY hoặc COD+PICKUP */}
+          {(subOrder.masterOrder?.deliveryMethod === 'OWNER_DELIVERY' || 
+            (subOrder.masterOrder?.deliveryMethod === 'PICKUP' && subOrder.masterOrder?.paymentMethod === 'COD')) && (
             <div className="flex justify-between border-t pt-2 text-orange-600 font-medium">
               <span>💳 Phí nền tảng (8%):</span>
-              <span>-{formatCurrency(Math.round((subOrder.pricing?.subtotalRental || 0) * 0.08))}</span>
+              <span>-{formatCurrency(subOrder.masterOrder?.platformFee || Math.round((subOrder.pricing?.subtotalRental || 0) * 0.08))}</span>
             </div>
           )}
           <div className="flex justify-between text-lg font-semibold">
