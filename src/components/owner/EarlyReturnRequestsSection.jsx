@@ -442,13 +442,16 @@ const EarlyReturnCard = ({
             <p className="text-xs font-semibold text-purple-600">NGƯỜI THUÊ</p>
           </div>
           <p className="font-bold text-gray-900">
-            {request.renter?.profile?.firstName && request.renter?.profile?.lastName
+            {request.renter?.profile?.firstName &&
+            request.renter?.profile?.lastName
               ? `${request.renter.profile.firstName} ${request.renter.profile.lastName}`
               : request.renter?.email || "Chưa cập nhật"}
           </p>
           <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
             <Phone className="w-3 h-3" />
-            {request.renter?.phone || request.renter?.profile?.phoneNumber || "Chưa có SĐT"}
+            {request.renter?.phone ||
+              request.renter?.profile?.phoneNumber ||
+              "Chưa có SĐT"}
           </p>
         </div>
 

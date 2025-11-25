@@ -43,12 +43,13 @@ const RentalOrdersPage = () => {
     setLoadingEarlyReturns(true);
     try {
       const response = await earlyReturnApi.getRenterRequests();
-      
+
       // Check both data.requests and metadata.requests for compatibility
-      const requests = response.data?.requests || response.metadata?.requests || [];
+      const requests =
+        response.data?.requests || response.metadata?.requests || [];
       setEarlyReturnRequests(requests);
     } catch (error) {
-      console.error('Failed to load early return requests:', error);
+      console.error("Failed to load early return requests:", error);
     } finally {
       setLoadingEarlyReturns(false);
     }
@@ -163,13 +164,17 @@ const RentalOrdersPage = () => {
   // Helper function to check if order has an early return request
   const getOrderEarlyReturnRequest = (order) => {
     if (!order.subOrders || !order.subOrders[0]) return null;
-    const subOrderId = order.subOrders[0]._id?.toString() || order.subOrders[0]._id;
-    
+    const subOrderId =
+      order.subOrders[0]._id?.toString() || order.subOrders[0]._id;
+
     const found = earlyReturnRequests.find((req) => {
-      const reqSubOrderId = req.subOrder?._id?.toString() || req.subOrder?.toString() || req.subOrder;
-      return reqSubOrderId === subOrderId && req.status !== 'CANCELLED';
+      const reqSubOrderId =
+        req.subOrder?._id?.toString() ||
+        req.subOrder?.toString() ||
+        req.subOrder;
+      return reqSubOrderId === subOrderId && req.status !== "CANCELLED";
     });
-    
+
     return found;
   };
 
@@ -281,14 +286,16 @@ const RentalOrdersPage = () => {
                   : "text-gray-600 hover:bg-gray-100"
               }`}
             >
-              🔄 Yêu Cầu Trả Sớm {earlyReturnRequests.length > 0 && `(${earlyReturnRequests.length})`}
+              🔄 Yêu Cầu Trả Sớm{" "}
+              {earlyReturnRequests.length > 0 &&
+                `(${earlyReturnRequests.length})`}
             </button>
           </div>
         </div>
 
         {/* Early Returns Tab */}
         {activeTab === "early-returns" && (
-          <EarlyReturnsTab 
+          <EarlyReturnsTab
             earlyReturnRequests={earlyReturnRequests}
             isLoading={loadingEarlyReturns}
           />
@@ -307,100 +314,104 @@ const RentalOrdersPage = () => {
                 </div>
               </div>
 
-          {/* Filters */}
-          <OrderFilters 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            filteredCount={filteredOrders.length}
-            totalCount={(currentOrders || []).length}
-          />
-        </div>
-
-        {/* Orders List */}
-        {isLoadingOrders ? (
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-              <span className="ml-3">Đang tải đơn hàng...</span>
+              {/* Filters */}
+              <OrderFilters
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                filteredCount={filteredOrders.length}
+                totalCount={(currentOrders || []).length}
+              />
             </div>
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              {searchQuery || statusFilter !== "all"
-                ? "Không tìm thấy đơn hàng nào"
-                : "Chưa có đơn hàng nào"}
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!
-            </p>
-            <button
-              onClick={() => navigate("/products")}
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-            >
-              Xem sản phẩm
-            </button>
-          </div>
-        ) : (
-          <OrdersTable 
-            orders={filteredOrders}
-            onViewDetail={handleViewDetail}
-            onEarlyReturn={handleEarlyReturn}
-            earlyReturnRequests={earlyReturnRequests}
-          />
+
+            {/* Orders List */}
+            {isLoadingOrders ? (
+              <div className="bg-white rounded-lg shadow-md p-8">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                  <span className="ml-3">Đang tải đơn hàng...</span>
+                </div>
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                  {searchQuery || statusFilter !== "all"
+                    ? "Không tìm thấy đơn hàng nào"
+                    : "Chưa có đơn hàng nào"}
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!
+                </p>
+                <button
+                  onClick={() => navigate("/products")}
+                  className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+                >
+                  Xem sản phẩm
+                </button>
+              </div>
+            ) : (
+              <OrdersTable
+                orders={filteredOrders}
+                onViewDetail={handleViewDetail}
+                onEarlyReturn={handleEarlyReturn}
+                earlyReturnRequests={earlyReturnRequests}
+              />
+            )}
+
+            {/* Pagination */}
+            {currentPagination.pages && currentPagination.pages > 1 && (
+              <div className="mt-8 flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => {
+                    const newPage = Math.max(
+                      1,
+                      (currentPagination.page || 1) - 1
+                    );
+                    loadMyOrders({
+                      page: newPage,
+                      status: statusFilter !== "all" ? statusFilter : undefined,
+                    });
+                  }}
+                  disabled={(currentPagination.page || 1) === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Trước
+                </button>
+
+                <span className="px-4 py-2">
+                  Trang {currentPagination.page || 1} /{" "}
+                  {currentPagination.pages || 1}
+                </span>
+
+                <button
+                  onClick={() => {
+                    const newPage = Math.min(
+                      currentPagination.pages || 1,
+                      (currentPagination.page || 1) + 1
+                    );
+                    loadMyOrders({
+                      page: newPage,
+                      status: statusFilter !== "all" ? statusFilter : undefined,
+                    });
+                  }}
+                  disabled={
+                    (currentPagination.page || 1) ===
+                    (currentPagination.pages || 1)
+                  }
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Sau
+                </button>
+              </div>
+            )}
+          </>
         )}
-
-        {/* Pagination */}
-        {currentPagination.pages && currentPagination.pages > 1 && (
-          <div className="mt-8 flex items-center justify-center space-x-2">
-            <button
-              onClick={() => {
-                const newPage = Math.max(1, (currentPagination.page || 1) - 1);
-                loadMyOrders({
-                  page: newPage,
-                  status: statusFilter !== "all" ? statusFilter : undefined,
-                });
-              }}
-              disabled={(currentPagination.page || 1) === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
-              Trước
-            </button>
-
-            <span className="px-4 py-2">
-              Trang {currentPagination.page || 1} /{" "}
-              {currentPagination.pages || 1}
-            </span>
-
-            <button
-              onClick={() => {
-                const newPage = Math.min(
-                  currentPagination.pages || 1,
-                  (currentPagination.page || 1) + 1
-                );
-                loadMyOrders({
-                  page: newPage,
-                  status: statusFilter !== "all" ? statusFilter : undefined,
-                });
-              }}
-              disabled={
-                (currentPagination.page || 1) === (currentPagination.pages || 1)
-              }
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
-              Sau
-            </button>
-          </div>
-        )}
-        </>
-          )}
 
         {/* Detail Modal */}
         {showDetailModal && selectedOrder && (
-          <OrderDetailModal 
+          <OrderDetailModal
             order={selectedOrder}
             onClose={closeDetailModal}
             onEarlyReturn={handleEarlyReturn}
