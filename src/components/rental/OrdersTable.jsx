@@ -124,6 +124,19 @@ const OrdersTable = ({
                   >
                     Xem
                   </button>
+                  {(order.status === "CONFIRMED" ||
+                    order.status === "PARTIALLY_CANCELLED") && (
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/rental-orders/${order._id}/confirmation-summary`
+                        )
+                      }
+                      className="text-sm bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                    >
+                      Chi tiết XN
+                    </button>
+                  )}
                   {order.status === "READY_FOR_CONTRACT" && (
                     <button
                       onClick={() => navigate("/rental-orders/contracts")}

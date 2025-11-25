@@ -195,7 +195,7 @@ const ActiveRentals = () => {
                   : "text-gray-600 hover:bg-gray-100"
               }`}
             >
-              📦 Sản Phẩm Đang Thuê
+              📦 Sản Phẩm Đang Cho Thuê
             </button>
             <button
               onClick={() => setActiveTab("early-returns")}
@@ -205,7 +205,7 @@ const ActiveRentals = () => {
                   : "text-gray-600 hover:bg-gray-100"
               }`}
             >
-              🔄 Yêu Cầu Trả Sớm
+              🔄 Yêu Cầu Trả Sớm Từ Người Thuê
             </button>
           </div>
         </motion.div>
