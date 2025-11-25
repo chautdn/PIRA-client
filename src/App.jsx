@@ -249,55 +249,55 @@ export default function App() {
                   <Route path="/payment/error" element={<PaymentError />} />
 
                   {/* Rental Order routes */}
-                  <Route 
-                    path="/rental-orders" 
+                  <Route
+                    path="/rental-orders"
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <RentalOrdersPage />
                       </RoleProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/rental-orders/:id" 
+                  <Route
+                    path="/rental-orders/:id"
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <RentalOrderDetailPage />
                       </RoleProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/rental-orders/:masterOrderId/confirmation-summary" 
+                  <Route
+                    path="/rental-orders/:masterOrderId/confirmation-summary"
                     element={
                       <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
                         <RenterConfirmationSummary />
                       </RoleProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/rental-orders/create" 
+                  <Route
+                    path="/rental-orders/create"
                     element={
                       <RoleProtectedRoute allowedRoles={["RENTER"]}>
                         <ErrorBoundary>
                           <RentalOrderForm />
                         </ErrorBoundary>
                       </RoleProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/rental-orders/confirmation/:id" 
+                  <Route
+                    path="/rental-orders/confirmation/:id"
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <OrderConfirmation />
                       </RoleProtectedRoute>
-                    } 
+                    }
                   />
-                  <Route 
-                    path="/rental-orders/contracts" 
+                  <Route
+                    path="/rental-orders/contracts"
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <ContractSigning />
                       </RoleProtectedRoute>
-                    } 
+                    }
                   />
 
                   {/* Transaction History */}
