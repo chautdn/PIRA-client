@@ -240,24 +240,24 @@ const OwnerRentalRequests = () => {
   const getStatusBadge = (status) => {
     const styles = {
       DRAFT: 'bg-gray-100 text-gray-800', // Old status - rare
-      PENDING_OWNER_CONFIRMATION: 'bg-yellow-100 text-yellow-800', // New main status
+      PENDING_CONFIRMATION: 'bg-yellow-100 text-yellow-800', // New main status
       OWNER_CONFIRMED: 'bg-green-100 text-green-800',
       OWNER_REJECTED: 'bg-red-100 text-red-800',
       READY_FOR_CONTRACT: 'bg-blue-100 text-blue-800',
       PENDING_CONTRACT: 'bg-blue-100 text-blue-800',
-      CONTRACTED: 'bg-purple-100 text-purple-800'
+      CONTRACT_SIGNED: 'bg-purple-100 text-purple-800'
     };
 
     const labels = {
       DRAFT: 'Bản nháp (cũ)',
-      PENDING_OWNER_CONFIRMATION: 'Chờ xác nhận',
+      PENDING_CONFIRMATION: 'Chờ xác nhận',
       OWNER_CONFIRMED: 'Đã xác nhận',
       OWNER_REJECTED: 'Đã từ chối',
       READY_FOR_CONTRACT: 'Sẵn sàng hợp đồng',
       PENDING_CONTRACT: 'Chờ ký hợp đồng',
-      CONTRACTED: 'Đã ký hợp đồng'
+      CONTRACT_SIGNED: 'Người thuê đã ký hợp đồng'
     };
-
+    
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
         {labels[status] || status}
@@ -308,7 +308,7 @@ const OwnerRentalRequests = () => {
             <div className="flex items-center space-x-4">
               <span className="text-sm font-medium text-gray-700">Lọc theo trạng thái:</span>
               <div className="flex space-x-2">
-                {['ALL', 'PENDING_OWNER_CONFIRMATION', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].map((status) => (
+                {['ALL', 'PENDING_CONFIRMATION', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].map((status) => (
                   <button
                     key={status}
                     onClick={() => setFilter(status)}
@@ -319,7 +319,7 @@ const OwnerRentalRequests = () => {
                     }`}
                   >
                     {status === 'ALL' ? 'Tất cả' : 
-                     status === 'PENDING_OWNER_CONFIRMATION' ? 'Chờ xác nhận' :
+                     status === 'PENDING_CONFIRMATION' ? 'Chờ xác nhận' :
                      status === 'OWNER_CONFIRMED' ? 'Đã xác nhận' : 'Đã từ chối'}
                   </button>
                 ))}

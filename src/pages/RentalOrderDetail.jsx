@@ -169,7 +169,7 @@ const RentalOrderDetailPage = () => {
       'PENDING_PAYMENT': 'bg-yellow-100 text-yellow-800',
       'PAYMENT_COMPLETED': 'bg-blue-100 text-blue-800',
       'PENDING_CONFIRMATION': 'bg-orange-100 text-orange-800',
-      'PENDING_OWNER_CONFIRMATION': 'bg-orange-100 text-orange-800',
+      'PENDING_CONFIRMATION': 'bg-orange-100 text-orange-800',
       'OWNER_CONFIRMED': 'bg-blue-100 text-blue-800',
       'OWNER_REJECTED': 'bg-red-100 text-red-800',
       'READY_FOR_CONTRACT': 'bg-purple-100 text-purple-800',
@@ -187,7 +187,7 @@ const RentalOrderDetailPage = () => {
       'PENDING_PAYMENT': 'Chờ thanh toán',
       'PAYMENT_COMPLETED': 'Đã thanh toán',
       'PENDING_CONFIRMATION': 'Chờ xác nhận',
-      'PENDING_OWNER_CONFIRMATION': 'Chờ chủ xác nhận',
+      'PENDING_CONFIRMATION': 'Chờ chủ xác nhận',
       'OWNER_CONFIRMED': 'Chủ đã xác nhận',
       'OWNER_REJECTED': 'Chủ từ chối',
       'READY_FOR_CONTRACT': 'Sẵn sàng ký HĐ',
@@ -457,7 +457,7 @@ const RentalOrderDetailPage = () => {
                               {getStatusText(subOrder.status)}
                             </span>
                             
-                            {isOwner && subOrder.owner?._id === user._id && subOrder.status === 'PENDING_OWNER_CONFIRMATION' && (
+                            {isOwner && subOrder.owner?._id === user._id && subOrder.status === 'PENDING_CONFIRMATION' && (
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => setConfirmAction(`confirm-${subOrder._id}`)}
@@ -604,7 +604,7 @@ const RentalOrderDetailPage = () => {
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           subOrder.status === 'OWNER_CONFIRMED' ? 'bg-green-500' :
                           subOrder.status === 'OWNER_REJECTED' ? 'bg-red-500' :
-                          subOrder.status === 'PENDING_OWNER_CONFIRMATION' ? 'bg-yellow-500' :
+                          subOrder.status === 'PENDING_CONFIRMATION' ? 'bg-yellow-500' :
                           'bg-gray-500'
                         }`}>
                           <User className="w-4 h-4 text-white" />
