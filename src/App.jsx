@@ -240,7 +240,10 @@ export default function App() {
 
                   {/* Payment result routes */}
                   <Route path="/payment/success" element={<PaymentSuccess />} />
-                  <Route path="/payment/cancelled" element={<PaymentCancelled />} />
+                  <Route
+                    path="/payment/cancelled"
+                    element={<PaymentCancelled />}
+                  />
                   <Route path="/payment/pending" element={<PaymentPending />} />
                   <Route path="/payment/error" element={<PaymentError />} />
 

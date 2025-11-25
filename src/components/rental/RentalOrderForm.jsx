@@ -98,7 +98,6 @@ const RentalOrderForm = () => {
     } else {
       return;
     }
-    
     const grouped = {};
     let earliestStart = null;
     let latestEnd = null;
