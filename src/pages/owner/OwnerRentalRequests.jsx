@@ -528,15 +528,15 @@ const OwnerRentalRequests = () => {
                                 className="text-sm bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600"
                                 title="Xem yêu cầu gia hạn"
                               >
-                                📋 Xem yêu cầu gia hạn
+                                 Xem yêu cầu gia hạn
                               </button>
-                              <button
+                              {/* <button
                                 onClick={() => handleHideProducts(s)}
                                 className="text-sm bg-gray-700 text-white px-3 py-1 rounded hover:bg-gray-800"
                                 title="Ẩn sản phẩm để tránh người khác thuê"
                               >
                                 🙈 Ẩn sản phẩm
-                              </button>
+                              </button> */}
                             </>
                           )}
                         {s.status === 'OWNER_CONFIRMED' && (
