@@ -272,7 +272,7 @@ const RenterConfirmationSummary = () => {
                       {subOrder.subOrderNumber}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Chủ đồ: {subOrder.owner?.profile?.fullName || 'N/A'}
+                      Chủ đồ: {subOrder.owner?.profile?.firstName || 'N/A'} {subOrder.owner?.profile?.lastName || ''}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       {confirmedProducts.length}/{subOrder.products.length} sản phẩm đã xác nhận
@@ -313,7 +313,7 @@ const RenterConfirmationSummary = () => {
                       {confirmedProducts.map((product) => (
                         <div key={product._id} className="flex items-center gap-4 p-3 bg-green-50 rounded-lg border border-green-200">
                           <img
-                            src={product.product?.images?.[0] || '/placeholder.jpg'}
+                            src={product.product?.images?.[0].url || '/placeholder.jpg'}
                             alt={product.product?.title}
                             className="w-16 h-16 object-cover rounded"
                           />
@@ -343,7 +343,7 @@ const RenterConfirmationSummary = () => {
                       {rejectedProducts.map((product) => (
                         <div key={product._id} className="flex items-center gap-4 p-3 bg-red-50 rounded-lg border border-red-200">
                           <img
-                            src={product.product?.images?.[0] || '/placeholder.jpg'}
+                            src={product.product?.images?.[0].url || '/placeholder.jpg'}
                             alt={product.product?.title}
                             className="w-16 h-16 object-cover rounded opacity-50"
                           />
@@ -376,7 +376,7 @@ const RenterConfirmationSummary = () => {
                       {pendingProducts.map((product) => (
                         <div key={product._id} className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <img
-                            src={product.product?.images?.[0] || '/placeholder.jpg'}
+                            src={product.product?.images?.[0].url || '/placeholder.jpg'}
                             alt={product.product?.title}
                             className="w-16 h-16 object-cover rounded"
                           />
@@ -488,7 +488,7 @@ const RenterConfirmationSummary = () => {
                   {rejectingSubOrder.subOrderNumber}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Chủ đồ: {rejectingSubOrder.owner?.profile?.fullName}
+                  Chủ đồ: {rejectingSubOrder.owner?.profile?.firstName} {rejectingSubOrder.owner?.profile?.lastName}
                 </p>
               </div>
 
