@@ -254,6 +254,7 @@ class RentalOrderService {
       const response = await api.get("/rental-orders/owner-active-rentals", {
         params,
       });
+      console.log("✅ Owner active rentals response:", response.data);
       return response.data;
     } catch (error) {
       throw new Error(
