@@ -202,11 +202,11 @@ const OwnerRentalRequests = () => {
           if (!currentSubOrder) return;
           
           // Kiểm tra xem tất cả sản phẩm đã được xác nhận hay từ chối hết chưa
-          const pendingItems = currentSubOrder.products?.filter(item => item.status === 'PENDING') || [];
+          const pendingItems = currentSubOrder.products?.filter(item => item.productStatus === 'PENDING') || [];
           
           if (pendingItems.length === 0) {
             // Tất cả sản phẩm đã được xử lý
-            const confirmedItems = currentSubOrder.products?.filter(item => item.status === 'CONFIRMED') || [];
+            const confirmedItems = currentSubOrder.products?.filter(item => item.productStatus === 'CONFIRMED') || [];
             
             if (confirmedItems.length > 0) {
               // Có ít nhất 1 sản phẩm được xác nhận -> tự động chuyển sang trạng thái OWNER_CONFIRMED
@@ -245,7 +245,7 @@ const OwnerRentalRequests = () => {
       OWNER_REJECTED: 'bg-red-100 text-red-800',
       READY_FOR_CONTRACT: 'bg-blue-100 text-blue-800',
       PENDING_CONTRACT: 'bg-blue-100 text-blue-800',
-      CONTRACTED: 'bg-purple-100 text-purple-800'
+      CONTRACT_SIGNED: 'bg-purple-100 text-purple-800'
     };
 
     const labels = {
@@ -255,7 +255,7 @@ const OwnerRentalRequests = () => {
       OWNER_REJECTED: 'Đã từ chối',
       READY_FOR_CONTRACT: 'Sẵn sàng hợp đồng',
       PENDING_CONTRACT: 'Chờ ký hợp đồng',
-      CONTRACTED: 'Đã ký hợp đồng'
+      CONTRACT_SIGNED: 'Đã ký hợp đồng'
     };
 
     return (
@@ -736,7 +736,7 @@ const SubOrderDetailModal = ({
     if (isChecked) {
       const pendingItems = new Set();
       (subOrder.products || []).forEach((item, index) => {
-        if (item.status === 'PENDING') {
+        if (item.productStatus === 'PENDING') {
           pendingItems.add(index);
         }
       });
@@ -834,9 +834,9 @@ const SubOrderDetailModal = ({
     }
   };
 
-  const pendingItems = (subOrder.products || []).filter(item => item.status === 'PENDING');
+  const pendingItems = (subOrder.products || []).filter(item => item.productStatus === 'PENDING');
   const allPendingSelected = pendingItems.length > 0 && pendingItems.every((_, index) => {
-    const actualIndex = (subOrder.products || []).findIndex(p => p.status === 'PENDING' && p === pendingItems[index]);
+    const actualIndex = (subOrder.products || []).findIndex(p => p.productStatus === 'PENDING' && p === pendingItems[index]);
     return selectedItems.has(actualIndex);
   });
 
@@ -903,9 +903,9 @@ const SubOrderDetailModal = ({
                   </div>
                   <p className="font-semibold text-lg">{(subOrder.products || []).length} sản phẩm</p>
                   <div className="text-xs text-gray-500 mt-1">
-                    <span className="text-green-600">✓ {subOrder.products?.filter(p => p.status === 'CONFIRMED').length}</span> |
-                    <span className="text-yellow-600"> ⏳ {subOrder.products?.filter(p => p.status === 'PENDING').length}</span> |
-                    <span className="text-red-600"> ✗ {subOrder.products?.filter(p => p.status === 'REJECTED').length}</span>
+                    <span className="text-green-600">✓ {subOrder.products?.filter(p => p.productStatus === 'CONFIRMED').length}</span> |
+                    <span className="text-yellow-600"> ⏳ {subOrder.products?.filter(p => p.productStatus === 'PENDING').length}</span> |
+                    <span className="text-red-600"> ✗ {subOrder.products?.filter(p => p.productStatus === 'REJECTED').length}</span>
                   </div>
                 </div>
 
@@ -948,7 +948,7 @@ const SubOrderDetailModal = ({
                     <div key={index} className="p-4 bg-gray-50 rounded-lg border hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center space-x-3 flex-1">
-                          {item.status === 'PENDING' && (
+                          {item.productStatus === 'PENDING' && (
                             <input
                               type="checkbox"
                               checked={selectedItems.has(index)}
@@ -994,17 +994,17 @@ const SubOrderDetailModal = ({
 
                       <div className="mt-3 flex items-center justify-between">
                         <div>
-                          {item.status === 'PENDING' && (
+                          {item.productStatus === 'PENDING' && (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                               ⏳ Chờ xác nhận
                             </span>
                           )}
-                          {item.status === 'CONFIRMED' && (
+                          {item.productStatus === 'CONFIRMED' && (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               ✅ Đã xác nhận
                             </span>
                           )}
-                          {item.status === 'REJECTED' && (
+                          {item.productStatus === 'REJECTED' && (
                             <div>
                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 ❌ Đã từ chối
@@ -1016,7 +1016,7 @@ const SubOrderDetailModal = ({
                           )}
                         </div>
 
-                        {item.status === 'PENDING' && (
+                        {item.productStatus === 'PENDING' && (
                           <div className="flex space-x-2">
                             <button
                               onClick={() => onConfirmItem(subOrder._id, index)}

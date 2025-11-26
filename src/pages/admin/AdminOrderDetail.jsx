@@ -336,10 +336,10 @@ const AdminOrderDetail = () => {
                                     💰 {formatCurrency(item.rentalRate)}
                                   </span>
                                 )}
-                                {item.confirmationStatus && (
+                                {item.productStatus&& (
                                   <span className={`text-xs px-2 py-1 rounded-full ${
-                                    item.confirmationStatus === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
-                                    item.confirmationStatus === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                    item.productStatus=== 'CONFIRMED' ? 'bg-green-100 text-green-700' :
+                                    item.productStatus=== 'REJECTED' ? 'bg-red-100 text-red-700' :
                                     'bg-yellow-100 text-yellow-700'
                                   }`}>
                                     {item.confirmationStatus}
