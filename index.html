@@ -9,6 +9,57 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Temporary error overlay to surface runtime and loading errors while debugging -->
+    <script>
+      (function(){
+        function showOverlay(message) {
+          try {
+            var existing = document.getElementById('pira-error-overlay');
+            if (existing) existing.remove();
+            var overlay = document.createElement('div');
+            overlay.id = 'pira-error-overlay';
+            overlay.style.position = 'fixed';
+            overlay.style.left = '0';
+            overlay.style.top = '0';
+            overlay.style.right = '0';
+            overlay.style.zIndex = '999999';
+            overlay.style.background = 'rgba(220,38,38,0.95)';
+            overlay.style.color = 'white';
+            overlay.style.padding = '12px 16px';
+            overlay.style.fontFamily = 'monospace';
+            overlay.style.fontSize = '13px';
+            overlay.style.maxHeight = '50vh';
+            overlay.style.overflow = 'auto';
+            overlay.innerText = 'Runtime error: ' + message;
+            document.body.appendChild(overlay);
+          } catch (e) {
+            console.error('Failed to show overlay', e);
+          }
+        }
+
+        window.addEventListener('error', function (ev) {
+          try { showOverlay(ev.message || String(ev.error) || 'Unknown error'); } catch(_){}
+        });
+        window.addEventListener('unhandledrejection', function (ev) {
+          try { showOverlay((ev.reason && (ev.reason.message || ev.reason)) || String(ev.reason) || 'Unhandled rejection'); } catch(_){}
+        });
+
+        // also catch module script load errors (Vite HMR or module import failures)
+        window.addEventListener('DOMContentLoaded', function(){
+          setTimeout(function(){
+            if (!window.__PI_RA_CLIENT_MOUNTED__) {
+              // If main app didn't mount within 3s, show a hint
+              // Do not override existing overlay
+              if (!document.getElementById('pira-error-overlay')) {
+                showOverlay('App failed to mount or threw early error. Check browser console and dev server logs.');
+              }
+            }
+          }, 3000);
+        });
+      })();
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

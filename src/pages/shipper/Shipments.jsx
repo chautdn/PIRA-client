@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import ShipmentService from '../../services/shipment';
 import { formatCurrency } from '../../utils/constants';
@@ -8,6 +9,35 @@ export default function ShipmentsPage() {
   const { user } = useAuth();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Lightbox state and helpers (must be declared before any early returns)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightbox = (images = [], index = 0) => {
+    setLightboxImages(images || []);
+    setLightboxIndex(index || 0);
+    setIsLightboxOpen(true);
+  };
+
+  const closeLightbox = () => setIsLightboxOpen(false);
+
+  useEffect(() => {
+    if (isLightboxOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isLightboxOpen]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!isLightboxOpen) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') setLightboxIndex(i => (i > 0 ? i - 1 : (lightboxImages.length - 1)));
+      if (e.key === 'ArrowRight') setLightboxIndex(i => (i < lightboxImages.length - 1 ? i + 1 : 0));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isLightboxOpen, lightboxImages.length]);
 
   useEffect(() => {
     if (!user) return;
@@ -134,7 +164,13 @@ export default function ShipmentsPage() {
                       {Array.isArray(s.tracking?.photos) && s.tracking.photos.length > 0 && (
                         <div className="flex space-x-2">
                           {s.tracking.photos.slice(0,3).map((p, i) => (
-                            <img key={i} src={p} alt={`proof-${i}`} className="w-12 h-12 object-cover rounded" />
+                            <img
+                              key={i}
+                              src={p}
+                              alt={`proof-${i}`}
+                              className="w-12 h-12 object-cover rounded cursor-pointer"
+                              onClick={() => openLightbox(s.tracking.photos, i)}
+                            />
                           ))}
                         </div>
                       )}
@@ -146,6 +182,70 @@ export default function ShipmentsPage() {
           </table>
         </div>
       )}
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {isLightboxOpen && lightboxImages && lightboxImages.length > 0 && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => closeLightbox()}
+          >
+            <motion.button
+              className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center z-10"
+              onClick={(e) => { e.stopPropagation(); closeLightbox(); }}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </motion.button>
+
+            <div className="relative w-full max-w-5xl max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              <motion.img
+                key={lightboxIndex}
+                src={lightboxImages[lightboxIndex]}
+                alt={`img-${lightboxIndex}`}
+                className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+              />
+
+              {/* Prev / Next */}
+              {lightboxImages.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setLightboxIndex(i => i > 0 ? i - 1 : lightboxImages.length - 1)}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    onClick={() => setLightboxIndex(i => i < lightboxImages.length - 1 ? i + 1 : 0)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+
+              {/* Thumbnails */}
+              {lightboxImages.length > 1 && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 overflow-x-auto px-2">
+                  {lightboxImages.map((img, idx) => (
+                    <button key={idx} onClick={() => setLightboxIndex(idx)} className={`w-20 h-20 rounded overflow-hidden ${idx === lightboxIndex ? 'ring-4 ring-white' : 'ring-2 ring-white/30'}`}>
+                      <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

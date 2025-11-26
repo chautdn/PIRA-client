@@ -47,6 +47,8 @@ const ShipmentService = {
     }
   }
 
+  ,
+
   // Create a shipment request
   async createShipment(payload) {
     try {
