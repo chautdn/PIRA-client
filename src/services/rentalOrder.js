@@ -436,6 +436,16 @@ class RentalOrderService {
     }
   }
 
+  // Renter confirms delivered for a suborder (fallback endpoint on server)
+  async renterConfirmDelivered(subOrderId) {
+    try {
+      const response = await api.post(`/rental-orders/suborders/${subOrderId}/confirm-delivered`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Không thể xác nhận đã nhận hàng');
+    }
+  }
+
   /**
    * Ký hợp đồng
    * @param {string} contractId - ID của hợp đồng

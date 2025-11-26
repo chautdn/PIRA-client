@@ -15,6 +15,7 @@ const OrdersTable = ({
   onViewDetail,
   onEarlyReturn,
   earlyReturnRequests,
+  onRenterConfirm,
 }) => {
   const navigate = useNavigate();
 
@@ -124,6 +125,28 @@ const OrdersTable = ({
                   >
                     Xem
                   </button>
+                  {/* Renter confirm: always show button next to 'Xem' (disabled when all subOrders already DELIVERED) */}
+                  {onRenterConfirm && (
+                    <button
+                      onClick={() => {
+                        // choose first subOrder that is not yet DELIVERED to confirm
+                        const candidate = order.subOrders?.find((s) => s.status !== 'DELIVERED');
+                        if (!candidate) return;
+                        onRenterConfirm(candidate._id);
+                      }}
+                      disabled={
+                        !order.subOrders || order.subOrders.length === 0 ||
+                        order.subOrders.every((s) => s.status === 'DELIVERED')
+                      }
+                      className={`text-sm px-3 py-1 rounded text-white ${
+                        order.subOrders && order.subOrders.every((s) => s.status === 'DELIVERED')
+                          ? 'bg-gray-300 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      Xác nhận đã nhận
+                    </button>
+                  )}
                   {(order.status === "CONFIRMED" ||
                     order.status === "PARTIALLY_CANCELLED") && (
                     <button

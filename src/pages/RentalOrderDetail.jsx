@@ -4,6 +4,7 @@ import { useRentalOrder } from "../context/RentalOrderContext";
 import { useAuth } from "../hooks/useAuth";
 import toast from "react-hot-toast";
 import api from "../services/api";
+import rentalOrderService from "../services/rentalOrder";
 import EarlyReturnRequestModal from "../components/rental/EarlyReturnRequestModal";
 import ManageShipmentModal from "../components/owner/ManageShipmentModal";
 import {
@@ -255,6 +256,20 @@ const RentalOrderDetailPage = () => {
     } catch (error) {
       console.error("Error handling owner action:", error);
       alert("Có lỗi xảy ra khi thực hiện hành động");
+    }
+  };
+
+  const handleRenterConfirm = async (subOrderId) => {
+    try {
+      toast.loading('Đang gửi xác nhận...');
+      await rentalOrderService.renterConfirmDelivered(subOrderId);
+      toast.dismiss();
+      toast.success('Cảm ơn — bạn đã xác nhận đã nhận hàng.');
+      await loadOrderDetail(id);
+    } catch (error) {
+      toast.dismiss();
+      console.error('Renter confirm failed', error);
+      toast.error(error.response?.data?.message || error.message || 'Không thể xác nhận đã nhận hàng');
     }
   };
 
@@ -602,6 +617,19 @@ const RentalOrderDetailPage = () => {
                                   </button>
                                 </div>
                               )}
+
+                            {/* Renter: confirm received button (when shipment marked DELIVERED) */}
+                            {isRenter && subOrder.status === 'DELIVERED' && (
+                              <div className="flex items-center ml-2">
+                                <button
+                                  onClick={() => handleRenterConfirm(subOrder._id)}
+                                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center space-x-1"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Xác nhận đã nhận hàng</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
 

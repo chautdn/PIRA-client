@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../context/CartContext";
 import api from "../services/api";
 import earlyReturnApi from "../services/earlyReturn.Api";
+import rentalOrderService from "../services/rentalOrder";
 import EarlyReturnRequestModal from "../components/rental/EarlyReturnRequestModal";
 import OrderFilters from "../components/rental/OrderFilters";
 import OrdersTable from "../components/rental/OrdersTable";
@@ -183,6 +184,22 @@ const RentalOrdersPage = () => {
     setShowDetailModal(true);
   };
 
+  const handleRenterConfirm = async (subOrderId) => {
+    try {
+      toast.loading('Đang gửi xác nhận...');
+      await rentalOrderService.renterConfirmDelivered(subOrderId);
+      toast.dismiss();
+      toast.success('Bạn đã xác nhận đã nhận hàng.');
+      // reload orders and early return requests
+      loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+      loadEarlyReturnRequests();
+    } catch (error) {
+      toast.dismiss();
+      console.error('Renter confirm failed', error);
+      toast.error(error.response?.data?.message || error.message || 'Không thể xác nhận đã nhận hàng');
+    }
+  };
+
   const handleEarlyReturn = (subOrder) => {
     setSelectedSubOrder(subOrder);
     setShowEarlyReturnModal(true);
@@ -357,6 +374,7 @@ const RentalOrdersPage = () => {
                 onViewDetail={handleViewDetail}
                 onEarlyReturn={handleEarlyReturn}
                 earlyReturnRequests={earlyReturnRequests}
+                onRenterConfirm={handleRenterConfirm}
               />
             )}
 

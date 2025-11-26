@@ -46,8 +46,15 @@ const ShipmentService = {
       throw new Error(err.response?.data?.message || err.message || 'Không thể cập nhật deliver');
     }
   }
-
-  ,
+,
+  async renterConfirm(shipmentId) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/confirm`);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể xác nhận nhận hàng');
+    }
+  },
 
   // Create a shipment request
   async createShipment(payload) {
