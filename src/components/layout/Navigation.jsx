@@ -51,6 +51,12 @@ const OwnerMenuDropdown = ({ user }) => {
       route: "/owner/rental-requests",
     },
     {
+      icon: "🔄",
+      label: "Đang Cho Thuê",
+      description: "Sản phẩm đang được khách thuê",
+      route: ROUTES.OWNER_ACTIVE_RENTALS,
+    },
+    {
       icon: "",
       label: "Thống Kê",
       description: "Xem doanh thu và báo cáo",

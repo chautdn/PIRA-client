@@ -29,6 +29,7 @@ export const ROUTES = {
   OWNER_PRODUCTS: "/owner/products",
   OWNER_CREATE_PRODUCT: "/owner/products/create",
   MY_REPORTS: "/my-reports",
+  OWNER_ACTIVE_RENTALS: "/owner/active-rentals",
   ADMIN: {
     DASHBOARD: "/admin",
     USERS: "/admin/users",

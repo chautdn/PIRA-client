@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useRentalOrder } from '../../context/RentalOrderContext';
 import { useAuth } from "../../hooks/useAuth";
@@ -8,6 +8,7 @@ import MapSelector from '../common/MapSelector';
 import PaymentMethodSelector from '../common/PaymentMethodSelector';
 import { toast } from '../common/Toast';
 import paymentService from '../../services/payment';
+import rentalOrderService from '../../services/rentalOrder';
 
 const RentalOrderForm = () => {
   try {
@@ -16,13 +17,21 @@ const RentalOrderForm = () => {
     const rentalOrderContext = useRentalOrder();
     const { createDraftOrder, createPaidOrder, calculateShipping, isCreatingDraft, isCalculatingShipping, shippingCalculation } = rentalOrderContext;
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Check if this is a direct rental (from product detail)
+    const directRentalData = location.state?.directRental ? location.state : null;
+    // Check if there are selected items from cart
+    const selectedItems = location.state?.selectedItems || null;
+    const fromCart = location.state?.fromCart || false;
 
     // Debug effect - only runs once
     useEffect(() => {
       console.log('RentalOrderForm: Component mounted');
       console.log('RentalOrderForm: User loaded:', user ? 'Yes' : 'No');
       console.log('RentalOrderForm: Cart loaded:', cartItems ? cartItems.length : 'No cart');
-      console.log('RentalOrderForm: Cart items data:', cartItems);
+      console.log('RentalOrderForm: Selected items:', selectedItems);
+      console.log('RentalOrderForm: From cart:', fromCart);
       console.log('RentalOrderForm: RentalOrder context loaded:', !!rentalOrderContext);
     }, []);
 
@@ -49,6 +58,8 @@ const RentalOrderForm = () => {
   const [totalShipping, setTotalShipping] = useState(0);
   const [showPaymentSelector, setShowPaymentSelector] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositModalData, setDepositModalData] = useState(null);
 
   // Update contact info when user changes
   useEffect(() => {
@@ -64,18 +75,37 @@ const RentalOrderForm = () => {
     }
   }, [user]);
 
-  // Group products by owner and set rental dates from cart
+  // Group products by owner and set rental dates from cart OR direct rental
   useEffect(() => {
-    if (!cartItems || !Array.isArray(cartItems)) return;
+    let sourceItems = [];
     
+    // Priority: direct rental > selected items > all cart items
+    if (directRentalData) {
+      console.log('🎯 Using direct rental data:', directRentalData);
+      // Convert direct rental to cart-like structure
+      sourceItems = [{
+        _id: 'direct-rental-item',
+        product: directRentalData.product,
+        quantity: directRentalData.quantity,
+        rental: directRentalData.rental
+      }];
+    } else if (selectedItems && Array.isArray(selectedItems) && selectedItems.length > 0) {
+      console.log('🎯 Using selected items from cart:', selectedItems);
+      sourceItems = selectedItems;
+    } else if (cartItems && Array.isArray(cartItems)) {
+      console.log('🎯 Using all cart items:', cartItems);
+      sourceItems = cartItems;
+    } else {
+      return;
+    }
     const grouped = {};
     let earliestStart = null;
     let latestEnd = null;
     
-    cartItems.forEach(item => {
+    sourceItems.forEach(item => {
       // Validate item structure
       if (!item?.product?.owner?._id) {
-        console.warn('Cart item missing owner data:', item);
+        console.warn('Item missing owner data:', item);
         return;
       }
       
@@ -89,7 +119,7 @@ const RentalOrderForm = () => {
       }
       grouped[ownerId].products.push(item);
       
-      // Track rental period from cart items
+      // Track rental period from items
       if (item.rental?.startDate && item.rental?.endDate) {
         const itemStart = new Date(item.rental.startDate);
         const itemEnd = new Date(item.rental.endDate);
@@ -106,7 +136,7 @@ const RentalOrderForm = () => {
     setGroupedProducts(grouped);
     console.log('RentalOrderForm: Grouped products:', grouped);
     
-    // Set rental dates from cart items
+    // Set rental dates from items
     if (earliestStart && latestEnd) {
       setOrderData(prev => ({
         ...prev,
@@ -116,7 +146,7 @@ const RentalOrderForm = () => {
         }
       }));
     }
-  }, [cartItems]);
+  }, [cartItems, directRentalData, selectedItems]);
 
   // Calculate rental duration
   const calculateDuration = () => {
@@ -164,7 +194,7 @@ const RentalOrderForm = () => {
     };
   };
 
-  // Calculate shipping using delivery batch system
+  // NEW: Calculate shipping using trip-based system (group by delivery date across all SubOrders)
   const handleCalculateShipping = async () => {
     if (orderData.deliveryMethod === 'PICKUP') {
       setTotalShipping(0);
@@ -185,128 +215,188 @@ const RentalOrderForm = () => {
       return;
     }
 
-    let total = 0;
-    const updatedGroups = { ...groupedProducts };
-
-    for (const [ownerId, group] of Object.entries(groupedProducts)) {
-      try {
-        const ownerLocation = {
-          latitude: group.owner.address?.coordinates?.latitude || null,
-          longitude: group.owner.address?.coordinates?.longitude || null
-        };
-
-        const userLocation = {
-          latitude: orderData.deliveryAddress.latitude || null,
-          longitude: orderData.deliveryAddress.longitude || null
-        };
-
-        // Kiểm tra tọa độ - nếu không có thì dùng phí mặc định
-        const hasOwnerCoords = ownerLocation.latitude && ownerLocation.longitude;
-        const hasUserCoords = userLocation.latitude && userLocation.longitude;
+    try {
+      // NEW LOGIC: Calculate shipping per SubOrder (per Owner) with delivery batches
+      // Each Owner's products are grouped by delivery date separately
+      
+      let masterTotalShipping = 0;
+      const updatedGroups = { ...groupedProducts };
+      
+      // Calculate shipping for each SubOrder (Owner) separately
+      for (const [ownerId, group] of Object.entries(updatedGroups)) {
+        console.log(`🚚 Calculating shipping for Owner ${ownerId}:`, group.products.length, 'products');
         
-        if (!hasOwnerCoords) {
-          console.warn(`⚠️ Chủ cho thuê ${group.owner.profile?.firstName || group.owner.profile?.fullName || 'này'} chưa cập nhật tọa độ địa chỉ`);
-          toast(`⚠️ Chủ cho thuê ${group.owner.profile?.firstName || group.owner.profile?.fullName || 'này'} chưa cập nhật tọa độ. Sử dụng phí ship mặc định 50.000đ`, { duration: 4000 });
+        // Group this owner's products by delivery date
+        const deliveryBatches = {};
+        group.products.forEach((product, index) => {
+          const deliveryDate = product.rental?.startDate ? 
+            new Date(product.rental.startDate).toISOString().split('T')[0] : 
+            'unknown';
           
-          // Sử dụng phí ship mặc định khi không có tọa độ
-          const defaultShippingFee = 50000;
+          if (!deliveryBatches[deliveryDate]) {
+            deliveryBatches[deliveryDate] = [];
+          }
           
-          setGroupedProducts(prev => ({
-            ...prev,
-            [ownerId]: {
-              ...prev[ownerId],
-              shippingFee: defaultShippingFee,
-              deliveryInfo: {
-                deliveryCount: 1,
-                distance: 'Chưa xác định',
-                deliveryBatches: [{
-                  deliveryDate: new Date().toISOString().split('T')[0],
-                  deliveryBatch: 1,
-                  batchSize: group.products.length,
-                  batchQuantity: group.products.reduce((sum, p) => sum + p.quantity, 0),
-                  deliveryFee: defaultShippingFee
-                }],
-                summary: {
-                  totalProducts: group.products.length,
-                  totalQuantity: group.products.reduce((sum, p) => sum + p.quantity, 0),
-                  totalDeliveries: 1,
-                  averageFeePerDelivery: defaultShippingFee,
-                  note: 'Phí ship mặc định - chủ chưa cập nhật tọa độ'
+          deliveryBatches[deliveryDate].push({
+            ...product,
+            productIndex: index
+          });
+        });
+
+        console.log(`📦 Owner ${ownerId} delivery batches:`, deliveryBatches);
+
+        let subOrderTotalShipping = 0;
+        const subOrderDeliveries = [];
+        let deliveryCount = 0;
+        
+        // Calculate shipping for each delivery batch (same owner, same date = 1 delivery trip)
+        for (const [deliveryDate, batchProducts] of Object.entries(deliveryBatches)) {
+          deliveryCount++;
+          
+          try {
+            const ownerLocation = {
+              latitude: group.owner.address?.coordinates?.latitude || null,
+              longitude: group.owner.address?.coordinates?.longitude || null
+            };
+
+            const userLocation = {
+              latitude: orderData.deliveryAddress.latitude || null,
+              longitude: orderData.deliveryAddress.longitude || null
+            };
+
+            const hasOwnerCoords = ownerLocation.latitude && ownerLocation.longitude;
+            const hasUserCoords = userLocation.latitude && userLocation.longitude;
+            
+            let batchFee = 0;
+            let batchInfo = null;
+            
+            if (!hasOwnerCoords || !hasUserCoords) {
+              // Fallback: Default fee calculation per delivery batch
+              const baseShippingFee = 20000; // 20k per delivery trip
+              const perProductFee = 3000;    // 3k per product in batch
+              const totalQuantity = batchProducts.reduce((sum, p) => sum + (p.quantity || 1), 0);
+              batchFee = baseShippingFee + (perProductFee * totalQuantity);
+              
+              batchInfo = {
+                deliveryDate,
+                batchSize: batchProducts.length,
+                batchQuantity: totalQuantity,
+                deliveryFee: batchFee,
+                distance: hasOwnerCoords ? 'Chưa có địa chỉ nhận' : 'Chưa có địa chỉ gửi',
+                fallback: true,
+                products: batchProducts.map(p => ({
+                  productId: p.product._id,
+                  quantity: p.quantity || 1,
+                  allocatedFee: Math.round(batchFee / batchProducts.length)
+                }))
+              };
+              
+              console.warn(`⚠️ Owner ${group.owner.profile?.firstName} batch ${deliveryDate} - Missing coords, fallback: ${batchFee}`);
+            } else {
+              // Use backend API to calculate exact shipping for this batch
+              const products = batchProducts.map(item => ({
+                product: item.product._id,
+                quantity: item.quantity || 1,
+                rentalPeriod: item.rental || {
+                  startDate: orderData.rentalPeriod.startDate,
+                  endDate: orderData.rentalPeriod.endDate
                 }
+              }));
+
+              const shippingData = {
+                subOrderId: `batch-${deliveryDate}-${ownerId}`,
+                ownerLocation,
+                userLocation,
+                products
+              };
+
+              console.log(`🚚 Calculating batch shipping for ${deliveryDate}:`, products.length, 'products');
+              const shippingResponse = await rentalOrderContext.calculateProductShipping(shippingData);
+              
+              if (shippingResponse?.success && shippingResponse.metadata?.shipping) {
+                const shipping = shippingResponse.metadata.shipping;
+                batchFee = shipping.totalShippingFee || 20000;
+                
+                batchInfo = {
+                  deliveryDate,
+                  batchSize: batchProducts.length,
+                  batchQuantity: batchProducts.reduce((sum, p) => sum + (p.quantity || 1), 0),
+                  deliveryFee: batchFee,
+                  distance: shipping.distance,
+                  fallback: false,
+                  deliveryBatches: shipping.deliveryBatches || [],
+                  products: shipping.productFees || [],
+                  summary: shipping.summary
+                };
+              } else {
+                // API failed, use fallback
+                batchFee = 25000;
+                batchInfo = { 
+                  deliveryDate, 
+                  deliveryFee: batchFee, 
+                  fallback: true,
+                  error: 'API calculation failed'
+                };
               }
             }
-          }));
-          
-          continue; // Bỏ qua owner này và tiếp tục với owner khác
-        }
-        
-        if (!hasUserCoords) {
-          throw new Error('Vui lòng chọn địa chỉ giao hàng trên bản đồ để có tọa độ chính xác');
-        }
-
-        // Prepare products with rental periods for delivery batch calculation
-        const products = group.products.map(item => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          rentalPeriod: {
-            startDate: item.rental?.startDate || orderData.rentalPeriod.startDate,
-            endDate: item.rental?.endDate || orderData.rentalPeriod.endDate
+            
+            // Add batch fee to SubOrder total
+            subOrderTotalShipping += batchFee;
+            subOrderDeliveries.push(batchInfo);
+            
+            console.log(`✅ Delivery batch ${deliveryDate} - Owner ${group.owner.profile?.firstName}: ${batchFee.toLocaleString('vi-VN')}đ`);
+            
+          } catch (error) {
+            console.error(`❌ Error calculating batch ${deliveryDate} for owner ${ownerId}:`, error);
+            
+            // Fallback for this batch
+            const fallbackFee = 25000;
+            subOrderTotalShipping += fallbackFee;
+            subOrderDeliveries.push({
+              deliveryDate,
+              deliveryFee: fallbackFee,
+              fallback: true,
+              error: error.message
+            });
           }
-        }));
-
-        const shippingData = {
-          subOrderId: `temp-${ownerId}`, // Temporary ID for calculation
-          ownerLocation,
-          userLocation,
-          products
-        };
-
-        console.log(`🚚 Tính phí ship cho chủ ${group.owner.profile?.firstName || group.owner.profile?.fullName}:`);
-        console.log('- Products:', products.length, 'items');
-        console.log('- Owner location:', ownerLocation);
-        console.log('- User location:', userLocation);
-        console.log('- Has coordinates: Owner=' + hasOwnerCoords + ', User=' + hasUserCoords);
-
-        // Use the new product shipping calculation API
-        const shippingResponse = await rentalOrderContext.calculateProductShipping(shippingData);
-        console.log('Delivery batch shipping response:', shippingResponse);
-        
-        let shippingFee = 20000; // default fallback
-        let deliveryInfo = null;
-        
-        if (shippingResponse?.metadata?.shipping) {
-          const shipping = shippingResponse.metadata.shipping;
-          shippingFee = shipping.totalShippingFee || shipping.shipping?.totalShippingFee || 20000;
-          
-          // Store delivery batch information
-          deliveryInfo = {
-            deliveryCount: shipping.deliveryCount || shipping.shipping?.deliveryCount || 1,
-            deliveryBatches: shipping.deliveryBatches || shipping.shipping?.deliveryBatches || [],
-            distance: shipping.distance || shipping.shipping?.distance,
-            summary: shipping.summary || shipping.shipping?.summary
-          };
         }
         
-        updatedGroups[ownerId].shippingFee = shippingFee;
-        updatedGroups[ownerId].deliveryInfo = deliveryInfo;
-        total += shippingFee;
-      } catch (error) {
-        const ownerName = group.owner?.profile?.fullName || 'Không rõ';
-        console.error(`❌ Lỗi tính phí ship cho chủ ${ownerName}:`, error);
-        toast.error(`Lỗi tính phí ship cho chủ ${ownerName}: ${error.message}`);
-        // Fallback: phí cố định
-        updatedGroups[ownerId].shippingFee = 20000;
+        // Update SubOrder shipping info
+        updatedGroups[ownerId].shippingFee = subOrderTotalShipping;
         updatedGroups[ownerId].deliveryInfo = {
-          deliveryCount: 1,
-          deliveryBatches: [],
-          error: error.message
+          deliveryCount,
+          deliveryBatches: subOrderDeliveries,
+          distance: subOrderDeliveries[0]?.distance || 'Unknown',
+          summary: `${deliveryCount} lần giao hàng`
         };
-        total += 20000;
+        
+        masterTotalShipping += subOrderTotalShipping;
+        
+        console.log(`📦 SubOrder ${ownerId} total: ${subOrderTotalShipping.toLocaleString('vi-VN')}đ (${deliveryCount} deliveries)`);
       }
+      
+      // Update state with calculated shipping fees
+      setGroupedProducts(updatedGroups);
+      setTotalShipping(masterTotalShipping);
+      
+      console.log('🎯 Final SubOrder-based shipping calculation:', {
+        masterTotalShipping: masterTotalShipping.toLocaleString('vi-VN') + 'đ',
+        totalSubOrders: Object.keys(updatedGroups).length,
+        subOrderBreakdown: Object.keys(updatedGroups).map(ownerId => ({
+          ownerId,
+          ownerName: updatedGroups[ownerId].owner?.profile?.firstName || 'Unknown',
+          subOrderShipping: updatedGroups[ownerId].shippingFee.toLocaleString('vi-VN') + 'đ',
+          deliveryCount: updatedGroups[ownerId].deliveryInfo.deliveryCount,
+          deliveryDates: updatedGroups[ownerId].deliveryInfo.deliveryBatches.map(b => b.deliveryDate)
+        }))
+      });
+      
+      toast.success(`Đã tính phí ship: ${masterTotalShipping.toLocaleString('vi-VN')}đ cho ${Object.keys(updatedGroups).length} SubOrder`);
+      
+    } catch (error) {
+      console.error('❌ Error in trip-based shipping calculation:', error);
+      toast.error(`Lỗi tính phí ship: ${error.message}`);
     }
-
-    setGroupedProducts(updatedGroups);
-    setTotalShipping(total);
   };
 
   // Validate form - dates are from cart, only validate delivery info
@@ -373,8 +463,14 @@ const RentalOrderForm = () => {
       // Process payment based on selected method
       switch (paymentMethod) {
         case 'WALLET':
-          // Deduct from user wallet automatically
-          paymentResult = await processWalletPayment(totals.grandTotal);
+          // For wallet payment, let the order creation handle the deduction
+          // No separate payment processing needed - avoid double deduction
+          console.log('💳 Wallet payment selected - skipping separate payment processing to avoid double deduction');
+          paymentResult = { 
+            method: 'WALLET', 
+            status: 'PENDING',
+            message: 'Thanh toán từ ví sẽ được xử lý khi tạo đơn hàng' 
+          };
           break;
           
         case 'BANK_TRANSFER':
@@ -384,12 +480,8 @@ const RentalOrderForm = () => {
           break;
           
         case 'COD':
-          // Cash on delivery - no immediate payment needed
-          paymentResult = { 
-            method: 'COD', 
-            status: 'PENDING',
-            message: 'Thanh toán khi nhận hàng' 
-          };
+          // COD requires mandatory deposit payment
+          paymentResult = await processCODWithDeposit(totals);
           break;
           
         default:
@@ -406,7 +498,13 @@ const RentalOrderForm = () => {
         paymentMethod: paymentMethod,
         totalAmount: totals.grandTotal,
         paymentTransactionId: paymentResult.transactionId,
-        paymentMessage: paymentResult.message
+        paymentMessage: paymentResult.message,
+        // COD specific fields
+        ...(paymentMethod === 'COD' && {
+          depositAmount: paymentResult.depositAmount,
+          depositPaymentMethod: paymentResult.depositPaymentMethod,
+          depositTransactionId: paymentResult.depositTransactionId
+        })
       };
 
       console.log('📤 Creating order after successful payment:', orderWithPayment);
@@ -414,6 +512,40 @@ const RentalOrderForm = () => {
       
       if (!paidOrder || !paidOrder._id) {
         throw new Error('Không nhận được thông tin đơn hàng hợp lệ từ server');
+      }
+
+      // Check if need to redirect to PayOS payment
+      if ((paymentMethod === 'PAYOS' || paymentMethod === 'BANK_TRANSFER') && 
+          paidOrder.paymentInfo?.paymentDetails?.paymentUrl) {
+        console.log('🔗 Redirecting to PayOS payment:', paidOrder.paymentInfo.paymentDetails.paymentUrl);
+        
+        // Save order info to sessionStorage for later use
+        sessionStorage.setItem('pendingPaymentOrder', JSON.stringify({
+          orderId: paidOrder._id,
+          orderNumber: paidOrder.masterOrderNumber,
+          orderCode: paidOrder.paymentInfo.orderCode
+        }));
+
+        // Redirect to PayOS payment page
+        window.location.href = paidOrder.paymentInfo.paymentDetails.paymentUrl;
+        return; // Stop execution here
+      }
+
+      // For COD with PayOS deposit
+      if (paymentMethod === 'COD' && 
+          paidOrder.paymentInfo?.paymentDetails?.depositPaymentUrl) {
+        console.log('🔗 Redirecting to PayOS deposit payment:', paidOrder.paymentInfo.paymentDetails.depositPaymentUrl);
+        
+        // Save order info to sessionStorage
+        sessionStorage.setItem('pendingPaymentOrder', JSON.stringify({
+          orderId: paidOrder._id,
+          orderNumber: paidOrder.masterOrderNumber,
+          orderCode: paidOrder.paymentInfo.paymentDetails.depositOrderCode
+        }));
+
+        // Redirect to PayOS payment page
+        window.location.href = paidOrder.paymentInfo.paymentDetails.depositPaymentUrl;
+        return; // Stop execution here
       }
       
       // Clear cart after successful payment and order creation
@@ -459,32 +591,160 @@ const RentalOrderForm = () => {
     }
   };
 
-  // Process wallet payment with real API
-  const processWalletPayment = async (amount) => {
+  // Process COD with mandatory deposit payment
+  const processCODWithDeposit = async (totals) => {
     try {
-      console.log('💳 Processing wallet payment for amount:', amount);
+      console.log('💵 Processing COD with mandatory deposit');
+      console.log('📊 Current totals:', totals);
       
-      const orderData = {
-        totalAmount: amount,
-        orderNumber: `ORD-${Date.now()}`,
-        description: 'Thanh toán đơn thuê bằng ví điện tử'
-      };
-
-      const result = await paymentService.processWalletPayment(orderData);
+      // Calculate total deposit from all items via backend API
+      const totalDeposit = await calculateTotalDeposit();
+      console.log('💰 Total deposit calculated:', {
+        amount: totalDeposit,
+        formatted: totalDeposit.toLocaleString('vi-VN') + 'đ',
+        isValid: totalDeposit > 0
+      });
+      
+      if (!totalDeposit || totalDeposit <= 0) {
+        console.error('❌ Invalid deposit amount:', totalDeposit);
+        throw new Error(`Không thể tính được tiền cọc cho đơn hàng này. Deposit calculated: ${totalDeposit}`);
+      }
+      
+      // Show deposit payment method selection
+      const depositPaymentMethod = await showDepositPaymentModal(totalDeposit, totals.grandTotal);
+      
+      if (!depositPaymentMethod) {
+        throw new Error('Cần chọn phương thức thanh toán cọc');
+      }
+      
+      // Process deposit payment
+      let depositResult;
+      if (depositPaymentMethod === 'WALLET') {
+        // Process wallet deposit payment (will be handled by backend)
+        depositResult = {
+          status: 'SUCCESS',
+          transactionId: `DEP_${Date.now()}`,
+          method: 'WALLET'
+        };
+      } else {
+        // Process PayOS deposit payment
+        depositResult = await processPayOSPayment(depositPaymentMethod, totalDeposit);
+      }
+      
+      if (depositResult.status !== 'SUCCESS') {
+        throw new Error('Thanh toán cọc thất bại: ' + (depositResult.message || 'Unknown error'));
+      }
       
       return {
-        method: 'WALLET',
+        method: 'COD',
         status: 'SUCCESS',
-        transactionId: result.metadata?.transactionId,
-        message: 'Thanh toán từ ví thành công'
+        depositAmount: totalDeposit,
+        depositPaymentMethod: depositPaymentMethod,
+        depositTransactionId: depositResult.transactionId,
+        message: `Đã thanh toán cọc ${totalDeposit.toLocaleString('vi-VN')}đ. Còn lại ${(totals.grandTotal - totalDeposit).toLocaleString('vi-VN')}đ thanh toán khi nhận hàng`
       };
+      
     } catch (error) {
+      console.error('❌ COD deposit payment error:', error);
       return {
-        method: 'WALLET',
+        method: 'COD',
         status: 'FAILED',
-        message: error.message || 'Lỗi thanh toán từ ví'
+        message: error.message || 'Lỗi thanh toán cọc'
       };
     }
+  };
+
+  // Calculate total deposit from backend API (accurate calculation)
+  const calculateTotalDeposit = async () => {
+    try {
+      console.log('💰 Fetching deposit calculation from backend...');
+      
+      // Use rentalOrderService instead of direct fetch
+      const result = await rentalOrderService.calculateDeposit();
+      console.log('💰 Deposit calculation result:', result);
+
+      if (result.success && result.metadata && typeof result.metadata.totalDeposit === 'number') {
+        return result.metadata.totalDeposit;
+      } else {
+        throw new Error('Invalid response format from deposit API');
+      }
+
+    } catch (error) {
+      console.error('❌ Error calculating deposit from API:', error);
+      
+      // Fallback to client-side calculation
+      console.log('🔄 Falling back to client-side deposit calculation');
+      const items = fromCart ? selectedItems : (directRentalData ? [directRentalData] : []);
+      
+      console.log('📋 Items for deposit calculation:', {
+        fromCart,
+        selectedItems: selectedItems?.length || 0,
+        directRentalData: !!directRentalData,
+        totalItems: items.length,
+        cartItems: cartItems?.length || 0
+      });
+
+      // If no items found, try to get from cartItems as last resort
+      const finalItems = items.length > 0 ? items : (cartItems || []);
+
+      if (finalItems.length === 0) {
+        console.error('❌ No items found for deposit calculation in any source');
+        throw new Error('Không có sản phẩm nào để tính tiền cọc');
+      }
+
+      const fallbackDeposit = finalItems.reduce((total, item) => {
+        const deposit = item.product?.pricing?.deposit?.amount || 
+                       item.product?.deposit || 
+                       item.depositRate || 
+                       0;
+        
+        console.log('💳 Item deposit:', {
+          productName: item.product?.title || item.product?.name,
+          quantity: item.quantity,
+          depositPerUnit: deposit,
+          itemTotal: deposit * item.quantity
+        });
+        
+        return total + (deposit * item.quantity);
+      }, 0);
+
+      console.log('💰 Fallback deposit total:', fallbackDeposit);
+      
+      // If still 0, provide a meaningful error
+      if (fallbackDeposit <= 0) {
+        console.error('❌ No deposit found in fallback calculation');
+        console.log('🔍 Debug info:', {
+          finalItems,
+          fromCart,
+          selectedItems,
+          directRentalData,
+          cartItems
+        });
+        // Return a small positive number to avoid blocking the flow
+        return 50000; // 50,000 VND as minimum deposit
+      }
+      
+      return fallbackDeposit;
+    }
+  };
+
+  // Show deposit payment method selection modal
+  const showDepositPaymentModal = (depositAmount, totalAmount) => {
+    return new Promise((resolve) => {
+      setShowDepositModal(true);
+      setDepositModalData({
+        depositAmount,
+        totalAmount,
+        onSelect: (method) => {
+          setShowDepositModal(false);
+          resolve(method);
+        },
+        onCancel: () => {
+          setShowDepositModal(false);
+          resolve(null);
+        }
+      });
+    });
   };
 
   // Process PayOS payment with real API
@@ -492,36 +752,15 @@ const RentalOrderForm = () => {
     try {
       console.log('🏦 Processing PayOS payment for amount:', amount);
       
-      const orderData = {
-        totalAmount: amount,
-        orderNumber: `ORD-${Date.now()}`,
-        description: 'Thanh toán đơn thuê qua PayOS'
-      };
-
-      const result = await paymentService.createOrderPaymentSession(orderData);
-      
-      // Open PayOS payment page in new window/tab
-      if (result.metadata?.checkoutUrl) {
-        window.open(result.metadata.checkoutUrl, '_blank');
-        
-        // For now, assume success (in real app, would wait for webhook)
-        const confirmed = window.confirm(
-          'Vui lòng hoàn tất thanh toán trên trang PayOS.\n\nNhấn OK khi đã thanh toán thành công, Cancel để hủy.'
-        );
-        
-        if (!confirmed) {
-          throw new Error('Người dùng đã hủy thanh toán');
-        }
-      }
-      
+      // This will be handled by createPaidOrder - just return pending status
+      // The actual PayOS payment link will be in the order response
       return {
         method: method,
-        status: 'SUCCESS',
-        transactionId: result.metadata?.transactionId,
-        orderCode: result.metadata?.orderCode,
-        message: 'Thanh toán PayOS thành công'
+        status: 'PENDING', // Changed from SUCCESS to PENDING
+        message: 'Đang tạo link thanh toán PayOS'
       };
     } catch (error) {
+      console.error('❌ PayOS payment error:', error);
       return {
         method: method,
         status: 'FAILED',
@@ -556,12 +795,22 @@ const RentalOrderForm = () => {
     orderData.deliveryAddress.longitude
   ]);
 
-  if (!cartItems || cartItems.length === 0) {
+  // Check if we have products (from cart or direct rental)
+  const hasProducts = directRentalData || (cartItems && cartItems.length > 0);
+  
+  if (!hasProducts) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Giỏ thuê trống</h2>
-          <p className="text-gray-600 mb-4">Vui lòng thêm sản phẩm vào giỏ trước khi tạo đơn thuê</p>
+          <h2 className="text-2xl font-bold mb-4">
+            {directRentalData ? 'Lỗi dữ liệu thuê' : 'Giỏ thuê trống'}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {directRentalData 
+              ? 'Dữ liệu thuê không hợp lệ. Vui lòng thử lại.'
+              : 'Vui lòng thêm sản phẩm vào giỏ trước khi tạo đơn thuê'
+            }
+          </p>
           <button
             onClick={() => navigate('/products')}
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
@@ -576,7 +825,16 @@ const RentalOrderForm = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Tạo Đơn Thuê</h1>
+        <div className="flex items-center gap-3 mb-8">
+          <h1 className="text-3xl font-bold">
+            {directRentalData ? 'Thuê Ngay' : 'Tạo Đơn Thuê'}
+          </h1>
+          {directRentalData && (
+            <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+              ⚡ Thuê trực tiếp
+            </span>
+          )}
+        </div>
 
 
 
@@ -676,13 +934,147 @@ const RentalOrderForm = () => {
                       <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                         <h4 className="font-medium text-blue-800 mb-2">🚚 Thông tin vận chuyển</h4>
                         
-                        {/* Total Shipping Cost */}
-                        <div className="mb-3 p-2 bg-white rounded border">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-700 font-medium">Tổng phí vận chuyển:</span>
+                        {/* SubOrder Level Shipping */}
+                        <div className="mb-3 p-3 bg-white rounded border">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-700 font-medium">Tổng phí vận chuyển SubOrder:</span>
                             <span className="font-bold text-blue-700 text-lg">
                               {(group.shippingFee || 0).toLocaleString('vi-VN')}đ
                             </span>
+                          </div>
+                          
+                          {/* Shipping Calculation Explanation */}
+                          {group.deliveryInfo && (
+                            <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
+                              <div className="font-medium text-blue-800 mb-1">💡 Cách tính phí:</div>
+                              <div className="text-blue-700 space-y-1">
+                                <div>• Phí ship = Số lần giao hàng × (15,000đ cơ bản + Khoảng cách × 5,000đ/km)</div>
+                                <div>• Sản phẩm cùng ngày giao = 1 lần giao = 1 phí ship</div>
+                                <div>• Phí ship được chia đều cho các sản phẩm trong cùng chuyến giao</div>
+                                <div>• Tối thiểu: 20,000đ/lần giao | Tối đa: 100,000đ/lần giao</div>
+                                {group.deliveryInfo.distance && (
+                                  <div>• Khoảng cách: {typeof group.deliveryInfo.distance === 'object' ? group.deliveryInfo.distance.km : group.deliveryInfo.distance}km</div>
+                                )}
+                                {group.deliveryInfo.summary && (
+                                  <div>• Tổng: {group.deliveryInfo.deliveryCount} lần giao × {Math.round((group.shippingFee || 0) / (group.deliveryInfo.deliveryCount || 1)).toLocaleString('vi-VN')}đ = {(group.shippingFee || 0).toLocaleString('vi-VN')}đ</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Shipping Per Product */}
+                          <div className="mt-2 space-y-1">
+                            <div className="text-xs text-gray-600 font-medium mb-1">📦 Chi tiết phí ship theo sản phẩm:</div>
+                            {group.products.map((item, prodIndex) => {
+                              // Calculate shipping fee per product based on delivery batch system
+                              let productDuration = 1;
+                              let deliveryDate = null;
+                              
+                              if (item.rental?.startDate && item.rental?.endDate) {
+                                const startDate = new Date(item.rental.startDate);
+                                const endDate = new Date(item.rental.endDate);
+                                const diffTime = Math.abs(endDate - startDate);
+                                productDuration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+                                deliveryDate = startDate.toLocaleDateString('vi-VN');
+                              }
+                              
+                              console.log(`🔍 Product ${prodIndex} - ${item.product.title}:`, {
+                                productId: item.product._id,
+                                deliveryInfo: group.deliveryInfo,
+                                productFees: group.deliveryInfo?.productFees,
+                                productShippingDetails: group.deliveryInfo?.productShippingDetails
+                              });
+                              
+                              // Find product shipping fee from detailed shipping info
+                              let productShippingFee = 0;
+                              let deliveryBatchInfo = null;
+                              
+                              // Try to find product shipping fee from backend calculation
+                              if (group.deliveryInfo?.productFees) {
+                                // Look for product fee by productId
+                                const productFee = group.deliveryInfo.productFees.find(fee => 
+                                  fee.productId === item.product._id
+                                );
+                                
+                                if (productFee) {
+                                  productShippingFee = productFee.allocatedFee || 0;
+                                  deliveryBatchInfo = {
+                                    deliveryDate: new Date(productFee.deliveryDate).toLocaleDateString('vi-VN'),
+                                    batchSize: productFee.breakdown?.batchSize || 1,
+                                    totalBatchFee: productFee.breakdown?.deliveryFee || 0,
+                                    distance: productFee.distance
+                                  };
+                                }
+                              }
+                              
+                              // If not found in productFees, try deliveryBatches
+                              if (productShippingFee === 0 && group.deliveryInfo?.productShippingDetails) {
+                                const productDetail = group.deliveryInfo.productShippingDetails.find(batch => 
+                                  batch.products?.some(p => p.productId === item.product._id)
+                                );
+                                
+                                if (productDetail) {
+                                  const productInfo = productDetail.products.find(p => p.productId === item.product._id);
+                                  productShippingFee = productInfo?.allocatedFee || 0;
+                                  deliveryBatchInfo = {
+                                    deliveryDate: new Date(productDetail.deliveryDate).toLocaleDateString('vi-VN'),
+                                    batchSize: productDetail.batchSize,
+                                    totalBatchFee: productDetail.deliveryFee
+                                  };
+                                }
+                              }
+                              
+                              // Final fallback - divide total shipping equally
+                              if (productShippingFee === 0) {
+                                const totalProductCount = group.products.length;
+                                productShippingFee = Math.round((group.shippingFee || 0) / totalProductCount);
+                                deliveryBatchInfo = {
+                                  deliveryDate: deliveryDate || 'Chưa xác định',
+                                  batchSize: totalProductCount,
+                                  totalBatchFee: group.shippingFee || 0,
+                                  note: 'Phí được chia đều (fallback)'
+                                };
+                              }
+                              
+                              return (
+                                <div key={prodIndex} className="bg-gray-50 p-2 rounded border-l-2 border-blue-300">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-700 text-xs">
+                                        {item.product.title || item.product.name}
+                                      </div>
+                                      <div className="text-xs text-gray-500 mt-1 space-y-1">
+                                        <div>📦 SL: {item.quantity} | ⏱️ {productDuration} ngày</div>
+                                        {deliveryDate && (
+                                          <div>🚚 Giao ngày: {deliveryDate}</div>
+                                        )}
+                                        {deliveryBatchInfo && (
+                                          <div className="text-xs text-blue-600">
+                                            📋 Batch: {deliveryBatchInfo.batchSize} SP = {deliveryBatchInfo.totalBatchFee?.toLocaleString('vi-VN')}đ
+                                            {deliveryBatchInfo.distance && (
+                                              <span className="ml-1">({deliveryBatchInfo.distance}km)</span>
+                                            )}
+                                            {deliveryBatchInfo.note && (
+                                              <div className="text-orange-600 mt-1">{deliveryBatchInfo.note}</div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="font-semibold text-blue-600 text-sm">
+                                        {productShippingFee.toLocaleString('vi-VN')}đ
+                                      </span>
+                                      {deliveryBatchInfo && (
+                                        <div className="text-xs text-gray-500">
+                                          /{deliveryBatchInfo.batchSize} SP
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
 
@@ -1014,7 +1406,12 @@ const RentalOrderForm = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Số sản phẩm:</span>
-                  <span>{cartItems?.length || 0}</span>
+                  <span>
+                    {directRentalData 
+                      ? directRentalData.quantity || 1
+                      : cartItems?.length || 0
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Thời gian thuê:</span>
@@ -1057,6 +1454,16 @@ const RentalOrderForm = () => {
           onClose={() => setShowPaymentSelector(false)}
         />
       )}
+
+      {/* Deposit Payment Modal for COD */}
+      {showDepositModal && depositModalData && (
+        <DepositPaymentModal
+          depositAmount={depositModalData.depositAmount}
+          totalAmount={depositModalData.totalAmount}
+          onSelect={depositModalData.onSelect}
+          onCancel={depositModalData.onCancel}
+        />
+      )}
     </div>
   );
   } catch (error) {
@@ -1078,6 +1485,106 @@ const RentalOrderForm = () => {
       </div>
     );
   }
+};
+
+// Deposit Payment Modal Component for COD orders
+const DepositPaymentModal = ({ depositAmount, totalAmount, onSelect, onCancel }) => {
+  const [selectedMethod, setSelectedMethod] = useState('');
+  
+  const depositMethods = [
+    {
+      key: 'WALLET',
+      title: 'Ví điện tử',
+      description: 'Thanh toán cọc từ số dư ví',
+      icon: '💳'
+    },
+    {
+      key: 'PAYOS',
+      title: 'Chuyển khoản ngân hàng',
+      description: 'Thanh toán cọc qua PayOS (QR Code)',
+      icon: '🏦'
+    }
+  ];
+
+  const remainingAmount = totalAmount - depositAmount;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <h2 className="text-xl font-semibold mb-4">💵 Thanh toán cọc - COD</h2>
+        
+        {/* Amount breakdown */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="text-sm space-y-2">
+            <div className="flex justify-between">
+              <span>Tổng đơn hàng:</span>
+              <span className="font-medium">{totalAmount.toLocaleString('vi-VN')}đ</span>
+            </div>
+            <div className="flex justify-between text-orange-600">
+              <span>Cọc cần thanh toán:</span>
+              <span className="font-bold">{depositAmount.toLocaleString('vi-VN')}đ</span>
+            </div>
+            <div className="flex justify-between text-gray-600 border-t pt-2">
+              <span>Còn lại khi nhận hàng:</span>
+              <span>{remainingAmount.toLocaleString('vi-VN')}đ</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-600 mb-4">
+          Chọn phương thức thanh toán cọc:
+        </p>
+        
+        <div className="space-y-3 mb-6">
+          {depositMethods.map((method) => (
+            <div
+              key={method.key}
+              className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                selectedMethod === method.key
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+              onClick={() => setSelectedMethod(method.key)}
+            >
+              <div className="flex items-start space-x-3">
+                <span className="text-2xl">{method.icon}</span>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="depositMethod"
+                      value={method.key}
+                      checked={selectedMethod === method.key}
+                      onChange={() => setSelectedMethod(method.key)}
+                      className="text-blue-500"
+                    />
+                    <h3 className="font-medium">{method.title}</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{method.description}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={() => selectedMethod && onSelect(selectedMethod)}
+            disabled={!selectedMethod}
+            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Thanh toán cọc
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default RentalOrderForm;

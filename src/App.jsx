@@ -27,11 +27,19 @@ import OwnerProducts from "./pages/owner/OwnerProducts";
 import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
+import ActiveRentals from "./pages/owner/ActiveRentals";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
 import TopUpCancel from "./pages/wallet/TopUpCancel";
 import Withdrawals from "./pages/Withdrawals";
+
+// Payment result pages
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
+import PaymentCancelled from "./pages/payment/PaymentCancelled";
+import PaymentPending from "./pages/payment/PaymentPending";
+import PaymentError from "./pages/payment/PaymentError";
+import RentalPaymentReturn from "./pages/rental/RentalPaymentReturn";
 
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
@@ -56,10 +64,10 @@ import MyReports from "./pages/auth/MyReports";
 import RentalOrdersPage from "./pages/RentalOrders";
 import RentalOrderDetailPage from "./pages/RentalOrderDetail";
 import RentalOrderForm from "./components/rental/RentalOrderForm";
-import RentalOrderFormTest from "./components/rental/RentalOrderFormTest";
 import OrderConfirmation from "./components/rental/OrderConfirmation";
 import TransactionHistory from "./pages/TransactionHistory";
 import ContractSigning from "./components/rental/ContractSigning";
+import RenterConfirmationSummary from "./pages/RenterConfirmationSummary";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
 
 // Component to handle scroll to top on route change
@@ -194,6 +202,14 @@ export default function App() {
                       </RoleProtectedRoute>
                     }
                   />
+                  <Route
+                    path={ROUTES.OWNER_ACTIVE_RENTALS}
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <ActiveRentals />
+                      </RoleProtectedRoute>
+                    }
+                  />
 
                   {/* Chat routes */}
                   <Route path={ROUTES.CHAT} element={<Chat />}>
@@ -244,6 +260,15 @@ export default function App() {
                     }
                   />
 
+                  {/* Payment result routes */}
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route
+                    path="/payment/cancelled"
+                    element={<PaymentCancelled />}
+                  />
+                  <Route path="/payment/pending" element={<PaymentPending />} />
+                  <Route path="/payment/error" element={<PaymentError />} />
+
                   {/* Rental Order routes */}
                   <Route
                     path="/rental-orders"
@@ -258,6 +283,14 @@ export default function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <RentalOrderDetailPage />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/:masterOrderId/confirmation-summary"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                        <RenterConfirmationSummary />
                       </RoleProtectedRoute>
                     }
                   />
