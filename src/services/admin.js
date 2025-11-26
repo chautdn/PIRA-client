@@ -155,6 +155,70 @@ class AdminService {
     }
   }
 
+  // User Details (Orders, Products, Bank) APIs
+  async getUserOrders(userId) {
+    try {
+      const response = await api.get(`/admin/users/${userId}/orders`);
+      console.log('AdminService getUserOrders - Full response:', response);
+      
+      // Handle different response structures
+      if (response.data && response.data.data) {
+        return response.data.data;
+      } else if (response.data && response.data.metadata) {
+        return response.data.metadata;
+      } else if (response.data) {
+        return response.data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+      throw error;
+    }
+  }
+
+  async getUserProducts(userId) {
+    try {
+      const response = await api.get(`/admin/users/${userId}/products`);
+      console.log('AdminService getUserProducts - Full response:', response);
+      
+      // Handle different response structures
+      if (response.data && response.data.data) {
+        return response.data.data;
+      } else if (response.data && response.data.metadata) {
+        return response.data.metadata;
+      } else if (response.data) {
+        return response.data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error fetching user products:', error);
+      throw error;
+    }
+  }
+
+  async getUserBankAccount(userId) {
+    try {
+      const response = await api.get(`/admin/users/${userId}/bank-account`);
+      console.log('AdminService getUserBankAccount - Full response:', response);
+      
+      // Handle different response structures
+      if (response.data && response.data.data) {
+        return response.data.data;
+      } else if (response.data && response.data.metadata) {
+        return response.data.metadata;
+      } else if (response.data) {
+        return response.data;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching user bank account:', error);
+      throw error;
+    }
+  }
+
   // Product Management APIs
   async getProducts(params = {}) {
     try {
