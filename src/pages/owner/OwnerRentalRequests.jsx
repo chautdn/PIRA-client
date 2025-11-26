@@ -202,11 +202,11 @@ const OwnerRentalRequests = () => {
           if (!currentSubOrder) return;
           
           // Kiểm tra xem tất cả sản phẩm đã được xác nhận hay từ chối hết chưa
-          const pendingItems = currentSubOrder.products?.filter(item => item.confirmationStatus === 'PENDING') || [];
+          const pendingItems = currentSubOrder.products?.filter(item => item.status === 'PENDING') || [];
           
           if (pendingItems.length === 0) {
             // Tất cả sản phẩm đã được xử lý
-            const confirmedItems = currentSubOrder.products?.filter(item => item.confirmationStatus === 'CONFIRMED') || [];
+            const confirmedItems = currentSubOrder.products?.filter(item => item.status === 'CONFIRMED') || [];
             
             if (confirmedItems.length > 0) {
               // Có ít nhất 1 sản phẩm được xác nhận -> tự động chuyển sang trạng thái OWNER_CONFIRMED
@@ -240,7 +240,7 @@ const OwnerRentalRequests = () => {
   const getStatusBadge = (status) => {
     const styles = {
       DRAFT: 'bg-gray-100 text-gray-800', // Old status - rare
-      PENDING_OWNER_CONFIRMATION: 'bg-yellow-100 text-yellow-800', // New main status
+      PENDING_CONFIRMATION: 'bg-yellow-100 text-yellow-800', // New main status
       OWNER_CONFIRMED: 'bg-green-100 text-green-800',
       OWNER_REJECTED: 'bg-red-100 text-red-800',
       READY_FOR_CONTRACT: 'bg-blue-100 text-blue-800',
@@ -250,7 +250,7 @@ const OwnerRentalRequests = () => {
 
     const labels = {
       DRAFT: 'Bản nháp (cũ)',
-      PENDING_OWNER_CONFIRMATION: 'Chờ xác nhận',
+      PENDING_CONFIRMATION: 'Chờ xác nhận',
       OWNER_CONFIRMED: 'Đã xác nhận',
       OWNER_REJECTED: 'Đã từ chối',
       READY_FOR_CONTRACT: 'Sẵn sàng hợp đồng',
@@ -308,7 +308,7 @@ const OwnerRentalRequests = () => {
             <div className="flex items-center space-x-4">
               <span className="text-sm font-medium text-gray-700">Lọc theo trạng thái:</span>
               <div className="flex space-x-2">
-                {['ALL', 'PENDING_OWNER_CONFIRMATION', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].map((status) => (
+                {['ALL', 'PENDING_CONFIRMATION', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].map((status) => (
                   <button
                     key={status}
                     onClick={() => setFilter(status)}
@@ -319,7 +319,7 @@ const OwnerRentalRequests = () => {
                     }`}
                   >
                     {status === 'ALL' ? 'Tất cả' : 
-                     status === 'PENDING_OWNER_CONFIRMATION' ? 'Chờ xác nhận' :
+                     status === 'PENDING_CONFIRMATION' ? 'Chờ xác nhận' :
                      status === 'OWNER_CONFIRMED' ? 'Đã xác nhận' : 'Đã từ chối'}
                   </button>
                 ))}
@@ -736,7 +736,7 @@ const SubOrderDetailModal = ({
     if (isChecked) {
       const pendingItems = new Set();
       (subOrder.products || []).forEach((item, index) => {
-        if (item.confirmationStatus === 'PENDING') {
+        if (item.status === 'PENDING') {
           pendingItems.add(index);
         }
       });
@@ -834,9 +834,9 @@ const SubOrderDetailModal = ({
     }
   };
 
-  const pendingItems = (subOrder.products || []).filter(item => item.confirmationStatus === 'PENDING');
+  const pendingItems = (subOrder.products || []).filter(item => item.status === 'PENDING');
   const allPendingSelected = pendingItems.length > 0 && pendingItems.every((_, index) => {
-    const actualIndex = (subOrder.products || []).findIndex(p => p.confirmationStatus === 'PENDING' && p === pendingItems[index]);
+    const actualIndex = (subOrder.products || []).findIndex(p => p.status === 'PENDING' && p === pendingItems[index]);
     return selectedItems.has(actualIndex);
   });
 
@@ -903,9 +903,9 @@ const SubOrderDetailModal = ({
                   </div>
                   <p className="font-semibold text-lg">{(subOrder.products || []).length} sản phẩm</p>
                   <div className="text-xs text-gray-500 mt-1">
-                    <span className="text-green-600">✓ {subOrder.products?.filter(p => p.confirmationStatus === 'CONFIRMED').length}</span> |
-                    <span className="text-yellow-600"> ⏳ {subOrder.products?.filter(p => p.confirmationStatus === 'PENDING').length}</span> |
-                    <span className="text-red-600"> ✗ {subOrder.products?.filter(p => p.confirmationStatus === 'REJECTED').length}</span>
+                    <span className="text-green-600">✓ {subOrder.products?.filter(p => p.status === 'CONFIRMED').length}</span> |
+                    <span className="text-yellow-600"> ⏳ {subOrder.products?.filter(p => p.status === 'PENDING').length}</span> |
+                    <span className="text-red-600"> ✗ {subOrder.products?.filter(p => p.status === 'REJECTED').length}</span>
                   </div>
                 </div>
 
@@ -948,7 +948,7 @@ const SubOrderDetailModal = ({
                     <div key={index} className="p-4 bg-gray-50 rounded-lg border hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center space-x-3 flex-1">
-                          {item.confirmationStatus === 'PENDING' && (
+                          {item.status === 'PENDING' && (
                             <input
                               type="checkbox"
                               checked={selectedItems.has(index)}
@@ -994,17 +994,17 @@ const SubOrderDetailModal = ({
 
                       <div className="mt-3 flex items-center justify-between">
                         <div>
-                          {item.confirmationStatus === 'PENDING' && (
+                          {item.status === 'PENDING' && (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                               ⏳ Chờ xác nhận
                             </span>
                           )}
-                          {item.confirmationStatus === 'CONFIRMED' && (
+                          {item.status === 'CONFIRMED' && (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               ✅ Đã xác nhận
                             </span>
                           )}
-                          {item.confirmationStatus === 'REJECTED' && (
+                          {item.status === 'REJECTED' && (
                             <div>
                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 ❌ Đã từ chối
@@ -1016,7 +1016,7 @@ const SubOrderDetailModal = ({
                           )}
                         </div>
 
-                        {item.confirmationStatus === 'PENDING' && (
+                        {item.status === 'PENDING' && (
                           <div className="flex space-x-2">
                             <button
                               onClick={() => onConfirmItem(subOrder._id, index)}

@@ -18,7 +18,6 @@ const RentalOrderTracking = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'PENDING_CONFIRMATION':
-      case 'PENDING_OWNER_CONFIRMATION':
         return <Clock className="w-5 h-5 text-yellow-500" />;
       case 'OWNER_CONFIRMED':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
@@ -35,8 +34,6 @@ const RentalOrderTracking = () => {
     switch (status) {
       case 'PENDING_CONFIRMATION':
         return 'Đơn hàng đã được tạo và thanh toán thành công. Đang chờ chủ sản phẩm xác nhận.';
-      case 'PENDING_OWNER_CONFIRMATION':
-        return 'Đang chờ chủ sản phẩm xác nhận yêu cầu thuê của bạn.';
       case 'OWNER_CONFIRMED':
         return 'Chủ sản phẩm đã xác nhận. Hợp đồng điện tử đã được tạo và đang chờ ký.';
       case 'OWNER_REJECTED':
@@ -143,7 +140,7 @@ const RentalOrderTracking = () => {
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(subOrder.status)}
                   <span className="text-sm font-medium">
-                    {subOrder.status === 'PENDING_OWNER_CONFIRMATION' ? 'Chờ xác nhận' :
+                    {subOrder.status === 'PENDING_CONFIRMATION' ? 'Chờ xác nhận' :
                      subOrder.status === 'OWNER_CONFIRMED' ? 'Đã xác nhận' :
                      subOrder.status === 'OWNER_REJECTED' ? 'Đã từ chối' :
                      subOrder.status}
