@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import EarlyReturnRequestModal from "../components/rental/EarlyReturnRequestModal";
+import ManageShipmentModal from "../components/owner/ManageShipmentModal";
 import {
   ArrowLeft,
   Package,
@@ -41,6 +42,7 @@ const RentalOrderDetailPage = () => {
   const [confirmAction, setConfirmAction] = useState(null); // 'confirm' or 'reject'
   const [rejectReason, setRejectReason] = useState("");
   const [showEarlyReturnModal, setShowEarlyReturnModal] = useState(false);
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
 
   // Check if this is a payment return
   const payment = searchParams.get("payment");
@@ -232,9 +234,10 @@ const RentalOrderDetailPage = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const isOwner = currentOrder.subOrders?.some(
-    (subOrder) => subOrder.owner?._id === user._id
-  );
+  const isOwner = !!currentOrder.subOrders?.some((subOrder) => {
+    const ownerId = subOrder.owner?._id ?? subOrder.owner;
+    return ownerId && String(ownerId) === String(user?._id);
+  });
 
   const isRenter = currentOrder.renter?._id === user._id;
 
@@ -300,6 +303,17 @@ const RentalOrderDetailPage = () => {
               >
                 <RotateCcw className="w-5 h-5" />
                 <span>Trả hàng sớm</span>
+              </button>
+            )}
+
+            {/* Owner: manage shipment button visible after contract signed */}
+            {isOwner && currentOrder.status === 'CONTRACT_SIGNED' && (
+              <button
+                onClick={() => setShowShipmentModal(true)}
+                className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
+              >
+                <FileText className="w-5 h-5" />
+                <span>Quản lí vận chuyển</span>
               </button>
             )}
           </div>
@@ -562,7 +576,7 @@ const RentalOrderDetailPage = () => {
                             </span>
 
                             {isOwner &&
-                              subOrder.owner?._id === user._id &&
+                              (String(subOrder.owner?._id ?? subOrder.owner) === String(user?._id)) &&
                               subOrder.status ===
                                 "PENDING_OWNER_CONFIRMATION" && (
                                 <div className="flex items-center space-x-2">
@@ -997,6 +1011,17 @@ const RentalOrderDetailPage = () => {
             loadOrderDetail(id);
             toast.success("Tạo yêu cầu trả hàng sớm thành công!");
           }}
+        />
+      )}
+
+      {/* Manage Shipment Modal */}
+      {showShipmentModal && currentOrder.subOrders && (
+        <ManageShipmentModal
+          isOpen={showShipmentModal}
+          onClose={() => setShowShipmentModal(false)}
+          subOrder={currentOrder.subOrders[0]}
+          masterOrder={currentOrder}
+          onSuccess={() => loadOrderDetail(id)}
         />
       )}
     </div>

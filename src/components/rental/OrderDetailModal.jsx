@@ -12,6 +12,9 @@ import {
   RotateCcw,
   AlertCircle,
 } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import { ownerProductApi } from "../../services/ownerProduct.Api";
+import { toast } from "react-hot-toast";
 import {
   getStatusColor,
   getStatusText,
@@ -29,6 +32,7 @@ const OrderDetailModal = ({
   earlyReturnRequest,
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   if (!order) return null;
 
@@ -188,6 +192,43 @@ const OrderDetailModal = ({
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Owner actions (accept/reject) - show only to the owner when pending */}
+                    {user && subOrder.owner && (subOrder.owner._id === user._id || subOrder.owner === user._id) && subOrder.status === 'PENDING_OWNER_CONFIRMATION' && (
+                      <div className="mt-3 flex items-center space-x-2">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await ownerProductApi.confirmSubOrder(subOrder._id);
+                              toast.success('Đã chấp nhận đơn thuê');
+                              onClose();
+                            } catch (err) {
+                              console.error('Lỗi chấp nhận đơn:', err);
+                              toast.error(err?.response?.data?.message || err?.message || 'Không thể chấp nhận đơn');
+                            }
+                          }}
+                          className="px-4 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
+                        >
+                          ✓ Chấp nhận
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const reason = window.prompt('Nhập lý do từ chối (tùy chọn):');
+                              await ownerProductApi.rejectSubOrder(subOrder._id, { reason });
+                              toast.success('Đã từ chối đơn thuê');
+                              onClose();
+                            } catch (err) {
+                              console.error('Lỗi từ chối đơn:', err);
+                              toast.error(err?.response?.data?.message || err?.message || 'Không thể từ chối đơn');
+                            }
+                          }}
+                          className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
+                        >
+                          ✗ Từ chối
+                        </button>
+                      </div>
+                    )}
 
                     {/* Products */}
                     {subOrder.products && subOrder.products.length > 0 && (

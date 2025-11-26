@@ -190,12 +190,12 @@ const ContractSigning = () => {
       
       // Create a new window with the contract content
       const printWindow = window.open('', '_blank');
-      if (printWindow) {
+        if (printWindow) {
         printWindow.document.write(`
           <!DOCTYPE html>
           <html>
           <head>
-            <title>Hợp đồng ${contract.contractNumber}</title>
+            <title>Hợp đồng ${contract?.contractNumber || ''}</title>
             <style>
               body { font-family: 'Times New Roman', serif; padding: 20px; }
               @media print {
@@ -210,19 +210,19 @@ const ContractSigning = () => {
               <div style="display: flex; justify-content: space-between;">
                 <div>
                   <p><strong>Chủ cho thuê:</strong></p>
-                  ${contract.signatures.owner.signed ? 
+                  ${contract.signatures?.owner?.signed ? 
                     `<img src="${contract.signatures.owner.signature}" style="max-width: 200px; border: 1px solid #ccc;" />` : 
                     '<p>Chưa ký</p>'
                   }
-                  <p><small>Ký lúc: ${contract.signatures.owner.signedAt ? new Date(contract.signatures.owner.signedAt).toLocaleString('vi-VN') : 'N/A'}</small></p>
+                  <p><small>Ký lúc: ${contract.signatures?.owner?.signedAt ? new Date(contract.signatures.owner.signedAt).toLocaleString('vi-VN') : 'N/A'}</small></p>
                 </div>
                 <div>
                   <p><strong>Người thuê:</strong></p>
-                  ${contract.signatures.renter.signed ? 
+                  ${contract.signatures?.renter?.signed ? 
                     `<img src="${contract.signatures.renter.signature}" style="max-width: 200px; border: 1px solid #ccc;" />` : 
                     '<p>Chưa ký</p>'
                   }
-                  <p><small>Ký lúc: ${contract.signatures.renter.signedAt ? new Date(contract.signatures.renter.signedAt).toLocaleString('vi-VN') : 'N/A'}</small></p>
+                  <p><small>Ký lúc: ${contract.signatures?.renter?.signedAt ? new Date(contract.signatures.renter.signedAt).toLocaleString('vi-VN') : 'N/A'}</small></p>
                 </div>
               </div>
             </div>
@@ -321,7 +321,7 @@ const ContractSigning = () => {
             </div>
 
             {/* Show existing signatures */}
-            {(contract.signatures.owner.signed || contract.signatures.renter.signed) && (
+            {(contract.signatures?.owner?.signed || contract.signatures?.renter?.signed) && (
               <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                 <h2 className="text-xl font-semibold mb-4 flex items-center">
                   <Signature className="w-5 h-5 mr-2" />
@@ -331,16 +331,16 @@ const ContractSigning = () => {
                   {/* Owner Signature */}
                   <div className="border border-gray-200 rounded-lg p-4">
                     <p className="font-medium text-gray-700 mb-2">Chủ cho thuê</p>
-                    {contract.signatures.owner.signed ? (
+                    {contract.signatures?.owner?.signed ? (
                       <>
                         <img 
-                          src={contract.signatures.owner.signature} 
+                          src={contract.signatures?.owner?.signature} 
                           alt="Chữ ký chủ đồ"
                           className="w-full h-32 object-contain border border-gray-300 rounded bg-white mb-2"
                         />
                         <p className="text-xs text-green-600 flex items-center gap-1">
                           <Check className="w-3 h-3" />
-                          Đã ký lúc: {new Date(contract.signatures.owner.signedAt).toLocaleString('vi-VN')}
+                          Đã ký lúc: {contract.signatures?.owner?.signedAt ? new Date(contract.signatures.owner.signedAt).toLocaleString('vi-VN') : 'N/A'}
                         </p>
                       </>
                     ) : (
@@ -353,16 +353,16 @@ const ContractSigning = () => {
                   {/* Renter Signature */}
                   <div className="border border-gray-200 rounded-lg p-4">
                     <p className="font-medium text-gray-700 mb-2">Người thuê</p>
-                    {contract.signatures.renter.signed ? (
+                    {contract.signatures?.renter?.signed ? (
                       <>
                         <img 
-                          src={contract.signatures.renter.signature} 
+                          src={contract.signatures?.renter?.signature} 
                           alt="Chữ ký người thuê"
                           className="w-full h-32 object-contain border border-gray-300 rounded bg-white mb-2"
                         />
                         <p className="text-xs text-green-600 flex items-center gap-1">
                           <Check className="w-3 h-3" />
-                          Đã ký lúc: {new Date(contract.signatures.renter.signedAt).toLocaleString('vi-VN')}
+                          Đã ký lúc: {contract.signatures?.renter?.signedAt ? new Date(contract.signatures.renter.signedAt).toLocaleString('vi-VN') : 'N/A'}
                         </p>
                       </>
                     ) : (
@@ -503,15 +503,15 @@ const ContractSigning = () => {
                 </div>
                 <div>
                   <label className="block font-medium text-gray-700">Thời gian thuê</label>
-                  <p>{new Date(contract.terms.startDate).toLocaleDateString('vi-VN')} - {new Date(contract.terms.endDate).toLocaleDateString('vi-VN')}</p>
+                  <p>{contract.terms?.startDate ? new Date(contract.terms.startDate).toLocaleDateString('vi-VN') : 'N/A'} - {contract.terms?.endDate ? new Date(contract.terms.endDate).toLocaleDateString('vi-VN') : 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block font-medium text-gray-700">Giá thuê</label>
-                  <p className="font-medium text-blue-600">{contract.terms.rentalRate.toLocaleString('vi-VN')}đ</p>
+                  <p className="font-medium text-blue-600">{contract.terms?.rentalRate ? contract.terms.rentalRate.toLocaleString('vi-VN') + 'đ' : 'N/A'}</p>
                 </div>
                 <div>
                   <label className="block font-medium text-gray-700">Tiền cọc</label>
-                  <p className="font-medium text-orange-600">{contract.terms.deposit.toLocaleString('vi-VN')}đ</p>
+                  <p className="font-medium text-orange-600">{contract.terms?.deposit ? contract.terms.deposit.toLocaleString('vi-VN') + 'đ' : 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -524,7 +524,7 @@ const ContractSigning = () => {
                   <User className="w-5 h-5 text-blue-600" />
                   <div>
                     <p className="font-medium">Chủ cho thuê</p>
-                    <p className="text-sm text-gray-600">{contract.owner.profile.fullName}</p>
+                    <p className="text-sm text-gray-600">{contract.owner?.profile?.fullName || 'N/A'}</p>
                     <div className="flex items-center space-x-1 mt-1">
                       {contract.signatures.owner.signed ? (
                         <>
@@ -545,7 +545,7 @@ const ContractSigning = () => {
                   <User className="w-5 h-5 text-green-600" />
                   <div>
                     <p className="font-medium">Người thuê</p>
-                    <p className="text-sm text-gray-600">{contract.renter.profile.fullName}</p>
+                    <p className="text-sm text-gray-600">{contract.renter?.profile?.fullName || 'N/A'}</p>
                     <div className="flex items-center space-x-1 mt-1">
                       {contract.signatures.renter.signed ? (
                         <>

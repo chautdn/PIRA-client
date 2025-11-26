@@ -5,6 +5,7 @@ import rentalOrderService from '../../services/rentalOrder';
 import { toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/constants';
 import ContractSigningModal from '../../components/common/ContractSigningModal';
+import ManageShipmentModal from '../../components/owner/ManageShipmentModal';
 
 const OwnerRentalRequests = () => {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ const OwnerRentalRequests = () => {
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showSigningInModal, setShowSigningInModal] = useState(false);
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -386,6 +388,17 @@ const OwnerRentalRequests = () => {
                         >
                           📋 Chi tiết
                         </button>
+                        {s.status === 'CONTRACT_SIGNED' && s.masterOrder?.deliveryMethod === 'DELIVERY' && (
+                          <button
+                            onClick={() => {
+                              setSelectedSubOrder(s);
+                              setShowShipmentModal(true);
+                            }}
+                            className="text-sm bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition-colors"
+                          >
+                            🚚 Quản lí vận chuyển
+                          </button>
+                        )}
                         {s.status === 'OWNER_CONFIRMED' && (
                           <button 
                             onClick={() => {
@@ -435,6 +448,20 @@ const OwnerRentalRequests = () => {
               setShowContractSigning(false);
               setSelectedContractId(null);
             }}
+          />
+        )}
+
+        {/* Shipment Modal */}
+        {showShipmentModal && selectedSubOrder && (
+          <ManageShipmentModal
+            isOpen={showShipmentModal}
+            onClose={() => {
+              setShowShipmentModal(false);
+              setSelectedSubOrder(null);
+            }}
+            subOrder={selectedSubOrder}
+            masterOrder={selectedSubOrder.masterOrder}
+            onSuccess={() => refreshSubOrderData(selectedSubOrder._id)}
           />
         )}
       </div>

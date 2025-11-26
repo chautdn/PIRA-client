@@ -336,6 +336,32 @@ export const RentalOrderProvider = ({ children }) => {
     }
   };
 
+  // Owner confirms a SubOrder
+  const confirmOwnerOrder = async (subOrderId) => {
+    dispatch({ type: RENTAL_ORDER_ACTIONS.OWNER_CONFIRM_START });
+    try {
+      const response = await rentalOrderService.ownerConfirmOrder(subOrderId, { status: 'CONFIRMED' });
+      dispatch({ type: RENTAL_ORDER_ACTIONS.OWNER_CONFIRM_SUCCESS });
+      return response;
+    } catch (error) {
+      dispatch({ type: RENTAL_ORDER_ACTIONS.OWNER_CONFIRM_ERROR, payload: error.message });
+      throw error;
+    }
+  };
+
+  // Owner rejects a SubOrder
+  const rejectOwnerOrder = async (subOrderId, reason) => {
+    dispatch({ type: RENTAL_ORDER_ACTIONS.OWNER_CONFIRM_START });
+    try {
+      const response = await rentalOrderService.ownerConfirmOrder(subOrderId, { status: 'REJECTED', rejectionReason: reason });
+      dispatch({ type: RENTAL_ORDER_ACTIONS.OWNER_CONFIRM_SUCCESS });
+      return response;
+    } catch (error) {
+      dispatch({ type: RENTAL_ORDER_ACTIONS.OWNER_CONFIRM_ERROR, payload: error.message });
+      throw error;
+    }
+  };
+
   const loadMyOrders = async (params = {}) => {
     dispatch({ type: RENTAL_ORDER_ACTIONS.LOAD_ORDERS_START });
     try {
@@ -490,6 +516,8 @@ export const RentalOrderProvider = ({ children }) => {
     createPaidOrder,
     confirmOrder,
     processPayment,
+    confirmOwnerOrder,
+    rejectOwnerOrder,
     loadMyOrders,
     loadOwnerOrders,
     loadOrderDetail,
