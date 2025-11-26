@@ -427,7 +427,56 @@ export default function OwnerProducts() {
                   onUnhide={handleUnhide}
                   onDelete={handleDelete}
                 />
+                
+                {/* Status Badge */}
+                <div className="absolute top-2 right-2 z-10">
+                  {product.status === "ACTIVE" && (
+                    <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
+                      <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                      Đang hoạt động
+                    </span>
+                  )}
+                  {product.status === "PENDING" && (
+                    <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
+                      <span className="w-2 h-2 bg-white rounded-full"></span>
+                      Chờ duyệt
+                    </span>
+                  )}
+                  {product.status === "INACTIVE" && (
+                    <span className="bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
+                      <span className="w-2 h-2 bg-white rounded-full"></span>
+                      Không hoạt động
+                    </span>
+                  )}
+                  {product.status === "SUSPENDED" && (
+                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
+                      <span className="w-2 h-2 bg-white rounded-full"></span>
+                      Đã đình chỉ
+                    </span>
+                  )}
+                  {product.status === "RENTED" && (
+                    <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
+                      <span className="w-2 h-2 bg-white rounded-full"></span>
+                      Đang cho thuê
+                    </span>
+                  )}
+                  {product.status === "DRAFT" && (
+                    <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
+                      <span className="w-2 h-2 bg-white rounded-full"></span>
+                      Bản nháp
+                    </span>
+                  )}
+                  {product.status === "OWNER_HIDDEN" && (
+                    <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
+                      <FiEyeOff className="w-3 h-3" />
+                      Đã ẩn
+                    </span>
+                  )}
+                </div>
+
                 <ProductCard product={product} isOwnerView={true} />
+                
+                {/* Overlay for hidden products */}
                 {product.status === "OWNER_HIDDEN" && (
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-xl flex items-center justify-center pointer-events-none">
                     <div className="bg-white px-4 py-2 rounded-lg shadow-lg">

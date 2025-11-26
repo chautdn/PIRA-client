@@ -32,19 +32,25 @@ const AdminLayout = () => {
       path: '/admin/products',
       icon: '📦'
     },
-    {
-      name: 'Quản lý Category',
-      path: '/admin/categories',
-      icon: '📁'
-    },
+   
     {
       name: 'Quản lý Đơn hàng',
       path: '/admin/orders',
       icon: '🛒'
     },
     {
-      name: 'Báo cáo & Thống kê',
+      name: 'Quản lý Báo cáo',
       path: '/admin/reports',
+      icon: '🚨'
+    },
+    {
+      name: 'Xác minh Ngân hàng',
+      path: '/admin/bank-accounts',
+      icon: '🏦'
+    },
+    {
+      name: 'Báo cáo & Thống kê',
+      path: '/admin/analytics',
       icon: '📈'
     },
     {
