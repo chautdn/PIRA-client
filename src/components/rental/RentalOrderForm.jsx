@@ -45,7 +45,6 @@ const RentalOrderForm = () => {
       ward: '',
       district: '',
       city: '',
-      province: 'Hồ Chí Minh',
       contactPhone: (user && user.profile && user.profile.phone) ? user.profile.phone : '',
       contactName: (user && user.profile && user.profile.fullName) ? user.profile.fullName : ''
     },
@@ -1163,27 +1162,6 @@ const RentalOrderForm = () => {
                 Hình thức nhận hàng
               </h2>
               <div className="space-y-3">
-               
-<label className="flex items-center space-x-3 cursor-pointer">
-  <input
-    type="radio"
-    value="PICKUP"
-    checked={orderData.deliveryMethod === 'PICKUP'}
-    onChange={(e) => {
-      setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }));
-      setTotalShipping(0);
-      setGroupedProducts(prev => {
-        const updated = { ...prev };
-        Object.keys(updated).forEach(ownerId => {
-          updated[ownerId].shippingFee = 0;
-        });
-        return updated;
-      });
-    }}
-    className="w-4 h-4 text-blue-500"
-  />
-  <span>Nhận trực tiếp (Miễn phí)</span>
-</label>
 <label className="flex items-center space-x-3 cursor-pointer">
   <input
     type="radio"

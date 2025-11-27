@@ -161,7 +161,7 @@ const OrderRow = ({
       <ActionButton
         onClick={() => onViewDetail(order)}
         variant="primary"
-        icon={Eye}
+        icon={Eye}  
         title="Xem chi tiết đơn hàng đã tạo"
       >
         Chi tiết
@@ -172,10 +172,7 @@ const OrderRow = ({
   const renderStatusActions = () => {
     const actions = [];
 
-    // Confirmation Summary
-    if (order.status === "CONFIRMED" ||
-        order.status === "PARTIALLY_CANCELLED" ||
-        order.status === "CONTRACT_SIGNED") {
+
       actions.push(
         <ActionButton
           key="confirmation"
@@ -187,7 +184,7 @@ const OrderRow = ({
            chi tiết xác nhận
         </ActionButton>
       );
-    }
+    
 
     // Contract Signing
     if (order.status === "READY_FOR_CONTRACT") {

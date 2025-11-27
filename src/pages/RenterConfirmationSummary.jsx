@@ -288,13 +288,17 @@ const RenterConfirmationSummary = () => {
                         ? 'bg-blue-100 text-blue-700'
                         : subOrder.status === 'OWNER_REJECTED'
                         ? 'bg-red-100 text-red-700'
+                        : subOrder.status === 'CONTRACT_SIGNED'
+                        ? 'bg-green-100 text-green-700'
                         : 'bg-gray-100 text-gray-700'
+              
                     }`}>
                       {subOrder.status === 'READY_FOR_CONTRACT' && '✓ Sẵn sàng ký HĐ'}
                       {subOrder.status === 'PARTIALLY_CONFIRMED' && '⚠ Xác nhận một phần'}
                       {subOrder.status === 'OWNER_CONFIRMED' && '✓ Đã xác nhận'}
                       {subOrder.status === 'OWNER_REJECTED' && '✗ Đã từ chối'}
-                      {!['READY_FOR_CONTRACT', 'PARTIALLY_CONFIRMED', 'OWNER_CONFIRMED', 'OWNER_REJECTED'].includes(subOrder.status) && subOrder.status}
+                      {subOrder.status === 'CONTRACT_SIGNED' && '✓ Hợp đồng đã ký'}
+                      {!['READY_FOR_CONTRACT', 'PARTIALLY_CONFIRMED', 'OWNER_CONFIRMED', 'OWNER_REJECTED','CONTRACT_SIGNED'].includes(subOrder.status) && subOrder.status}
                     </div>
                   </div>
                 </div>

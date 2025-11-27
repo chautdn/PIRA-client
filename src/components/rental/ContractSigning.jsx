@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useRentalOrder } from '../../context/RentalOrderContext';
-import { FileText, Signature, Check, AlertCircle, Download, User } from 'lucide-react';
+import { useRentalOrder } from '../../context/RentalOrderContext';  
+import { FileText, Signature, Check, AlertCircle, Download, User, Clock } from 'lucide-react';
 import rentalOrderService from '../../services/rentalOrder';
 import { toast } from '../common/Toast';
 
