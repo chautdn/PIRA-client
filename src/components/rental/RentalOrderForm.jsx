@@ -61,26 +61,21 @@ const RentalOrderForm = () => {
       );
     }, []);
 
-    const [orderData, setOrderData] = useState(() => ({
-      rentalPeriod: {
-        startDate: "",
-        endDate: "",
-      },
-      deliveryAddress: {
-        streetAddress: "",
-        ward: "",
-        district: "",
-        city: "",
-        province: "Hồ Chí Minh",
-        contactPhone:
-          user && user.profile && user.profile.phone ? user.profile.phone : "",
-        contactName:
-          user && user.profile && user.profile.fullName
-            ? user.profile.fullName
-            : "",
-      },
-      deliveryMethod: "PICKUP",
-    }));
+  const [orderData, setOrderData] = useState(() => ({
+    rentalPeriod: {
+      startDate: '',
+      endDate: ''
+    },
+    deliveryAddress: {
+      streetAddress: '',
+      ward: '',
+      district: '',
+      city: '',
+      contactPhone: (user && user.profile && user.profile.phone) ? user.profile.phone : '',
+      contactName: (user && user.profile && user.profile.fullName) ? user.profile.fullName : ''
+    },
+    deliveryMethod: 'PICKUP'
+  }));
 
     const [errors, setErrors] = useState({});
     const [step, setStep] = useState(1);
@@ -1561,70 +1556,35 @@ const RentalOrderForm = () => {
                 </div>
               </div>
 
-              {/* Delivery Method */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-6 flex items-center">
-                  <Truck className="w-5 h-5 mr-2" />
-                  Hình thức nhận hàng
-                </h2>
-                <div className="space-y-3">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="PICKUP"
-                      checked={orderData.deliveryMethod === "PICKUP"}
-                      onChange={(e) => {
-                        setOrderData((prev) => ({
-                          ...prev,
-                          deliveryMethod: e.target.value,
-                        }));
-                        setTotalShipping(0);
-                        setGroupedProducts((prev) => {
-                          const updated = { ...prev };
-                          Object.keys(updated).forEach((ownerId) => {
-                            updated[ownerId].shippingFee = 0;
-                          });
-                          return updated;
-                        });
-                      }}
-                      className="w-4 h-4 text-blue-500"
-                    />
-                    <span>Nhận trực tiếp (Miễn phí)</span>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="OWNER_DELIVERY"
-                      checked={orderData.deliveryMethod === "OWNER_DELIVERY"}
-                      onChange={(e) =>
-                        setOrderData((prev) => ({
-                          ...prev,
-                          deliveryMethod: e.target.value,
-                        }))
-                      }
-                      className="w-4 h-4 text-blue-500"
-                    />
-                    <span>
-                      Chủ của sản phẩm vận chuyển (Phí ship phụ thuộc vào chủ)
-                    </span>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="DELIVERY"
-                      checked={orderData.deliveryMethod === "DELIVERY"}
-                      onChange={(e) =>
-                        setOrderData((prev) => ({
-                          ...prev,
-                          deliveryMethod: e.target.value,
-                        }))
-                      }
-                      className="w-4 h-4 text-blue-500"
-                    />
-                    <span>Giao tận nơi (Có phí ship)</span>
-                  </label>
-                </div>
+            {/* Delivery Method */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-6 flex items-center">
+                <Truck className="w-5 h-5 mr-2" />
+                Hình thức nhận hàng
+              </h2>
+              <div className="space-y-3">
+<label className="flex items-center space-x-3 cursor-pointer">
+  <input
+    type="radio"
+    value="OWNER_DELIVERY"
+    checked={orderData.deliveryMethod === 'OWNER_DELIVERY'}
+    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
+    className="w-4 h-4 text-blue-500"
+  />
+  <span>Chủ của sản phẩm vận chuyển (Phí ship phụ thuộc vào chủ)</span>
+</label>
+<label className="flex items-center space-x-3 cursor-pointer">
+  <input
+    type="radio"
+    value="DELIVERY"
+    checked={orderData.deliveryMethod === 'DELIVERY'}
+    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
+    className="w-4 h-4 text-blue-500"
+  />
+  <span>Giao tận nơi (Có phí ship)</span>
+</label>
               </div>
+            </div>
 
               {orderData.deliveryMethod === "OWNER_DELIVERY" && (
                 <div className="bg-white rounded-lg shadow-md p-6">
