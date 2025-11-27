@@ -63,6 +63,7 @@ import TransactionHistory from "./pages/TransactionHistory";
 import ContractSigning from "./components/rental/ContractSigning";
 import RenterConfirmationSummary from "./pages/RenterConfirmationSummary";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
+import VoucherRedeem from "./pages/voucher/VoucherRedeem";
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -320,6 +321,16 @@ export default function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <TransactionHistory />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
+                  {/* Voucher routes */}
+                  <Route
+                    path="/vouchers"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <VoucherRedeem />
                       </RoleProtectedRoute>
                     }
                   />

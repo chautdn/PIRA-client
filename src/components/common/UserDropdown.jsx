@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { ROUTES } from "../../utils/constants";
+import voucherService from "../../services/voucher";
 
 const UserDropdown = () => {
   const { user, logout, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [loyaltyData, setLoyaltyData] = useState(null);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -23,6 +25,23 @@ const UserDropdown = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Fetch loyalty points when dropdown opens
+  useEffect(() => {
+    if (isOpen && user) {
+      fetchLoyaltyData();
+    }
+  }, [isOpen, user]);
+
+  const fetchLoyaltyData = async () => {
+    try {
+      const response = await voucherService.getLoyaltyPoints();
+      setLoyaltyData(response);
+    } catch (error) {
+      console.error("Error fetching loyalty data:", error);
+      // Silently fail - don't show error to user
+    }
+  };
 
   const handleLogout = async () => {
     setLogoutLoading(true);
@@ -117,7 +136,9 @@ const UserDropdown = () => {
                 <div className="text-sm font-semibold text-gray-900 truncate">
                   {displayName}
                 </div>
-                <div className="text-xs text-gray-500 truncate">{user.email}</div>
+                <div className="text-xs text-gray-500 truncate">
+                  {user.email}
+                </div>
               </div>
             </div>
           </div>
@@ -131,6 +152,15 @@ const UserDropdown = () => {
             >
               <span className="mr-3 text-lg">👤</span>
               Profile
+            </Link>
+
+            <Link
+              to="/vouchers"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-indigo-50 transition-colors group"
+              onClick={() => setIsOpen(false)}
+            >
+              <span className="mr-3 text-lg">🎁</span>
+              <span>Redeem Vouchers</span>
             </Link>
 
             <Link

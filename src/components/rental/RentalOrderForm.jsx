@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import MapSelector from "../common/MapSelector";
 import PaymentMethodSelector from "../common/PaymentMethodSelector";
+import VoucherSelector from "../voucher/VoucherSelector";
 import { toast } from "../common/Toast";
 import paymentService from "../../services/payment";
 import rentalOrderService from "../../services/rentalOrder";
@@ -91,6 +92,7 @@ const RentalOrderForm = () => {
     const [depositModalData, setDepositModalData] = useState(null);
     const [activePromotion, setActivePromotion] = useState(null);
     const [loadingPromotion, setLoadingPromotion] = useState(true);
+    const [selectedVoucher, setSelectedVoucher] = useState(null);
 
     // Update contact info when user changes
     useEffect(() => {
@@ -1927,6 +1929,15 @@ const RentalOrderForm = () => {
                   </div>
                 )}
 
+                {/* Voucher Selector */}
+                <div className="mb-4">
+                  <VoucherSelector
+                    onVoucherSelect={setSelectedVoucher}
+                    selectedVoucher={selectedVoucher}
+                    shippingFee={totals.totalShipping}
+                  />
+                </div>
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Số sản phẩm:</span>
@@ -1952,7 +1963,9 @@ const RentalOrderForm = () => {
                     <span>Phí vận chuyển:</span>
                     <span
                       className={
-                        activePromotion ? "line-through text-gray-400" : ""
+                        activePromotion || selectedVoucher
+                          ? "line-through text-gray-400"
+                          : ""
                       }
                     >
                       {totals.totalShipping.toLocaleString("vi-VN")}đ
@@ -1961,7 +1974,7 @@ const RentalOrderForm = () => {
                   {activePromotion && (
                     <>
                       <div className="flex justify-between text-green-600">
-                        <span>Giảm phí ship (tự động):</span>
+                        <span>Giảm phí ship (khuyến mãi):</span>
                         <span>
                           -
                           {(() => {
@@ -1982,10 +1995,50 @@ const RentalOrderForm = () => {
                           đ
                         </span>
                       </div>
-                      <div className="flex justify-between font-medium">
-                        <span>Phí ship sau giảm:</span>
-                        <span className="text-green-600">
-                          {(() => {
+                    </>
+                  )}
+                  {selectedVoucher && (
+                    <div className="flex justify-between text-green-600">
+                      <span>
+                        Giảm phí ship (voucher {selectedVoucher.discountPercent}
+                        %):
+                      </span>
+                      <span>
+                        -
+                        {(() => {
+                          const baseShipping = activePromotion
+                            ? totals.totalShipping -
+                              (activePromotion.systemPromotion.discountType ===
+                              "PERCENTAGE"
+                                ? (totals.totalShipping *
+                                    activePromotion.systemPromotion
+                                      .shippingDiscountValue) /
+                                  100
+                                : Math.min(
+                                    activePromotion.systemPromotion
+                                      .shippingDiscountValue,
+                                    totals.totalShipping
+                                  ))
+                            : totals.totalShipping;
+                          const voucherDiscount = Math.round(
+                            (baseShipping * selectedVoucher.discountPercent) /
+                              100
+                          );
+                          return voucherDiscount.toLocaleString("vi-VN");
+                        })()}
+                        đ
+                      </span>
+                    </div>
+                  )}
+                  {(activePromotion || selectedVoucher) && (
+                    <div className="flex justify-between font-medium">
+                      <span>Phí ship sau giảm:</span>
+                      <span className="text-green-600">
+                        {(() => {
+                          let finalShipping = totals.totalShipping;
+
+                          // Apply promotion discount first
+                          if (activePromotion) {
                             const discount =
                               activePromotion.systemPromotion.discountType ===
                               "PERCENTAGE"
@@ -1998,37 +2051,67 @@ const RentalOrderForm = () => {
                                       .shippingDiscountValue,
                                     totals.totalShipping
                                   );
-                            return (
-                              totals.totalShipping - discount
-                            ).toLocaleString("vi-VN");
-                          })()}
-                          đ
-                        </span>
-                      </div>
-                    </>
+                            finalShipping -= discount;
+                          }
+
+                          // Apply voucher discount on remaining amount
+                          if (selectedVoucher) {
+                            const voucherDiscount = Math.round(
+                              (finalShipping *
+                                selectedVoucher.discountPercent) /
+                                100
+                            );
+                            finalShipping -= voucherDiscount;
+                          }
+
+                          return Math.max(0, finalShipping).toLocaleString(
+                            "vi-VN"
+                          );
+                        })()}
+                        đ
+                      </span>
+                    </div>
                   )}
                   <hr className="my-3" />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Tổng cộng:</span>
                     <span className="text-blue-600">
                       {(() => {
-                        if (!activePromotion)
-                          return totals.grandTotal.toLocaleString("vi-VN");
-                        const discount =
-                          activePromotion.systemPromotion.discountType ===
-                          "PERCENTAGE"
-                            ? (totals.totalShipping *
-                                activePromotion.systemPromotion
-                                  .shippingDiscountValue) /
+                        let finalShipping = totals.totalShipping;
+
+                        // Apply promotion discount
+                        if (activePromotion) {
+                          const discount =
+                            activePromotion.systemPromotion.discountType ===
+                            "PERCENTAGE"
+                              ? (totals.totalShipping *
+                                  activePromotion.systemPromotion
+                                    .shippingDiscountValue) /
+                                100
+                              : Math.min(
+                                  activePromotion.systemPromotion
+                                    .shippingDiscountValue,
+                                  totals.totalShipping
+                                );
+                          finalShipping -= discount;
+                        }
+
+                        // Apply voucher discount
+                        if (selectedVoucher) {
+                          const voucherDiscount = Math.round(
+                            (finalShipping * selectedVoucher.discountPercent) /
                               100
-                            : Math.min(
-                                activePromotion.systemPromotion
-                                  .shippingDiscountValue,
-                                totals.totalShipping
-                              );
-                        return (totals.grandTotal - discount).toLocaleString(
-                          "vi-VN"
-                        );
+                          );
+                          finalShipping -= voucherDiscount;
+                        }
+
+                        finalShipping = Math.max(0, finalShipping);
+                        const grandTotal =
+                          totals.totalRental +
+                          totals.totalDeposit +
+                          finalShipping;
+
+                        return grandTotal.toLocaleString("vi-VN");
                       })()}
                       đ
                     </span>
