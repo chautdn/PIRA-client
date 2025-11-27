@@ -128,19 +128,6 @@ class RentalOrderService {
     }
   }
 
-  // Bước 6: Ký hợp đồng
-  async signContract(contractId, signatureData) {
-    try {
-      const response = await api.post(
-        `/rental-orders/contracts/${contractId}/sign`,
-        signatureData
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || "Không thể ký hợp đồng");
-    }
-  }
-
   // Lấy đơn hàng của người thuê
   async getMyOrders(params = {}) {
     try {
