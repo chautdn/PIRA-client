@@ -247,7 +247,11 @@ const OwnerRentalRequests = () => {
       OWNER_REJECTED: 'bg-red-100 text-red-800',
       READY_FOR_CONTRACT: 'bg-blue-100 text-blue-800',
       PENDING_CONTRACT: 'bg-blue-100 text-blue-800',
-      CONTRACTED: 'bg-purple-100 text-purple-800'
+      CONTRACTED: 'bg-purple-100 text-purple-800',
+      CONTRACT_SIGNED: 'bg-green-100 text-green-800',
+      DELIVERED: 'bg-green-100 text-green-800',
+      COMPLETED: 'bg-green-100 text-green-800',
+      CANCELLED: 'bg-red-100 text-red-800'
     };
 
     const labels = {
@@ -257,7 +261,11 @@ const OwnerRentalRequests = () => {
       OWNER_REJECTED: 'Đã từ chối',
       READY_FOR_CONTRACT: 'Sẵn sàng hợp đồng',
       PENDING_CONTRACT: 'Chờ ký hợp đồng',
-      CONTRACTED: 'Đã ký hợp đồng'
+      CONTRACTED: 'Đã ký hợp đồng',
+      CONTRACT_SIGNED: 'Đã ký hợp đồng ✓',
+      DELIVERED: 'Đã giao',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy'
     };
 
     return (
