@@ -258,9 +258,9 @@ const RenterConfirmationSummary = () => {
       {/* SubOrders Details */}
       <div className="space-y-6">
         {subOrders?.map((subOrder) => {
-          const confirmedProducts = subOrder.products.filter(p => p.confirmationStatus === 'CONFIRMED');
-          const rejectedProducts = subOrder.products.filter(p => p.confirmationStatus === 'REJECTED');
-          const pendingProducts = subOrder.products.filter(p => p.confirmationStatus === 'PENDING');
+          const confirmedProducts = subOrder.products.filter(p => p.productStatus === 'CONFIRMED');
+          const rejectedProducts = subOrder.products.filter(p => p.productStatus === 'REJECTED');
+          const pendingProducts = subOrder.products.filter(p => p.productStatus === 'PENDING');
 
           return (
             <div key={subOrder._id} className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden">

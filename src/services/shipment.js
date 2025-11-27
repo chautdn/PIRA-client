@@ -1,6 +1,16 @@
 import api from './api';
 
 const ShipmentService = {
+  // Get available shippers
+  async getAvailableShippers(params = {}) {
+    try {
+      const response = await api.get('/shipments/shippers', { params });
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể lấy danh sách shipper');
+    }
+  },
+
   // List shippers by ward/district/city
   async listShippers(params = {}) {
     try {
@@ -45,8 +55,8 @@ const ShipmentService = {
     } catch (err) {
       throw new Error(err.response?.data?.message || err.message || 'Không thể cập nhật deliver');
     }
-  }
-,
+  },
+
   async renterConfirm(shipmentId) {
     try {
       const response = await api.post(`/shipments/${shipmentId}/confirm`);
@@ -64,7 +74,20 @@ const ShipmentService = {
     } catch (err) {
       throw new Error(err.response?.data?.message || err.message || 'Không thể tạo yêu cầu vận chuyển');
     }
+  },
+
+  // Create both DELIVERY and RETURN shipments for an order and assign to shipper
+  async createDeliveryAndReturnShipments(masterOrderId, shipperId) {
+    try {
+      const response = await api.post(`/shipments/order/${masterOrderId}/create-shipments`, {
+        shipperId
+      });
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể tạo shipment (delivery + return)');
+    }
   }
 };
 
 export default ShipmentService;
+
