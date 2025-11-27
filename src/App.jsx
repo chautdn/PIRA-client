@@ -370,6 +370,10 @@ export default function App() {
                       path="products/:productId"
                       element={<AdminProductDetail />}
                     />
+                    <Route
+                      path="promotions"
+                      element={<SystemPromotionManagement />}
+                    />
                     <Route path="orders" element={<OrderManagement />} />
                     <Route
                       path="orders/:orderId"

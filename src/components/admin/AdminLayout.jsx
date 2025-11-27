@@ -33,6 +33,11 @@ const AdminLayout = () => {
       icon: "📦",
     },
     {
+      name: "Khuyến mãi Hệ thống",
+      path: "/admin/promotions",
+      icon: "🎁",
+    },
+    {
       name: "Quản lý Đơn hàng",
       path: "/admin/orders",
       icon: "🛒",
