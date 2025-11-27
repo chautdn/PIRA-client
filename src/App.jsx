@@ -51,6 +51,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
+import SystemPromotionManagement from "./pages/admin/SystemPromotionManagement";
+import PromotionBanner from "./components/common/PromotionBanner";
 
 // Rental system pages
 import RentalOrdersPage from "./pages/RentalOrders";
@@ -71,6 +73,18 @@ function ScrollToTop() {
   }, [pathname]);
 
   return null;
+}
+
+// Component to conditionally render Promotion Banner
+function ConditionalPromotionBanner() {
+  const location = useLocation();
+
+  // Don't show banner on admin routes
+  if (location.pathname.startsWith("/admin")) {
+    return null;
+  }
+
+  return <PromotionBanner />;
 }
 
 // Component to conditionally render Navigation
@@ -128,6 +142,7 @@ export default function App() {
           <BrowserRouter>
             <ScrollToTop />
             <div className="min-h-screen bg-gray-50 flex flex-col">
+              <ConditionalPromotionBanner />
               <ConditionalNavigation />
               <CartDrawer />
               <main className="flex-1">
@@ -322,6 +337,10 @@ export default function App() {
                     <Route path="users" element={<UserManagement />} />
                     <Route path="users/:userId" element={<UserDetail />} />
                     <Route path="products" element={<ProductManagement />} />
+                    <Route
+                      path="promotions"
+                      element={<SystemPromotionManagement />}
+                    />
                     <Route
                       path="categories"
                       element={<div>Category Management - Coming Soon</div>}
