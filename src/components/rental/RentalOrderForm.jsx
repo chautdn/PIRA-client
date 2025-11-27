@@ -1563,17 +1563,8 @@ const RentalOrderForm = () => {
                 Hình thức nhận hàng
               </h2>
               <div className="space-y-3">
-<label className="flex items-center space-x-3 cursor-pointer">
-  <input
-    type="radio"
-    value="OWNER_DELIVERY"
-    checked={orderData.deliveryMethod === 'OWNER_DELIVERY'}
-    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
-    className="w-4 h-4 text-blue-500"
-  />
-  <span>Chủ của sản phẩm vận chuyển (Phí ship phụ thuộc vào chủ)</span>
-</label>
-<label className="flex items-center space-x-3 cursor-pointer">
+
+  <label className="flex items-center space-x-3 cursor-pointer">
   <input
     type="radio"
     value="DELIVERY"
