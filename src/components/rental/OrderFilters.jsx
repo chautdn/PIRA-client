@@ -35,9 +35,6 @@ const OrderFilters = ({
               <option value="PENDING_PAYMENT">Chờ thanh toán</option>
               <option value="PAYMENT_COMPLETED">Đã thanh toán</option>
               <option value="PENDING_CONFIRMATION">Chờ xác nhận</option>
-              <option value="PENDING_OWNER_CONFIRMATION">
-                Chờ chủ xác nhận
-              </option>
               <option value="CONFIRMED">Đã xác nhận</option>
               <option value="PARTIALLY_CANCELLED">Xác nhận một phần</option>
               <option value="READY_FOR_CONTRACT">Sẵn sàng ký HĐ</option>

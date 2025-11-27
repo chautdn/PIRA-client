@@ -53,6 +53,14 @@ import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
 import SystemPromotionManagement from "./pages/admin/SystemPromotionManagement";
 import PromotionBanner from "./components/common/PromotionBanner";
+import AdminProductDetail from "./pages/admin/AdminProductDetail";
+import OrderManagement from "./pages/admin/OrderManagement";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
+import ReportManagement from "./pages/admin/ReportManagement";
+import AdminReportDetail from "./pages/admin/AdminReportDetail";
+import BankManagement from "./pages/admin/BankManagement";
+import AdminBankDetail from "./pages/admin/AdminBankDetail";
+import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
 import RentalOrdersPage from "./pages/RentalOrders";
@@ -243,6 +251,16 @@ export default function App() {
                     />
                   </Route>
 
+                  {/* My Reports */}
+                  <Route
+                    path={ROUTES.MY_REPORTS}
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <MyReports />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
                   {/* Wallet routes */}
                   <Route
                     path="/wallet/topup-success"
@@ -253,6 +271,16 @@ export default function App() {
                     element={<TopUpCancel />}
                   />
                   <Route path="/withdrawals" element={<Withdrawals />} />
+
+                  {/* Transaction History */}
+                  <Route
+                    path="/transactions"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <TransactionHistory />
+                      </RoleProtectedRoute>
+                    }
+                  />
 
                   {/* Payment result routes */}
                   <Route path="/payment/success" element={<PaymentSuccess />} />
@@ -315,16 +343,6 @@ export default function App() {
                     }
                   />
 
-                  {/* Transaction History */}
-                  <Route
-                    path="/transactions"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <TransactionHistory />
-                      </RoleProtectedRoute>
-                    }
-                  />
-
                   {/* Voucher routes */}
                   <Route
                     path="/vouchers"
@@ -349,20 +367,23 @@ export default function App() {
                     <Route path="users/:userId" element={<UserDetail />} />
                     <Route path="products" element={<ProductManagement />} />
                     <Route
-                      path="promotions"
-                      element={<SystemPromotionManagement />}
+                      path="products/:productId"
+                      element={<AdminProductDetail />}
                     />
+                    <Route path="orders" element={<OrderManagement />} />
                     <Route
-                      path="categories"
-                      element={<div>Category Management - Coming Soon</div>}
+                      path="orders/:orderId"
+                      element={<AdminOrderDetail />}
                     />
+                    <Route path="reports" element={<ReportManagement />} />
                     <Route
-                      path="orders"
-                      element={<div>Order Management - Coming Soon</div>}
+                      path="reports/:reportId"
+                      element={<AdminReportDetail />}
                     />
+                    <Route path="bank-accounts" element={<BankManagement />} />
                     <Route
-                      path="reports"
-                      element={<div>Reports & Analytics - Coming Soon</div>}
+                      path="bank-accounts/:userId"
+                      element={<AdminBankDetail />}
                     />
                     <Route
                       path="settings"

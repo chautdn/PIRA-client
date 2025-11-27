@@ -33,24 +33,19 @@ const AdminLayout = () => {
       icon: "📦",
     },
     {
-      name: "Quản lý Category",
-      path: "/admin/categories",
-      icon: "📁",
-    },
-    {
-      name: "Khuyến mãi Hệ thống",
-      path: "/admin/promotions",
-      icon: "🎁",
-    },
-    {
       name: "Quản lý Đơn hàng",
       path: "/admin/orders",
       icon: "🛒",
     },
     {
-      name: "Báo cáo & Thống kê",
+      name: "Quản lý Báo cáo",
       path: "/admin/reports",
-      icon: "📈",
+      icon: "🚨",
+    },
+    {
+      name: "Xác minh Ngân hàng",
+      path: "/admin/bank-accounts",
+      icon: "🏦",
     },
     {
       name: "Cài đặt",
