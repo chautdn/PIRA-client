@@ -18,11 +18,13 @@ export const useSystemPromotionSocket = (onPromotionUpdate) => {
     // Initialize socket even without user (for public banner updates)
     if (!socket) {
       // Remove /api from URL for socket connection
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3055";
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:5000/api";
       const serverUrl = apiUrl.replace("/api", "");
       const token = localStorage.getItem("token");
 
-      console.log("[Socket] Connecting to:", serverUrl);
+      console.log("[Socket] 🔌 Connecting to:", serverUrl);
+      console.log("[Socket] Token present:", !!token);
 
       socket = io(serverUrl, {
         auth: token ? { token } : {},
