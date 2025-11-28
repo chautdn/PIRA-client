@@ -11,6 +11,11 @@ export default function ShipmentsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedShipmentType, setSelectedShipmentType] = useState('DELIVERY'); // Filter by type
+  
+  // Customer info modal state
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  
   // Lightbox state and helpers (must be declared before any early returns)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState([]);
@@ -48,7 +53,9 @@ export default function ShipmentsPage() {
         setLoading(true);
         const resp = await ShipmentService.listMyShipments();
         const data = resp.data || resp;
-        setShipments(Array.isArray(data) ? data : (data.data || data));
+        const shipmentsData = Array.isArray(data) ? data : (data.data || data);
+        console.log('✅ Loaded shipments:', shipmentsData.length, shipmentsData);
+        setShipments(shipmentsData);
       } catch (err) {
         console.error('Failed to load shipments', err.message || err);
       } finally {
@@ -102,6 +109,9 @@ export default function ShipmentsPage() {
       else if (!rentalPeriod && s.subOrder?.createdAt) {
         dateStr = formatDateVN(s.subOrder.createdAt);
       }
+      else if (!rentalPeriod && s.createdAt) {
+        dateStr = formatDateVN(s.createdAt);
+      }
       
       if (dateStr) {
         const key = `${dateStr}-${shipmentType}`;
@@ -109,6 +119,8 @@ export default function ShipmentsPage() {
           datesMap[key] = [];
         }
         datesMap[key].push(s);
+      } else {
+        console.warn('⚠️ Shipment without date:', s.shipmentId, { rentalPeriod, subOrderCreatedAt: s.subOrder?.createdAt, shipmentCreatedAt: s.createdAt });
       }
     });
     
@@ -342,7 +354,7 @@ export default function ShipmentsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                         <div className="font-semibold text-green-600">{formatCurrency(s.fee || 0)}</div>
-                        {s.status === 'DELIVERED' && (
+                        {s.status === 'DELIVERED' && s.type === 'RETURN' && (
                           <div className="text-xs text-green-500 mt-1">✅ Sẽ được chuyển</div>
                         )}
                       </td>
@@ -359,6 +371,30 @@ export default function ShipmentsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => {
+                                // Get customer info from customerInfo or construct from subOrder renter
+                                const customer = s.customerInfo || {};
+                                const renter = s.subOrder?.masterOrder?.renter;
+                                const name = customer.name || renter?.profile?.fullName || renter?.profile?.firstName || 'N/A';
+                                const phone = customer.phone || renter?.phone || 'N/A';
+                                const email = customer.email || renter?.email || 'N/A';
+                                
+                                setSelectedCustomer({
+                                  name: name,
+                                  phone: phone,
+                                  email: email,
+                                  address: s.type === 'DELIVERY' ? s.toAddress : s.fromAddress,
+                                  type: s.type
+                                });
+                                setIsCustomerModalOpen(true);
+                              }}
+                              className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium transition-colors"
+                              title="Xem thông tin khách hàng"
+                            >
+                              👤 Info
+                            </button>
+
                             {s.status === 'PENDING' && (
                               <button 
                                 onClick={() => handleAccept(s)}
@@ -429,6 +465,84 @@ export default function ShipmentsPage() {
           )}
         </div>
       )}
+
+      {/* Customer Info Modal */}
+      <AnimatePresence>
+        {isCustomerModalOpen && selectedCustomer && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsCustomerModalOpen(false)}
+          >
+            <motion.div
+              className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {selectedCustomer.type === 'DELIVERY' ? '👤 Chủ hàng' : '👤 Người thuê'}
+                </h2>
+                <button
+                  onClick={() => setIsCustomerModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <label className="text-xs font-semibold text-gray-600 uppercase">Tên khách hàng</label>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">{selectedCustomer.name}</p>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <label className="text-xs font-semibold text-gray-600 uppercase">Số điện thoại</label>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">
+                    <a href={`tel:${selectedCustomer.phone}`} className="text-blue-600 hover:underline">
+                      {selectedCustomer.phone}
+                    </a>
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <label className="text-xs font-semibold text-gray-600 uppercase">Email</label>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">
+                    <a href={`mailto:${selectedCustomer.email}`} className="text-blue-600 hover:underline">
+                      {selectedCustomer.email}
+                    </a>
+                  </p>
+                </div>
+
+                {selectedCustomer.address && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <label className="text-xs font-semibold text-gray-600 uppercase">Địa chỉ</label>
+                    <p className="text-sm text-gray-900 mt-1 leading-relaxed">
+                      {selectedCustomer.address.streetAddress && <div>{selectedCustomer.address.streetAddress}</div>}
+                      {selectedCustomer.address.ward && <div>{selectedCustomer.address.ward}</div>}
+                      {selectedCustomer.address.district && <div>{selectedCustomer.address.district}</div>}
+                      {selectedCustomer.address.city && <div>{selectedCustomer.address.city}</div>}
+                      {selectedCustomer.address.province && <div>{selectedCustomer.address.province}</div>}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setIsCustomerModalOpen(false)}
+                className="w-full mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Đóng
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Lightbox Modal */}
       <AnimatePresence>
