@@ -497,7 +497,11 @@ const RentalOrdersPage = () => {
               setSelectedOrder(null);
             }}
             masterOrder={selectedOrder}
-            onConfirmReceived={handleShipmentConfirmReceived}
+            onConfirmReceived={async () => {
+              // Wait for loadMyOrders to complete before closing
+              await loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+              await loadEarlyReturnRequests();
+            }}
           />
         )}
       </div>

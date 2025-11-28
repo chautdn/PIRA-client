@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Truck, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ShipmentService from '../../services/shipment';
+import rentalOrderService from '../../services/rentalOrder';
 
 export default function RenterShipmentModal({ isOpen, onClose, masterOrder, onConfirmReceived }) {
   const [shipments, setShipments] = useState([]);
@@ -33,15 +34,17 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrder, onCo
   };
 
   const handleConfirmReceived = async () => {
-    if (!masterOrder?.subOrders?.[0]) {
+    if (!masterOrder?.subOrders?.[0]?._id) {
       toast.error('Không tìm thấy thông tin đơn hàng');
       return;
     }
 
     setConfirming(true);
     try {
-      // Gọi API xác nhận đã nhận hàng
-      await ShipmentService.renterConfirm(shipments[0]?._id);
+      // Gọi API xác nhận đã nhận hàng cho subOrder
+      const response = await rentalOrderService.renterConfirmDelivered(masterOrder.subOrders[0]._id);
+      
+      console.log('✅ Renter confirmed delivery response:', response);
       
       toast.success('✅ Bạn đã xác nhận đã nhận hàng');
       
@@ -50,7 +53,10 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrder, onCo
         await onConfirmReceived();
       }
       
-      onClose();
+      // Wait a moment before closing to ensure callback completes
+      setTimeout(() => {
+        onClose();
+      }, 500);
     } catch (err) {
       console.error('Error confirming shipment:', err.message);
       toast.error(err.response?.data?.message || 'Không thể xác nhận đã nhận hàng');
@@ -174,19 +180,19 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrder, onCo
               </div>
 
               {/* Confirm Button */}
-              {!isDelivered && isPending || isPickedUp ? (
+              {!isDelivered && (isPending || isPickedUp) ? (
+                <div className="w-full bg-yellow-100 text-yellow-700 font-bold py-3 px-4 rounded-lg text-center border border-yellow-300 mb-4">
+                  ⏳ Chờ hàng được giao...
+                </div>
+              ) : isDelivered ? (
                 <button
                   onClick={handleConfirmReceived}
                   disabled={confirming}
-                  className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                  className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 mb-4"
                 >
                   <CheckCircle className="w-5 h-5" />
-                  <span>{confirming ? 'Đang xác nhận...' : '✅ Đã nhận hàng'}</span>
+                  <span>{confirming ? 'Đang xác nhận...' : '✅ Xác nhận đã nhận hàng'}</span>
                 </button>
-              ) : isDelivered ? (
-                <div className="w-full bg-green-100 text-green-700 font-bold py-3 px-4 rounded-lg text-center border border-green-300">
-                  ✅ Bạn đã xác nhận nhận hàng
-                </div>
               ) : null}
             </>
           )}

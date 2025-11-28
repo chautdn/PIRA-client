@@ -13,7 +13,7 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
     if (isOpen && masterOrder?._id) {
       loadShipments();
     }
-  }, [isOpen, masterOrder?._id]);
+  }, [isOpen, masterOrder?._id, subOrder?._id]);
 
   const loadShipments = async () => {
     setLoading(true);
@@ -48,10 +48,10 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
       
       console.log('📦 All shipments:', shipmentList);
       
-      // Lọc DELIVERY shipments
-      const deliveryShipments = shipmentList.filter(s => s.type === 'DELIVERY' || !s.type);
-      console.log('📦 Filtered delivery shipments:', deliveryShipments);
-      setShipments(deliveryShipments);
+      // Lọc RETURN shipments (hàng được trả về từ người thuê)
+      const returnShipments = shipmentList.filter(s => s.type === 'RETURN');
+      console.log('📦 Filtered return shipments:', returnShipments);
+      setShipments(returnShipments);
     } catch (err) {
       console.error('Error loading shipments:', err);
       // Không hiển thị error toast nếu API fail, vì shipment có thể chưa được tạo
@@ -87,8 +87,10 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
 
   if (!isOpen) return null;
 
-  const deliveryShipment = shipments[0];
-  const isDelivered = deliveryShipment?.status === 'DELIVERED';
+  const returnShipment = shipments[0];
+  // Owner can confirm if shipment is DELIVERED or IN_TRANSIT (already picked up by shipper)
+  const canConfirm = returnShipment?.status === 'DELIVERED' || returnShipment?.status === 'IN_TRANSIT';
+  const isDelivered = returnShipment?.status === 'DELIVERED';
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -102,10 +104,10 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
 
   const getStatusText = (status) => {
     switch(status) {
-      case 'PENDING': return '⏳ Chờ lấy hàng';
-      case 'PICKED_UP': return '📦 Đã lấy hàng';
-      case 'IN_TRANSIT': return '🚚 Đang giao';
-      case 'DELIVERED': return '✅ Đã giao';
+      case 'PENDING': return '⏳ Chờ lấy hàng trả';
+      case 'PICKED_UP': return '📦 Đã lấy hàng trả';
+      case 'IN_TRANSIT': return '🚚 Đang giao hàng trả';
+      case 'DELIVERED': return '✅ Đã nhận hàng trả';
       default: return '❓ Không xác định';
     }
   };
@@ -117,7 +119,7 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
           <div className="flex items-center space-x-3">
             <Truck className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">Quản lí vận chuyển</h2>
+            <h2 className="text-xl font-bold text-gray-900">Quản lí hàng trả về</h2>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="w-5 h-5" />
@@ -134,12 +136,12 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
           ) : shipments.length === 0 ? (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
               <AlertCircle className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-              <p className="text-gray-700 font-semibold mb-2">Chưa có thông tin vận chuyển</p>
+              <p className="text-gray-700 font-semibold mb-2">Chưa có thông tin hàng trả về</p>
               <p className="text-sm text-gray-600 mb-4">
-                Vui lòng nhấn button "Yêu cầu vận chuyển" ở bảng trên để tạo đơn vận chuyển trước
+                Vui lòng nhấn button "Yêu cầu vận chuyển" ở bảng trên để tạo đơn vận chuyển hàng trả
               </p>
               <p className="text-xs text-gray-500 bg-white rounded p-2">
-                Sau khi request vận chuyển, thông tin shipment sẽ hiển thị ở đây
+                Sau khi khách thuê gửi yêu cầu trả hàng, thông tin vận chuyển sẽ hiển thị ở đây
               </p>
             </div>
           ) : (
@@ -148,57 +150,65 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
                 <div className="flex items-center space-x-3 mb-4">
                   <CheckCircle className={`w-5 h-5 ${isDelivered ? 'text-green-600' : 'text-blue-600'}`} />
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(deliveryShipment?.status)}`}>
-                    {getStatusText(deliveryShipment?.status)}
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(returnShipment?.status)}`}>
+                    {getStatusText(returnShipment?.status)}
                   </span>
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  {deliveryShipment?.shipmentNumber && (
+                  {returnShipment?.shipmentNumber && (
                     <div>
                       <span className="text-gray-600">Mã shipment:</span>
-                      <span className="ml-2 font-medium text-gray-900">{deliveryShipment.shipmentNumber}</span>
+                      <span className="ml-2 font-medium text-gray-900">{returnShipment.shipmentNumber}</span>
                     </div>
                   )}
                   
-                  {deliveryShipment?.shipper?.name && (
+                  {returnShipment?.shipper?.name && (
                     <div>
                       <span className="text-gray-600">Shipper:</span>
-                      <span className="ml-2 font-medium text-gray-900">{deliveryShipment.shipper.name}</span>
+                      <span className="ml-2 font-medium text-gray-900">{returnShipment.shipper.name}</span>
                     </div>
                   )}
 
-                  {deliveryShipment?.shipper?.phone && (
+                  {returnShipment?.shipper?.phone && (
                     <div>
                       <span className="text-gray-600">SĐT:</span>
-                      <span className="ml-2 font-medium text-gray-900">{deliveryShipment.shipper.phone}</span>
+                      <span className="ml-2 font-medium text-gray-900">{returnShipment.shipper.phone}</span>
                     </div>
                   )}
 
-                  {deliveryShipment?.estimatedDeliveryDate && (
+                  {returnShipment?.estimatedDeliveryDate && (
                     <div>
                       <span className="text-gray-600">Ngày giao dự kiến:</span>
                       <span className="ml-2 font-medium text-gray-900">
-                        {new Date(deliveryShipment.estimatedDeliveryDate).toLocaleDateString('vi-VN')}
+                        {new Date(returnShipment.estimatedDeliveryDate).toLocaleDateString('vi-VN')}
                       </span>
                     </div>
                   )}
 
-                  {deliveryShipment?.actualDeliveryDate && (
+                  {returnShipment?.actualDeliveryDate && (
                     <div>
                       <span className="text-gray-600">Ngày giao thực tế:</span>
                       <span className="ml-2 font-medium text-green-600">
-                        {new Date(deliveryShipment.actualDeliveryDate).toLocaleDateString('vi-VN')}
+                        {new Date(returnShipment.actualDeliveryDate).toLocaleDateString('vi-VN')}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {isDelivered && subOrder?.status !== 'RECEIVED' && (
+              {isDelivered && subOrder?.status !== 'COMPLETED' && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                   <p className="text-sm text-green-800">
-                    <span className="font-semibold">ℹ️ Ghi chú:</span> Hàng đã được giao. Xác nhận để trả cọc cho khách thuê.
+                    <span className="font-semibold">ℹ️ Ghi chú:</span> Hàng trả đã được giao. Xác nhận để trả cọc cho khách thuê.
+                  </p>
+                </div>
+              )}
+
+              {canConfirm && !isDelivered && subOrder?.status !== 'COMPLETED' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold">ℹ️ Ghi chú:</span> Hàng đang được vận chuyển. Bạn có thể xác nhận khi đã nhận hàng.
                   </p>
                 </div>
               )}
@@ -215,7 +225,7 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
             Đóng
           </button>
           
-          {isDelivered && subOrder?.status !== 'RECEIVED' && (
+          {isDelivered && subOrder?.status !== 'COMPLETED' && (
             <button
               onClick={handleConfirmReceived}
               disabled={confirming}
@@ -225,7 +235,21 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
                   : 'bg-green-500 hover:bg-green-600'
               }`}
             >
-              {confirming ? '⏳ Đang xác nhận...' : '✅ Đã nhận hàng'}
+              {confirming ? '⏳ Đang xác nhận...' : '✅ Đã nhận hàng trả'}
+            </button>
+          )}
+
+          {canConfirm && !isDelivered && subOrder?.status !== 'COMPLETED' && (
+            <button
+              onClick={handleConfirmReceived}
+              disabled={confirming}
+              className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
+                confirming
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
+            >
+              {confirming ? '⏳ Đang xác nhận...' : '✅ Xác nhận đã nhận hàng trả'}
             </button>
           )}
         </div>

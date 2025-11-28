@@ -192,6 +192,7 @@ const RentalOrderDetailPage = () => {
       OWNER_REJECTED: "bg-red-100 text-red-800",
       READY_FOR_CONTRACT: "bg-purple-100 text-purple-800",
       CONTRACT_SIGNED: "bg-green-100 text-green-800",
+      DELIVERED: "bg-blue-100 text-blue-800",
       ACTIVE: "bg-green-100 text-green-800",
       COMPLETED: "bg-gray-100 text-gray-800",
       CANCELLED: "bg-red-100 text-red-800",
@@ -209,6 +210,7 @@ const RentalOrderDetailPage = () => {
       OWNER_REJECTED: "Chủ từ chối",
       READY_FOR_CONTRACT: "Sẵn sàng ký HĐ",
       CONTRACT_SIGNED: "Đã ký HĐ",
+      DELIVERED: "Đã giao hàng",
       ACTIVE: "Đang thuê",
       COMPLETED: "Hoàn thành",
       CANCELLED: "Đã hủy",
@@ -260,9 +262,16 @@ const RentalOrderDetailPage = () => {
   const handleRenterConfirm = async (subOrderId) => {
     try {
       toast.loading('Đang gửi xác nhận...');
-      await rentalOrderService.renterConfirmDelivered(subOrderId);
+      const response = await rentalOrderService.renterConfirmDelivered(subOrderId);
+      
+      console.log('✅ Renter confirmation response:', response);
+      
       toast.dismiss();
       toast.success('Cảm ơn — bạn đã xác nhận đã nhận hàng.');
+      
+      // Add small delay to ensure backend processing is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       await loadOrderDetail(id);
     } catch (error) {
       toast.dismiss();

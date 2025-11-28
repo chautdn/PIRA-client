@@ -9,6 +9,7 @@ export default function ShipmentsPage() {
   const { user } = useAuth();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
   // Lightbox state and helpers (must be declared before any early returns)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState([]);
@@ -46,7 +47,16 @@ export default function ShipmentsPage() {
         setLoading(true);
         const resp = await ShipmentService.listMyShipments();
         const data = resp.data || resp;
-        setShipments(Array.isArray(data) ? data : (data.data || data));
+        const shipmentsArray = Array.isArray(data) ? data : (data.data || data);
+        setShipments(shipmentsArray);
+        
+        // Debug log
+        console.log('Loaded shipments:', shipmentsArray);
+        if (shipmentsArray.length > 0) {
+          console.log('First shipment:', shipmentsArray[0]);
+          console.log('First shipment subOrder:', shipmentsArray[0].subOrder);
+          console.log('First shipment rentalPeriod:', shipmentsArray[0].subOrder?.rentalPeriod);
+        }
       } catch (err) {
         console.error('Failed to load shipments', err.message || err);
       } finally {
@@ -57,6 +67,71 @@ export default function ShipmentsPage() {
   }, [user]);
 
   if (loading) return <div className="p-6">Loading shipments...</div>;
+
+  // Format date to Vietnamese format DD/MM/YYYY
+  const formatDateVN = (date) => {
+    if (!date) return null;
+    return new Date(date).toLocaleDateString('vi-VN');
+  };
+
+  // Get all unique rental dates from shipments
+  const getAllRentalDates = () => {
+    const datesSet = new Set();
+    shipments.forEach((s) => {
+      // Try to get rental period from subOrder or masterOrder
+      const rentalPeriod = s.subOrder?.rentalPeriod || s.subOrder?.masterOrder?.rentalPeriod;
+      
+      if (rentalPeriod?.startDate) {
+        datesSet.add(formatDateVN(rentalPeriod.startDate));
+      }
+      if (rentalPeriod?.endDate) {
+        datesSet.add(formatDateVN(rentalPeriod.endDate));
+      }
+      
+      // Fallback to pickup/deliver dates if no rental period
+      if (!rentalPeriod) {
+        if (s.tracking?.pickedUpAt) {
+          datesSet.add(formatDateVN(s.tracking.pickedUpAt));
+        }
+        if (s.tracking?.deliveredAt) {
+          datesSet.add(formatDateVN(s.tracking.deliveredAt));
+        }
+      }
+    });
+    return Array.from(datesSet).sort((a, b) => {
+      const parseDate = (str) => {
+        const [day, month, year] = str.split('/').map(Number);
+        return new Date(year, month - 1, day);
+      };
+      return parseDate(b) - parseDate(a);
+    });
+  };
+
+  // Group shipments by a specific rental date
+  const groupShipmentsByRentalDate = (targetDate) => {
+    return shipments.filter((s) => {
+      const rentalPeriod = s.subOrder?.rentalPeriod || s.subOrder?.masterOrder?.rentalPeriod;
+      
+      if (rentalPeriod) {
+        const startDate = formatDateVN(rentalPeriod.startDate);
+        const endDate = formatDateVN(rentalPeriod.endDate);
+        return startDate === targetDate || endDate === targetDate;
+      }
+      
+      // Fallback to pickup/deliver dates
+      if (s.tracking?.pickedUpAt && formatDateVN(s.tracking.pickedUpAt) === targetDate) {
+        return true;
+      }
+      if (s.tracking?.deliveredAt && formatDateVN(s.tracking.deliveredAt) === targetDate) {
+        return true;
+      }
+      
+      return false;
+    });
+  };
+
+  const rentalDates = getAllRentalDates();
+  const shipmentsForSelectedDate = selectedDate ? groupShipmentsByRentalDate(selectedDate) : [];
 
   const handleAccept = async (s) => {
     try {
@@ -119,67 +194,158 @@ export default function ShipmentsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">Quản lí vận chuyển</h1>
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">Quản lí vận chuyển</h1>
+      
       {shipments.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-6">Không có shipment nào</div>
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <p className="text-gray-500 text-lg">Không có shipment nào</p>
+        </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SubOrder</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Phí</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày pick/deliver</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {shipments.map((s) => (
-                <tr key={s._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{s.shipmentId}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.subOrder?._id || s.subOrder}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.status}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600">{formatCurrency(s.fee || 0)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {s.tracking?.pickedUpAt ? new Date(s.tracking.pickedUpAt).toLocaleString('vi-VN') : '-'}
-                    {' / '}
-                    {s.tracking?.deliveredAt ? new Date(s.tracking.deliveredAt).toLocaleString('vi-VN') : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    <div className="flex items-center space-x-2">
-                      {s.status === 'PENDING' && (
-                        <button onClick={() => handleAccept(s)} className="px-3 py-1 bg-green-600 text-white rounded">Nhận</button>
-                      )}
-
-                      {s.status === 'SHIPPER_CONFIRMED' && (
-                        <button onClick={() => handleUploadAction(s, 'pickup')} className="px-3 py-1 bg-blue-600 text-white rounded">Pickup (chụp ảnh)</button>
-                      )}
-
-                      {s.status === 'IN_TRANSIT' && (
-                        <button onClick={() => handleUploadAction(s, 'deliver')} className="px-3 py-1 bg-indigo-600 text-white rounded">Deliver (chụp ảnh)</button>
-                      )}
-
-                      {/* Show uploaded photos preview */}
-                      {Array.isArray(s.tracking?.photos) && s.tracking.photos.length > 0 && (
-                        <div className="flex space-x-2">
-                          {s.tracking.photos.slice(0,3).map((p, i) => (
-                            <img
-                              key={i}
-                              src={p}
-                              alt={`proof-${i}`}
-                              className="w-12 h-12 object-cover rounded cursor-pointer"
-                              onClick={() => openLightbox(s.tracking.photos, i)}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+        <div>
+          {/* Date Buttons Section */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Chọn ngày xử lý đơn</h2>
+            <div className="flex flex-wrap gap-3">
+              {rentalDates.map((date) => (
+                <button
+                  key={date}
+                  onClick={() => setSelectedDate(selectedDate === date ? null : date)}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    selectedDate === date
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50'
+                  }`}
+                >
+                  <span className="block text-sm">Đơn ngày {date}</span>
+                  <span className="text-xs opacity-75">({groupShipmentsByRentalDate(date).length} đơn)</span>
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          {/* Shipments Details Section */}
+          {selectedDate && shipmentsForSelectedDate.length > 0 && (
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
+              <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Danh sách đơn hàng ngày {selectedDate}
+                </h3>
+              </div>
+              
+              <table className="w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã shipment</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SubOrder</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Phí</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {shipmentsForSelectedDate.map((s) => (
+                    <motion.tr
+                      key={s._id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="hover:bg-blue-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.shipmentId}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.subOrder?._id || s.subOrder}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          s.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          s.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                          s.status === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-800' :
+                          s.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600">{formatCurrency(s.fee || 0)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <div className="text-xs text-gray-500">
+                          {s.tracking?.pickedUpAt ? (
+                            <div>Pickup: {new Date(s.tracking.pickedUpAt).toLocaleTimeString('vi-VN')}</div>
+                          ) : null}
+                          {s.tracking?.deliveredAt ? (
+                            <div>Deliver: {new Date(s.tracking.deliveredAt).toLocaleTimeString('vi-VN')}</div>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            {s.status === 'PENDING' && (
+                              <button 
+                                onClick={() => handleAccept(s)}
+                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
+                              >
+                                Nhận
+                              </button>
+                            )}
+
+                            {s.status === 'SHIPPER_CONFIRMED' && (
+                              <button 
+                                onClick={() => handleUploadAction(s, 'pickup')}
+                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+                              >
+                                📸 Pickup
+                              </button>
+                            )}
+
+                            {s.status === 'IN_TRANSIT' && (
+                              <button 
+                                onClick={() => handleUploadAction(s, 'deliver')}
+                                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition-colors"
+                              >
+                                📸 Deliver
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Show uploaded photos preview */}
+                          {Array.isArray(s.tracking?.photos) && s.tracking.photos.length > 0 && (
+                            <div className="flex gap-2">
+                              {s.tracking.photos.slice(0, 3).map((p, i) => (
+                                <img
+                                  key={i}
+                                  src={p}
+                                  alt={`proof-${i}`}
+                                  className="w-12 h-12 object-cover rounded cursor-pointer hover:shadow-md transition-shadow"
+                                  onClick={() => openLightbox(s.tracking.photos, i)}
+                                />
+                              ))}
+                              {s.tracking.photos.length > 3 && (
+                                <div className="w-12 h-12 rounded bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                                  +{s.tracking.photos.length - 3}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {selectedDate && shipmentsForSelectedDate.length === 0 && (
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <p className="text-gray-500 text-lg">Không có dữ liệu cho ngày này</p>
+            </div>
+          )}
+
+          {!selectedDate && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow p-8 text-center">
+              <p className="text-gray-600 text-lg mb-2">👆 Chọn một ngày để xem danh sách đơn hàng</p>
+              <p className="text-gray-500 text-sm">Tổng cộng: {shipments.length} đơn hàng</p>
+            </div>
+          )}
         </div>
       )}
 
