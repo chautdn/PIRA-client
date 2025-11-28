@@ -8,6 +8,7 @@ import api from "../services/api";
 import earlyReturnApi from "../services/earlyReturn.Api";
 import rentalOrderService from "../services/rentalOrder";
 import EarlyReturnRequestModal from "../components/rental/EarlyReturnRequestModal";
+import RenterShipmentModal from "../components/rental/RenterShipmentModal";
 import OrderFilters from "../components/rental/OrderFilters";
 import OrdersTable from "../components/rental/OrdersTable";
 import OrderDetailModal from "../components/rental/OrderDetailModal";
@@ -27,6 +28,7 @@ const RentalOrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [showEarlyReturnModal, setShowEarlyReturnModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
@@ -210,6 +212,17 @@ const RentalOrdersPage = () => {
     setShowDetailModal(false);
   };
 
+  const handleShipmentManage = (order) => {
+    setSelectedOrder(order);
+    setShowShipmentModal(true);
+  };
+
+  const handleShipmentConfirmReceived = async () => {
+    // Reload orders and early returns
+    await loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+    loadEarlyReturnRequests();
+  };
+
   const currentOrders = myOrders;
   const currentPagination = pagination.myOrders || {};
 
@@ -307,6 +320,20 @@ const RentalOrdersPage = () => {
               {earlyReturnRequests.length > 0 &&
                 `(${earlyReturnRequests.length})`}
             </button>
+            <button
+              onClick={() => {
+                if (selectedOrder) {
+                  handleShipmentManage(selectedOrder);
+                } else {
+                  toast.error("Vui lòng chọn một đơn hàng để quản lí vận chuyển");
+                }
+              }}
+              className="px-6 py-3 rounded-xl font-bold transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+              title="Quản lí vận chuyển"
+              disabled={!selectedOrder}
+            >
+              🚚 Quản lí VC
+            </button>
           </div>
         </div>
 
@@ -373,6 +400,8 @@ const RentalOrdersPage = () => {
                 orders={filteredOrders}
                 onViewDetail={handleViewDetail}
                 onEarlyReturn={handleEarlyReturn}
+                onShipmentManage={handleShipmentManage}
+                onSelectOrder={setSelectedOrder}
                 earlyReturnRequests={earlyReturnRequests}
                 onRenterConfirm={handleRenterConfirm}
               />
@@ -456,6 +485,19 @@ const RentalOrdersPage = () => {
               loadEarlyReturnRequests();
               toast.success("Tạo yêu cầu trả hàng sớm thành công!");
             }}
+          />
+        )}
+
+        {/* Shipment Modal */}
+        {showShipmentModal && selectedOrder && (
+          <RenterShipmentModal
+            isOpen={showShipmentModal}
+            onClose={() => {
+              setShowShipmentModal(false);
+              setSelectedOrder(null);
+            }}
+            masterOrder={selectedOrder}
+            onConfirmReceived={handleShipmentConfirmReceived}
           />
         )}
       </div>

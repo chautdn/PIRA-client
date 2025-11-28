@@ -86,6 +86,16 @@ const ShipmentService = {
     } catch (err) {
       throw new Error(err.response?.data?.message || err.message || 'Không thể tạo shipment (delivery + return)');
     }
+  },
+
+  // Get shipments for a master order
+  async getShipmentsByMasterOrder(masterOrderId) {
+    try {
+      const response = await api.get(`/shipments/order/${masterOrderId}`);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể lấy danh sách shipment');
+    }
   }
 };
 

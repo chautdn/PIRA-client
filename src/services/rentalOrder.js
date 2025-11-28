@@ -434,6 +434,19 @@ class RentalOrderService {
   }
 
   /**
+   * Owner xác nhận đã nhận hàng trả (auto trả cọc cho renter)
+   * @param {string} subOrderId - ID của sub order
+   */
+  async ownerConfirmDelivered(subOrderId) {
+    try {
+      const response = await api.post(`/rental-orders/suborders/${subOrderId}/owner-confirm-delivered`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Không thể xác nhận đã nhận hàng trả');
+    }
+  }
+
+  /**
    * Ký hợp đồng
    * @param {string} contractId - ID của hợp đồng
    * @param {object} signData - { signature, agreementConfirmed, signatureMethod }

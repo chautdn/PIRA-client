@@ -9,7 +9,8 @@ import {
   Calendar,
   DollarSign,
   Hash,
-  Clock
+  Clock,
+  Truck
 } from "lucide-react";
 import {
   getStatusColor,
@@ -128,6 +129,8 @@ const OrderRow = ({
   order,
   onViewDetail,
   onEarlyReturn,
+  onShipmentManage,
+  onSelectOrder,
   earlyReturnRequest,
   navigate
 }) => {
@@ -204,6 +207,8 @@ const OrderRow = ({
       );
     }
 
+
+
     // Early Return
     if (order.status === "ACTIVE" && order.subOrders?.[0]) {
       if (earlyReturnRequest) {
@@ -229,7 +234,10 @@ const OrderRow = ({
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100">
+    <tr 
+      className="hover:bg-blue-50 transition-colors duration-150 border-b border-gray-100 cursor-pointer"
+      onClick={() => onSelectOrder?.(order)}
+    >
       {/* Order Number */}
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="flex items-center">
@@ -295,10 +303,12 @@ const OrdersTable = ({
   orders = [],
   onViewDetail,
   onEarlyReturn,
+  onShipmentManage,
   earlyReturnRequests = [],
   isLoading = false,
   error = null,
   onRenterConfirm,
+  onSelectOrder,
 }) => {
   const navigate = useNavigate();
 
@@ -369,6 +379,8 @@ const OrdersTable = ({
                 order={order}
                 onViewDetail={onViewDetail}
                 onEarlyReturn={onEarlyReturn}
+                onShipmentManage={onShipmentManage}
+                onSelectOrder={onSelectOrder}
                 earlyReturnRequest={getOrderEarlyReturnRequest(order)}
                 navigate={navigate}
               />
