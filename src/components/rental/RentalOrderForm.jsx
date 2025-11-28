@@ -216,6 +216,35 @@ const RentalOrderForm = () => {
       return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
+    // Helper function to calculate final shipping after discounts
+    const calculateFinalShipping = () => {
+      let finalShipping = totalShipping;
+
+      // Apply promotion discount first
+      if (activePromotion) {
+        const discount =
+          activePromotion.systemPromotion.discountType === "PERCENTAGE"
+            ? (totalShipping *
+                activePromotion.systemPromotion.shippingDiscountValue) /
+              100
+            : Math.min(
+                activePromotion.systemPromotion.shippingDiscountValue,
+                totalShipping
+              );
+        finalShipping -= discount;
+      }
+
+      // Apply voucher discount on remaining amount
+      if (selectedVoucher) {
+        const voucherDiscount = Math.round(
+          (finalShipping * selectedVoucher.discountPercent) / 100
+        );
+        finalShipping -= voucherDiscount;
+      }
+
+      return Math.max(0, finalShipping);
+    };
+
     // Calculate total amounts using dates from cart items
     const calculateTotals = () => {
       let totalRental = 0;
@@ -250,12 +279,16 @@ const RentalOrderForm = () => {
         });
       }
 
+      // Calculate final shipping with discounts applied
+      const finalShipping = calculateFinalShipping();
+
       return {
         duration: totalDays,
         totalRental,
         totalDeposit,
-        totalShipping,
-        grandTotal: totalRental + totalDeposit + totalShipping,
+        totalShipping, // Original shipping for display
+        finalShipping, // Discounted shipping for actual payment
+        grandTotal: totalRental + totalDeposit + finalShipping, // Use discounted shipping in total
       };
     };
 
@@ -574,7 +607,9 @@ const RentalOrderForm = () => {
     // Handle payment method selection and process different payment types
     const handlePaymentMethodSelect = async (paymentMethod) => {
       console.log("🚀 Processing payment with method:", paymentMethod);
-      console.log("� Total amount:", totals.grandTotal);
+      console.log("💰 Total amount (with discounts):", totals.grandTotal);
+      console.log("🏷️ Active promotion:", activePromotion ? activePromotion.title : "None");
+      console.log("🎫 Selected voucher:", selectedVoucher ? selectedVoucher.code : "None");
 
       try {
         let paymentResult = null;
@@ -596,10 +631,10 @@ const RentalOrderForm = () => {
 
           case "BANK_TRANSFER":
           case "PAYOS":
-            // Redirect to PayOS payment gateway
+            // Redirect to PayOS payment gateway - use discounted total
             paymentResult = await processPayOSPayment(
               paymentMethod,
-              totals.grandTotal
+              totals.grandTotal // Now includes discount
             );
             break;
 
