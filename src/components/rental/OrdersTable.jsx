@@ -58,12 +58,6 @@ const TableHeader = () => (
       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
         <span>Trạng thái</span>
       </th>
-      <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-        <span>Chi tiết yêu cầu</span>
-      </th>
-      <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-        <span>Hành động</span>
-      </th>
     </tr>
   </thead>
 );
@@ -229,7 +223,10 @@ const OrderRow = ({
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100">
+    <tr 
+      onClick={() => navigate(`/rental-orders/${order._id}`)}
+      className="hover:bg-blue-50 transition-colors duration-150 border-b border-gray-100 cursor-pointer"
+    >
       {/* Order Number */}
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="flex items-center">
@@ -272,20 +269,6 @@ const OrderRow = ({
       {/* Status */}
       <td className="px-4 py-4 whitespace-nowrap">
         <StatusBadge status={order.status} />
-      </td>
-
-      {/* Detail Actions */}
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div className="flex justify-center">
-          {renderDetailActions()}
-        </div>
-      </td>
-
-      {/* Status Actions */}
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {renderStatusActions()}
-        </div>
       </td>
     </tr>
   );

@@ -57,6 +57,12 @@ const OwnerMenuDropdown = ({ user }) => {
       route: ROUTES.OWNER_ACTIVE_RENTALS,
     },
     {
+      icon: "⚖️",
+      label: "Tranh Chấp",
+      description: "Quản lý và giải quyết tranh chấp",
+      route: "/disputes",
+    },
+    {
       icon: "",
       label: "Thống Kê",
       description: "Xem doanh thu và báo cáo",
