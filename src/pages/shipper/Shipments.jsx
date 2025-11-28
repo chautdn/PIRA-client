@@ -10,6 +10,7 @@ export default function ShipmentsPage() {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedShipmentType, setSelectedShipmentType] = useState('DELIVERY'); // Filter by type
   // Lightbox state and helpers (must be declared before any early returns)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState([]);
@@ -47,16 +48,7 @@ export default function ShipmentsPage() {
         setLoading(true);
         const resp = await ShipmentService.listMyShipments();
         const data = resp.data || resp;
-        const shipmentsArray = Array.isArray(data) ? data : (data.data || data);
-        setShipments(shipmentsArray);
-        
-        // Debug log
-        console.log('Loaded shipments:', shipmentsArray);
-        if (shipmentsArray.length > 0) {
-          console.log('First shipment:', shipmentsArray[0]);
-          console.log('First shipment subOrder:', shipmentsArray[0].subOrder);
-          console.log('First shipment rentalPeriod:', shipmentsArray[0].subOrder?.rentalPeriod);
-        }
+        setShipments(Array.isArray(data) ? data : (data.data || data));
       } catch (err) {
         console.error('Failed to load shipments', err.message || err);
       } finally {
@@ -74,64 +66,74 @@ export default function ShipmentsPage() {
     return new Date(date).toLocaleDateString('vi-VN');
   };
 
-  // Get all unique rental dates from shipments
-  const getAllRentalDates = () => {
-    const datesSet = new Set();
+  // Get all unique rental dates from shipments - organized by type and date
+  const getAllRentalDatesWithType = () => {
+    const datesMap = {}; // { 'DD/MM/YYYY-DELIVERY': [...], 'DD/MM/YYYY-RETURN': [...] }
+    
     shipments.forEach((s) => {
-      // Try to get rental period from subOrder or masterOrder
-      const rentalPeriod = s.subOrder?.rentalPeriod || s.subOrder?.masterOrder?.rentalPeriod;
+      // Try multiple ways to get rental period
+      let rentalPeriod = null;
       
-      if (rentalPeriod?.startDate) {
-        datesSet.add(formatDateVN(rentalPeriod.startDate));
+      if (s.subOrder?.rentalPeriod) {
+        rentalPeriod = s.subOrder.rentalPeriod;
       }
-      if (rentalPeriod?.endDate) {
-        datesSet.add(formatDateVN(rentalPeriod.endDate));
+      else if (s.subOrder?.masterOrder?.rentalPeriod) {
+        rentalPeriod = s.subOrder.masterOrder.rentalPeriod;
+      }
+      else if (s.subOrder?.products?.[0]?.rentalPeriod) {
+        rentalPeriod = s.subOrder.products[0].rentalPeriod;
+      }
+      else if (s.masterOrder?.rentalPeriod) {
+        rentalPeriod = s.masterOrder.rentalPeriod;
       }
       
-      // Fallback to pickup/deliver dates if no rental period
-      if (!rentalPeriod) {
-        if (s.tracking?.pickedUpAt) {
-          datesSet.add(formatDateVN(s.tracking.pickedUpAt));
+      const shipmentType = s.type; // 'DELIVERY' or 'RETURN'
+      let dateStr = null;
+      
+      // For DELIVERY: use startDate
+      if (shipmentType === 'DELIVERY' && rentalPeriod?.startDate) {
+        dateStr = formatDateVN(rentalPeriod.startDate);
+      }
+      // For RETURN: use endDate
+      else if (shipmentType === 'RETURN' && rentalPeriod?.endDate) {
+        dateStr = formatDateVN(rentalPeriod.endDate);
+      }
+      // Fallback to createdAt if no rental period
+      else if (!rentalPeriod && s.subOrder?.createdAt) {
+        dateStr = formatDateVN(s.subOrder.createdAt);
+      }
+      
+      if (dateStr) {
+        const key = `${dateStr}-${shipmentType}`;
+        if (!datesMap[key]) {
+          datesMap[key] = [];
         }
-        if (s.tracking?.deliveredAt) {
-          datesSet.add(formatDateVN(s.tracking.deliveredAt));
-        }
+        datesMap[key].push(s);
       }
     });
-    return Array.from(datesSet).sort((a, b) => {
+    
+    return datesMap;
+  };
+
+  const datesMapByType = getAllRentalDatesWithType();
+  
+  // Extract and sort unique date-type combinations
+  const getUniqueDateTypePairs = () => {
+    const pairs = Object.keys(datesMapByType);
+    return pairs.sort((a, b) => {
       const parseDate = (str) => {
-        const [day, month, year] = str.split('/').map(Number);
+        const datePart = str.split('-')[0]; // Extract DD/MM/YYYY
+        const [day, month, year] = datePart.split('/').map(Number);
         return new Date(year, month - 1, day);
       };
       return parseDate(b) - parseDate(a);
     });
   };
 
-  // Group shipments by a specific rental date
-  const groupShipmentsByRentalDate = (targetDate) => {
-    return shipments.filter((s) => {
-      const rentalPeriod = s.subOrder?.rentalPeriod || s.subOrder?.masterOrder?.rentalPeriod;
-      
-      if (rentalPeriod) {
-        const startDate = formatDateVN(rentalPeriod.startDate);
-        const endDate = formatDateVN(rentalPeriod.endDate);
-        return startDate === targetDate || endDate === targetDate;
-      }
-      
-      // Fallback to pickup/deliver dates
-      if (s.tracking?.pickedUpAt && formatDateVN(s.tracking.pickedUpAt) === targetDate) {
-        return true;
-      }
-      if (s.tracking?.deliveredAt && formatDateVN(s.tracking.deliveredAt) === targetDate) {
-        return true;
-      }
-      
-      return false;
-    });
-  };
-
-  const rentalDates = getAllRentalDates();
-  const shipmentsForSelectedDate = selectedDate ? groupShipmentsByRentalDate(selectedDate) : [];
+  const dateTypePairs = getUniqueDateTypePairs();
+  
+  // Get shipments for selected date-type pair
+  const shipmentsForSelectedDate = selectedDate ? datesMapByType[selectedDate] : [];
 
   const handleAccept = async (s) => {
     try {
@@ -202,34 +204,98 @@ export default function ShipmentsPage() {
         </div>
       ) : (
         <div>
+          {/* Type Filter Buttons */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Loại đơn hàng</h2>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  setSelectedShipmentType('DELIVERY');
+                  setSelectedDate(null);
+                }}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  selectedShipmentType === 'DELIVERY'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50'
+                }`}
+              >
+                📦 Giao hàng
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedShipmentType('RETURN');
+                  setSelectedDate(null);
+                }}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  selectedShipmentType === 'RETURN'
+                    ? 'bg-orange-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-orange-600 hover:bg-orange-50'
+                }`}
+              >
+                🔄 Nhận trả
+              </button>
+            </div>
+          </div>
+
           {/* Date Buttons Section */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Chọn ngày xử lý đơn</h2>
-            <div className="flex flex-wrap gap-3">
-              {rentalDates.map((date) => (
-                <button
-                  key={date}
-                  onClick={() => setSelectedDate(selectedDate === date ? null : date)}
-                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                    selectedDate === date
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50'
-                  }`}
-                >
-                  <span className="block text-sm">Đơn ngày {date}</span>
-                  <span className="text-xs opacity-75">({groupShipmentsByRentalDate(date).length} đơn)</span>
-                </button>
-              ))}
-            </div>
+            {(() => {
+              // Filter dates by selected type
+              const filteredPairs = dateTypePairs.filter(pair => pair.endsWith(`-${selectedShipmentType}`));
+              
+              if (filteredPairs.length === 0) {
+                return (
+                  <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-6 text-center">
+                    <p className="text-gray-600">Không có đơn hàng loại này</p>
+                  </div>
+                );
+              }
+              
+              return (
+                <div className="flex flex-wrap gap-3">
+                  {filteredPairs.map((pair) => {
+                    const [dateStr] = pair.split('-');
+                    const count = datesMapByType[pair]?.length || 0;
+                    const isDelivery = selectedShipmentType === 'DELIVERY';
+                    
+                    return (
+                      <button
+                        key={pair}
+                        onClick={() => setSelectedDate(selectedDate === pair ? null : pair)}
+                        className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                          selectedDate === pair
+                            ? isDelivery
+                              ? 'bg-blue-600 text-white shadow-lg'
+                              : 'bg-orange-600 text-white shadow-lg'
+                            : isDelivery
+                            ? 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50'
+                            : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-orange-600 hover:bg-orange-50'
+                        }`}
+                      >
+                        <span className="block text-sm">Đơn ngày {dateStr}</span>
+                        <span className="text-xs opacity-75">({count} đơn)</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Shipments Details Section */}
           {selectedDate && shipmentsForSelectedDate.length > 0 && (
             <div className="bg-white rounded-lg shadow overflow-x-auto">
               <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Danh sách đơn hàng ngày {selectedDate}
-                </h3>
+                {(() => {
+                  const [dateStr, shipmentType] = selectedDate.split('-');
+                  const typeLabel = shipmentType === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả';
+                  return (
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {typeLabel} - Danh sách đơn hàng ngày {dateStr}
+                    </h3>
+                  );
+                })()}
               </div>
               
               <table className="w-full divide-y divide-gray-200">
@@ -237,8 +303,9 @@ export default function ShipmentsPage() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã shipment</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SubOrder</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Phí</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Phí vận chuyển</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
                   </tr>
@@ -253,6 +320,15 @@ export default function ShipmentsPage() {
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.shipmentId}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.subOrder?._id || s.subOrder}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          s.type === 'DELIVERY'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {s.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           s.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -264,7 +340,12 @@ export default function ShipmentsPage() {
                           {s.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600">{formatCurrency(s.fee || 0)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <div className="font-semibold text-green-600">{formatCurrency(s.fee || 0)}</div>
+                        {s.status === 'DELIVERED' && (
+                          <div className="text-xs text-green-500 mt-1">✅ Sẽ được chuyển</div>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         <div className="text-xs text-gray-500">
                           {s.tracking?.pickedUpAt ? (
