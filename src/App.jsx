@@ -28,6 +28,7 @@ import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
 import ActiveRentals from "./pages/owner/ActiveRentals";
+import OwnerStatistics from "./pages/owner/OwnerStatistics";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
@@ -225,6 +226,14 @@ export default function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <ActiveRentals />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.OWNER_STATISTICS}
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <OwnerStatistics />
                       </RoleProtectedRoute>
                     }
                   />
