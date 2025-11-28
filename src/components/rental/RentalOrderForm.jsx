@@ -61,26 +61,21 @@ const RentalOrderForm = () => {
       );
     }, []);
 
-    const [orderData, setOrderData] = useState(() => ({
-      rentalPeriod: {
-        startDate: "",
-        endDate: "",
-      },
-      deliveryAddress: {
-        streetAddress: "",
-        ward: "",
-        district: "",
-        city: "",
-        province: "Hồ Chí Minh",
-        contactPhone:
-          user && user.profile && user.profile.phone ? user.profile.phone : "",
-        contactName:
-          user && user.profile && user.profile.fullName
-            ? user.profile.fullName
-            : "",
-      },
-      deliveryMethod: "PICKUP",
-    }));
+  const [orderData, setOrderData] = useState(() => ({
+    rentalPeriod: {
+      startDate: '',
+      endDate: ''
+    },
+    deliveryAddress: {
+      streetAddress: '',
+      ward: '',
+      district: '',
+      city: '',
+      contactPhone: (user && user.profile && user.profile.phone) ? user.profile.phone : '',
+      contactName: (user && user.profile && user.profile.fullName) ? user.profile.fullName : ''
+    },
+    deliveryMethod: 'PICKUP'
+  }));
 
     const [errors, setErrors] = useState({});
     const [step, setStep] = useState(1);
@@ -221,6 +216,35 @@ const RentalOrderForm = () => {
       return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     };
 
+    // Helper function to calculate final shipping after discounts
+    const calculateFinalShipping = () => {
+      let finalShipping = totalShipping;
+
+      // Apply promotion discount first
+      if (activePromotion) {
+        const discount =
+          activePromotion.systemPromotion.discountType === "PERCENTAGE"
+            ? (totalShipping *
+                activePromotion.systemPromotion.shippingDiscountValue) /
+              100
+            : Math.min(
+                activePromotion.systemPromotion.shippingDiscountValue,
+                totalShipping
+              );
+        finalShipping -= discount;
+      }
+
+      // Apply voucher discount on remaining amount
+      if (selectedVoucher) {
+        const voucherDiscount = Math.round(
+          (finalShipping * selectedVoucher.discountPercent) / 100
+        );
+        finalShipping -= voucherDiscount;
+      }
+
+      return Math.max(0, finalShipping);
+    };
+
     // Calculate total amounts using dates from cart items
     const calculateTotals = () => {
       let totalRental = 0;
@@ -255,12 +279,16 @@ const RentalOrderForm = () => {
         });
       }
 
+      // Calculate final shipping with discounts applied
+      const finalShipping = calculateFinalShipping();
+
       return {
         duration: totalDays,
         totalRental,
         totalDeposit,
-        totalShipping,
-        grandTotal: totalRental + totalDeposit + totalShipping,
+        totalShipping, // Original shipping for display
+        finalShipping, // Discounted shipping for actual payment
+        grandTotal: totalRental + totalDeposit + finalShipping, // Use discounted shipping in total
       };
     };
 
@@ -579,7 +607,9 @@ const RentalOrderForm = () => {
     // Handle payment method selection and process different payment types
     const handlePaymentMethodSelect = async (paymentMethod) => {
       console.log("🚀 Processing payment with method:", paymentMethod);
-      console.log("� Total amount:", totals.grandTotal);
+      console.log("💰 Total amount (with discounts):", totals.grandTotal);
+      console.log("🏷️ Active promotion:", activePromotion ? activePromotion.title : "None");
+      console.log("🎫 Selected voucher:", selectedVoucher ? selectedVoucher.code : "None");
 
       try {
         let paymentResult = null;
@@ -601,10 +631,10 @@ const RentalOrderForm = () => {
 
           case "BANK_TRANSFER":
           case "PAYOS":
-            // Redirect to PayOS payment gateway
+            // Redirect to PayOS payment gateway - use discounted total
             paymentResult = await processPayOSPayment(
               paymentMethod,
-              totals.grandTotal
+              totals.grandTotal // Now includes discount
             );
             break;
 
@@ -1561,70 +1591,26 @@ const RentalOrderForm = () => {
                 </div>
               </div>
 
-              {/* Delivery Method */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold mb-6 flex items-center">
-                  <Truck className="w-5 h-5 mr-2" />
-                  Hình thức nhận hàng
-                </h2>
-                <div className="space-y-3">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="PICKUP"
-                      checked={orderData.deliveryMethod === "PICKUP"}
-                      onChange={(e) => {
-                        setOrderData((prev) => ({
-                          ...prev,
-                          deliveryMethod: e.target.value,
-                        }));
-                        setTotalShipping(0);
-                        setGroupedProducts((prev) => {
-                          const updated = { ...prev };
-                          Object.keys(updated).forEach((ownerId) => {
-                            updated[ownerId].shippingFee = 0;
-                          });
-                          return updated;
-                        });
-                      }}
-                      className="w-4 h-4 text-blue-500"
-                    />
-                    <span>Nhận trực tiếp (Miễn phí)</span>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="OWNER_DELIVERY"
-                      checked={orderData.deliveryMethod === "OWNER_DELIVERY"}
-                      onChange={(e) =>
-                        setOrderData((prev) => ({
-                          ...prev,
-                          deliveryMethod: e.target.value,
-                        }))
-                      }
-                      className="w-4 h-4 text-blue-500"
-                    />
-                    <span>
-                      Chủ của sản phẩm vận chuyển (Phí ship phụ thuộc vào chủ)
-                    </span>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      value="DELIVERY"
-                      checked={orderData.deliveryMethod === "DELIVERY"}
-                      onChange={(e) =>
-                        setOrderData((prev) => ({
-                          ...prev,
-                          deliveryMethod: e.target.value,
-                        }))
-                      }
-                      className="w-4 h-4 text-blue-500"
-                    />
-                    <span>Giao tận nơi (Có phí ship)</span>
-                  </label>
-                </div>
+            {/* Delivery Method */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-6 flex items-center">
+                <Truck className="w-5 h-5 mr-2" />
+                Hình thức nhận hàng
+              </h2>
+              <div className="space-y-3">
+
+  <label className="flex items-center space-x-3 cursor-pointer">
+  <input
+    type="radio"
+    value="DELIVERY"
+    checked={orderData.deliveryMethod === 'DELIVERY'}
+    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
+    className="w-4 h-4 text-blue-500"
+  />
+  <span>Giao tận nơi (Có phí ship)</span>
+</label>
               </div>
+            </div>
 
               {orderData.deliveryMethod === "OWNER_DELIVERY" && (
                 <div className="bg-white rounded-lg shadow-md p-6">

@@ -379,10 +379,8 @@ const OwnerRentalRequests = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn chính</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người thuê</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
@@ -396,16 +394,9 @@ const OwnerRentalRequests = () => {
                     onClick={() => setSelectedSubOrder(s)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{s.subOrderNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.masterOrder?.masterOrderNumber}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.masterOrder?.renter?.profile?.firstName || ''} {s.masterOrder?.renter?.profile?.lastName || ''} </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{(s.products || []).length}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {s.rentalPeriod?.startDate && s.rentalPeriod?.endDate ? (
-                        <span>{new Date(s.rentalPeriod.startDate).toLocaleDateString('vi-VN')} → {new Date(s.rentalPeriod.endDate).toLocaleDateString('vi-VN')}</span>
-                      ) : (
-                        <span className="text-sm text-blue-600">Nhiều thời gian</span>
-                      )}
-                    </td>
+                   
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600">{formatCurrency(((s.pricing?.subtotalRental || 0) + (s.pricing?.subtotalDeposit || 0) + (s.pricing?.shippingFee || 0)))}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(s.status)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">

@@ -34,6 +34,7 @@ import ShipmentsPage from "./pages/shipper/Shipments";
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
 import TopUpCancel from "./pages/wallet/TopUpCancel";
 import Withdrawals from "./pages/Withdrawals";
+import AllNotifications from "./pages/AllNotifications";
 
 // Payment result pages
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
@@ -61,6 +62,7 @@ import ReportManagement from "./pages/admin/ReportManagement";
 import AdminReportDetail from "./pages/admin/AdminReportDetail";
 import BankManagement from "./pages/admin/BankManagement";
 import AdminBankDetail from "./pages/admin/AdminBankDetail";
+import WithdrawalManagement from "./pages/admin/WithdrawalManagement";
 import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
@@ -272,6 +274,7 @@ export default function App() {
                     element={<TopUpCancel />}
                   />
                   <Route path="/withdrawals" element={<Withdrawals />} />
+                  <Route path="/notifications" element={<AllNotifications />} />
 
                   {/* Transaction History */}
                   <Route
@@ -320,7 +323,7 @@ export default function App() {
                   <Route
                     path="/rental-orders/create"
                     element={
-                      <RoleProtectedRoute allowedRoles={["RENTER"]}>
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
                         <ErrorBoundary>
                           <RentalOrderForm />
                         </ErrorBoundary>
@@ -399,6 +402,10 @@ export default function App() {
                     <Route
                       path="bank-accounts/:userId"
                       element={<AdminBankDetail />}
+                    />
+                    <Route
+                      path="withdrawals"
+                      element={<WithdrawalManagement />}
                     />
                     <Route
                       path="settings"

@@ -33,10 +33,34 @@ const FormNavigation = ({
     formData.promotion?.paymentMethod === "wallet" &&
     promotionCost > walletBalance;
 
+  const hasNotAgreedToTerms = !formData.agreedToTerms;
   const isLastStep = currentStep === totalSteps;
 
   return (
     <div className="space-y-4">
+      {/* Terms Agreement Warning */}
+      {isLastStep && hasNotAgreedToTerms && (
+        <motion.div
+          className="bg-orange-50 border-2 border-orange-300 rounded-xl p-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-start gap-4">
+            <icons.BiInfoCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <h4 className="font-bold text-orange-900 mb-2">
+                📋 Cần đồng ý Điều Khoản và Điều Kiện
+              </h4>
+              <p className="text-sm text-orange-800">
+                Vui lòng tick vào ô đồng ý{" "}
+                <span className="font-bold">"Điều Khoản và Điều Kiện"</span> để
+                hoàn thành việc đăng sản phẩm.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Insufficient Balance Warning */}
       {hasInsufficientBalance && (
         <motion.div
@@ -85,7 +109,11 @@ const FormNavigation = ({
         <motion.button
           type="button"
           onClick={isLastStep ? onSubmit : onNext}
-          disabled={isSubmitting || hasInsufficientBalance}
+          disabled={
+            isSubmitting ||
+            hasInsufficientBalance ||
+            (isLastStep && hasNotAgreedToTerms)
+          }
           className={`ml-auto px-8 py-3 rounded-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
             isLastStep
               ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg"
@@ -114,7 +142,7 @@ const FormNavigation = ({
       </div>
 
       {/* Submit Hint */}
-      {isLastStep && !hasInsufficientBalance && (
+      {isLastStep && !hasInsufficientBalance && !hasNotAgreedToTerms && (
         <p className="text-center text-sm text-gray-500">
           {formData.promotion?.enabled
             ? "Sản phẩm sẽ được đăng và quảng cáo ngay sau khi thanh toán thành công"
