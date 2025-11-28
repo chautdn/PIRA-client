@@ -322,7 +322,7 @@ export default function App() {
                   <Route
                     path="/rental-orders/create"
                     element={
-                      <RoleProtectedRoute allowedRoles={["RENTER"]}>
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
                         <ErrorBoundary>
                           <RentalOrderForm />
                         </ErrorBoundary>
