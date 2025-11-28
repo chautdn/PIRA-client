@@ -1,69 +1,75 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import notificationService from '../services/notification';
-import useChatSocket from '../hooks/useChatSocket';
+import React, { createContext, useContext, useReducer, useEffect } from "react";
+import { useAuth } from "../hooks/useAuth";
+import notificationService from "../services/notification";
+import useChatSocket from "../hooks/useChatSocket";
 
 export const NotificationContext = createContext();
 
 const notificationReducer = (state, action) => {
   switch (action.type) {
-    case 'SET_NOTIFICATIONS':
+    case "SET_NOTIFICATIONS":
       return {
         ...state,
         notifications: action.payload.notifications,
         pagination: action.payload.pagination,
         loading: false,
-        error: null
+        error: null,
       };
-    case 'SET_UNREAD_COUNT':
+    case "SET_UNREAD_COUNT":
       return {
         ...state,
-        unreadCount: action.payload
+        unreadCount: action.payload,
       };
-    case 'ADD_NOTIFICATION':
+    case "ADD_NOTIFICATION":
       return {
         ...state,
         notifications: [action.payload, ...state.notifications],
-        unreadCount: state.unreadCount + 1
+        unreadCount: state.unreadCount + 1,
       };
-    case 'MARK_AS_READ':
+    case "MARK_AS_READ":
       return {
         ...state,
         notifications: state.notifications.map((notif) =>
-          notif._id === action.payload ? { ...notif, status: 'READ', readAt: new Date() } : notif
+          notif._id === action.payload
+            ? { ...notif, status: "READ", readAt: new Date() }
+            : notif
         ),
-        unreadCount: Math.max(0, state.unreadCount - 1)
+        unreadCount: Math.max(0, state.unreadCount - 1),
       };
-    case 'MARK_ALL_AS_READ':
+    case "MARK_ALL_AS_READ":
       return {
         ...state,
         notifications: state.notifications.map((notif) => ({
           ...notif,
-          status: 'READ',
-          readAt: new Date()
+          status: "READ",
+          readAt: new Date(),
         })),
-        unreadCount: 0
+        unreadCount: 0,
       };
-    case 'DELETE_NOTIFICATION':
-      const deletedNotif = state.notifications.find((n) => n._id === action.payload);
+    case "DELETE_NOTIFICATION":
+      const deletedNotif = state.notifications.find(
+        (n) => n._id === action.payload
+      );
       return {
         ...state,
-        notifications: state.notifications.filter((notif) => notif._id !== action.payload),
+        notifications: state.notifications.filter(
+          (notif) => notif._id !== action.payload
+        ),
         unreadCount:
-          deletedNotif && deletedNotif.status !== 'READ'
+          deletedNotif && deletedNotif.status !== "READ"
             ? Math.max(0, state.unreadCount - 1)
-            : state.unreadCount
+            : state.unreadCount,
       };
-    case 'SET_LOADING':
+    case "SET_LOADING":
       return {
         ...state,
-        loading: action.payload
+        loading: action.payload,
       };
-    case 'SET_ERROR':
+    case "SET_ERROR":
       return {
         ...state,
         error: action.payload,
-        loading: false
+        loading: false,
       };
     default:
       return state;
@@ -76,10 +82,10 @@ const initialState = {
   pagination: {
     currentPage: 1,
     totalPages: 1,
-    totalItems: 0
+    totalItems: 0,
   },
   loading: false,
-  error: null
+  error: null,
 };
 
 export const NotificationProvider = ({ children }) => {
@@ -100,75 +106,79 @@ export const NotificationProvider = ({ children }) => {
     if (!socket || !isAuthenticated) return;
 
     const handleNewNotification = (data) => {
-      console.log('📬 New notification received:', data);
-      dispatch({ type: 'ADD_NOTIFICATION', payload: data.notification });
+      console.log("📬 New notification received:", data);
+      dispatch({ type: "ADD_NOTIFICATION", payload: data.notification });
       // Also refresh unread count
       fetchUnreadCount();
     };
 
     const handleNotificationCount = (data) => {
-      console.log('🔔 Notification count update:', data);
-      dispatch({ type: 'SET_UNREAD_COUNT', payload: data.unreadCount });
+      console.log("🔔 Notification count update:", data);
+      dispatch({ type: "SET_UNREAD_COUNT", payload: data.unreadCount });
     };
 
-    socket.on('notification:new', handleNewNotification);
-    socket.on('notification:count', handleNotificationCount);
+    socket.on("notification:new", handleNewNotification);
+    socket.on("notification:count", handleNotificationCount);
 
-    console.log('✅ Notification socket listeners registered');
+    console.log("✅ Notification socket listeners registered");
 
     return () => {
-      socket.off('notification:new', handleNewNotification);
-      socket.off('notification:count', handleNotificationCount);
-      console.log('🔌 Notification socket listeners removed');
+      socket.off("notification:new", handleNewNotification);
+      socket.off("notification:count", handleNotificationCount);
+      console.log("🔌 Notification socket listeners removed");
     };
   }, [socket, isAuthenticated]);
 
   const fetchNotifications = async (page = 1, filters = {}, limit = 20) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      const result = await notificationService.getUserNotifications(page, limit, filters);
-      console.log('📋 Fetched notifications:', result);
-      dispatch({ type: 'SET_NOTIFICATIONS', payload: result });
+      dispatch({ type: "SET_LOADING", payload: true });
+      const result = await notificationService.getUserNotifications(
+        page,
+        limit,
+        filters
+      );
+      console.log("📋 Fetched notifications:", result);
+      dispatch({ type: "SET_NOTIFICATIONS", payload: result });
     } catch (error) {
-      console.error('❌ Error fetching notifications:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      console.error("❌ Error fetching notifications:", error);
+      dispatch({ type: "SET_ERROR", payload: error.message });
     }
   };
 
   const fetchUnreadCount = async () => {
     try {
       const count = await notificationService.getUnreadCount();
-      console.log('🔢 Unread count:', count);
-      dispatch({ type: 'SET_UNREAD_COUNT', payload: count });
+      console.log("🔢 Unread count:", count);
+      dispatch({ type: "SET_UNREAD_COUNT", payload: count });
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      console.error("Error fetching unread count:", error);
     }
   };
 
   const markAsRead = async (notificationId) => {
     try {
       await notificationService.markAsRead(notificationId);
-      dispatch({ type: 'MARK_AS_READ', payload: notificationId });
+      dispatch({ type: "MARK_AS_READ", payload: notificationId });
     } catch (error) {
-      console.error('Error marking as read:', error);
+      console.error("Error marking as read:", error);
     }
   };
 
   const markAllAsRead = async () => {
     try {
       await notificationService.markAllAsRead();
-      dispatch({ type: 'MARK_ALL_AS_READ' });
+      dispatch({ type: "MARK_ALL_AS_READ" });
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      console.error("Error marking all as read:", error);
     }
   };
 
   const deleteNotification = async (notificationId) => {
     try {
       await notificationService.deleteNotification(notificationId);
-      dispatch({ type: 'DELETE_NOTIFICATION', payload: notificationId });
+      dispatch({ type: "DELETE_NOTIFICATION", payload: notificationId });
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      console.error("Error deleting notification:", error);
     }
   };
 
@@ -182,16 +192,20 @@ export const NotificationProvider = ({ children }) => {
     fetchUnreadCount,
     markAsRead,
     markAllAsRead,
-    deleteNotification
+    deleteNotification,
   };
 
-  return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
+  return (
+    <NotificationContext.Provider value={value}>
+      {children}
+    </NotificationContext.Provider>
+  );
 };
 
 export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotification must be used within NotificationProvider');
+    throw new Error("useNotification must be used within NotificationProvider");
   }
   return context;
 };

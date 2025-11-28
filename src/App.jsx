@@ -33,6 +33,7 @@ import ActiveRentals from "./pages/owner/ActiveRentals";
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
 import TopUpCancel from "./pages/wallet/TopUpCancel";
 import Withdrawals from "./pages/Withdrawals";
+import AllNotifications from "./pages/AllNotifications";
 
 // Payment result pages
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
@@ -272,6 +273,7 @@ export default function App() {
                     element={<TopUpCancel />}
                   />
                   <Route path="/withdrawals" element={<Withdrawals />} />
+                  <Route path="/notifications" element={<AllNotifications />} />
 
                   {/* Transaction History */}
                   <Route
@@ -390,7 +392,10 @@ export default function App() {
                       path="bank-accounts/:userId"
                       element={<AdminBankDetail />}
                     />
-                    <Route path="withdrawals" element={<WithdrawalManagement />} />
+                    <Route
+                      path="withdrawals"
+                      element={<WithdrawalManagement />}
+                    />
                     <Route
                       path="settings"
                       element={<div>System Settings - Coming Soon</div>}

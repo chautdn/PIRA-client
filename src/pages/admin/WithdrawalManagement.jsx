@@ -1,34 +1,100 @@
-import React, { useState, useEffect } from 'react';
-import { adminService } from '../../services/admin';
-import { motion } from 'framer-motion';
-import { Search, Filter, CheckCircle, XCircle, Clock, AlertCircle, DollarSign } from 'lucide-react';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { adminService } from "../../services/admin";
+import { motion } from "framer-motion";
+import {
+  Search,
+  Filter,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertCircle,
+  DollarSign,
+  Wallet,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import useChatSocket from "../../hooks/useChatSocket";
 
 const WithdrawalManagement = () => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    status: '',
+    status: "",
     page: 1,
-    limit: 20
+    limit: 20,
   });
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
-    totalItems: 0
+    totalItems: 0,
   });
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [actionData, setActionData] = useState({
-    status: '',
-    adminNote: '',
-    rejectionReason: ''
+    status: "",
+    adminNote: "",
+    rejectionReason: "",
   });
+  const [systemWallet, setSystemWallet] = useState(null);
+  const [loadingWallet, setLoadingWallet] = useState(true);
+  const { socket } = useChatSocket();
 
   useEffect(() => {
     fetchWithdrawals();
+    fetchSystemWallet();
   }, [filters]);
+
+  // Listen for system wallet updates via socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleSystemWalletUpdate = (data) => {
+      console.log("💰 System wallet update received:", data);
+      setSystemWallet((prev) => ({
+        ...prev,
+        balance: data.balance,
+        totalBalance: data.balance.total,
+      }));
+    };
+
+    const handleWithdrawalRequested = (data) => {
+      console.log("📥 New withdrawal request received:", data);
+      toast.success("Có yêu cầu rút tiền mới!");
+      // Refresh the withdrawals list
+      fetchWithdrawals();
+    };
+
+    const handleWithdrawalUpdated = (data) => {
+      console.log("🔄 Withdrawal updated:", data);
+      // Refresh the withdrawals list
+      fetchWithdrawals();
+    };
+
+    socket.on("system:wallet:update", handleSystemWalletUpdate);
+    socket.on("withdrawal-requested", handleWithdrawalRequested);
+    socket.on("withdrawal-updated", handleWithdrawalUpdated);
+
+    return () => {
+      socket.off("system:wallet:update", handleSystemWalletUpdate);
+      socket.off("withdrawal-requested", handleWithdrawalRequested);
+      socket.off("withdrawal-updated", handleWithdrawalUpdated);
+    };
+  }, [socket]);
+
+  const fetchSystemWallet = async () => {
+    try {
+      setLoadingWallet(true);
+      const result = await adminService.getSystemWallet();
+      console.log("🏦 System wallet fetched:", result);
+      console.log("💰 Balance data:", result?.balance);
+      setSystemWallet(result);
+    } catch (error) {
+      console.error("Error fetching system wallet:", error);
+      toast.error("Không thể tải số dư ví hệ thống");
+    } finally {
+      setLoadingWallet(false);
+    }
+  };
 
   const fetchWithdrawals = async () => {
     try {
@@ -37,43 +103,49 @@ const WithdrawalManagement = () => {
       setWithdrawals(result.withdrawals || []);
       setPagination(result.pagination || {});
     } catch (error) {
-      console.error('Error fetching withdrawals:', error);
-      toast.error('Không thể tải danh sách rút tiền');
+      console.error("Error fetching withdrawals:", error);
+      toast.error("Không thể tải danh sách rút tiền");
     } finally {
       setLoading(false);
     }
   };
 
   const handleStatusChange = async (withdrawalId, status) => {
-    if (!actionData.adminNote && status !== 'processing') {
-      toast.error('Vui lòng nhập ghi chú quản trị viên');
+    if (!actionData.adminNote && status !== "processing") {
+      toast.error("Vui lòng nhập ghi chú quản trị viên");
       return;
     }
 
-    if (status === 'rejected' && !actionData.rejectionReason) {
-      toast.error('Vui lòng nhập lý do từ chối');
+    if (status === "rejected" && !actionData.rejectionReason) {
+      toast.error("Vui lòng nhập lý do từ chối");
       return;
     }
 
     try {
       setProcessing(true);
-      await adminService.updateWithdrawalStatus(withdrawalId, status, actionData);
-      
-      toast.success(
-        status === 'processing'
-          ? 'Đã chuyển sang đang xử lý'
-          : status === 'completed'
-          ? 'Đã duyệt yêu cầu rút tiền'
-          : 'Đã từ chối yêu cầu rút tiền'
+      await adminService.updateWithdrawalStatus(
+        withdrawalId,
+        status,
+        actionData
       );
-      
+
+      toast.success(
+        status === "processing"
+          ? "Đã chuyển sang đang xử lý"
+          : status === "completed"
+          ? "Đã duyệt yêu cầu rút tiền"
+          : "Đã từ chối yêu cầu rút tiền"
+      );
+
       setShowModal(false);
       setSelectedWithdrawal(null);
-      setActionData({ status: '', adminNote: '', rejectionReason: '' });
+      setActionData({ status: "", adminNote: "", rejectionReason: "" });
       fetchWithdrawals();
     } catch (error) {
-      console.error('Error updating withdrawal status:', error);
-      toast.error(error.response?.data?.message || 'Không thể cập nhật trạng thái');
+      console.error("Error updating withdrawal status:", error);
+      toast.error(
+        error.response?.data?.message || "Không thể cập nhật trạng thái"
+      );
     } finally {
       setProcessing(false);
     }
@@ -87,18 +159,45 @@ const WithdrawalManagement = () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: Clock, label: 'Chờ xử lý' },
-      processing: { bg: 'bg-blue-100', text: 'text-blue-800', icon: AlertCircle, label: 'Đang xử lý' },
-      completed: { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle, label: 'Đã hoàn thành' },
-      rejected: { bg: 'bg-red-100', text: 'text-red-800', icon: XCircle, label: 'Đã từ chối' },
-      cancelled: { bg: 'bg-gray-100', text: 'text-gray-800', icon: XCircle, label: 'Đã hủy' }
+      pending: {
+        bg: "bg-yellow-100",
+        text: "text-yellow-800",
+        icon: Clock,
+        label: "Chờ xử lý",
+      },
+      processing: {
+        bg: "bg-blue-100",
+        text: "text-blue-800",
+        icon: AlertCircle,
+        label: "Đang xử lý",
+      },
+      completed: {
+        bg: "bg-green-100",
+        text: "text-green-800",
+        icon: CheckCircle,
+        label: "Đã hoàn thành",
+      },
+      rejected: {
+        bg: "bg-red-100",
+        text: "text-red-800",
+        icon: XCircle,
+        label: "Đã từ chối",
+      },
+      cancelled: {
+        bg: "bg-gray-100",
+        text: "text-gray-800",
+        icon: XCircle,
+        label: "Đã hủy",
+      },
     };
 
     const badge = badges[status] || badges.pending;
     const Icon = badge.icon;
 
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badge.bg} ${badge.text}`}>
+      <span
+        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${badge.bg} ${badge.text}`}
+      >
         <Icon className="w-4 h-4 mr-1" />
         {badge.label}
       </span>
@@ -106,14 +205,14 @@ const WithdrawalManagement = () => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleString('vi-VN');
+    return new Date(date).toLocaleString("vi-VN");
   };
 
   return (
@@ -121,7 +220,28 @@ const WithdrawalManagement = () => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Quản Lý Rút Tiền</h1>
-        <p className="text-gray-600 mt-2">Quản lý các yêu cầu rút tiền từ người dùng</p>
+        <p className="text-gray-600 mt-2">
+          Quản lý các yêu cầu rút tiền từ người dùng
+        </p>
+      </div>
+
+      {/* System Wallet Balance */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 mb-6 text-white">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-white bg-opacity-20 rounded-lg">
+            <Wallet className="w-8 h-8" />
+          </div>
+          <div>
+            <p className="text-sm text-blue-100 mb-1">Số dư Ví Hệ Thống</p>
+            {loadingWallet ? (
+              <div className="animate-pulse h-8 w-48 bg-blue-500 rounded"></div>
+            ) : (
+              <h2 className="text-3xl font-bold">
+                {formatCurrency(systemWallet?.balance?.available || 0)}
+              </h2>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -129,7 +249,9 @@ const WithdrawalManagement = () => {
         <div className="flex flex-wrap gap-4">
           <select
             value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
+            onChange={(e) =>
+              setFilters({ ...filters, status: e.target.value, page: 1 })
+            }
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Tất cả trạng thái</option>
@@ -184,9 +306,12 @@ const WithdrawalManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {withdrawal.user?.profile?.firstName} {withdrawal.user?.profile?.lastName}
+                          {withdrawal.user?.profile?.firstName}{" "}
+                          {withdrawal.user?.profile?.lastName}
                         </div>
-                        <div className="text-sm text-gray-500">{withdrawal.user?.email}</div>
+                        <div className="text-sm text-gray-500">
+                          {withdrawal.user?.email}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -195,7 +320,9 @@ const WithdrawalManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{withdrawal.bankDetails?.bankName}</div>
+                      <div className="text-sm text-gray-900">
+                        {withdrawal.bankDetails?.bankName}
+                      </div>
                       <div className="text-sm text-gray-500">
                         {withdrawal.bankDetails?.accountNumber}
                       </div>
@@ -210,24 +337,30 @@ const WithdrawalManagement = () => {
                       {formatDate(withdrawal.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {withdrawal.status === 'pending' && (
+                      {withdrawal.status === "pending" && (
                         <button
-                          onClick={() => openActionModal(withdrawal, 'processing')}
+                          onClick={() =>
+                            openActionModal(withdrawal, "processing")
+                          }
                           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mr-2"
                         >
                           Xử lý
                         </button>
                       )}
-                      {withdrawal.status === 'processing' && (
+                      {withdrawal.status === "processing" && (
                         <>
                           <button
-                            onClick={() => openActionModal(withdrawal, 'completed')}
+                            onClick={() =>
+                              openActionModal(withdrawal, "completed")
+                            }
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg mr-2"
                           >
                             Duyệt
                           </button>
                           <button
-                            onClick={() => openActionModal(withdrawal, 'rejected')}
+                            onClick={() =>
+                              openActionModal(withdrawal, "rejected")
+                            }
                             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
                           >
                             Từ chối
@@ -245,11 +378,14 @@ const WithdrawalManagement = () => {
           {pagination.totalPages > 1 && (
             <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                Hiển thị {withdrawals.length} trên {pagination.totalItems} yêu cầu
+                Hiển thị {withdrawals.length} trên {pagination.totalItems} yêu
+                cầu
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
+                  onClick={() =>
+                    setFilters({ ...filters, page: filters.page - 1 })
+                  }
                   disabled={filters.page === 1}
                   className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
@@ -259,7 +395,9 @@ const WithdrawalManagement = () => {
                   Trang {pagination.currentPage} / {pagination.totalPages}
                 </span>
                 <button
-                  onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
+                  onClick={() =>
+                    setFilters({ ...filters, page: filters.page + 1 })
+                  }
                   disabled={filters.page === pagination.totalPages}
                   className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
@@ -280,37 +418,57 @@ const WithdrawalManagement = () => {
             className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
           >
             <h3 className="text-xl font-bold mb-4">
-              {actionData.status === 'processing' && 'Bắt đầu xử lý'}
-              {actionData.status === 'completed' && 'Duyệt rút tiền'}
-              {actionData.status === 'rejected' && 'Từ chối rút tiền'}
+              {actionData.status === "processing" && "Bắt đầu xử lý"}
+              {actionData.status === "completed" && "Duyệt rút tiền"}
+              {actionData.status === "rejected" && "Từ chối rút tiền"}
             </h3>
 
             <div className="mb-4">
-              <p className="text-sm text-gray-600">Số tiền: <span className="font-semibold">{formatCurrency(selectedWithdrawal.amount)}</span></p>
-              <p className="text-sm text-gray-600">Người dùng: <span className="font-semibold">{selectedWithdrawal.user?.email}</span></p>
+              <p className="text-sm text-gray-600">
+                Số tiền:{" "}
+                <span className="font-semibold">
+                  {formatCurrency(selectedWithdrawal.amount)}
+                </span>
+              </p>
+              <p className="text-sm text-gray-600">
+                Người dùng:{" "}
+                <span className="font-semibold">
+                  {selectedWithdrawal.user?.email}
+                </span>
+              </p>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ghi chú quản trị viên {actionData.status !== 'processing' && <span className="text-red-500">*</span>}
+                Ghi chú quản trị viên{" "}
+                {actionData.status !== "processing" && (
+                  <span className="text-red-500">*</span>
+                )}
               </label>
               <textarea
                 value={actionData.adminNote}
-                onChange={(e) => setActionData({ ...actionData, adminNote: e.target.value })}
+                onChange={(e) =>
+                  setActionData({ ...actionData, adminNote: e.target.value })
+                }
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Nhập ghi chú..."
               />
             </div>
 
-            {actionData.status === 'rejected' && (
+            {actionData.status === "rejected" && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Lý do từ chối <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={actionData.rejectionReason}
-                  onChange={(e) => setActionData({ ...actionData, rejectionReason: e.target.value })}
+                  onChange={(e) =>
+                    setActionData({
+                      ...actionData,
+                      rejectionReason: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nhập lý do từ chối..."
@@ -323,7 +481,11 @@ const WithdrawalManagement = () => {
                 onClick={() => {
                   setShowModal(false);
                   setSelectedWithdrawal(null);
-                  setActionData({ status: '', adminNote: '', rejectionReason: '' });
+                  setActionData({
+                    status: "",
+                    adminNote: "",
+                    rejectionReason: "",
+                  });
                 }}
                 disabled={processing}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
@@ -331,17 +493,19 @@ const WithdrawalManagement = () => {
                 Hủy
               </button>
               <button
-                onClick={() => handleStatusChange(selectedWithdrawal._id, actionData.status)}
+                onClick={() =>
+                  handleStatusChange(selectedWithdrawal._id, actionData.status)
+                }
                 disabled={processing}
                 className={`flex-1 px-4 py-2 rounded-lg text-white disabled:opacity-50 ${
-                  actionData.status === 'completed'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : actionData.status === 'rejected'
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                  actionData.status === "completed"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : actionData.status === "rejected"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-blue-600 hover:bg-blue-700"
                 }`}
               >
-                {processing ? 'Đang xử lý...' : 'Xác nhận'}
+                {processing ? "Đang xử lý..." : "Xác nhận"}
               </button>
             </div>
           </motion.div>

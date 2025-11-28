@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 const notificationService = {
   // Get user notifications
@@ -7,13 +7,13 @@ const notificationService = {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        ...filters
+        ...filters,
       });
 
       const response = await api.get(`/notifications?${params}`);
       return response.data.metadata;
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error("Error fetching notifications:", error);
       throw error;
     }
   },
@@ -21,10 +21,10 @@ const notificationService = {
   // Get unread count
   getUnreadCount: async () => {
     try {
-      const response = await api.get('/notifications/unread-count');
+      const response = await api.get("/notifications/unread-count");
       return response.data.metadata.unreadCount;
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      console.error("Error fetching unread count:", error);
       throw error;
     }
   },
@@ -35,7 +35,7 @@ const notificationService = {
       const response = await api.patch(`/notifications/${notificationId}/read`);
       return response.data.metadata.notification;
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
       throw error;
     }
   },
@@ -43,10 +43,10 @@ const notificationService = {
   // Mark all as read
   markAllAsRead: async () => {
     try {
-      const response = await api.patch('/notifications/mark-all-read');
+      const response = await api.patch("/notifications/mark-all-read");
       return response.data.metadata;
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      console.error("Error marking all as read:", error);
       throw error;
     }
   },
@@ -57,10 +57,10 @@ const notificationService = {
       const response = await api.delete(`/notifications/${notificationId}`);
       return response.data;
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      console.error("Error deleting notification:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default notificationService;

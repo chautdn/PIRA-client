@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Bell, Trash2, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useNotification } from '../hooks/useNotification';
-import { formatDistanceToNow } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Bell, Trash2, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { useNotification } from "../hooks/useNotification";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
 
 const AllNotifications = () => {
   const {
@@ -14,23 +14,24 @@ const AllNotifications = () => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    fetchNotifications
+    fetchNotifications,
   } = useNotification();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
 
   useEffect(() => {
     const filters = {};
-    if (selectedType !== 'all') filters.type = selectedType;
-    if (selectedStatus !== 'all') filters.status = selectedStatus;
-    
-    fetchNotifications(currentPage, filters);
+    if (selectedType !== "all") filters.type = selectedType;
+    if (selectedStatus !== "all") filters.status = selectedStatus;
+
+    // Use limit of 20 for full page, dropdown shows only 5
+    fetchNotifications(currentPage, filters, 20);
   }, [currentPage, selectedType, selectedStatus]);
 
   const handleNotificationClick = async (notification) => {
-    if (notification.status !== 'READ') {
+    if (notification.status !== "READ") {
       await markAsRead(notification._id);
     }
   };
@@ -43,61 +44,61 @@ const AllNotifications = () => {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       setCurrentPage(newPage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const getCategoryColor = (category) => {
     switch (category) {
-      case 'SUCCESS':
-        return 'bg-green-100 text-green-800';
-      case 'ERROR':
-        return 'bg-red-100 text-red-800';
-      case 'WARNING':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'INFO':
+      case "SUCCESS":
+        return "bg-green-100 text-green-800";
+      case "ERROR":
+        return "bg-red-100 text-red-800";
+      case "WARNING":
+        return "bg-yellow-100 text-yellow-800";
+      case "INFO":
       default:
-        return 'bg-blue-100 text-blue-800';
+        return "bg-blue-100 text-blue-800";
     }
   };
 
   const getCategoryIcon = (category) => {
     switch (category) {
-      case 'SUCCESS':
-        return '✓';
-      case 'ERROR':
-        return '✗';
-      case 'WARNING':
-        return '⚠';
-      case 'INFO':
+      case "SUCCESS":
+        return "✓";
+      case "ERROR":
+        return "✗";
+      case "WARNING":
+        return "⚠";
+      case "INFO":
       default:
-        return 'ℹ';
+        return "ℹ";
     }
   };
 
   const getTypeTranslation = (type) => {
     const translations = {
-      ORDER: 'Đơn hàng',
-      PAYMENT: 'Thanh toán',
-      SHIPMENT: 'Vận chuyển',
-      REVIEW: 'Đánh giá',
-      DISPUTE: 'Tranh chấp',
-      PROMOTION: 'Khuyến mãi',
-      SYSTEM: 'Hệ thống',
-      REMINDER: 'Nhắc nhở',
-      WITHDRAWAL: 'Rút tiền',
-      VOUCHER: 'Phiếu giảm giá'
+      ORDER: "Đơn hàng",
+      PAYMENT: "Thanh toán",
+      SHIPMENT: "Vận chuyển",
+      REVIEW: "Đánh giá",
+      DISPUTE: "Tranh chấp",
+      PROMOTION: "Khuyến mãi",
+      SYSTEM: "Hệ thống",
+      REMINDER: "Nhắc nhở",
+      WITHDRAWAL: "Rút tiền",
+      VOUCHER: "Phiếu giảm giá",
     };
     return translations[type] || type;
   };
 
   const getStatusTranslation = (status) => {
     const translations = {
-      PENDING: 'Chờ xử lý',
-      SENT: 'Đã gửi',
-      DELIVERED: 'Đã nhận',
-      READ: 'Đã đọc',
-      FAILED: 'Thất bại'
+      PENDING: "Chờ xử lý",
+      SENT: "Đã gửi",
+      DELIVERED: "Đã nhận",
+      READ: "Đã đọc",
+      FAILED: "Thất bại",
     };
     return translations[status] || status;
   };
@@ -111,11 +112,13 @@ const AllNotifications = () => {
             <div className="flex items-center gap-3">
               <Bell className="w-8 h-8 text-blue-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Tất cả thông báo</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Tất cả thông báo
+                </h1>
                 <p className="text-sm text-gray-500 mt-1">
                   {unreadCount > 0
                     ? `Bạn có ${unreadCount} thông báo chưa đọc`
-                    : 'Bạn đã đọc hết thông báo'}
+                    : "Bạn đã đọc hết thông báo"}
                 </p>
               </div>
             </div>
@@ -181,9 +184,9 @@ const AllNotifications = () => {
               <Bell className="w-16 h-16 mb-4 opacity-50" />
               <p className="text-lg font-medium">Không có thông báo</p>
               <p className="text-sm text-gray-400 mt-1">
-                {selectedType !== 'all' || selectedStatus !== 'all'
-                  ? 'Không tìm thấy thông báo phù hợp với bộ lọc'
-                  : 'Bạn chưa có thông báo nào'}
+                {selectedType !== "all" || selectedStatus !== "all"
+                  ? "Không tìm thấy thông báo phù hợp với bộ lọc"
+                  : "Bạn chưa có thông báo nào"}
               </p>
             </div>
           ) : (
@@ -195,8 +198,12 @@ const AllNotifications = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   className={`p-6 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    notification.status !== 'READ' ? 'bg-blue-50' : ''
-                  } ${index === notifications.length - 1 ? 'border-b-0 rounded-b-lg' : ''}`}
+                    notification.status !== "READ" ? "bg-blue-50" : ""
+                  } ${
+                    index === notifications.length - 1
+                      ? "border-b-0 rounded-b-lg"
+                      : ""
+                  }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -208,10 +215,12 @@ const AllNotifications = () => {
                             notification.category
                           )}`}
                         >
-                          <span className="mr-1">{getCategoryIcon(notification.category)}</span>
+                          <span className="mr-1">
+                            {getCategoryIcon(notification.category)}
+                          </span>
                           {getTypeTranslation(notification.type)}
                         </span>
-                        {notification.status !== 'READ' && (
+                        {notification.status !== "READ" && (
                           <span className="w-2.5 h-2.5 bg-blue-600 rounded-full"></span>
                         )}
                         <span className="text-xs text-gray-400">
@@ -223,13 +232,15 @@ const AllNotifications = () => {
                       <h3 className="text-base font-semibold text-gray-900 mb-2">
                         {notification.title}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-3">{notification.message}</p>
+                      <p className="text-sm text-gray-600 mb-3">
+                        {notification.message}
+                      </p>
 
                       {/* Timestamp */}
                       <p className="text-xs text-gray-400">
                         {formatDistanceToNow(new Date(notification.createdAt), {
                           addSuffix: true,
-                          locale: vi
+                          locale: vi,
                         })}
                       </p>
                     </div>
@@ -253,8 +264,10 @@ const AllNotifications = () => {
         {pagination.totalPages > 1 && (
           <div className="mt-6 flex items-center justify-between bg-white rounded-lg shadow-sm p-4">
             <div className="text-sm text-gray-700">
-              Hiển thị trang <span className="font-medium">{pagination.currentPage}</span> trong{' '}
-              <span className="font-medium">{pagination.totalPages}</span> trang
+              Hiển thị trang{" "}
+              <span className="font-medium">{pagination.currentPage}</span>{" "}
+              trong <span className="font-medium">{pagination.totalPages}</span>{" "}
+              trang
               <span className="text-gray-500 ml-2">
                 (Tổng {pagination.totalItems} thông báo)
               </span>
@@ -270,32 +283,35 @@ const AllNotifications = () => {
               </button>
 
               <div className="flex gap-1">
-                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                  let pageNumber;
-                  if (pagination.totalPages <= 5) {
-                    pageNumber = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNumber = i + 1;
-                  } else if (currentPage >= pagination.totalPages - 2) {
-                    pageNumber = pagination.totalPages - 4 + i;
-                  } else {
-                    pageNumber = currentPage - 2 + i;
-                  }
+                {Array.from(
+                  { length: Math.min(5, pagination.totalPages) },
+                  (_, i) => {
+                    let pageNumber;
+                    if (pagination.totalPages <= 5) {
+                      pageNumber = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNumber = i + 1;
+                    } else if (currentPage >= pagination.totalPages - 2) {
+                      pageNumber = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNumber = currentPage - 2 + i;
+                    }
 
-                  return (
-                    <button
-                      key={pageNumber}
-                      onClick={() => handlePageChange(pageNumber)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        currentPage === pageNumber
-                          ? 'bg-blue-600 text-white'
-                          : 'border border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {pageNumber}
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => handlePageChange(pageNumber)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === pageNumber
+                            ? "bg-blue-600 text-white"
+                            : "border border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  }
+                )}
               </div>
 
               <button
