@@ -515,21 +515,21 @@ const AdminDashboard = () => {
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             <div>
               <p className="font-medium">Database</p>
-              <p className="text-sm text-gray-500">Hoạt động bình thường</p>
+              <p className="text-sm text-gray-500">Nếu nhìn thấy chữ là hoạt động bình thường</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             <div>
               <p className="font-medium">API Server</p>
-              <p className="text-sm text-gray-500">Hoạt động bình thường</p>
+              <p className="text-sm text-gray-500">Nếu nhìn thấy chữ là hoạt động bình thường</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
             <div>
               <p className="font-medium">Storage</p>
-              <p className="text-sm text-gray-500">Sử dụng 78% dung lượng</p>
+              <p className="text-sm text-gray-500">Sử dụng 99% dung lượng</p>
             </div>
           </div>
         </div>

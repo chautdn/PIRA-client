@@ -784,6 +784,46 @@ class AdminService {
       throw error;
     }
   }
+
+  // ========== WITHDRAWAL MANAGEMENT ==========
+  async getWithdrawals(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await api.get(`/withdrawals/admin/all?${queryParams.toString()}`);
+      
+      if (response.data.success) {
+        return response.data.metadata;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error fetching withdrawals:', error);
+      throw error;
+    }
+  }
+
+  async updateWithdrawalStatus(withdrawalId, status, data = {}) {
+    try {
+      const response = await api.patch(`/withdrawals/admin/${withdrawalId}/status`, {
+        status,
+        ...data
+      });
+      
+      if (response.data.success) {
+        return response.data.metadata;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error('Error updating withdrawal status:', error);
+      throw error;
+    }
+  }
 }
 
 // Create and export admin service instance

@@ -53,6 +53,11 @@ const AdminLayout = () => {
       icon: "🏦",
     },
     {
+      name: "Quản lý Rút tiền",
+      path: "/admin/withdrawals",
+      icon: "💰",
+    },
+    {
       name: "Cài đặt",
       path: "/admin/settings",
       icon: "⚙️",

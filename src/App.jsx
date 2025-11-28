@@ -60,6 +60,7 @@ import ReportManagement from "./pages/admin/ReportManagement";
 import AdminReportDetail from "./pages/admin/AdminReportDetail";
 import BankManagement from "./pages/admin/BankManagement";
 import AdminBankDetail from "./pages/admin/AdminBankDetail";
+import WithdrawalManagement from "./pages/admin/WithdrawalManagement";
 import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
@@ -389,6 +390,7 @@ export default function App() {
                       path="bank-accounts/:userId"
                       element={<AdminBankDetail />}
                     />
+                    <Route path="withdrawals" element={<WithdrawalManagement />} />
                     <Route
                       path="settings"
                       element={<div>System Settings - Coming Soon</div>}
