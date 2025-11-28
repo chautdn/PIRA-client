@@ -22,6 +22,18 @@ const Profile = () => {
   // KYC Modal states
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycStatus, setKycStatus] = useState(null);
+  
+  // Change password states
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
+  
+  // Error states
+  const [errors, setErrors] = useState({});
+  const [passwordErrors, setPasswordErrors] = useState({});
 
   const [formData, setFormData] = useState({
     profile: {
@@ -171,6 +183,14 @@ const Profile = () => {
         [field]: value,
       },
     }));
+    
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
   };
 
   const handleDirectChange = (field, value) => {
@@ -178,14 +198,28 @@ const Profile = () => {
       ...prev,
       [field]: value,
     }));
+    
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
   };
 
   const handleSave = async () => {
+    if (!validateProfile()) {
+      toast.error('Vui lòng kiểm tra lại thông tin');
+      return;
+    }
+    
     try {
       setSaving(true);
       const response = await userService.updateProfile(formData);
       setUser(response.data);
       setEditing(false);
+      setErrors({});
       toast.success("Cập nhật thành công!");
 
       // Check if came from product creation page
@@ -206,7 +240,103 @@ const Profile = () => {
 
   const handleCancel = () => {
     setEditing(false);
+    setErrors({});
     fetchProfile();
+  };
+
+  // Validation functions
+  const validateProfile = () => {
+    const newErrors = {};
+    
+    // Validate firstName
+    if (!formData.profile.firstName.trim()) {
+      newErrors.firstName = 'Họ không được để trống';
+    } else if (formData.profile.firstName.trim().length < 2) {
+      newErrors.firstName = 'Họ phải có ít nhất 2 ký tự';
+    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(formData.profile.firstName)) {
+      newErrors.firstName = 'Họ chỉ được chứa chữ cái';
+    }
+    
+    // Validate lastName
+    if (!formData.profile.lastName.trim()) {
+      newErrors.lastName = 'Tên không được để trống';
+    } else if (formData.profile.lastName.trim().length < 1) {
+      newErrors.lastName = 'Tên phải có ít nhất 1 ký tự';
+    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(formData.profile.lastName)) {
+      newErrors.lastName = 'Tên chỉ được chứa chữ cái';
+    }
+    
+    // Validate phone
+    if (formData.phone && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(formData.phone)) {
+      newErrors.phone = 'Số điện thoại không hợp lệ (VD: 0912345678)';
+    }
+    
+    // Validate date of birth
+    if (formData.profile.dateOfBirth) {
+      const birthDate = new Date(formData.profile.dateOfBirth);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      
+      if (age < 13) {
+        newErrors.dateOfBirth = 'Bạn phải ít nhất 13 tuổi';
+      } else if (age > 120) {
+        newErrors.dateOfBirth = 'Ngày sinh không hợp lệ';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
+  const validatePassword = () => {
+    const newErrors = {};
+    
+    if (!passwordData.currentPassword) {
+      newErrors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại';
+    }
+    
+    if (!passwordData.newPassword) {
+      newErrors.newPassword = 'Vui lòng nhập mật khẩu mới';
+    } else if (passwordData.newPassword.length < 6) {
+      newErrors.newPassword = 'Mật khẩu mới phải có ít nhất 6 ký tự';
+    }
+    
+    if (!passwordData.confirmPassword) {
+      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu mới';
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+    }
+    
+    setPasswordErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle change password
+  const handleChangePassword = async () => {
+    if (!validatePassword()) {
+      toast.error('Vui lòng kiểm tra lại thông tin');
+      return;
+    }
+    
+    try {
+      setChangingPassword(true);
+      await userService.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      
+      toast.success('Đổi mật khẩu thành công!');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setPasswordErrors({});
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleAvatarUpload = async (event) => {
@@ -336,7 +466,7 @@ const Profile = () => {
             animate="animate"
           >
             {/* User Info Header with Gradient */}
-            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6">
+            <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-green-600 p-6">
               <div className="flex items-center">
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden ring-4 ring-white/30">
@@ -376,7 +506,7 @@ const Profile = () => {
             <div className="py-3">
               {menuItems.map((item) => (
                 <div key={item.id}>
-                  <button className="w-full flex items-center px-5 py-3 text-left hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 group">
+                  <button className="w-full flex items-center px-5 py-3 text-left hover:bg-gradient-to-r hover:from-green-50 hover:to-primary-50 transition-all duration-200 group">
                     <span className="text-2xl mr-3 group-hover:scale-110 transition-transform duration-200">{item.icon}</span>
                     <span className="text-gray-700 font-medium group-hover:text-gray-900">{item.label}</span>
                   </button>
@@ -389,7 +519,7 @@ const Profile = () => {
                           onClick={() => setActiveSection(subItem.id)}
                           className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 rounded-lg ${
                             activeSection === subItem.id
-                              ? "bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold shadow-md transform scale-105"
+                              ? "bg-gradient-to-r from-primary-500 to-green-600 text-white font-semibold shadow-md transform scale-105"
                               : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                           }`}
                         >
@@ -413,7 +543,7 @@ const Profile = () => {
           >
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               {/* Header with Gradient */}
-              <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-red-500 p-8">
+              <div className="bg-gradient-to-r from-primary-500 via-green-500 to-primary-600 p-8">
                 <div className="flex justify-between items-center">
                   <div>
                     <h1 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -430,7 +560,7 @@ const Profile = () => {
                       {activeSection === "password" && "Đổi Mật Khẩu"}
                       {activeSection === "banking" && "Tài Khoản Ngân Hàng"}
                     </h1>
-                    <p className="text-orange-100 mt-2 text-lg">
+                    <p className="text-green-100 mt-2 text-lg">
                       {activeSection === "verification"
                         ? "Xác minh danh tính để nâng cao độ tin cậy tài khoản"
                         : activeSection === "banking"
@@ -573,32 +703,87 @@ const Profile = () => {
                   <div className="flex gap-8">
                     {/* Form Fields */}
                     <div className="flex-1 max-w-lg space-y-5">
-                      {/* Name */}
+                      {/* First Name */}
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
                             <span className="text-xl">👤</span>
-                            Tên:
+                            Họ:
                           </label>
                           <div className="flex-1">
                             {editing ? (
-                              <input
-                                type="text"
-                                value={formData.profile.firstName}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "profile",
-                                    "firstName",
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
-                                placeholder="Nhập tên của bạn"
-                              />
+                              <>
+                                <input
+                                  type="text"
+                                  value={formData.profile.firstName}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "profile",
+                                      "firstName",
+                                      e.target.value
+                                    )
+                                  }
+                                  className={`w-full px-4 py-3 border-2 ${errors.firstName ? 'border-red-300' : 'border-blue-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200`}
+                                  placeholder="Nhập họ của bạn"
+                                />
+                                {errors.firstName && (
+                                  <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                                    <span>⚠️</span>
+                                    <span>{errors.firstName}</span>
+                                  </div>
+                                )}
+                              </>
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
                                   {user?.profile?.firstName || "Chưa cập nhật"}
+                                </span>
+                                <button
+                                  onClick={() => setEditing(true)}
+                                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
+                                >
+                                  ✏️ Thay Đổi
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Last Name */}
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-100 hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-center">
+                          <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
+                            <span className="text-xl">🏷️</span>
+                            Tên:
+                          </label>
+                          <div className="flex-1">
+                            {editing ? (
+                              <>
+                                <input
+                                  type="text"
+                                  value={formData.profile.lastName}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "profile",
+                                      "lastName",
+                                      e.target.value
+                                    )
+                                  }
+                                  className={`w-full px-4 py-3 border-2 ${errors.lastName ? 'border-red-300' : 'border-green-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200`}
+                                  placeholder="Nhập tên của bạn"
+                                />
+                                {errors.lastName && (
+                                  <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                                    <span>⚠️</span>
+                                    <span>{errors.lastName}</span>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-900 font-medium">
+                                  {user?.profile?.lastName || "Chưa cập nhật"}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
@@ -626,7 +811,7 @@ const Profile = () => {
                                   ? `${user.email.slice(0, 3)}*********@gmail.com`
                                   : "N/A"}
                               </span>
-                              <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200">
+                              <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 shadow-md transform hover:-translate-y-0.5 transition-all duration-200">
                                 ✏️ Thay Đổi
                               </button>
                             </div>
@@ -643,15 +828,23 @@ const Profile = () => {
                           </label>
                           <div className="flex-1">
                             {editing ? (
-                              <input
-                                type="tel"
-                                value={formData.phone}
-                                onChange={(e) =>
-                                  handleDirectChange("phone", e.target.value)
-                                }
-                                className="w-full px-4 py-3 border-2 border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200"
-                                placeholder="Nhập số điện thoại"
-                              />
+                              <>
+                                <input
+                                  type="tel"
+                                  value={formData.phone}
+                                  onChange={(e) =>
+                                    handleDirectChange("phone", e.target.value)
+                                  }
+                                  className={`w-full px-4 py-3 border-2 ${errors.phone ? 'border-red-300' : 'border-green-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200`}
+                                  placeholder="Nhập số điện thoại"
+                                />
+                                {errors.phone && (
+                                  <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                                    <span>⚠️</span>
+                                    <span>{errors.phone}</span>
+                                  </div>
+                                )}
+                              </>
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
@@ -765,18 +958,26 @@ const Profile = () => {
                           </label>
                           <div className="flex-1">
                             {editing ? (
-                              <input
-                                type="date"
-                                value={formData.profile.dateOfBirth}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "profile",
-                                    "dateOfBirth",
-                                    e.target.value
-                                  )
-                                }
-                                className="px-4 py-3 border-2 border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white shadow-sm transition-all duration-200"
-                              />
+                              <>
+                                <input
+                                  type="date"
+                                  value={formData.profile.dateOfBirth}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "profile",
+                                      "dateOfBirth",
+                                      e.target.value
+                                    )
+                                  }
+                                  className={`px-4 py-3 border-2 ${errors.dateOfBirth ? 'border-red-300' : 'border-rose-300'} rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white shadow-sm transition-all duration-200`}
+                                />
+                                {errors.dateOfBirth && (
+                                  <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                                    <span>⚠️</span>
+                                    <span>{errors.dateOfBirth}</span>
+                                  </div>
+                                )}
+                              </>
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
@@ -798,6 +999,79 @@ const Profile = () => {
                         </div>
                       </div>
 
+                      {/* Credit Score - Read Only */}
+                      <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-xl border-2 border-yellow-200 hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-center">
+                          <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
+                            <span className="text-xl">⭐</span>
+                            Điểm tín dụng:
+                          </label>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="text-gray-900 font-bold text-lg">
+                                  {user?.creditScore || 100} / 100
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {/* Credit Score Stars */}
+                                  {[...Array(5)].map((_, i) => (
+                                    <span 
+                                      key={i}
+                                      className={`text-lg ${
+                                        i < Math.floor((user?.creditScore || 100) / 20) 
+                                          ? 'text-yellow-400' 
+                                          : 'text-gray-300'
+                                      }`}
+                                    >
+                                      ⭐
+                                    </span>
+                                  ))}
+                                </div>
+                                <span 
+                                  className={`px-3 py-1 text-xs font-bold rounded-full ${
+                                    (user?.creditScore || 100) >= 80 
+                                      ? 'bg-green-100 text-green-800'
+                                      : (user?.creditScore || 100) >= 60
+                                      ? 'bg-yellow-100 text-yellow-800' 
+                                      : (user?.creditScore || 100) >= 40
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}
+                                >
+                                  {(user?.creditScore || 100) >= 80 
+                                    ? 'Xuất sắc' 
+                                    : (user?.creditScore || 100) >= 60
+                                    ? 'Tốt'
+                                    : (user?.creditScore || 100) >= 40
+                                    ? 'Khá'
+                                    : 'Cần cải thiện'}
+                                </span>
+                              </div>
+                              
+                            </div>
+                            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-500 ${
+                                  (user?.creditScore || 100) >= 80 
+                                    ? 'bg-gradient-to-r from-green-400 to-green-600'
+                                    : (user?.creditScore || 100) >= 60
+                                    ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
+                                    : (user?.creditScore || 100) >= 40
+                                    ? 'bg-gradient-to-r from-orange-400 to-orange-600'
+                                    : 'bg-gradient-to-r from-red-400 to-red-600'
+                                }`}
+                                style={{
+                                  width: `${Math.min(user?.creditScore || 100, 100)}%`
+                                }}
+                              ></div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                              💡 Điểm tín dụng được tính dựa trên lịch sử thuê và trả đồ của bạn
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Save Button */}
                       {editing && (
                         <div className="flex items-center mt-8">
@@ -806,7 +1080,7 @@ const Profile = () => {
                             <button
                               onClick={handleSave}
                               disabled={saving}
-                              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-pink-600 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
                             >
                               {saving ? "⏳ Đang lưu..." : "💾 Lưu thay đổi"}
                             </button>
@@ -843,7 +1117,7 @@ const Profile = () => {
                         </div>
                       </div>
 
-                      <label className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl cursor-pointer hover:from-blue-600 hover:to-purple-600 text-sm shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                      <label className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl cursor-pointer hover:from-blue-600 hover:to-blue-700 text-sm shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
                         <input
                           type="file"
                           accept="image/*"
@@ -968,7 +1242,7 @@ const Profile = () => {
                         <button
                           onClick={handleSave}
                           disabled={saving}
-                          className="px-6 py-2 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                          className="px-6 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50"
                         >
                           {saving ? "Đang lưu..." : "Lưu Địa Chỉ"}
                         </button>
@@ -989,15 +1263,28 @@ const Profile = () => {
                         <div className="relative">
                           <input
                             type="password"
-                            className="w-full px-4 py-3 pl-12 border-2 border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                            value={passwordData.currentPassword}
+                            onChange={(e) => {
+                              setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }));
+                              if (passwordErrors.currentPassword) {
+                                setPasswordErrors(prev => ({ ...prev, currentPassword: undefined }));
+                              }
+                            }}
+                            className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.currentPassword ? 'border-red-300' : 'border-red-200'} rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder=" Nhập mật khẩu hiện tại..."
                           />
                           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔐</span>
                         </div>
+                        {passwordErrors.currentPassword && (
+                          <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                            <span>⚠️</span>
+                            <span>{passwordErrors.currentPassword}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* New Password */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-100 hover:shadow-xl transition-all duration-300">
+                      <div className="bg-gradient-to-r from-primary-50 to-green-50 p-6 rounded-xl border-2 border-primary-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
                           <span className="text-2xl">🆕</span>
                           Mật khẩu mới
@@ -1005,11 +1292,24 @@ const Profile = () => {
                         <div className="relative">
                           <input
                             type="password"
-                            className="w-full px-4 py-3 pl-12 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                            value={passwordData.newPassword}
+                            onChange={(e) => {
+                              setPasswordData(prev => ({ ...prev, newPassword: e.target.value }));
+                              if (passwordErrors.newPassword) {
+                                setPasswordErrors(prev => ({ ...prev, newPassword: undefined }));
+                              }
+                            }}
+                            className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.newPassword ? 'border-red-300' : 'border-primary-200'} rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder=" Nhập mật khẩu mới..."
                           />
                           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔑</span>
                         </div>
+                        {passwordErrors.newPassword && (
+                          <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                            <span>⚠️</span>
+                            <span>{passwordErrors.newPassword}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Confirm Password */}
@@ -1021,15 +1321,28 @@ const Profile = () => {
                         <div className="relative">
                           <input
                             type="password"
-                            className="w-full px-4 py-3 pl-12 border-2 border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400"
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => {
+                              setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }));
+                              if (passwordErrors.confirmPassword) {
+                                setPasswordErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                              }
+                            }}
+                            className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-green-200'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder=" Nhập lại mật khẩu mới..."
                           />
                           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔓</span>
                         </div>
+                        {passwordErrors.confirmPassword && (
+                          <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                            <span>⚠️</span>
+                            <span>{passwordErrors.confirmPassword}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Security Tips */}
-                      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-5 rounded-xl border-2 border-yellow-200">
+                      <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-xl border-2 border-yellow-200">
                         <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
                           <span className="text-xl">💡</span>
                           Mẹo bảo mật
@@ -1037,7 +1350,7 @@ const Profile = () => {
                         <ul className="space-y-2 text-sm text-gray-700">
                           <li className="flex items-center gap-2">
                             <span>✅</span>
-                            <span>Sử dụng ít nhất 8 ký tự</span>
+                            <span>Sử dụng ít nhất 6 ký tự</span>
                           </li>
                           <li className="flex items-center gap-2">
                             <span>✅</span>
@@ -1052,8 +1365,12 @@ const Profile = () => {
 
                       {/* Update Button */}
                       <div className="flex justify-end pt-4">
-                        <button className="px-10 py-4 bg-gradient-to-r from-red-500 via-orange-500 to-pink-500 text-white text-lg font-bold rounded-xl hover:from-red-600 hover:via-orange-600 hover:to-pink-600 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300">
-                          🔒 Cập Nhật Mật Khẩu
+                        <button 
+                          onClick={handleChangePassword}
+                          disabled={changingPassword}
+                          className="px-10 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none"
+                        >
+                          {changingPassword ? '⏳ Đang cập nhật...' : '🔒 Cập Nhật Mật Khẩu'}
                         </button>
                       </div>
                     </div>

@@ -6,6 +6,7 @@ const userService = {
   getProfile: () => api.get("/users/profile"),
   updateProfile: (payload) => api.put("/users/profile", payload),
   updateProfileByKyc: () => api.put("/users/profile-by-kyc"), // Không cần payload
+  changePassword: (data) => api.put("/users/change-password", data),
   uploadAvatar: (file) => {
     const formData = new FormData();
     formData.append("avatar", file);
