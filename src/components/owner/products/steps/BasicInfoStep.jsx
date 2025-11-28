@@ -77,45 +77,6 @@ const BasicInfoStep = ({ formData, errors, handleInputChange }) => {
         </div>
       </div>
 
-      {/* Condition */}
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Tình Trạng <span className="text-red-500">*</span>
-        </label>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {[
-            { value: "NEW", label: "Mới 100%", icon: "✨" },
-            { value: "LIKE_NEW", label: "Như Mới", icon: "⭐" },
-            { value: "GOOD", label: "Tốt", icon: "👍" },
-            { value: "FAIR", label: "Khá", icon: "👌" },
-            { value: "POOR", label: "Cũ", icon: "🔧" },
-          ].map((condition) => (
-            <button
-              key={condition.value}
-              type="button"
-              onClick={() =>
-                handleInputChange({
-                  target: { name: "condition", value: condition.value },
-                })
-              }
-              className={`p-4 rounded-xl border-2 transition-all text-center ${
-                formData.condition === condition.value
-                  ? "border-primary-500 bg-primary-50 shadow-md"
-                  : "border-gray-200 hover:border-primary-300 hover:shadow-sm"
-              }`}
-            >
-              <div className="text-2xl mb-1">{condition.icon}</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {condition.label}
-              </div>
-            </button>
-          ))}
-        </div>
-        {errors.condition && (
-          <p className="text-sm text-red-600 mt-1">{errors.condition}</p>
-        )}
-      </div>
-
       {/* Quantity */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">

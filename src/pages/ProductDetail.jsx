@@ -519,7 +519,7 @@ export default function ProductDetail() {
     }
 
     // Real-time availability check trước khi add to cart
-    console.log('🔍 Checking real-time availability before adding to cart...');
+    // Check real-time availability before adding to cart
     try {
       const availabilityResponse = await rentalOrderService.getProductAvailabilityCalendar(
         product._id,
@@ -580,7 +580,7 @@ export default function ProductDetail() {
           return;
         }
         
-        console.log(`✅ Real-time check passed: ${currentAvailable} available, requesting ${quantity}`);
+        // Real-time check passed: ${currentAvailable} available, requesting ${quantity}
       }
     } catch (error) {
       console.error('Error checking real-time availability:', error);

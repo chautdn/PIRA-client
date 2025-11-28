@@ -14,6 +14,7 @@ const PromotionStep = ({
   walletBalance,
   walletLoading,
   handleInputChange,
+  errors = {},
 }) => {
   const handlePromotionToggle = (enabled, tier = null) => {
     handleInputChange({
@@ -490,6 +491,12 @@ const PromotionStep = ({
             của PIRA khi đăng sản phẩm cho thuê trên nền tảng.
           </label>
         </div>
+        {errors.agreedToTerms && (
+          <p className="text-red-600 text-sm mt-2 flex items-center">
+            <icons.BiInfoCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+            {errors.agreedToTerms}
+          </p>
+        )}
       </div>
     </motion.div>
   );
