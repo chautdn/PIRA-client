@@ -5,8 +5,8 @@ import { useCart } from "../../context/CartContext";
 import { ROUTES } from "../../utils/constants";
 
 const CartItem = ({ item }) => {
-  const { updateQuantity, removeFromCart } = useCart();
-  const { product, quantity, rental } = item;
+  const { updateQuantityByItemId, removeFromCartById } = useCart();
+  const { product, quantity, rental, _id: itemId } = item;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -15,17 +15,22 @@ const CartItem = ({ item }) => {
     }).format(price);
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Chưa chọn';
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  };
+
   const handleQuantityChange = (newQuantity) => {
     if (newQuantity < 1) {
       handleRemove();
     } else {
-      updateQuantity(product._id, newQuantity);
+      updateQuantityByItemId(itemId, newQuantity);
     }
   };
 
   const handleRemove = () => {
     if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
-      removeFromCart(product._id);
+      removeFromCartById(itemId);
     }
   };
 
@@ -64,11 +69,26 @@ const CartItem = ({ item }) => {
           </h3>
         </Link>
 
+        {/* Owner Info */}
+        {product.owner && (
+          <div className="text-xs text-blue-600 mb-1 flex items-center gap-1">
+            <span>👤</span>
+            <span>Chủ: {product.owner.profile?.firstName || 'N/A'}</span>
+          </div>
+        )}
+
         <div className="text-sm text-gray-600 mb-2">
           <div>{formatPrice(dailyRate)}/ngày</div>
           {rental?.duration > 0 && (
             <div className="text-xs text-gray-500">
               {rental.duration} ngày thuê
+            </div>
+          )}
+          {/* Rental Period */}
+          {rental?.startDate && rental?.endDate && (
+            <div className="text-xs text-purple-600 mt-1 flex items-center gap-1">
+              <span>📅</span>
+              <span>{formatDate(rental.startDate)} → {formatDate(rental.endDate)}</span>
             </div>
           )}
         </div>

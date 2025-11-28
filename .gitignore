@@ -1,3 +1,27 @@
+# Test files (keep folder structure, ignore contents)
+test/**/*
+!test/README.md
+!test/.gitkeep
+*.test.js
+*.test.jsx
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.jsx
+*.spec.ts
+*.spec.tsx
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Development markdown files (keep only production README.md)
+*_GUIDE.md
+*_TEST.md
+*_REPORT.md
+DEPLOYMENT*.md
+TESTING*.md
+
 # Logs
 logs
 *.log
@@ -137,3 +161,6 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Package lock file
+package-lock.json

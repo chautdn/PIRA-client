@@ -27,11 +27,20 @@ import OwnerProducts from "./pages/owner/OwnerProducts";
 import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
+import ActiveRentals from "./pages/owner/ActiveRentals";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
 import TopUpCancel from "./pages/wallet/TopUpCancel";
 import Withdrawals from "./pages/Withdrawals";
+import AllNotifications from "./pages/AllNotifications";
+
+// Payment result pages
+import PaymentSuccess from "./pages/payment/PaymentSuccess";
+import PaymentCancelled from "./pages/payment/PaymentCancelled";
+import PaymentPending from "./pages/payment/PaymentPending";
+import PaymentError from "./pages/payment/PaymentError";
+import RentalPaymentReturn from "./pages/rental/RentalPaymentReturn";
 
 // Chat components
 import ChatContainer from "./components/chat/ChatContainer";
@@ -43,16 +52,28 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
+import SystemPromotionManagement from "./pages/admin/SystemPromotionManagement";
+import PromotionBanner from "./components/common/PromotionBanner";
+import AdminProductDetail from "./pages/admin/AdminProductDetail";
+import OrderManagement from "./pages/admin/OrderManagement";
+import AdminOrderDetail from "./pages/admin/AdminOrderDetail";
+import ReportManagement from "./pages/admin/ReportManagement";
+import AdminReportDetail from "./pages/admin/AdminReportDetail";
+import BankManagement from "./pages/admin/BankManagement";
+import AdminBankDetail from "./pages/admin/AdminBankDetail";
+import WithdrawalManagement from "./pages/admin/WithdrawalManagement";
+import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
 import RentalOrdersPage from "./pages/RentalOrders";
 import RentalOrderDetailPage from "./pages/RentalOrderDetail";
 import RentalOrderForm from "./components/rental/RentalOrderForm";
-import RentalOrderFormTest from "./components/rental/RentalOrderFormTest";
 import OrderConfirmation from "./components/rental/OrderConfirmation";
 import TransactionHistory from "./pages/TransactionHistory";
 import ContractSigning from "./components/rental/ContractSigning";
+import RenterConfirmationSummary from "./pages/RenterConfirmationSummary";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
+import VoucherRedeem from "./pages/voucher/VoucherRedeem";
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -63,6 +84,18 @@ function ScrollToTop() {
   }, [pathname]);
 
   return null;
+}
+
+// Component to conditionally render Promotion Banner
+function ConditionalPromotionBanner() {
+  const location = useLocation();
+
+  // Don't show banner on admin routes
+  if (location.pathname.startsWith("/admin")) {
+    return null;
+  }
+
+  return <PromotionBanner />;
 }
 
 // Component to conditionally render Navigation
@@ -120,6 +153,7 @@ export default function App() {
           <BrowserRouter>
             <ScrollToTop />
             <div className="min-h-screen bg-gray-50 flex flex-col">
+              <ConditionalPromotionBanner />
               <ConditionalNavigation />
               <CartDrawer />
               <main className="flex-1">
@@ -186,6 +220,14 @@ export default function App() {
                       </RoleProtectedRoute>
                     }
                   />
+                  <Route
+                    path={ROUTES.OWNER_ACTIVE_RENTALS}
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <ActiveRentals />
+                      </RoleProtectedRoute>
+                    }
+                  />
 
                   {/* Chat routes */}
                   <Route path={ROUTES.CHAT} element={<Chat />}>
@@ -211,6 +253,16 @@ export default function App() {
                     />
                   </Route>
 
+                  {/* My Reports */}
+                  <Route
+                    path={ROUTES.MY_REPORTS}
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <MyReports />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
                   {/* Wallet routes */}
                   <Route
                     path="/wallet/topup-success"
@@ -221,6 +273,26 @@ export default function App() {
                     element={<TopUpCancel />}
                   />
                   <Route path="/withdrawals" element={<Withdrawals />} />
+                  <Route path="/notifications" element={<AllNotifications />} />
+
+                  {/* Transaction History */}
+                  <Route
+                    path="/transactions"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <TransactionHistory />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
+                  {/* Payment result routes */}
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route
+                    path="/payment/cancelled"
+                    element={<PaymentCancelled />}
+                  />
+                  <Route path="/payment/pending" element={<PaymentPending />} />
+                  <Route path="/payment/error" element={<PaymentError />} />
 
                   {/* Rental Order routes */}
                   <Route
@@ -240,9 +312,17 @@ export default function App() {
                     }
                   />
                   <Route
+                    path="/rental-orders/:masterOrderId/confirmation-summary"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                        <RenterConfirmationSummary />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/rental-orders/create"
                     element={
-                      <RoleProtectedRoute allowedRoles={["RENTER"]}>
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
                         <ErrorBoundary>
                           <RentalOrderForm />
                         </ErrorBoundary>
@@ -266,12 +346,12 @@ export default function App() {
                     }
                   />
 
-                  {/* Transaction History */}
+                  {/* Voucher routes */}
                   <Route
-                    path="/transactions"
+                    path="/vouchers"
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <TransactionHistory />
+                        <VoucherRedeem />
                       </RoleProtectedRoute>
                     }
                   />
@@ -290,16 +370,31 @@ export default function App() {
                     <Route path="users/:userId" element={<UserDetail />} />
                     <Route path="products" element={<ProductManagement />} />
                     <Route
-                      path="categories"
-                      element={<div>Category Management - Coming Soon</div>}
+                      path="products/:productId"
+                      element={<AdminProductDetail />}
                     />
                     <Route
-                      path="orders"
-                      element={<div>Order Management - Coming Soon</div>}
+                      path="promotions"
+                      element={<SystemPromotionManagement />}
+                    />
+                    <Route path="orders" element={<OrderManagement />} />
+                    <Route
+                      path="orders/:orderId"
+                      element={<AdminOrderDetail />}
+                    />
+                    <Route path="reports" element={<ReportManagement />} />
+                    <Route
+                      path="reports/:reportId"
+                      element={<AdminReportDetail />}
+                    />
+                    <Route path="bank-accounts" element={<BankManagement />} />
+                    <Route
+                      path="bank-accounts/:userId"
+                      element={<AdminBankDetail />}
                     />
                     <Route
-                      path="reports"
-                      element={<div>Reports & Analytics - Coming Soon</div>}
+                      path="withdrawals"
+                      element={<WithdrawalManagement />}
                     />
                     <Route
                       path="settings"

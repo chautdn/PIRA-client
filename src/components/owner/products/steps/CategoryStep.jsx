@@ -38,16 +38,6 @@ const CategoryStep = ({
               key={category._id}
               type="button"
               onClick={() => {
-                console.log("🔘 Selected category:", category);
-                console.log(
-                  "📋 Category has subCategories (camelCase):",
-                  category.subCategories
-                );
-                console.log(
-                  "📋 Category has subcategories (lowercase):",
-                  category.subcategories
-                );
-                console.log("🗺️ CategoryMap entry:", categoryMap[category._id]);
                 handleInputChange({
                   target: { name: "category", value: category._id },
                 });

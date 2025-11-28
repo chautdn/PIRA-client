@@ -9,8 +9,8 @@ class CartApiService {
    */
   async getCart() {
     const response = await api.get("/cart");
-    // Backend returns: { success, data: { user, items } }
-    return response.data.data?.items || [];
+    // Backend returns: { success, data: { user, items, expiredItems? } }
+    return response.data.data || { items: [] };
   }
 
   /**
@@ -56,6 +56,14 @@ class CartApiService {
    */
   async updateRental(productId, rental) {
     const response = await api.put(`/cart/${productId}/rental`, { rental });
+    return response.data.data?.items || [];
+  }
+
+  /**
+   * Update rental dates by itemId in backend cart
+   */
+  async updateRentalByItemId(itemId, rental) {
+    const response = await api.put(`/cart/item/${itemId}/rental`, { rental });
     return response.data.data?.items || [];
   }
 

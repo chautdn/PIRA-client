@@ -1,0 +1,11 @@
+// Placeholder file to ensure test folder is tracked in git
+// Actual test files are gitignored
+
+// Example test structure:
+// test/
+// ├── components/
+// │   └── Auth.test.jsx
+// ├── hooks/
+// │   └── useAuth.test.js
+// └── utils/
+//     └── formatters.test.js

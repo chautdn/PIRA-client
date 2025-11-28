@@ -6,6 +6,7 @@ import UserDropdown from "../common/UserDropdown";
 import WalletBalance from "../wallet/WalletBalance";
 import WishlistPopup from "../common/WishlistPopup";
 import LogoutModal from "../common/LogoutModal";
+import NotificationBell from "../common/NotificationBell";
 import useChatSocket from "../../hooks/useChatSocket";
 import useChat from "../../hooks/useChat";
 import { ROUTES } from "../../utils/constants";
@@ -49,6 +50,12 @@ const OwnerMenuDropdown = ({ user }) => {
       label: "Yêu Cầu Thuê",
       description: "Quản lý yêu cầu thuê sản phẩm",
       route: "/owner/rental-requests",
+    },
+    {
+      icon: "🔄",
+      label: "Đang Cho Thuê",
+      description: "Sản phẩm đang được khách thuê",
+      route: ROUTES.OWNER_ACTIVE_RENTALS,
     },
     {
       icon: "",
@@ -381,6 +388,9 @@ const Navigation = () => {
                     </span>
                   )}
                 </button>
+
+                {/* Notification Bell - Only show for authenticated users */}
+                {user && <NotificationBell />}
               </div>
 
               {/* Wallet Balance - show only for authenticated users */}

@@ -1,8 +1,7 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import icons from "../../../../utils/icons";
-import LocationSelector from "../LocationSelector";
+import MapSelector from "../../../common/MapSelector";
 import { useAuth } from "../../../../hooks/useAuth";
 
 const fadeInUp = {
@@ -12,14 +11,30 @@ const fadeInUp = {
 };
 
 const LocationStep = ({ formData, errors, handleInputChange, onSaveDraft }) => {
-  const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleUpdateAddress = () => {
-    // Save draft before navigating
-    if (onSaveDraft && onSaveDraft()) {
-      navigate("/profile", { state: { fromProductCreate: true } });
-    }
+  // Handle location selection from MapSelector
+  const handleLocationSelect = (locationData) => {
+    // Update the form data with the selected location
+    const locationObject = {
+      target: {
+        name: "location",
+        value: {
+          address: {
+            streetAddress: locationData.streetAddress || locationData.fullAddress || "",
+            ward: locationData.ward || "",
+            district: locationData.district || "",
+          },
+          city: locationData.city || "Đà Nẵng",
+          coordinates: {
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+          },
+        },
+      },
+    };
+    
+    handleInputChange(locationObject);
   };
 
   return (
@@ -34,51 +49,74 @@ const LocationStep = ({ formData, errors, handleInputChange, onSaveDraft }) => {
         </p>
       </div>
 
-      {/* User Address Info Box */}
-      {user?.address && (
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3 flex-1">
-              <icons.BiInfoCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-bold text-blue-900 mb-1">Địa Chỉ Hồ Sơ</h4>
-                <p className="text-sm text-blue-800">
-                  {user.address.streetAddress || "Chưa cập nhật số nhà"}
-                  {user.address.streetAddress && user.address.district
-                    ? ", "
-                    : ""}
-                  {user.address.district || ""}
-                  {user.address.city &&
-                  (user.address.streetAddress || user.address.district)
-                    ? `, ${user.address.city}`
-                    : user.address.city || ""}
-                </p>
-                {(!user.address.streetAddress ||
-                  !user.address.district ||
-                  !user.address.city) && (
-                  <p className="text-xs text-blue-700 mt-1">
-                    ⚠️ Địa chỉ chưa đầy đủ. Vui lòng cập nhật để sử dụng.
-                  </p>
-                )}
-              </div>
+      {/* Current Location Display */}
+      {(formData.location?.address?.streetAddress || formData.location?.coordinates?.latitude) && (
+        <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <icons.FiMapPin className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-bold text-green-900 mb-1">Địa Chỉ Đã Chọn</h4>
+              <p className="text-sm text-green-800">
+                {formData.location.address?.streetAddress || "Địa chỉ đã chọn từ bản đồ"}
+                {formData.location.address?.ward && `, ${formData.location.address.ward}`}
+                {formData.location.address?.district && `, ${formData.location.address.district}`}
+                {formData.location.city && `, ${formData.location.city}`}
+              </p>
+              {formData.location.coordinates?.latitude && formData.location.coordinates?.longitude && (
+                <div className="text-xs text-green-700 mt-1">
+                  ✅ Tọa độ: {formData.location.coordinates.latitude.toFixed(6)}, {formData.location.coordinates.longitude.toFixed(6)}
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={handleUpdateAddress}
-              className="ml-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-semibold whitespace-nowrap"
-            >
-              <icons.FiEdit3 className="w-4 h-4 inline mr-1" />
-              Cập Nhật
-            </button>
           </div>
         </div>
       )}
 
-      <LocationSelector
-        location={formData.location}
-        onChange={handleInputChange}
-        errors={errors}
-      />
+      {/* VietMap Selector */}
+      <div className="space-y-4">
+        <label className="block text-sm font-semibold text-gray-800">
+          <icons.BiMapPin className="inline w-4 h-4 mr-2 text-primary-600" />
+          Chọn địa chỉ trên bản đồ (để tính khoảng cách chính xác) *
+        </label>
+        <MapSelector
+          onLocationSelect={handleLocationSelect}
+          initialAddress={formData.location?.address?.streetAddress || ""}
+          placeholder="Nhấn để chọn địa chỉ trên bản đồ VietMap..."
+          className="mb-4"
+        />
+        {errors.location && (
+          <p className="text-sm text-red-600 mt-1 flex items-center">
+            <icons.BiInfoCircle className="w-4 h-4 mr-1.5 flex-shrink-0" />
+            {errors.location}
+          </p>
+        )}
+      </div>
+
+      {/* Location Tips */}
+      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mt-6">
+        <h5 className="font-bold text-blue-800 mb-3 flex items-center">
+          <icons.BiInfoCircle className="w-5 h-5 mr-2" />
+          Mẹo Chọn Địa Điểm
+        </h5>
+        <div className="space-y-2 text-sm text-blue-700">
+          <div className="flex items-start space-x-2">
+            <icons.FiMapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>Chọn địa điểm dễ tìm và thuận tiện cho việc giao nhận</span>
+          </div>
+          <div className="flex items-start space-x-2">
+            <icons.HiOutlineLocationMarker className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>
+              Ưu tiên khu vực có chỗ đậu xe hoặc gần phương tiện công cộng
+            </span>
+          </div>
+          <div className="flex items-start space-x-2">
+            <icons.BsBuildings className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span>
+              Có thể gặp tại văn phòng, trung tâm thương mại hoặc địa điểm công cộng
+            </span>
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 };

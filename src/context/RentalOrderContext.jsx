@@ -150,8 +150,13 @@ const rentalOrderReducer = (state, action) => {
       return { ...state, isLoadingOrders: false, error: action.payload };
 
     case RENTAL_ORDER_ACTIONS.LOAD_ORDER_DETAIL_START:
+      console.log('🔄 Reducer: LOAD_ORDER_DETAIL_START');
       return { ...state, isLoadingOrderDetail: true, error: null };
     case RENTAL_ORDER_ACTIONS.LOAD_ORDER_DETAIL_SUCCESS:
+      console.log('✅ Reducer: LOAD_ORDER_DETAIL_SUCCESS', {
+        payload: action.payload,
+        masterOrder: action.payload.masterOrder
+      });
       return { 
         ...state, 
         isLoadingOrderDetail: false, 
@@ -159,6 +164,7 @@ const rentalOrderReducer = (state, action) => {
         error: null 
       };
     case RENTAL_ORDER_ACTIONS.LOAD_ORDER_DETAIL_ERROR:
+      console.error('❌ Reducer: LOAD_ORDER_DETAIL_ERROR', action.payload);
       return { ...state, isLoadingOrderDetail: false, error: action.payload };
 
     case RENTAL_ORDER_ACTIONS.LOAD_CONTRACTS_START:
@@ -210,6 +216,16 @@ export const RentalOrderProvider = ({ children }) => {
     useEffect(() => {
       console.log('RentalOrderProvider: Initializing with user:', user ? 'Yes' : 'No');
     }, [user]);
+
+    // Debug effect - log state changes
+    useEffect(() => {
+      console.log('📊 RentalOrderContext State Updated:', {
+        hasCurrentOrder: !!state.currentOrder,
+        currentOrderId: state.currentOrder?._id,
+        isLoadingOrderDetail: state.isLoadingOrderDetail,
+        error: state.error
+      });
+    }, [state.currentOrder, state.isLoadingOrderDetail, state.error]);
 
   // Actions
   const createDraftOrder = async (orderData) => {
@@ -371,14 +387,29 @@ export const RentalOrderProvider = ({ children }) => {
   };
 
   const loadOrderDetail = async (masterOrderId) => {
+    console.log('🔍 RentalOrderContext: Loading order detail for:', masterOrderId);
     dispatch({ type: RENTAL_ORDER_ACTIONS.LOAD_ORDER_DETAIL_START });
     try {
       const response = await rentalOrderService.getOrderDetail(masterOrderId);
+      console.log('✅ RentalOrderContext: Order loaded successfully:', response);
+      console.log('📦 Response structure:', {
+        hasData: !!response.data,
+        hasMetadata: !!response.metadata,
+        hasMasterOrder: !!response.data?.masterOrder || !!response.metadata?.masterOrder,
+        dataKeys: response.data ? Object.keys(response.data) : [],
+        metadataKeys: response.metadata ? Object.keys(response.metadata) : []
+      });
+      
+      // Use data instead of metadata (both should work but data is more consistent)
+      const masterOrder = response.data?.masterOrder || response.metadata?.masterOrder;
+      console.log('🔔 Dispatching LOAD_ORDER_DETAIL_SUCCESS with masterOrder:', !!masterOrder);
+      
       dispatch({ 
         type: RENTAL_ORDER_ACTIONS.LOAD_ORDER_DETAIL_SUCCESS, 
-        payload: response.metadata 
+        payload: { masterOrder } 
       });
     } catch (error) {
+      console.error('❌ RentalOrderContext: Failed to load order:', error);
       dispatch({ 
         type: RENTAL_ORDER_ACTIONS.LOAD_ORDER_DETAIL_ERROR, 
         payload: error.message 

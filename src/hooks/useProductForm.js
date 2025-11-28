@@ -11,7 +11,6 @@ import { ROUTES } from "../utils/constants";
 const INITIAL_FORM_DATA = {
   title: "",
   description: "",
-  condition: "LIKE_NEW",
   quantity: 1,
   category: "",
   subCategory: "",
@@ -26,13 +25,13 @@ const INITIAL_FORM_DATA = {
   location: {
     address: {
       streetAddress: "",
+      ward: "",
+      district: "",
     },
     city: "Đà Nẵng",
-    ward: "",
-    district: "",
     coordinates: {
-      lat: 16.0544,
-      lng: 108.2022,
+      latitude: 16.0544,
+      longitude: 108.2022,
     },
     deliveryOptions: {
       pickup: true,
@@ -49,7 +48,7 @@ const INITIAL_FORM_DATA = {
   agreedToTerms: false,
 };
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 6;
 
 const DRAFT_KEY = "pira_product_draft";
 
@@ -174,6 +173,30 @@ export const useProductForm = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
+    // Special handling for location object (from MapSelector)
+    if (name === "location" && typeof value === "object") {
+      console.log("🔄 handleInputChange received location object:", value);
+      setFormData((prev) => {
+        console.log("🔄 Previous formData.location:", prev.location);
+        const newFormData = {
+          ...prev,
+          location: value,
+        };
+        console.log("🔄 New formData.location:", newFormData.location);
+        return newFormData;
+      });
+
+      // Clear location error
+      if (errors.location) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.location;
+          return newErrors;
+        });
+      }
+      return;
+    }
+
     // Handle nested object updates (e.g., "pricing.dailyRate", "pricing.deposit.amount")
     if (name.includes(".")) {
       const keys = name.split(".");
@@ -203,9 +226,7 @@ export const useProductForm = () => {
         "pricing.dailyRate": "dailyRate",
         "pricing.deposit.amount": "depositAmount",
         "pricing.deposit.type": "depositType",
-        "location.address.streetAddress": "streetAddress",
-        "location.district": "district",
-        "location.ward": "ward",
+        "location": "location",
       };
 
       const errorKey = errorKeyMap[name] || keys[keys.length - 1];
@@ -245,9 +266,6 @@ export const useProductForm = () => {
         if (!formData.description.trim()) {
           newErrors.description = "Vui lòng nhập mô tả sản phẩm";
         }
-        if (!formData.condition) {
-          newErrors.condition = "Vui lòng chọn tình trạng sản phẩm";
-        }
         if (!formData.quantity || formData.quantity < 1) {
           newErrors.quantity = "Số lượng phải lớn hơn 0";
         }
@@ -284,31 +302,18 @@ export const useProductForm = () => {
         break;
 
       case 5: // Location
-        if (!formData.location.address.streetAddress.trim()) {
-          newErrors.streetAddress = "Vui lòng nhập địa chỉ";
-        }
-        if (!formData.location.ward) {
-          newErrors.ward = "Vui lòng chọn phường/xã";
-        }
-        if (!formData.location.district) {
-          newErrors.district = "Vui lòng chọn quận/huyện";
+        // More flexible location validation - require either address OR coordinates
+        const hasAddress = formData.location?.address?.streetAddress?.trim();
+        const hasCoordinates = formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude;
+        
+        if (!hasAddress && !hasCoordinates) {
+          newErrors.location = "Vui lòng chọn địa chỉ trên bản đồ";
         }
         break;
 
-      case 6: // Delivery Options
-        if (
-          !formData.location.deliveryOptions.pickup &&
-          !formData.location.deliveryOptions.delivery
-        ) {
-          newErrors.deliveryOptions =
-            "Vui lòng chọn ít nhất một phương thức giao hàng";
-        }
-        break;
-
-      case 7: // Promotion
+      case 6: // Promotion Step
         if (!formData.agreedToTerms) {
-          newErrors.agreedToTerms =
-            "Bạn phải đồng ý với điều khoản và điều kiện để tạo sản phẩm";
+          newErrors.agreedToTerms = "Bạn phải đồng ý với điều khoản và điều kiện để tạo sản phẩm";
         }
         break;
 
@@ -382,17 +387,17 @@ export const useProductForm = () => {
     setIsSubmitting(true);
 
     try {
-      console.log("📤 Submitting product with data:", formData);
-
       // Create FormData for multipart/form-data
       const formDataToSend = new FormData();
 
       // Add text fields
       formDataToSend.append("title", formData.title.trim());
       formDataToSend.append("description", formData.description.trim());
-      formDataToSend.append("condition", formData.condition);
       formDataToSend.append("quantity", formData.quantity);
       formDataToSend.append("category", formData.category);
+      
+      // Add default condition since server still expects it
+      formDataToSend.append("condition", "GOOD");
 
       if (formData.subCategory) {
         formDataToSend.append("subCategory", formData.subCategory);
@@ -432,8 +437,6 @@ export const useProductForm = () => {
 
       const response = await ownerProductApi.createOwnerProduct(formDataToSend);
 
-      console.log("✅ Product created:", response);
-
       if (response.success) {
         const createdProduct = response.data;
         toast.success("🎉 Tạo sản phẩm thành công!");
@@ -442,9 +445,11 @@ export const useProductForm = () => {
         clearDraft();
 
         // Refresh user data to get updated role (RENTER -> OWNER)
+        // Only refresh if user is currently a RENTER to avoid unnecessary API calls
         try {
-          await refreshUser();
-          console.log("✅ User role refreshed");
+          if (user?.role === "RENTER") {
+            await refreshUser();
+          }
         } catch (error) {
           console.warn("Could not refresh user role:", error);
           // Non-critical error, continue

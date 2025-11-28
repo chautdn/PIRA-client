@@ -7,20 +7,21 @@ const PaymentMethodSelector = ({ onSelectMethod, selectedMethod, onClose }) => {
     {
       key: 'WALLET',
       title: 'Ví điện tử',
-      description: 'Thanh toán trực tiếp từ số dư ví (Tự động trừ tiền)',
+      description: 'Thanh toán toàn bộ từ số dư ví',
       icon: '💳'
     },
     {
       key: 'PAYOS',
-      title: 'PayOS QR Code',
-      description: 'Thanh toán qua mã QR PayOS (Chuyển khoản/Ví điện tử)',
-      icon: '💰'
+      title: 'Chuyển khoản ngân hàng',
+      description: 'Thanh toán toàn bộ qua PayOS (QR Code/Chuyển khoản)',
+      icon: '🏦'
     },
     {
       key: 'COD',
       title: 'Thanh toán khi nhận hàng',
-      description: 'Thanh toán bằng tiền mặt khi nhận sản phẩm',
-      icon: '💵'
+      description: 'Đặt cọc trước + Thanh toán còn lại khi nhận hàng',
+      icon: '💵',
+      badge: 'Cần cọc'
     }
   ];
 
@@ -60,6 +61,11 @@ const PaymentMethodSelector = ({ onSelectMethod, selectedMethod, onClose }) => {
                       className="text-blue-500"
                     />
                     <h3 className="font-medium">{method.title}</h3>
+                    {method.badge && (
+                      <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
+                        {method.badge}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{method.description}</p>
                 </div>
