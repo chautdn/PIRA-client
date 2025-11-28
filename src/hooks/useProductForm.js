@@ -226,7 +226,7 @@ export const useProductForm = () => {
         "pricing.dailyRate": "dailyRate",
         "pricing.deposit.amount": "depositAmount",
         "pricing.deposit.type": "depositType",
-        "location": "location",
+        location: "location",
       };
 
       const errorKey = errorKeyMap[name] || keys[keys.length - 1];
@@ -304,8 +304,10 @@ export const useProductForm = () => {
       case 5: // Location
         // More flexible location validation - require either address OR coordinates
         const hasAddress = formData.location?.address?.streetAddress?.trim();
-        const hasCoordinates = formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude;
-        
+        const hasCoordinates =
+          formData.location?.coordinates?.latitude &&
+          formData.location?.coordinates?.longitude;
+
         if (!hasAddress && !hasCoordinates) {
           newErrors.location = "Vui lòng chọn địa chỉ trên bản đồ";
         }
@@ -313,7 +315,8 @@ export const useProductForm = () => {
 
       case 6: // Promotion Step
         if (!formData.agreedToTerms) {
-          newErrors.agreedToTerms = "Bạn phải đồng ý với điều khoản và điều kiện để tạo sản phẩm";
+          newErrors.agreedToTerms =
+            "Bạn phải đồng ý với điều khoản và điều kiện để tạo sản phẩm";
         }
         break;
 
@@ -395,7 +398,7 @@ export const useProductForm = () => {
       formDataToSend.append("description", formData.description.trim());
       formDataToSend.append("quantity", formData.quantity);
       formDataToSend.append("category", formData.category);
-      
+
       // Add default condition since server still expects it
       formDataToSend.append("condition", "GOOD");
 
