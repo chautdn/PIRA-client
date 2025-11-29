@@ -188,12 +188,117 @@ const AdminDisputeDetail = () => {
               </div>
 
               {/* Product Info */}
-              {dispute.subOrder && (
+              {dispute.subOrder && dispute.subOrder.products && dispute.subOrder.products[dispute.productIndex] && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Thông tin sản phẩm</h3>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">SubOrder ID: {dispute.subOrder._id}</p>
-                    <p className="text-sm text-gray-600">Product Index: {dispute.productIndex}</p>
+                    {(() => {
+                      const productData = dispute.subOrder.products[dispute.productIndex];
+                      const product = productData?.product;
+                      
+                      // Get image URL - handle both string and object format
+                      const getImageUrl = () => {
+                        if (!product?.images?.[0]) return null;
+                        const firstImage = product.images[0];
+                        return typeof firstImage === 'string' ? firstImage : firstImage?.url;
+                      };
+                      
+                      // Get deposit amount - handle both number and object format
+                      const getDepositAmount = () => {
+                        if (productData?.totalDeposit) return productData.totalDeposit;
+                        if (product?.pricing?.deposit) {
+                          const deposit = product.pricing.deposit;
+                          return typeof deposit === 'number' ? deposit : deposit?.amount;
+                        }
+                        return null;
+                      };
+                      
+                      return (
+                        <div className="flex gap-4">
+                          {getImageUrl() ? (
+                            <img 
+                              src={getImageUrl()} 
+                              alt={product.title || product.name || 'Product'}
+                              className="w-24 h-24 object-cover rounded-lg border"
+                            />
+                          ) : (
+                            <div className="w-24 h-24 bg-gray-200 rounded-lg border flex items-center justify-center">
+                              <span className="text-gray-400 text-xs">No image</span>
+                            </div>
+                          )}
+                          <div className="flex-1 space-y-2">
+                            <p className="font-semibold text-gray-900">{product?.title || product?.name || 'Không có tên sản phẩm'}</p>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                              <div>
+                                <span className="text-gray-600">Số lượng:</span>
+                                <span className="ml-2 font-medium">{productData?.quantity || 0}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Giá thuê/ngày:</span>
+                                <span className="ml-2 font-medium">
+                                  {product?.pricing?.dailyRate 
+                                    ? `${product.pricing.dailyRate.toLocaleString('vi-VN')}đ` 
+                                    : 'Chưa có'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Tiền cọc:</span>
+                                <span className="ml-2 font-medium">
+                                  {getDepositAmount()
+                                    ? `${getDepositAmount().toLocaleString('vi-VN')}đ` 
+                                    : 'Chưa có'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Chủ hàng:</span>
+                                <span className="ml-2 font-medium">{dispute.subOrder.owner?.profile?.fullName || 'Không rõ'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Rental Order Info */}
+              {dispute.subOrder && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Thông tin đơn thuê</h3>
+                  <div className="bg-blue-50 rounded-lg p-4 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Mã SubOrder</p>
+                      <p className="font-medium text-gray-900 font-mono text-xs break-all">
+                        {dispute.subOrder.subOrderId || dispute.subOrder._id || 'Không có'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Người thuê</p>
+                      <p className="font-medium text-gray-900">
+                        {dispute.subOrder.masterOrder?.renter?.profile?.fullName || 'Không rõ'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Ngày bắt đầu thuê</p>
+                      <p className="font-medium text-gray-900">
+                        {(() => {
+                          const productData = dispute.subOrder.products?.[dispute.productIndex];
+                          const startDate = productData?.rentalPeriod?.startDate || dispute.subOrder.rentalPeriod?.startDate;
+                          return startDate ? formatDate(startDate) : 'Chưa có';
+                        })()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Ngày kết thúc thuê</p>
+                      <p className="font-medium text-gray-900">
+                        {(() => {
+                          const productData = dispute.subOrder.products?.[dispute.productIndex];
+                          const endDate = productData?.rentalPeriod?.endDate || dispute.subOrder.rentalPeriod?.endDate;
+                          return endDate ? formatDate(endDate) : 'Chưa có';
+                        })()}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

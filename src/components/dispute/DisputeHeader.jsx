@@ -39,20 +39,35 @@ const DisputeHeader = ({ dispute }) => {
         <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
           <h3 className="text-sm font-semibold text-gray-700 mb-2">📦 Sản phẩm liên quan</h3>
           <div className="flex gap-4">
-            {productData.images && productData.images.length > 0 && (
-              <img
-                src={productData.images[0]}
-                alt={productData.name}
-                className="w-24 h-24 object-cover rounded-lg border border-gray-300"
-              />
-            )}
+            {(() => {
+              // Get image URL - handle both string and object format
+              const getImageUrl = () => {
+                if (!productData.images?.[0]) return null;
+                const firstImage = productData.images[0];
+                return typeof firstImage === 'string' ? firstImage : firstImage?.url;
+              };
+
+              const imageUrl = getImageUrl();
+              
+              return imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={productData.title || productData.name}
+                  className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
+                  <span className="text-gray-400 text-xs">No image</span>
+                </div>
+              );
+            })()}
             <div className="flex-1">
               <p className="text-sm font-semibold text-gray-900 mb-1">
-                {productData.name}
+                {productData.title || productData.name}
               </p>
               <div className="flex gap-4 text-xs text-gray-600">
-                <span>Giá thuê: {product.rentalRate?.toLocaleString('vi-VN')}đ</span>
-                <span>Đặt cọc: {product.depositRate?.toLocaleString('vi-VN')}đ</span>
+                <span>Giá thuê: {(product.rentalRate || productData.pricing?.dailyRate)?.toLocaleString('vi-VN')}đ</span>
+                <span>Đặt cọc: {(product.depositRate || product.totalDeposit || productData.pricing?.deposit?.amount)?.toLocaleString('vi-VN')}đ</span>
                 {product.quantity && <span>Số lượng: {product.quantity}</span>}
               </div>
             </div>
