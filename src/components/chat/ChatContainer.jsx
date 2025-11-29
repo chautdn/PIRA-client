@@ -17,6 +17,7 @@ const ChatContainer = () => {
     fetchMessages,
     markAsRead,
     updateMessagesCache,
+    removeMessageFromCache,
     selectedConversation,
     setSelectedConversation,
   } = useChat(conversationId);
@@ -63,7 +64,10 @@ const ChatContainer = () => {
     });
 
     const unsubscribeDeleted = onMessageDeleted((data) => {
-      // Handle message deletion
+      // Handle message deletion in real-time
+      if (data.messageId && data.conversationId === conversationId) {
+        removeMessageFromCache(data.messageId, data.conversationId);
+      }
     });
 
     const unsubscribeRead = onMarkedAsRead((data) => {
@@ -82,6 +86,7 @@ const ChatContainer = () => {
     onMessageDeleted,
     onMarkedAsRead,
     updateMessagesCache,
+    removeMessageFromCache,
   ]);
 
   // CRITICAL: Mark as read with throttling
