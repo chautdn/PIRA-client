@@ -1,12 +1,37 @@
 import { useState } from 'react';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 const RespondDisputeModal = ({ isOpen, onClose, onSubmit }) => {
   const [decision, setDecision] = useState(''); // 'ACCEPTED' or 'REJECTED'
   const [reason, setReason] = useState('');
   const [images, setImages] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   if (!isOpen) return null;
+
+  const uploadImages = async (files) => {
+    if (!files || files.length === 0) return [];
+    
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    try {
+      const response = await api.post('/upload/images', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data.urls || [];
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new Error('Failed to upload images');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,26 +44,46 @@ const RespondDisputeModal = ({ isOpen, onClose, onSubmit }) => {
     setIsSubmitting(true);
     
     try {
+      // Upload images first
+      let imageUrls = [];
+      if (selectedFiles.length > 0) {
+        setIsUploading(true);
+        toast.loading('Đang upload ảnh...', { id: 'upload' });
+        imageUrls = await uploadImages(selectedFiles);
+        toast.success('Upload ảnh thành công!', { id: 'upload' });
+        setIsUploading(false);
+      }
+
       await onSubmit({
         decision,
         reason,
         evidence: {
-          description: reason,
-          images
+          photos: imageUrls,
+          notes: reason
         }
       });
       onClose();
+      // Reset
+      setDecision('');
+      setReason('');
+      setImages([]);
+      setSelectedFiles([]);
     } catch (error) {
       console.error('Error submitting response:', error);
+      toast.error(error.message || 'Phản hồi thất bại');
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    // In real app, upload images and get URLs
-    // For now, just store file names
+    if (files.length > 10) {
+      toast.error('Tối đa 10 ảnh');
+      return;
+    }
+    setSelectedFiles(files);
     setImages(files.map(f => URL.createObjectURL(f)));
   };
 

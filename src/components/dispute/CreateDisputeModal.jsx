@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { getDisputeTypesForShipment } from '../../utils/disputeHelpers';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
   const [formData, setFormData] = useState({
@@ -7,37 +9,82 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
     type: '',
     title: '',
     description: '',
-    priority: 'MEDIUM',
     images: []
   });
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   if (!isOpen) return null;
+
+  const uploadImages = async (files) => {
+    if (!files || files.length === 0) return [];
+    
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    try {
+      const response = await api.post('/upload/images', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data.urls || [];
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new Error('Failed to upload images');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
+      let imageUrls = [];
+      if (selectedFiles.length > 0) {
+        setIsUploading(true);
+        toast.loading('Đang upload ảnh...', { id: 'upload' });
+        imageUrls = await uploadImages(selectedFiles);
+        toast.success('Upload ảnh thành công!', { id: 'upload' });
+        setIsUploading(false);
+      }
+
       await onSubmit({
         rentalOrderId: rentalOrder._id,
         ...formData,
         evidence: {
-          description: formData.description,
-          images: formData.images
+          photos: imageUrls,
+          additionalInfo: formData.description
         }
       });
       onClose();
+      setFormData({
+        shipmentType: 'DELIVERY',
+        type: '',
+        title: '',
+        description: '',
+        images: []
+      });
+      setSelectedFiles([]);
     } catch (error) {
       console.error('Error creating dispute:', error);
+      toast.error(error.message || 'Tạo tranh chấp thất bại');
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    // In real app, upload images and get URLs
+    if (files.length > 10) {
+      toast.error('Tối đa 10 ảnh');
+      return;
+    }
+    setSelectedFiles(files);
     setFormData(prev => ({
       ...prev,
       images: files.map(f => URL.createObjectURL(f))
@@ -57,7 +104,6 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Shipment Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Loại vận chuyển <span className="text-red-500">*</span>
@@ -67,7 +113,7 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
                 onChange={(e) => setFormData(prev => ({ 
                   ...prev, 
                   shipmentType: e.target.value,
-                  type: '' // Reset type when shipment changes
+                  type: ''
                 }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 required
@@ -77,7 +123,6 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
               </select>
             </div>
 
-            {/* Dispute Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Loại tranh chấp <span className="text-red-500">*</span>
@@ -98,7 +143,6 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
               </select>
             </div>
 
-            {/* Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tiêu đề <span className="text-red-500">*</span>
@@ -114,24 +158,6 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
               />
             </div>
 
-            {/* Priority */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mức độ ưu tiên
-              </label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="LOW">Thấp</option>
-                <option value="MEDIUM">Trung bình</option>
-                <option value="HIGH">Cao</option>
-                <option value="URGENT">Khẩn cấp</option>
-              </select>
-            </div>
-
-            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Mô tả chi tiết <span className="text-red-500">*</span>
@@ -146,7 +172,6 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
               />
             </div>
 
-            {/* Images */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Hình ảnh bằng chứng
@@ -172,7 +197,6 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
               )}
             </div>
 
-            {/* Actions */}
             <div className="flex justify-end gap-3 mt-6">
               <button
                 type="button"

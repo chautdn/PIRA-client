@@ -1,36 +1,78 @@
 import { useState } from 'react';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 const ThirdPartyEvidenceModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     description: '',
     images: []
   });
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   if (!isOpen) return null;
+
+  const uploadImages = async (files) => {
+    if (!files || files.length === 0) return [];
+    
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    try {
+      const response = await api.post('/upload/images', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data.urls || [];
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw new Error('Failed to upload images');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
+      // Upload images first
+      let imageUrls = [];
+      if (selectedFiles.length > 0) {
+        setIsUploading(true);
+        toast.loading('Đang upload ảnh...', { id: 'upload' });
+        imageUrls = await uploadImages(selectedFiles);
+        toast.success('Upload ảnh thành công!', { id: 'upload' });
+        setIsUploading(false);
+      }
+
       await onSubmit({
-        description: formData.description,
-        images: formData.images
+        officialDecision: formData.description,
+        photos: imageUrls
       });
       onClose();
       // Reset form
       setFormData({ description: '', images: [] });
+      setSelectedFiles([]);
     } catch (error) {
       console.error('Error uploading evidence:', error);
+      toast.error(error.message || 'Upload thất bại');
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    // In real app, upload images and get URLs
+    if (files.length > 10) {
+      toast.error('Tối đa 10 ảnh');
+      return;
+    }
+    setSelectedFiles(files);
     setFormData(prev => ({
       ...prev,
       images: files.map(f => URL.createObjectURL(f))
