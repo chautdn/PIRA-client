@@ -427,9 +427,12 @@ export default function OwnerProducts() {
                   onUnhide={handleUnhide}
                   onDelete={handleDelete}
                 />
-                
-                {/* Status Badge */}
-                <div className="absolute top-2 right-2 z-10">
+
+                {/* Status Badge - Positioned to avoid conflict with promotion badge */}
+                <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 items-end">
+                  {/* Promotion badge space - if product is promoted, status badge moves down */}
+                  {product.isPromoted && <div className="h-8"></div>}
+
                   {product.status === "ACTIVE" && (
                     <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
                       <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
@@ -475,7 +478,7 @@ export default function OwnerProducts() {
                 </div>
 
                 <ProductCard product={product} isOwnerView={true} />
-                
+
                 {/* Overlay for hidden products */}
                 {product.status === "OWNER_HIDDEN" && (
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-xl flex items-center justify-center pointer-events-none">

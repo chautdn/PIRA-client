@@ -67,14 +67,6 @@ const LocationStep = ({ formData, errors, handleInputChange, onSaveDraft }) => {
                   `, ${formData.location.address.district}`}
                 {formData.location.city && `, ${formData.location.city}`}
               </p>
-              {formData.location.coordinates?.latitude &&
-                formData.location.coordinates?.longitude && (
-                  <div className="text-xs text-green-700 mt-1">
-                    ✅ Tọa độ:{" "}
-                    {formData.location.coordinates.latitude.toFixed(6)},{" "}
-                    {formData.location.coordinates.longitude.toFixed(6)}
-                  </div>
-                )}
             </div>
           </div>
         </div>
