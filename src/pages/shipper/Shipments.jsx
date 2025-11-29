@@ -11,6 +11,7 @@ export default function ShipmentsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedShipmentType, setSelectedShipmentType] = useState('DELIVERY'); // Filter by type
+  const [proofs, setProofs] = useState({}); // Cache proofs by shipmentId
   
   // Customer info modal state
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -20,6 +21,12 @@ export default function ShipmentsPage() {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [selectedFilesForUpload, setSelectedFilesForUpload] = useState(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadModalShipment, setUploadModalShipment] = useState(null);
+  const [uploadAction, setUploadAction] = useState(null);
+  const [proofModalOpen, setProofModalOpen] = useState(false);
+  const [proofModalShipment, setProofModalShipment] = useState(null);
 
   const openLightbox = (images = [], index = 0) => {
     setLightboxImages(images || []);
@@ -56,6 +63,18 @@ export default function ShipmentsPage() {
         const shipmentsData = Array.isArray(data) ? data : (data.data || data);
         console.log('✅ Loaded shipments:', shipmentsData.length, shipmentsData);
         setShipments(shipmentsData);
+
+        // Load proofs for all shipments
+        const proofsMap = {};
+        for (const shipment of shipmentsData) {
+          try {
+            const proofData = await ShipmentService.getProof(shipment._id);
+            proofsMap[shipment._id] = proofData.data || proofData;
+          } catch (err) {
+            console.log(`Could not load proof for shipment ${shipment._id}`);
+          }
+        }
+        setProofs(proofsMap);
       } catch (err) {
         console.error('Failed to load shipments', err.message || err);
       } finally {
@@ -160,50 +179,116 @@ export default function ShipmentsPage() {
     }
   };
 
-  // Generic uploader: prompts for files, uploads them and returns array of urls
-  const promptAndUpload = () => {
+  // Get files directly from input and show preview modal
+  const promptForFilesWithPreview = (shipment, action) => {
     return new Promise((resolve, reject) => {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
       input.multiple = true;
-      input.onchange = async (e) => {
+      input.onchange = (e) => {
         const files = Array.from(e.target.files || []);
-        if (files.length === 0) return resolve([]);
-        try {
-          const uploads = await Promise.all(files.map(f => chatService.uploadImage(f)));
-          // chatService.uploadImage returns response.data (server shape). Try to extract url(s)
-          const urls = uploads.map(r => (r.data ? (r.data.url || r.data.path || r.data) : (r.url || r.path || r)) ).filter(Boolean);
-          resolve(urls);
-        } catch (err) {
-          reject(err);
+        if (files.length > 0) {
+          // Add to existing files
+          setSelectedFilesForUpload(prev => prev ? [...prev, ...files] : files);
+          setUploadModalShipment(shipment);
+          setUploadAction(action);
+          setUploadModalOpen(true);
         }
+        resolve(files);
       };
       input.click();
     });
   };
 
-  const handleUploadAction = async (s, action) => {
+  // Add more files
+  const addMoreFiles = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        setSelectedFilesForUpload(prev => [...(prev || []), ...files]);
+      }
+    };
+    input.click();
+  };
+
+  // Remove file from preview
+  const removeFile = (index) => {
+    setSelectedFilesForUpload(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Actually upload the files
+  const confirmUpload = async () => {
     try {
-      const urls = await promptAndUpload();
-      if (!urls || urls.length === 0) {
-        alert('No photos selected');
+      if (!selectedFilesForUpload || !uploadModalShipment) {
+        alert('No files selected');
         return;
       }
 
-      if (action === 'pickup') {
-        await ShipmentService.pickupShipment(s._id, { photos: urls });
-      } else if (action === 'deliver') {
-        await ShipmentService.deliverShipment(s._id, { photos: urls });
+      const formData = new FormData();
+      selectedFilesForUpload.forEach(file => {
+        formData.append('images', file);
+      });
+
+      console.log(`📤 Uploading ${selectedFilesForUpload.length} file(s) for shipment ${uploadModalShipment._id}...`);
+      await ShipmentService.uploadProof(uploadModalShipment._id, formData);
+      console.log(`✅ Proof uploaded successfully`);
+
+      // Only after successful upload, mark shipment as pickup/delivered
+      if (uploadAction === 'pickup') {
+        console.log(`📤 Marking shipment as picked up...`);
+        await ShipmentService.pickupShipment(uploadModalShipment._id);
+        console.log(`✅ Shipment marked as picked up`);
+      } else if (uploadAction === 'deliver') {
+        console.log(`📤 Marking shipment as delivered...`);
+        await ShipmentService.deliverShipment(uploadModalShipment._id);
+        console.log(`✅ Shipment marked as delivered`);
       }
 
       const resp = await ShipmentService.listMyShipments();
       const data = resp.data || resp;
       setShipments(Array.isArray(data) ? data : (data.data || data));
+
+      // Load proof after successful upload
+      await loadProof(uploadModalShipment._id);
+
+      // Close modal and reset
+      setUploadModalOpen(false);
+      setSelectedFilesForUpload(null);
+      setUploadModalShipment(null);
+      setUploadAction(null);
     } catch (err) {
-      console.error('Upload action failed', err.message || err);
-      alert(err.message || 'Action failed');
+      console.error('Upload failed', err.message || err);
+      alert(err.message || 'Upload failed');
     }
+  };
+
+  // Load proof for a specific shipment
+  const loadProof = async (shipmentId) => {
+    try {
+      const proofData = await ShipmentService.getProof(shipmentId);
+      setProofs(prev => ({
+        ...prev,
+        [shipmentId]: proofData.data || proofData
+      }));
+    } catch (err) {
+      console.log('Failed to load proof:', err.message);
+      // Not critical, just won't show images
+    }
+  };
+
+  // Open proof modal
+  const openProofModal = (shipment) => {
+    setProofModalShipment(shipment);
+    setProofModalOpen(true);
+  };
+
+  const handleUploadAction = async (s, action) => {
+    await promptForFilesWithPreview(s, action);
   };
 
   return (
@@ -310,144 +395,272 @@ export default function ShipmentsPage() {
                 })()}
               </div>
               
-              <table className="w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã shipment</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SubOrder</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Phí vận chuyển</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {shipmentsForSelectedDate.map((s) => (
-                    <motion.tr
-                      key={s._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="hover:bg-blue-50 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.shipmentId}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.subOrder?._id || s.subOrder}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          s.type === 'DELIVERY'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {s.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          s.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                          s.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-100 text-blue-800' :
-                          s.status === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-800' :
-                          s.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {s.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="font-semibold text-green-600">{formatCurrency(s.fee || 0)}</div>
-                        {s.status === 'DELIVERED' && s.type === 'RETURN' && (
-                          <div className="text-xs text-green-500 mt-1">✅ Sẽ được chuyển</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        <div className="text-xs text-gray-500">
-                          {s.tracking?.pickedUpAt ? (
-                            <div>Pickup: {new Date(s.tracking.pickedUpAt).toLocaleTimeString('vi-VN')}</div>
-                          ) : null}
-                          {s.tracking?.deliveredAt ? (
-                            <div>Deliver: {new Date(s.tracking.deliveredAt).toLocaleTimeString('vi-VN')}</div>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => {
-                                // Get customer info from customerInfo or construct from subOrder renter
-                                const customer = s.customerInfo || {};
-                                const renter = s.subOrder?.masterOrder?.renter;
-                                const name = customer.name || renter?.profile?.fullName || renter?.profile?.firstName || 'N/A';
-                                const phone = customer.phone || renter?.phone || 'N/A';
-                                const email = customer.email || renter?.email || 'N/A';
-                                
-                                setSelectedCustomer({
-                                  name: name,
-                                  phone: phone,
-                                  email: email,
-                                  address: s.type === 'DELIVERY' ? s.toAddress : s.fromAddress,
-                                  type: s.type
-                                });
-                                setIsCustomerModalOpen(true);
-                              }}
-                              className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium transition-colors"
-                              title="Xem thông tin khách hàng"
-                            >
-                              👤 Info
-                            </button>
-
-                            {s.status === 'PENDING' && (
-                              <button 
-                                onClick={() => handleAccept(s)}
-                                className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
-                              >
-                                Nhận
-                              </button>
-                            )}
-
-                            {s.status === 'SHIPPER_CONFIRMED' && (
-                              <button 
-                                onClick={() => handleUploadAction(s, 'pickup')}
-                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
-                              >
-                                📸 Pickup
-                              </button>
-                            )}
-
-                            {s.status === 'IN_TRANSIT' && (
-                              <button 
-                                onClick={() => handleUploadAction(s, 'deliver')}
-                                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition-colors"
-                              >
-                                📸 Deliver
-                              </button>
-                            )}
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã shipment</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SubOrder</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Phí vận chuyển</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {shipmentsForSelectedDate.map((s) => (
+                      <motion.tr
+                        key={s._id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="hover:bg-blue-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.shipmentId}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.subOrder?._id || s.subOrder}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            s.type === 'DELIVERY'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-orange-100 text-orange-800'
+                          }`}>
+                            {s.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            s.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                            s.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                            s.status === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-800' :
+                            s.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {s.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          <div className="font-semibold text-green-600">{formatCurrency(s.fee || 0)}</div>
+                          {s.status === 'DELIVERED' && s.type === 'RETURN' && (
+                            <div className="text-xs text-green-500 mt-1">✅ Sẽ được chuyển</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          <div className="text-xs text-gray-500">
+                            {s.tracking?.pickedUpAt ? (
+                              <div>Pickup: {new Date(s.tracking.pickedUpAt).toLocaleTimeString('vi-VN')}</div>
+                            ) : null}
+                            {s.tracking?.deliveredAt ? (
+                              <div>Deliver: {new Date(s.tracking.deliveredAt).toLocaleTimeString('vi-VN')}</div>
+                            ) : null}
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button 
+                                onClick={() => {
+                                  const customer = s.customerInfo || {};
+                                  const renter = s.subOrder?.masterOrder?.renter;
+                                  const name = customer.name || renter?.profile?.fullName || renter?.profile?.firstName || 'N/A';
+                                  const phone = customer.phone || renter?.phone || 'N/A';
+                                  const email = customer.email || renter?.email || 'N/A';
+                                  
+                                  setSelectedCustomer({
+                                    name: name,
+                                    phone: phone,
+                                    email: email,
+                                    address: s.type === 'DELIVERY' ? s.toAddress : s.fromAddress,
+                                    type: s.type
+                                  });
+                                  setIsCustomerModalOpen(true);
+                                }}
+                                className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium transition-colors text-xs"
+                                title="Xem thông tin khách hàng"
+                              >
+                                👤 Info
+                              </button>
 
-                          {/* Show uploaded photos preview */}
-                          {Array.isArray(s.tracking?.photos) && s.tracking.photos.length > 0 && (
-                            <div className="flex gap-2">
-                              {s.tracking.photos.slice(0, 3).map((p, i) => (
-                                <img
-                                  key={i}
-                                  src={p}
-                                  alt={`proof-${i}`}
-                                  className="w-12 h-12 object-cover rounded cursor-pointer hover:shadow-md transition-shadow"
-                                  onClick={() => openLightbox(s.tracking.photos, i)}
-                                />
-                              ))}
-                              {s.tracking.photos.length > 3 && (
-                                <div className="w-12 h-12 rounded bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
-                                  +{s.tracking.photos.length - 3}
-                                </div>
+                              {s.status === 'PENDING' && (
+                                <button 
+                                  onClick={() => handleAccept(s)}
+                                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors text-xs"
+                                >
+                                  Nhận
+                                </button>
+                              )}
+
+                              {s.status === 'SHIPPER_CONFIRMED' && (
+                                <button 
+                                  onClick={() => handleUploadAction(s, 'pickup')}
+                                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors text-xs"
+                                >
+                                  📸 Pickup
+                                </button>
+                              )}
+
+                              {s.status === 'IN_TRANSIT' && (
+                                <button 
+                                  onClick={() => handleUploadAction(s, 'deliver')}
+                                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition-colors text-xs"
+                                >
+                                  📸 Deliver
+                                </button>
+                              )}
+
+                              {proofs[s._id] && (proofs[s._id].imagesBeforeDelivery?.length > 0 || proofs[s._id].imagesAfterDelivery?.length > 0) && (
+                                <button
+                                  onClick={() => openProofModal(s)}
+                                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-medium transition-colors text-xs"
+                                >
+                                  🖼️ Proof
+                                </button>
                               )}
                             </div>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {shipmentsForSelectedDate.map((s) => (
+                  <motion.div
+                    key={s._id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 overflow-hidden"
+                  >
+                    {/* Top Bar - Type & Status */}
+                    <div className={`px-4 py-3 ${
+                      s.type === 'DELIVERY' 
+                        ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500' 
+                        : 'bg-gradient-to-r from-orange-50 to-orange-100 border-l-4 border-orange-500'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{s.type === 'DELIVERY' ? '📦' : '🔄'}</span>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-sm">
+                              {s.type === 'DELIVERY' ? 'Giao Hàng' : 'Nhận Trả'}
+                            </p>
+                            <p className="text-xs text-gray-600">{s.shipmentId}</p>
+                          </div>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          s.status === 'PENDING' ? 'bg-yellow-200 text-yellow-900' :
+                          s.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-200 text-blue-900' :
+                          s.status === 'IN_TRANSIT' ? 'bg-purple-200 text-purple-900' :
+                          s.status === 'DELIVERED' ? 'bg-green-200 text-green-900' :
+                          'bg-gray-200 text-gray-900'
+                        }`}>
+                          {s.status === 'PENDING' ? '⏳' :
+                           s.status === 'SHIPPER_CONFIRMED' ? '✓' :
+                           s.status === 'IN_TRANSIT' ? '🚚' :
+                           s.status === 'DELIVERED' ? '✓✓' :
+                           '❓'} {s.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="px-4 py-3 space-y-2">
+                      {/* Fee & Tracking */}
+                      <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                        <div>
+                          <p className="text-xs text-gray-600">Phí vận chuyển</p>
+                          <p className="font-bold text-green-600 text-sm">{formatCurrency(s.fee || 0)}</p>
+                        </div>
+                        <div className="text-right text-xs text-gray-600">
+                          {s.tracking?.pickedUpAt && (
+                            <p>🕐 {new Date(s.tracking.pickedUpAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                          )}
+                          {s.tracking?.deliveredAt && (
+                            <p>✓ {new Date(s.tracking.deliveredAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                          )}
+                          {!s.tracking?.pickedUpAt && !s.tracking?.deliveredAt && (
+                            <p className="text-gray-500">Chưa cập nhật</p>
                           )}
                         </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+
+                      {/* Confirmation Message */}
+                      {s.status === 'DELIVERED' && s.type === 'RETURN' && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-2 flex items-center gap-2">
+                          <span className="text-lg">✅</span>
+                          <p className="text-xs text-green-800 font-medium">Sẽ được chuyển khoản</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="px-4 py-3 border-t border-gray-200 space-y-2">
+                      <button 
+                        onClick={() => {
+                          const customer = s.customerInfo || {};
+                          const renter = s.subOrder?.masterOrder?.renter;
+                          const name = customer.name || renter?.profile?.fullName || renter?.profile?.firstName || 'N/A';
+                          const phone = customer.phone || renter?.phone || 'N/A';
+                          const email = customer.email || renter?.email || 'N/A';
+                          
+                          setSelectedCustomer({
+                            name: name,
+                            phone: phone,
+                            email: email,
+                            address: s.type === 'DELIVERY' ? s.toAddress : s.fromAddress,
+                            type: s.type
+                          });
+                          setIsCustomerModalOpen(true);
+                        }}
+                        className="w-full px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium transition-colors text-sm"
+                      >
+                        👤 Thông tin khách hàng
+                      </button>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {s.status === 'PENDING' && (
+                          <button 
+                            onClick={() => handleAccept(s)}
+                            className="px-3 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
+                          >
+                            ✓ Nhận
+                          </button>
+                        )}
+
+                        {s.status === 'SHIPPER_CONFIRMED' && (
+                          <button 
+                            onClick={() => handleUploadAction(s, 'pickup')}
+                            className="px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                          >
+                            📸 Pickup
+                          </button>
+                        )}
+
+                        {s.status === 'IN_TRANSIT' && (
+                          <button 
+                            onClick={() => handleUploadAction(s, 'deliver')}
+                            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm"
+                          >
+                            📸 Deliver
+                          </button>
+                        )}
+
+                        {proofs[s._id] && (proofs[s._id].imagesBeforeDelivery?.length > 0 || proofs[s._id].imagesAfterDelivery?.length > 0) && (
+                          <button
+                            onClick={() => openProofModal(s)}
+                            className="px-3 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm"
+                          >
+                            🖼️ Proof
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -544,7 +757,171 @@ export default function ShipmentsPage() {
         )}
       </AnimatePresence>
 
-      {/* Lightbox Modal */}
+      {/* Proof Modal */}
+      <AnimatePresence>
+        {proofModalOpen && proofModalShipment && proofs[proofModalShipment._id] && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setProofModalOpen(false)}
+          >
+            <motion.div
+              className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">📸 Shipment Proof</h2>
+                <button
+                  onClick={() => setProofModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Upload new proof button */}
+                <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
+                  <button
+                    onClick={() => {
+                      setProofModalOpen(false);
+                      promptForFilesWithPreview(proofModalShipment, proofModalShipment.status === 'SHIPPER_CONFIRMED' ? 'pickup' : 'deliver');
+                    }}
+                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    📤 Upload Proof Image
+                  </button>
+                </div>
+
+                {/* Before Delivery Images */}
+                {proofs[proofModalShipment._id].imagesBeforeDelivery?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">B</span>
+                      Ảnh Pickup ({proofs[proofModalShipment._id].imagesBeforeDelivery.length})
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {proofs[proofModalShipment._id].imagesBeforeDelivery.map((img, idx) => (
+                        <img
+                          key={`before-${idx}`}
+                          src={img}
+                          alt={`pickup-${idx}`}
+                          className="w-full h-32 object-cover rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => openLightbox(proofs[proofModalShipment._id].imagesBeforeDelivery, idx)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* After Delivery Images */}
+                {proofs[proofModalShipment._id].imagesAfterDelivery?.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <span className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">A</span>
+                      Ảnh Delivered ({proofs[proofModalShipment._id].imagesAfterDelivery.length})
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {proofs[proofModalShipment._id].imagesAfterDelivery.map((img, idx) => (
+                        <img
+                          key={`after-${idx}`}
+                          src={img}
+                          alt={`delivered-${idx}`}
+                          className="w-full h-32 object-cover rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                          onClick={() => openLightbox(proofs[proofModalShipment._id].imagesAfterDelivery, idx)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!proofs[proofModalShipment._id].imagesBeforeDelivery?.length && !proofs[proofModalShipment._id].imagesAfterDelivery?.length && (
+                  <div className="text-center py-8 text-gray-500">
+                    Chưa có ảnh proof nào
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Upload Modal */}
+      <AnimatePresence>
+        {uploadModalOpen && selectedFilesForUpload && uploadModalShipment && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setUploadModalOpen(false)}
+          >
+            <motion.div
+              className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  📸 Preview Ảnh ({selectedFilesForUpload.length} file)
+                </h2>
+                <button
+                  onClick={() => setUploadModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                {selectedFilesForUpload.map((file, idx) => (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`preview-${idx}`}
+                      className="w-full h-32 object-cover rounded-lg shadow-md"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-lg transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <button
+                        onClick={() => removeFile(idx)}
+                        className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded truncate max-w-[90%]">
+                      {file.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={addMoreFiles}
+                  className="flex-1 px-4 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  ➕ Chọn thêm
+                </button>
+                <button
+                  onClick={confirmUpload}
+                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  ✅ Upload ({selectedFilesForUpload.length})
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isLightboxOpen && lightboxImages && lightboxImages.length > 0 && (
           <motion.div

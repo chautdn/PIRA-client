@@ -57,6 +57,28 @@ const ShipmentService = {
     }
   },
 
+  async uploadProof(shipmentId, formData) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/proof`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể upload proof');
+    }
+  },
+
+  async getProof(shipmentId) {
+    try {
+      const response = await api.get(`/shipments/${shipmentId}/proof`);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể lấy proof');
+    }
+  },
+
   async renterConfirm(shipmentId) {
     try {
       const response = await api.post(`/shipments/${shipmentId}/confirm`);

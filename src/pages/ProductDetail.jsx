@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { productService } from '../services/product';
 import { reviewService } from '../services/review';
 import { useCart } from '../context/CartContext';
@@ -32,6 +33,7 @@ export default function ProductDetail() {
   const [reviewsPage, setReviewsPage] = useState(1);
   const [reviewsTotal, setReviewsTotal] = useState(0);
   const [reviewsTarget, setReviewsTarget] = useState('PRODUCT');
+  const [ratingFilter, setRatingFilter] = useState(null); // null = all, 1-5 = specific rating
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, title: '', comment: '', photos: [] });
   const fileInputRef = useRef(null);
@@ -75,9 +77,9 @@ export default function ProductDetail() {
   useEffect(() => {
     // fetch reviews when product loaded and reviews tab active
     if (activeTab === 'reviews' && product?._id) {
-      fetchReviews(product._id);
+      fetchReviews(product._id, ratingFilter);
     }
-  }, [activeTab, product?._id]);
+  }, [activeTab, product?._id, ratingFilter]);
 
   // Check if user can write review (must have rented this product with COMPLETED order)
   useEffect(() => {
@@ -195,10 +197,14 @@ export default function ProductDetail() {
     checkCanWriteReview();
   }, [user, product?._id]);
 
-  const fetchReviews = async (productId) => {
+  const fetchReviews = async (productId, filterRating = null) => {
     try {
       setReviewsLoading(true);
-      const res = await reviewService.listByProduct(productId, { page: reviewsPage, limit: 10, target: reviewsTarget });
+      const params = { page: reviewsPage, limit: 10, target: reviewsTarget };
+      if (filterRating) {
+        params.rating = filterRating;
+      }
+      const res = await reviewService.listByProduct(productId, params);
       const items = res.data?.data || [];
       const pagination = res.data?.pagination || {};
       
@@ -249,6 +255,7 @@ export default function ProductDetail() {
   const changeReviewsTarget = (target) => {
     setReviewsTarget(target);
     setReviewsPage(1);
+    setRatingFilter(null); // Reset rating filter when changing target
     // directly fetch first page for new target
     (async () => {
       try {
@@ -316,8 +323,8 @@ export default function ProductDetail() {
   };
 
   const submitNewReview = async () => {
-    if (!newReview.comment || !newReview.rating) {
-      alert('Vui lòng nhập đủ nội dung và đánh giá');
+    if (!newReview.rating) {
+      toast.error('Vui lòng chọn đánh giá sao');
       return;
     }
     try {
@@ -353,9 +360,31 @@ export default function ProductDetail() {
   await changeReviewsTarget(reviewsTarget);
   setNewReview({ rating: 5, title: '', comment: '', photos: [], type: reviewsTarget });
   if (fileInputRef.current) fileInputRef.current.value = null;
+  toast.success('Đánh giá đã được gửi thành công!');
     } catch (err) {
       console.error('Error creating review', err);
-      alert('Lỗi khi gửi đánh giá');
+      // Check for duplicate review error - differentiate by type
+      const errorMessage = err.response?.data?.message || '';
+      
+      // Check if it's a duplicate review based on the target type
+      if (errorMessage.toLowerCase().includes('bình luận 1 lần cho sản phẩm')) {
+        toast.error('Bạn đã đánh giá sản phẩm này rồi');
+      } else if (errorMessage.toLowerCase().includes('bình luận 1 lần cho người')) {
+        toast.error('Bạn đã đánh giá chủ sở hữu này rồi');
+      } else if (errorMessage.toLowerCase().includes('bình luận 1 lần')) {
+        // Generic duplicate message from backend
+        if (reviewsTarget === 'PRODUCT') {
+          toast.error('Bạn đã đánh giá sản phẩm này rồi');
+        } else if (reviewsTarget === 'OWNER') {
+          toast.error('Bạn đã đánh giá chủ sở hữu này rồi');
+        } else {
+          toast.error('Bạn đã đánh giá rồi');
+        }
+      } else if (errorMessage.toLowerCase().includes('hoàn thành một đơn hàng')) {
+        toast.error('Bạn phải hoàn thành một đơn hàng với người này để đánh giá');
+      } else {
+        toast.error('Lỗi khi gửi đánh giá');
+      }
     }
   };
 
@@ -372,9 +401,10 @@ export default function ProductDetail() {
   await reviewService.reply(reviewId, fd);
       fetchReviews(product._id);
       setReplyBoxOpen((prev) => ({ ...prev, [reviewId]: false }));
+      toast.success('Phản hồi đã được gửi thành công!');
     } catch (err) {
       console.error('Error replying to review', err);
-      alert('Lỗi khi gửi phản hồi');
+      toast.error('Lỗi khi gửi phản hồi');
     }
   };
 
@@ -501,9 +531,10 @@ export default function ProductDetail() {
       await reviewService.remove(reviewId);
       // refresh
       fetchReviews(product._id);
+      toast.success('Đánh giá đã được xóa');
     } catch (err) {
       console.error('Error deleting review', err);
-      alert('Lỗi khi xóa đánh giá');
+      toast.error('Lỗi khi xóa đánh giá');
     }
   };
 
@@ -523,9 +554,10 @@ export default function ProductDetail() {
       await reviewService.update(reviewId, fd);
       setEditingReview({});
       fetchReviews(product._id);
+      toast.success('Đánh giá đã được cập nhật');
     } catch (err) {
       console.error('Error saving review edit', err);
-      alert('Lỗi khi lưu chỉnh sửa');
+      toast.error('Lỗi khi lưu chỉnh sửa');
     }
   };
 
@@ -533,9 +565,10 @@ export default function ProductDetail() {
     try {
       await reviewService.deleteResponse(reviewId, responseId);
       fetchReviews(product._id);
+      toast.success('Phản hồi đã được xóa');
     } catch (err) {
       console.error('Error deleting response', err);
-      alert('Lỗi khi xóa phản hồi');
+      toast.error('Lỗi khi xóa phản hồi');
     }
   };
 
@@ -553,9 +586,10 @@ export default function ProductDetail() {
       
       await reviewService.updateResponse(reviewId, responseId, fd);
       fetchReviews(product._id);
+      toast.success('Phản hồi đã được cập nhật');
     } catch (err) {
       console.error('Error saving response edit', err);
-      alert('Lỗi khi lưu chỉnh sửa phản hồi');
+      toast.error('Lỗi khi lưu chỉnh sửa phản hồi');
     }
   };
 
@@ -1338,12 +1372,17 @@ export default function ProductDetail() {
                                 const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                                 const delay = 0.12 * idx; // stagger from top -> bottom
                                 const duration = 0.7 + idx * 0.12; // slightly longer for later bars
+                                const isActive = ratingFilter === s;
                                 return (
-                                  <div key={s} className="flex items-center gap-4">
-                                    <div className="w-8 text-sm text-gray-700">{s}★</div>
-                                    <div className="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
+                                  <div 
+                                    key={s} 
+                                    className="flex items-center gap-4 cursor-pointer group"
+                                    onClick={() => setRatingFilter(isActive ? null : s)}
+                                  >
+                                    <div className={`w-8 text-sm font-medium transition-colors ${isActive ? 'text-yellow-600' : 'text-gray-700 group-hover:text-yellow-600'}`}>{s}★</div>
+                                    <div className={`flex-1 rounded-full h-3 overflow-hidden transition-colors ${isActive ? 'bg-yellow-300' : 'bg-gray-200 group-hover:bg-gray-300'}`}>
                                       <motion.div
-                                        className="h-3 bg-yellow-400 rounded-full"
+                                        className={`h-3 rounded-full transition-colors ${isActive ? 'bg-yellow-600' : 'bg-yellow-400'}`}
                                         initial={{ width: 0 }}
                                         animate={{ width: `${pct}%` }}
                                         transition={{ duration, delay, ease: 'easeOut' }}
@@ -1465,7 +1504,7 @@ export default function ProductDetail() {
                                         <button onClick={() => { setEditingReview({ id: r._id, text: r.comment, title: r.title || '' }); setMenuOpen({}); }} className="w-full text-left px-3 py-2 hover:bg-gray-50">Chỉnh sửa</button>
                                         <button onClick={async () => { if (confirm('Bạn muốn xóa đánh giá này?')) { await handleDeleteReview(r._id); setMenuOpen({}); } }} className="w-full text-left px-3 py-2 text-red-600 hover:bg-gray-50">Xóa</button>
                                       </div>
-                                    )}
+                                    )}git 
                                   </div>
                                 </div>
 
