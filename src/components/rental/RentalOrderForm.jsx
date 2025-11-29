@@ -74,7 +74,7 @@ const RentalOrderForm = () => {
       contactPhone: (user && user.profile && user.profile.phone) ? user.profile.phone : '',
       contactName: (user && user.profile && user.profile.fullName) ? user.profile.fullName : ''
     },
-    deliveryMethod: 'PICKUP'
+    deliveryMethod: 'DELIVERY',
   }));
 
     const [errors, setErrors] = useState({});
@@ -366,11 +366,14 @@ const RentalOrderForm = () => {
                 latitude: group.owner.address?.coordinates?.latitude || null,
                 longitude: group.owner.address?.coordinates?.longitude || null,
               };
+              console.log("group", group);
+              console.log("Owner Location:", ownerLocation);
 
               const userLocation = {
                 latitude: orderData.deliveryAddress.latitude || null,
                 longitude: orderData.deliveryAddress.longitude || null,
               };
+              console.log("User Location:", userLocation);
 
               const hasOwnerCoords =
                 ownerLocation.latitude && ownerLocation.longitude;
@@ -421,21 +424,26 @@ const RentalOrderForm = () => {
                 }));
 
                 const shippingData = {
-                  subOrderId: `batch-${deliveryDate}-${ownerId}`,
-                  ownerLocation,
-                  userLocation,
-                  products,
-                };
-
+  subOrderId: `batch-${deliveryDate}-${ownerId}`,
+  ownerAddress: {
+    latitude: group.owner.address?.coordinates?.latitude || null,
+    longitude: group.owner.address?.coordinates?.longitude || null,
+    streetAddress: group.owner.address?.streetAddress || "Địa chỉ không xác định", // Thêm streetAddress
+  },
+  deliveryAddress: {
+    latitude: orderData.deliveryAddress.latitude || null,
+    longitude: orderData.deliveryAddress.longitude || null,
+    streetAddress: orderData.deliveryAddress.streetAddress || "Địa chỉ không xác định", // Thêm streetAddress
+  },
+  products,
+};
                 console.log(
                   `🚚 Calculating batch shipping for ${deliveryDate}:`,
                   products.length,
                   "products"
                 );
                 const shippingResponse =
-                  await rentalOrderContext.calculateProductShipping(
-                    shippingData
-                  );
+                  await calculateShipping(shippingData);
 
                 if (
                   shippingResponse?.success &&
