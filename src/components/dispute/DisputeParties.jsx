@@ -1,6 +1,12 @@
 import { formatDate } from '../../utils/disputeHelpers';
 
 const DisputeParties = ({ dispute }) => {
+  // Determine roles based on shipmentType
+  // DELIVERY: Renter complains (about delivery issue) -> Renter is complainant, Owner is respondent
+  // RETURN: Owner complains (about return issue) -> Owner is complainant, Renter is respondent
+  const complainantRole = dispute.shipmentType === 'DELIVERY' ? 'Người thuê' : 'Chủ hàng';
+  const respondentRole = dispute.shipmentType === 'DELIVERY' ? 'Chủ hàng' : 'Người thuê';
+
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Các bên liên quan</h2>
@@ -14,14 +20,14 @@ const DisputeParties = ({ dispute }) => {
                 Người khiếu nại
               </p>
               <p className="text-sm text-blue-700">
-                {dispute.complainant?.fullName || 'N/A'}
+                {dispute.complainant?.profile?.fullName || dispute.complainant?.fullName || 'N/A'}
               </p>
               <p className="text-xs text-blue-600 mt-1">
                 {dispute.complainant?.email || 'N/A'}
               </p>
             </div>
             <span className="px-2 py-1 bg-blue-200 text-blue-800 text-xs rounded">
-              {dispute.complainantRole === 'RENTER' ? 'Người thuê' : 'Chủ hàng'}
+              {complainantRole}
             </span>
           </div>
         </div>
@@ -34,14 +40,14 @@ const DisputeParties = ({ dispute }) => {
                 Bên bị khiếu nại
               </p>
               <p className="text-sm text-orange-700">
-                {dispute.respondent?.fullName || 'N/A'}
+                {dispute.respondent?.profile?.fullName || dispute.respondent?.fullName || 'N/A'}
               </p>
               <p className="text-xs text-orange-600 mt-1">
                 {dispute.respondent?.email || 'N/A'}
               </p>
             </div>
             <span className="px-2 py-1 bg-orange-200 text-orange-800 text-xs rounded">
-              {dispute.complainantRole === 'RENTER' ? 'Chủ hàng' : 'Người thuê'}
+              {respondentRole}
             </span>
           </div>
         </div>
