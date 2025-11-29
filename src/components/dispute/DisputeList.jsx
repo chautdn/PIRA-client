@@ -6,8 +6,6 @@ import {
   getDisputeStatusText,
   getDisputeTypeColor,
   getDisputeTypeText,
-  getPriorityColor,
-  getPriorityText,
   formatDate
 } from '../../utils/disputeHelpers';
 
@@ -16,8 +14,7 @@ const DisputeList = () => {
   const { disputes, isLoading, loadMyDisputes } = useDispute();
   const [filters, setFilters] = useState({
     status: '',
-    type: '',
-    priority: ''
+    type: ''
   });
 
   useEffect(() => {
@@ -45,7 +42,7 @@ const DisputeList = () => {
     <div className="space-y-4">
       {/* Filters */}
       <div className="bg-white rounded-lg shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Trạng thái
@@ -83,26 +80,9 @@ const DisputeList = () => {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ưu tiên
-            </label>
-            <select
-              value={filters.priority}
-              onChange={(e) => handleFilterChange('priority', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            >
-              <option value="">Tất cả</option>
-              <option value="LOW">Thấp</option>
-              <option value="MEDIUM">Trung bình</option>
-              <option value="HIGH">Cao</option>
-              <option value="URGENT">Khẩn cấp</option>
-            </select>
-          </div>
-
           <div className="flex items-end">
             <button
-              onClick={() => setFilters({ status: '', type: '', priority: '' })}
+              onClick={() => setFilters({ status: '', type: '' })}
               className="w-full px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
             >
               Xóa bộ lọc
@@ -126,9 +106,6 @@ const DisputeList = () => {
                 Trạng thái
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ưu tiên
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ngày tạo
               </th>
             </tr>
@@ -136,7 +113,7 @@ const DisputeList = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {disputes.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
                   Không có tranh chấp nào
                 </td>
               </tr>
@@ -160,11 +137,6 @@ const DisputeList = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getDisputeStatusColor(dispute.status)}`}>
                       {getDisputeStatusText(dispute.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityColor(dispute.priority)}`}>
-                      {getPriorityText(dispute.priority)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
