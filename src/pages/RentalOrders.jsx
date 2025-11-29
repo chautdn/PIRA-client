@@ -236,75 +236,15 @@ const RentalOrdersPage = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Quản lý đơn thuê</h1>
-            <p className="text-gray-600">
-              Theo dõi và quản lý các đơn hàng thuê của bạn
-            </p>
-          </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => loadMyOrders()}
-              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-            >
-              🔄 Reload
-            </button>
-            <button
-              onClick={() => navigate("/products")}
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
-            >
-              🛍️ Thuê sản phẩm
-            </button>
-            <button
-              onClick={() => navigate("/cart")}
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-            >
-              <Package className="w-5 h-5" />
-              <span>Tạo đơn mới</span>
-            </button>
-          </div>
-        </div>
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-2xl shadow-lg mb-6 p-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setActiveTab("orders")}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                activeTab === "orders"
-                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              📦 Đơn Thuê Của Tôi
-            </button>
-            <button
-              onClick={() => setActiveTab("early-returns")}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                activeTab === "early-returns"
-                  ? "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              🔄 Yêu Cầu Trả Sớm{" "}
-              {earlyReturnRequests.length > 0 &&
-                `(${earlyReturnRequests.length})`}
-            </button>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Quản lý đơn thuê</h1>
+          <p className="text-gray-600">
+            Theo dõi và quản lý các đơn hàng thuê của bạn
+          </p>
         </div>
 
-        {/* Early Returns Tab */}
-        {activeTab === "early-returns" && (
-          <EarlyReturnsTab
-            earlyReturnRequests={earlyReturnRequests}
-            isLoading={loadingEarlyReturns}
-          />
-        )}
-
-        {/* Orders Tab */}
-        {activeTab === "orders" && (
-          <>
-            {/* Header */}
+        {/* Orders List */}
+        <>
             <div className="bg-white rounded-lg shadow-md mb-6">
               <div className="border-b border-gray-200">
                 <div className="px-6 py-4">
@@ -406,8 +346,7 @@ const RentalOrdersPage = () => {
                 </button>
               </div>
             )}
-          </>
-        )}
+        </>
 
         {/* Detail Modal */}
         {showDetailModal && selectedOrder && (
