@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useDispute } from '../../context/DisputeContext';
 import { toast } from 'react-hot-toast';
 import { formatDate } from '../../utils/disputeHelpers';
+import AdminThirdPartyFinalDecisionModal from './AdminThirdPartyFinalDecisionModal';
 
 const ThirdPartySection = ({ dispute, isAdmin = false }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showAdminFinalDecisionModal, setShowAdminFinalDecisionModal] = useState(false);
   const { shareShipperInfo, uploadThirdPartyEvidence, loadDisputeDetail } = useDispute();
 
   const handleShareShipperInfo = async () => {
@@ -22,7 +24,8 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
   };
 
   const thirdParty = dispute.thirdPartyResolution;
-  const isShipperInfoShared = thirdParty?.shipperInfoShared?.sharedAt;
+  const sharedData = thirdParty?.sharedData;
+  const isShipperInfoShared = sharedData?.sharedAt;
   const evidenceDeadline = thirdParty?.evidenceDeadline;
   const isEvidenceUploaded = dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED';
 
@@ -63,14 +66,123 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
       )}
 
       {/* Shipper info shared status */}
-      {isShipperInfoShared && (
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4">
-          <p className="text-green-800">
-            <strong>✅ Đã chia sẻ thông tin shipper:</strong> {formatDate(isShipperInfoShared)}
-          </p>
-          <p className="text-green-700 text-sm mt-1">
-            Cả hai bên đã có thông tin để upload bằng chứng từ bên thứ 3
-          </p>
+      {isShipperInfoShared && sharedData && (
+        <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4 space-y-4">
+          <div>
+            <p className="text-green-800 font-semibold mb-2">
+              ✅ Admin đã chia sẻ thông tin để chuẩn bị cho bên thứ 3
+            </p>
+            <p className="text-green-700 text-sm">
+              Thời gian chia sẻ: {formatDate(sharedData.sharedAt)}
+            </p>
+          </div>
+
+          {/* Thông tin cá nhân 2 bên */}
+          {sharedData.partyInfo && (
+            <div className="bg-white p-4 rounded border border-green-300 space-y-3">
+              <h4 className="font-semibold text-green-900">Thông tin các bên liên quan:</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Complainant */}
+                <div className="bg-blue-50 p-3 rounded">
+                  <p className="text-xs text-blue-600 font-medium mb-2">NGƯỜI KHIẾU NẠI</p>
+                  <div className="text-sm space-y-1">
+                    <p><strong>Tên:</strong> {sharedData.partyInfo.complainant.name}</p>
+                    <p><strong>SĐT:</strong> {sharedData.partyInfo.complainant.phone}</p>
+                    <p><strong>Email:</strong> {sharedData.partyInfo.complainant.email}</p>
+                    {sharedData.partyInfo.complainant.address && (
+                      <p><strong>Địa chỉ:</strong> {sharedData.partyInfo.complainant.address}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Respondent */}
+                <div className="bg-orange-50 p-3 rounded">
+                  <p className="text-xs text-orange-600 font-medium mb-2">BÊN BỊ KHIẾU NẠI</p>
+                  <div className="text-sm space-y-1">
+                    <p><strong>Tên:</strong> {sharedData.partyInfo.respondent.name}</p>
+                    <p><strong>SĐT:</strong> {sharedData.partyInfo.respondent.phone}</p>
+                    <p><strong>Email:</strong> {sharedData.partyInfo.respondent.email}</p>
+                    {sharedData.partyInfo.respondent.address && (
+                      <p><strong>Địa chỉ:</strong> {sharedData.partyInfo.respondent.address}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Ảnh bằng chứng từ shipper */}
+          {sharedData.shipperEvidence && (
+            <div className="bg-white p-4 rounded border border-green-300">
+              <h4 className="font-semibold text-green-900 mb-3">Bằng chứng từ Shipper:</h4>
+              
+              {sharedData.shipperEvidence.notes && (
+                <div className="mb-3">
+                  <p className="text-sm font-medium text-gray-700">Ghi chú:</p>
+                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded mt-1">
+                    {sharedData.shipperEvidence.notes}
+                  </p>
+                </div>
+              )}
+
+              {sharedData.shipperEvidence.photos?.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Hình ảnh ({sharedData.shipperEvidence.photos.length} ảnh):
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {sharedData.shipperEvidence.photos.map((photo, idx) => (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Shipper evidence ${idx + 1}`}
+                          className="w-full h-32 object-cover rounded border-2 border-green-300 cursor-pointer hover:border-green-500 transition"
+                          onClick={() => window.open(photo, '_blank')}
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
+                          Ảnh {idx + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">💡 Click vào ảnh để xem chi tiết</p>
+                </div>
+              )}
+
+              {sharedData.shipperEvidence.videos?.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Video ({sharedData.shipperEvidence.videos.length}):
+                  </p>
+                  <div className="space-y-2">
+                    {sharedData.shipperEvidence.videos.map((video, idx) => (
+                      <a
+                        key={idx}
+                        href={video}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-green-300 hover:border-green-500 hover:bg-green-50 transition text-sm"
+                      >
+                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-green-700">Video {idx + 1}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="bg-yellow-50 p-3 rounded border border-yellow-300">
+            <p className="text-yellow-800 text-sm">
+              💡 <strong>Hướng dẫn:</strong> Sử dụng thông tin trên để liên hệ với bên thứ 3. 
+              Sau khi nhận được kết quả từ bên thứ 3, vui lòng upload bằng chứng bên dưới trước hạn {formatDate(evidenceDeadline)}.
+            </p>
+          </div>
         </div>
       )}
 
@@ -91,28 +203,99 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
 
       {/* Evidence uploaded status */}
       {isEvidenceUploaded && thirdParty?.evidence && (
-        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 space-y-4">
           <p className="text-purple-800 mb-2">
             <strong>📋 Đã upload bằng chứng:</strong> {formatDate(thirdParty.evidence.uploadedAt)}
           </p>
+          <p className="text-purple-700 text-sm">
+            <strong>Người upload:</strong> {thirdParty.evidence.uploadedBy?.profile?.fullName || 'N/A'}
+          </p>
+          
           {thirdParty.evidence.officialDecision && (
             <div className="mt-3">
-              <p className="text-purple-700 font-medium">Quyết định chính thức:</p>
-              <p className="text-purple-800 bg-purple-100 p-3 rounded mt-1">
+              <p className="text-purple-700 font-medium mb-2">Quyết định chính thức từ bên thứ 3:</p>
+              <p className="text-purple-800 bg-purple-100 p-3 rounded whitespace-pre-wrap">
                 {thirdParty.evidence.officialDecision}
               </p>
             </div>
           )}
-          {thirdParty.evidence.documents?.length > 0 && (
-            <p className="text-purple-700 mt-2">
-              Tài liệu đính kèm: {thirdParty.evidence.documents.length} file(s)
-            </p>
+          
+          {/* Thông tin bên thứ 3 */}
+          {thirdParty.thirdPartyInfo && (
+            <div className="mt-3 bg-white p-3 rounded border border-purple-300">
+              <p className="text-purple-700 font-medium mb-2">Thông tin bên thứ 3:</p>
+              <div className="text-sm space-y-1">
+                <p><strong>Tên:</strong> {thirdParty.thirdPartyInfo.name}</p>
+                <p><strong>Liên hệ:</strong> {thirdParty.thirdPartyInfo.contactInfo}</p>
+                <p><strong>Mã hồ sơ:</strong> {thirdParty.thirdPartyInfo.caseNumber}</p>
+              </div>
+            </div>
           )}
+          
+          {/* Hình ảnh bằng chứng */}
           {thirdParty.evidence.photos?.length > 0 && (
-            <p className="text-purple-700 mt-1">
-              Hình ảnh: {thirdParty.evidence.photos.length} ảnh
-            </p>
+            <div className="mt-3">
+              <p className="text-purple-700 font-medium mb-2">
+                Hình ảnh bằng chứng ({thirdParty.evidence.photos.length} ảnh):
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {thirdParty.evidence.photos.map((photo, idx) => (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={photo}
+                      alt={`Third party evidence ${idx + 1}`}
+                      className="w-full h-40 object-cover rounded border-2 border-purple-300 cursor-pointer hover:border-purple-500 transition"
+                      onClick={() => window.open(photo, '_blank')}
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
+                      Ảnh {idx + 1}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-purple-600 mt-2">💡 Click vào ảnh để xem chi tiết</p>
+            </div>
           )}
+          
+          {/* Tài liệu đính kèm */}
+          {thirdParty.evidence.documents?.length > 0 && (
+            <div className="mt-3">
+              <p className="text-purple-700 font-medium mb-2">
+                Tài liệu đính kèm ({thirdParty.evidence.documents.length} file):
+              </p>
+              <div className="space-y-2">
+                {thirdParty.evidence.documents.map((doc, idx) => (
+                  <a
+                    key={idx}
+                    href={doc}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 bg-white rounded border border-purple-300 hover:border-purple-500 hover:bg-purple-50 transition text-sm"
+                  >
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-purple-700">Tài liệu {idx + 1}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Admin button: Đưa ra quyết định cuối */}
+      {isAdmin && isEvidenceUploaded && dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED' && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-800 mb-3">
+            <strong>✅ Đã nhận được kết quả từ bên thứ 3.</strong> Admin có thể đưa ra quyết định cuối cùng dựa trên bằng chứng trên.
+          </p>
+          <button
+            onClick={() => setShowAdminFinalDecisionModal(true)}
+            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+          >
+            Đưa ra quyết định cuối cùng
+          </button>
         </div>
       )}
 
@@ -122,6 +305,18 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
           dispute={dispute}
+        />
+      )}
+
+      {/* Admin Final Decision Modal */}
+      {showAdminFinalDecisionModal && (
+        <AdminThirdPartyFinalDecisionModal
+          isOpen={showAdminFinalDecisionModal}
+          onClose={() => setShowAdminFinalDecisionModal(false)}
+          dispute={dispute}
+          onSuccess={() => {
+            loadDisputeDetail(dispute._id);
+          }}
         />
       )}
     </div>

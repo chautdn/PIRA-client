@@ -8,8 +8,6 @@ import {
   getDisputeStatusColor,
   getDisputeStatusText,
   getDisputeTypeText,
-  getPriorityColor,
-  getPriorityText,
   formatDate
 } from '../../utils/disputeHelpers';
 import AdminResponseModal from '../../components/dispute/AdminResponseModal';
@@ -68,9 +66,6 @@ const AdminDisputeDetail = () => {
           <div className="flex gap-2">
             <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getDisputeStatusColor(dispute.status)}`}>
               {getDisputeStatusText(dispute.status)}
-            </span>
-            <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getPriorityColor(dispute.priority)}`}>
-              {getPriorityText(dispute.priority)}
             </span>
           </div>
         </div>
@@ -333,12 +328,22 @@ const AdminDisputeDetail = () => {
                       <p className="text-sm font-medium text-gray-700 mb-2">Hình ảnh ({dispute.evidence.photos.length}):</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {dispute.evidence.photos.map((photo, idx) => (
-                          <img
-                            key={idx}
-                            src={photo}
-                            alt={`Evidence ${idx + 1}`}
-                            className="w-full h-32 object-cover rounded border"
-                          />
+                          <div 
+                            key={idx} 
+                            className="relative group cursor-pointer"
+                            onClick={() => window.open(photo, '_blank')}
+                          >
+                            <img
+                              src={photo}
+                              alt={`Evidence ${idx + 1}`}
+                              className="w-full h-32 object-cover rounded border hover:border-blue-500 transition"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded flex items-center justify-center pointer-events-none">
+                              <span className="text-white text-sm opacity-0 group-hover:opacity-100">
+                                🔍 Xem chi tiết
+                              </span>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -369,12 +374,22 @@ const AdminDisputeDetail = () => {
                         </p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                           {dispute.respondentResponse.evidence.photos.map((photo, idx) => (
-                            <img
-                              key={idx}
-                              src={photo}
-                              alt={`Response Evidence ${idx + 1}`}
-                              className="w-full h-32 object-cover rounded border"
-                            />
+                            <div 
+                              key={idx} 
+                              className="relative group cursor-pointer"
+                              onClick={() => window.open(photo, '_blank')}
+                            >
+                              <img
+                                src={photo}
+                                alt={`Response Evidence ${idx + 1}`}
+                                className="w-full h-32 object-cover rounded border hover:border-orange-500 transition"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded flex items-center justify-center pointer-events-none">
+                                <span className="text-white text-sm opacity-0 group-hover:opacity-100">
+                                  🔍 Xem chi tiết
+                                </span>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
