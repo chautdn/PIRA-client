@@ -53,19 +53,19 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
       {isAdmin && dispute.status === 'THIRD_PARTY_ESCALATED' && !isShipperInfoShared && (
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-blue-800 mb-3">
-            Cần chia sẻ thông tin shipper và bằng chứng cho cả hai bên để họ có thể upload kết quả từ bên thứ 3.
+            Cần chia sẻ thông tin của renter và owner gửi lại cho renter và owner để biết, giúp họ có thể upload kết quả từ bên thứ 3.
           </p>
           <button
             onClick={handleShareShipperInfo}
             disabled={isLoading}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
           >
-            {isLoading ? 'Đang chia sẻ...' : 'Chia sẻ thông tin shipper'}
+            {isLoading ? 'Đang chia sẻ...' : 'Chia sẻ thông tin các bên'}
           </button>
         </div>
       )}
 
-      {/* Shipper info shared status */}
+      {/* Shared info status */}
       {isShipperInfoShared && sharedData && (
         <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4 space-y-4">
           <div>
@@ -80,107 +80,43 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
           {/* Thông tin cá nhân 2 bên */}
           {sharedData.partyInfo && (
             <div className="bg-white p-4 rounded border border-green-300 space-y-3">
-              <h4 className="font-semibold text-green-900">Thông tin các bên liên quan:</h4>
+              <h4 className="font-semibold text-green-900">📋 Thông tin các bên liên quan</h4>
+              <p className="text-xs text-gray-600">
+                Thông tin này đã được chia sẻ cho cả hai bên để họ có thể liên hệ với nhau và chuẩn bị tài liệu cho bên thứ 3.
+              </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Complainant */}
                 <div className="bg-blue-50 p-3 rounded">
-                  <p className="text-xs text-blue-600 font-medium mb-2">NGƯỜI KHIẾU NẠI</p>
+                  <p className="text-xs text-blue-600 font-medium mb-2">
+                    {dispute.shipmentType === 'DELIVERY' ? 'NGƯỜI THUÊ (Chủ hàng)' : 'CHỦ HÀNG (Người thuê)'}
+                  </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.complainant.name}</p>
-                    <p><strong>SĐT:</strong> {sharedData.partyInfo.complainant.phone}</p>
                     <p><strong>Email:</strong> {sharedData.partyInfo.complainant.email}</p>
-                    {sharedData.partyInfo.complainant.address && (
-                      <p><strong>Địa chỉ:</strong> {sharedData.partyInfo.complainant.address}</p>
-                    )}
+                    <p><strong>Số điện thoại:</strong> {sharedData.partyInfo.complainant.phone}</p>
                   </div>
                 </div>
 
                 {/* Respondent */}
                 <div className="bg-orange-50 p-3 rounded">
-                  <p className="text-xs text-orange-600 font-medium mb-2">BÊN BỊ KHIẾU NẠI</p>
+                  <p className="text-xs text-orange-600 font-medium mb-2">
+                    {dispute.shipmentType === 'DELIVERY' ? 'CHỦ HÀNG (Người thuê)' : 'NGƯỜI THUÊ (Chủ hàng)'}
+                  </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.respondent.name}</p>
-                    <p><strong>SĐT:</strong> {sharedData.partyInfo.respondent.phone}</p>
                     <p><strong>Email:</strong> {sharedData.partyInfo.respondent.email}</p>
-                    {sharedData.partyInfo.respondent.address && (
-                      <p><strong>Địa chỉ:</strong> {sharedData.partyInfo.respondent.address}</p>
-                    )}
+                    <p><strong>Số điện thoại:</strong> {sharedData.partyInfo.respondent.phone}</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Ảnh bằng chứng từ shipper */}
-          {sharedData.shipperEvidence && (
-            <div className="bg-white p-4 rounded border border-green-300">
-              <h4 className="font-semibold text-green-900 mb-3">Bằng chứng từ Shipper:</h4>
-              
-              {sharedData.shipperEvidence.notes && (
-                <div className="mb-3">
-                  <p className="text-sm font-medium text-gray-700">Ghi chú:</p>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded mt-1">
-                    {sharedData.shipperEvidence.notes}
-                  </p>
-                </div>
-              )}
-
-              {sharedData.shipperEvidence.photos?.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Hình ảnh ({sharedData.shipperEvidence.photos.length} ảnh):
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {sharedData.shipperEvidence.photos.map((photo, idx) => (
-                      <div key={idx} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Shipper evidence ${idx + 1}`}
-                          className="w-full h-32 object-cover rounded border-2 border-green-300 cursor-pointer hover:border-green-500 transition"
-                          onClick={() => window.open(photo, '_blank')}
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center">
-                          Ảnh {idx + 1}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-green-600 mt-2">💡 Click vào ảnh để xem chi tiết</p>
-                </div>
-              )}
-
-              {sharedData.shipperEvidence.videos?.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Video ({sharedData.shipperEvidence.videos.length}):
-                  </p>
-                  <div className="space-y-2">
-                    {sharedData.shipperEvidence.videos.map((video, idx) => (
-                      <a
-                        key={idx}
-                        href={video}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-green-300 hover:border-green-500 hover:bg-green-50 transition text-sm"
-                      >
-                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-green-700">Video {idx + 1}</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           <div className="bg-yellow-50 p-3 rounded border border-yellow-300">
             <p className="text-yellow-800 text-sm">
-              💡 <strong>Hướng dẫn:</strong> Sử dụng thông tin trên để liên hệ với bên thứ 3. 
-              Sau khi nhận được kết quả từ bên thứ 3, vui lòng upload bằng chứng bên dưới trước hạn {formatDate(evidenceDeadline)}.
+              💡 <strong>Hướng dẫn:</strong> Sử dụng thông tin trên để liên hệ với bên kia nếu cần thiết. 
+              Sau khi nhận được kết quả từ bên thứ 3, vui lòng upload bằng chứng bên dưới trước hạn <strong>{formatDate(evidenceDeadline)}</strong>.
             </p>
           </div>
         </div>
