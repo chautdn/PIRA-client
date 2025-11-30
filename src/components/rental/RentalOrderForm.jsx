@@ -1671,90 +1671,9 @@ const RentalOrderForm = () => {
                         </p>
                       )}
 
-                      {/* Map location status */}
-                      {orderData.deliveryAddress.latitude &&
-                        orderData.deliveryAddress.longitude && (
-                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                            <p className="text-sm text-green-700 flex items-center">
-                              <span className="mr-2">✅</span>
-                              Địa chỉ đã được chọn từ bản đồ - Không cần nhập
-                              thủ công
-                            </p>
-                          </div>
-                        )}
-
-                      {/* Fallback manual input - only show if no map location */}
-                      {!orderData.deliveryAddress.latitude &&
-                        !orderData.deliveryAddress.longitude && (
-                          <div className="mt-2">
-                            <input
-                              type="text"
-                              value={orderData.deliveryAddress.streetAddress}
-                              onChange={(e) =>
-                                setOrderData((prev) => ({
-                                  ...prev,
-                                  deliveryAddress: {
-                                    ...prev.deliveryAddress,
-                                    streetAddress: e.target.value,
-                                  },
-                                }))
-                              }
-                              placeholder="Hoặc nhập thủ công: Số nhà, tên đường..."
-                              className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              💡 Khuyến khích chọn từ bản đồ để có địa chỉ chính
-                              xác nhất
-                            </p>
-                          </div>
-                        )}
+                      
                     </div>
-                    {/* Chỉ hiển thị các trường này nếu chưa chọn từ map */}
-                    {!orderData.deliveryAddress.latitude &&
-                      !orderData.deliveryAddress.longitude && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2">
-                              Phường/Xã
-                            </label>
-                            <input
-                              type="text"
-                              value={orderData.deliveryAddress.ward}
-                              onChange={(e) =>
-                                setOrderData((prev) => ({
-                                  ...prev,
-                                  deliveryAddress: {
-                                    ...prev.deliveryAddress,
-                                    ward: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                              placeholder="Nhập phường/xã..."
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-2">
-                              Quận/Huyện
-                            </label>
-                            <input
-                              type="text"
-                              value={orderData.deliveryAddress.district}
-                              onChange={(e) =>
-                                setOrderData((prev) => ({
-                                  ...prev,
-                                  deliveryAddress: {
-                                    ...prev.deliveryAddress,
-                                    district: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                              placeholder="Nhập quận/huyện..."
-                            />
-                          </div>
-                        </div>
-                      )}
+                   
 
                     {/* Hiển thị thông tin địa chỉ từ map (read-only) */}
                     {orderData.deliveryAddress.latitude &&
@@ -1873,7 +1792,7 @@ const RentalOrderForm = () => {
                   </button>
                 </div>
               )}
-
+  
               {/* Order Action */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-center">
