@@ -63,6 +63,7 @@ import AdminReportDetail from "./pages/admin/AdminReportDetail";
 import BankManagement from "./pages/admin/BankManagement";
 import AdminBankDetail from "./pages/admin/AdminBankDetail";
 import WithdrawalManagement from "./pages/admin/WithdrawalManagement";
+import WithdrawalDetailAnalysis from "./pages/admin/WithdrawalDetailAnalysis";
 import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
@@ -432,6 +433,10 @@ export default function App() {
                     <Route
                       path="withdrawals"
                       element={<WithdrawalManagement />}
+                    />
+                    <Route
+                      path="withdrawals/:withdrawalId/analysis"
+                      element={<WithdrawalDetailAnalysis />}
                     />
                     <Route
                       path="settings"
