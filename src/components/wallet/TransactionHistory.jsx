@@ -86,16 +86,21 @@ const TransactionHistory = ({ isOpen, onClose }) => {
     }
   };
 
-  const getTypeIcon = (type) => {
+  const getTypeIcon = (type, isOutgoing = false) => {
     switch (type) {
       case "deposit":
         return <ArrowDownLeft className="w-4 h-4 text-green-500" />;
       case "withdrawal":
         return <ArrowUpRight className="w-4 h-4 text-red-500" />;
+      case "payment":
+        return <ArrowUpRight className="w-4 h-4 text-red-500" />; // Payment (outgoing)
       case "refund":
         return <ArrowDownLeft className="w-4 h-4 text-blue-500" />; // Hoàn tiền
       default:
-        return <ArrowDownLeft className="w-4 h-4 text-gray-400" />;
+        // Use isOutgoing to determine direction for unknown types
+        return isOutgoing ? 
+          <ArrowUpRight className="w-4 h-4 text-red-500" /> : 
+          <ArrowDownLeft className="w-4 h-4 text-green-500" />;
     }
   };
 
@@ -105,6 +110,8 @@ const TransactionHistory = ({ isOpen, onClose }) => {
         return "Nạp tiền";
       case "withdrawal":
         return "Rút tiền";
+      case "payment":
+        return "Thanh toán";
       case "refund":
         return "Hoàn tiền";
       default:
@@ -210,7 +217,7 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                         {/* Type & Status Icons */}
                         <div className="flex flex-col items-center gap-1">
                           <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
-                            {getTypeIcon(transaction.type)}
+                            {getTypeIcon(transaction.type, transaction.isOutgoing)}
                           </div>
                           {getStatusIcon(transaction.status)}
                         </div>
@@ -251,13 +258,13 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                         <div className="text-right">
                           <div
                             className={`font-bold text-lg ${
-                              transaction.type === "deposit" || transaction.type === "refund"
+                              transaction.displayAmount >= 0
                                 ? "text-green-600"
                                 : "text-red-600"
                             }`}
                           >
-                            {transaction.type === "withdrawal"||transaction.type === "order_payment" ? "-" : "+"}
-                            {transaction.amount?.toLocaleString()}
+                            {transaction.displayAmount?.toLocaleString() || 
+                             (transaction.amount?.toLocaleString() || "0")}
                           </div>
                           <div className="text-xs text-gray-500">VND</div>
                         </div>

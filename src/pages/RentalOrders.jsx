@@ -29,7 +29,6 @@ const RentalOrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [showEarlyReturnModal, setShowEarlyReturnModal] = useState(false);
   const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
@@ -220,11 +219,6 @@ const RentalOrdersPage = () => {
     setShowDetailModal(false);
   };
 
-  const handleShipmentManage = (order) => {
-    setSelectedOrder(order);
-    setShowShipmentModal(true);
-  };
-
   const handleShipmentConfirmReceived = async () => {
     // Reload orders and early returns
     await loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
@@ -328,35 +322,11 @@ const RentalOrdersPage = () => {
               {earlyReturnRequests.length > 0 &&
                 `(${earlyReturnRequests.length})`}
             </button>
-            <button
-              onClick={() => {
-                if (selectedOrder) {
-                  handleShipmentManage(selectedOrder);
-                } else {
-                  toast.error("Vui lòng chọn một đơn hàng để quản lí vận chuyển");
-                }
-              }}
-              className="px-6 py-3 rounded-xl font-bold transition-all text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-              title="Quản lí vận chuyển"
-              disabled={!selectedOrder}
-            >
-              🚚 Quản lí VC
-            </button>
           </div>
         </div>
 
-        {/* Early Returns Tab */}
-        {activeTab === "early-returns" && (
-          <EarlyReturnsTab
-            earlyReturnRequests={earlyReturnRequests}
-            isLoading={loadingEarlyReturns}
-          />
-        )}
-
-        {/* Orders Tab */}
-        {activeTab === "orders" && (
-          <>
-            {/* Header */}
+        {/* Orders List */}
+        <>
             <div className="bg-white rounded-lg shadow-md mb-6">
               <div className="border-b border-gray-200">
                 <div className="px-6 py-4">
@@ -408,7 +378,6 @@ const RentalOrdersPage = () => {
                 orders={filteredOrders}
                 onViewDetail={handleViewDetail}
                 onEarlyReturn={handleEarlyReturn}
-                onShipmentManage={handleShipmentManage}
                 onSelectOrder={setSelectedOrder}
                 earlyReturnRequests={earlyReturnRequests}
                 onRenterConfirm={handleRenterConfirm}
@@ -461,8 +430,7 @@ const RentalOrdersPage = () => {
                 </button>
               </div>
             )}
-          </>
-        )}
+        </>
 
         {/* Detail Modal */}
         {showDetailModal && selectedOrder && (
@@ -513,23 +481,6 @@ const RentalOrdersPage = () => {
                 status: statusFilter !== "all" ? statusFilter : undefined,
               });
               toast.success("Yêu cầu gia hạn đã được gửi!");
-            }}
-          />
-        )}
-
-        {/* Shipment Modal */}
-        {showShipmentModal && selectedOrder && (
-          <RenterShipmentModal
-            isOpen={showShipmentModal}
-            onClose={() => {
-              setShowShipmentModal(false);
-              setSelectedOrder(null);
-            }}
-            masterOrder={selectedOrder}
-            onConfirmReceived={async () => {
-              // Wait for loadMyOrders to complete before closing
-              await loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
-              await loadEarlyReturnRequests();
             }}
           />
         )}

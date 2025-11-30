@@ -225,15 +225,15 @@ const ImageUploader = ({ images, onChange, error }) => {
       {/* AI Validation Notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <h4 className="text-sm font-medium text-blue-800 mb-1">
-          🤖 AI Image Validation
+          🤖 Kiểm Tra Ảnh Bằng AI
         </h4>
         <p className="text-xs text-blue-700">
-          Your images will be automatically validated to ensure they:
+          Ảnh của bạn sẽ được kiểm tra tự động để đảm bảo rằng chúng:
         </p>
         <ul className="text-xs text-blue-700 mt-1 list-disc list-inside">
-          <li>Are appropriate and family-friendly</li>
-          <li>Match your selected product category</li>
-          <li>Meet quality standards</li>
+          <li>Phù hợp và thân thiện với gia đình</li>
+          <li>Khớp với danh mục sản phẩm bạn đã chọn</li>
+          <li>Đạt tiêu chuẩn chất lượng</li>
         </ul>
       </div>
     </div>

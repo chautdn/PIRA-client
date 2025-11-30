@@ -59,12 +59,6 @@ const TableHeader = () => (
       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
         <span>Trạng thái</span>
       </th>
-      <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-        <span>Chi tiết yêu cầu</span>
-      </th>
-      <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-        <span>Hành động</span>
-      </th>
     </tr>
   </thead>
 );
@@ -129,7 +123,6 @@ const OrderRow = ({
   order,
   onViewDetail,
   onEarlyReturn,
-  onShipmentManage,
   onSelectOrder,
   earlyReturnRequest,
   navigate
@@ -232,8 +225,8 @@ const OrderRow = ({
 
   return (
     <tr 
+      onClick={() => navigate(`/rental-orders/${order._id}`)}
       className="hover:bg-blue-50 transition-colors duration-150 border-b border-gray-100 cursor-pointer"
-      onClick={() => onSelectOrder?.(order)}
     >
       {/* Order Number */}
       <td className="px-4 py-4 whitespace-nowrap">
@@ -278,20 +271,6 @@ const OrderRow = ({
       <td className="px-4 py-4 whitespace-nowrap">
         <StatusBadge status={order.status} />
       </td>
-
-      {/* Detail Actions */}
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div className="flex justify-center">
-          {renderDetailActions()}
-        </div>
-      </td>
-
-      {/* Status Actions */}
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {renderStatusActions()}
-        </div>
-      </td>
     </tr>
   );
 };
@@ -300,7 +279,6 @@ const OrdersTable = ({
   orders = [],
   onViewDetail,
   onEarlyReturn,
-  onShipmentManage,
   earlyReturnRequests = [],
   isLoading = false,
   error = null,
@@ -376,7 +354,6 @@ const OrdersTable = ({
                 order={order}
                 onViewDetail={onViewDetail}
                 onEarlyReturn={onEarlyReturn}
-                onShipmentManage={onShipmentManage}
                 onSelectOrder={onSelectOrder}
                 earlyReturnRequest={getOrderEarlyReturnRequest(order)}
                 navigate={navigate}

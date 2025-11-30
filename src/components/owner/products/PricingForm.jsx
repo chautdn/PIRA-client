@@ -133,46 +133,6 @@ const PricingForm = ({ pricing = {}, onChange, errors = {} }) => {
           </p>
         )}
       </div>
-
-      {/* Pricing Summary */}
-      {safePricing.dailyRate && safePricing.deposit.amount && (
-        <div className="md:col-span-2 bg-gray-50 p-3 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">
-            Pricing Summary
-          </h4>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span>Daily Rate:</span>
-              <span className="font-medium">
-                {formatCurrency(safePricing.dailyRate)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Security Deposit:</span>
-              <span className="font-medium">
-                {safePricing.deposit.type === "FIXED"
-                  ? formatCurrency(safePricing.deposit.amount)
-                  : `${safePricing.deposit.amount}% (${formatCurrency(
-                      (safePricing.dailyRate * safePricing.deposit.amount) / 100
-                    )})`}
-              </span>
-            </div>
-            <div className="border-t pt-1 flex justify-between font-semibold">
-              <span>Total (1 day):</span>
-              <span>
-                {formatCurrency(
-                  parseFloat(safePricing.dailyRate) +
-                    (safePricing.deposit.type === "FIXED"
-                      ? parseFloat(safePricing.deposit.amount)
-                      : (parseFloat(safePricing.dailyRate) *
-                          parseFloat(safePricing.deposit.amount)) /
-                        100)
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
