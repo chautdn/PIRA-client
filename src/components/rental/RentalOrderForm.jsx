@@ -14,6 +14,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import MapSelector from "../common/MapSelector";
+import AddressSelectionModal from "./AddressSelectionModal";
 import PaymentMethodSelector from "../common/PaymentMethodSelector";
 import VoucherSelector from "../voucher/VoucherSelector";
 import { toast } from "../common/Toast";
@@ -24,6 +25,7 @@ import systemPromotionService from "../../services/systemPromotion";
 const RentalOrderForm = () => {
   try {
     const { user } = useAuth();
+    console.log("RentalOrderForm: Auth user:", user);
     const { cart: cartItems, clearCart } = useCart();
     const rentalOrderContext = useRentalOrder();
     const {
@@ -71,8 +73,10 @@ const RentalOrderForm = () => {
       ward: '',
       district: '',
       city: '',
-      contactPhone: (user && user.profile && user.profile.phone) ? user.profile.phone : '',
-      contactName: (user && user.profile && user.profile.fullName) ? user.profile.fullName : ''
+      contactPhone: (user && (user.phone || (user.profile && user.profile.phone))) ? (user.phone || user.profile.phone) : '',
+      contactName: (user && (user.profile && (user.profile.firstName || user.profile.lastName)))
+        ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
+        : (user && user.profile && user.profile.fullName) || ''
     },
     deliveryMethod: 'DELIVERY',
   }));
@@ -89,17 +93,94 @@ const RentalOrderForm = () => {
     const [loadingPromotion, setLoadingPromotion] = useState(true);
     const [selectedVoucher, setSelectedVoucher] = useState(null);
 
-    // Update contact info when user changes
+    // Address related states
+    const [userAddresses, setUserAddresses] = useState(() => (user && user.addresses) ? user.addresses : (user && user.address ? [{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }] : []));
+    const [loadingAddresses, setLoadingAddresses] = useState(false);
+    const [showAddressModal, setShowAddressModal] = useState(false);
+
     useEffect(() => {
-      if (user && user.profile) {
+      // Keep userAddresses in sync with user from context
+      if (user) {
+        if (user.addresses && Array.isArray(user.addresses)) {
+          setUserAddresses(user.addresses);
+        } else if (user.address) {
+          setUserAddresses([{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }]);
+        } else {
+          setUserAddresses([]);
+        }
+      }
+    }, [user]);
+
+    // When user addresses load, pre-fill orderData.deliveryAddress with default address (local only)
+    useEffect(() => {
+      if (!userAddresses || userAddresses.length === 0) return;
+
+      const hasAddressInOrder = !!(
+        orderData.deliveryAddress.streetAddress ||
+        orderData.deliveryAddress.latitude ||
+        orderData.deliveryAddress.longitude
+      );
+
+      if (hasAddressInOrder) return; // don't overwrite if user already interacted with address
+
+      const defaultAddress = userAddresses.find((a) => a.isDefault) || userAddresses[0];
+      if (!defaultAddress) return;
+
+      setOrderData((prev) => ({
+        ...prev,
+        deliveryAddress: {
+          ...prev.deliveryAddress,
+          streetAddress: defaultAddress.streetAddress || defaultAddress.formattedAddress || "",
+          ward: defaultAddress.ward || defaultAddress.subLocality || "",
+          district: defaultAddress.district || "",
+          city: defaultAddress.city || defaultAddress.locality || "",
+          contactPhone: defaultAddress.phone || defaultAddress.contactPhone || prev.deliveryAddress.contactPhone,
+          contactName: defaultAddress.contactName || prev.deliveryAddress.contactName,
+          latitude: (defaultAddress.coordinates && defaultAddress.coordinates.latitude) || defaultAddress.latitude || prev.deliveryAddress.latitude,
+          longitude: (defaultAddress.coordinates && defaultAddress.coordinates.longitude) || defaultAddress.longitude || prev.deliveryAddress.longitude,
+        },
+      }));
+    }, [userAddresses]);
+
+    const handleAddressFromModal = (address) => {
+      if (!address) return;
+      setOrderData((prev) => ({
+        ...prev,
+        deliveryAddress: {
+          ...prev.deliveryAddress,
+          streetAddress: address.streetAddress || address.formattedAddress || "",
+          ward: address.ward || address.subLocality || "",
+          district: address.district || "",
+          city: address.city || address.locality || "",
+          contactPhone: address.phone || address.contactPhone || prev.deliveryAddress.contactPhone,
+          contactName: address.contactName || prev.deliveryAddress.contactName,
+          latitude: (address.coordinates && address.coordinates.latitude) || address.latitude || prev.deliveryAddress.latitude,
+          longitude: (address.coordinates && address.coordinates.longitude) || address.longitude || prev.deliveryAddress.longitude,
+        },
+      }));
+      setShowAddressModal(false);
+      try {
+        // toast is imported earlier
+        toast.success("Đã cập nhật địa chỉ giao hàng!");
+      } catch (e) {
+        console.log("Address updated");
+      }
+    };
+
+    // Update contact info when user changes (use top-level phone and profile name parts)
+    useEffect(() => {
+      if (user) {
+        const phoneFromUser = user.phone || (user.profile && user.profile.phone) || '';
+        const nameFromProfile = (user.profile && (user.profile.firstName || user.profile.lastName))
+          ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
+          : (user.profile && user.profile.fullName) || '';
+
         setOrderData((prev) => ({
           ...prev,
           deliveryAddress: {
             ...prev.deliveryAddress,
-            contactPhone:
-              user.profile.phone || prev.deliveryAddress.contactPhone,
-            contactName:
-              user.profile.fullName || prev.deliveryAddress.contactName,
+            contactPhone: phoneFromUser || prev.deliveryAddress.contactPhone,
+            contactName: nameFromProfile || prev.deliveryAddress.contactName,
           },
         }));
       }
@@ -1619,6 +1700,15 @@ const RentalOrderForm = () => {
 </label>
               </div>
             </div>
+            
+            {showAddressModal && (
+              <AddressSelectionModal
+                isOpen={showAddressModal}
+                onClose={() => setShowAddressModal(false)}
+                userAddresses={userAddresses}
+                onSelect={handleAddressFromModal}
+              />
+            )}
 
               {orderData.deliveryMethod === "OWNER_DELIVERY" && (
                 <div className="bg-white rounded-lg shadow-md p-6">
