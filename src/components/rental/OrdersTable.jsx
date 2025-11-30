@@ -9,7 +9,8 @@ import {
   Calendar,
   DollarSign,
   Hash,
-  Clock
+  Clock,
+  Truck
 } from "lucide-react";
 import {
   getStatusColor,
@@ -122,6 +123,7 @@ const OrderRow = ({
   order,
   onViewDetail,
   onEarlyReturn,
+  onSelectOrder,
   earlyReturnRequest,
   navigate
 }) => {
@@ -194,6 +196,8 @@ const OrderRow = ({
         </ActionButton>
       );
     }
+
+
 
     // Early Return
     if (order.status === "ACTIVE" && order.subOrders?.[0]) {
@@ -277,7 +281,9 @@ const OrdersTable = ({
   onEarlyReturn,
   earlyReturnRequests = [],
   isLoading = false,
-  error = null
+  error = null,
+  onRenterConfirm,
+  onSelectOrder,
 }) => {
   const navigate = useNavigate();
 
@@ -348,6 +354,7 @@ const OrdersTable = ({
                 order={order}
                 onViewDetail={onViewDetail}
                 onEarlyReturn={onEarlyReturn}
+                onSelectOrder={onSelectOrder}
                 earlyReturnRequest={getOrderEarlyReturnRequest(order)}
                 navigate={navigate}
               />

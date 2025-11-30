@@ -128,19 +128,6 @@ class RentalOrderService {
     }
   }
 
-  // Bước 6: Ký hợp đồng
-  async signContract(contractId, signatureData) {
-    try {
-      const response = await api.post(
-        `/rental-orders/contracts/${contractId}/sign`,
-        signatureData
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || "Không thể ký hợp đồng");
-    }
-  }
-
   // Lấy đơn hàng của người thuê
   async getMyOrders(params = {}) {
     try {
@@ -436,6 +423,29 @@ class RentalOrderService {
     }
   }
 
+  // Renter confirms delivered for a suborder (fallback endpoint on server)
+  async renterConfirmDelivered(subOrderId) {
+    try {
+      const response = await api.post(`/rental-orders/suborders/${subOrderId}/confirm-delivered`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Không thể xác nhận đã nhận hàng');
+    }
+  }
+
+  /**
+   * Owner xác nhận đã nhận hàng trả (auto trả cọc cho renter)
+   * @param {string} subOrderId - ID của sub order
+   */
+  async ownerConfirmDelivered(subOrderId) {
+    try {
+      const response = await api.post(`/rental-orders/suborders/${subOrderId}/owner-confirm-delivered`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Không thể xác nhận đã nhận hàng trả');
+    }
+  }
+
   /**
    * Ký hợp đồng
    * @param {string} contractId - ID của hợp đồng
@@ -450,6 +460,44 @@ class RentalOrderService {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || "Không thể ký hợp đồng");
+    }
+  }
+
+  /**
+   * Tính phí gia hạn
+   * @param {string} masterOrderId - ID của master order
+   * @param {number} extendDays - Số ngày gia hạn
+   */
+  async calculateExtendFee(masterOrderId, extendDays) {
+    try {
+      const response = await api.post(
+        `/rental-orders/${masterOrderId}/calculate-extend-fee`,
+        { extendDays }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể tính phí gia hạn"
+      );
+    }
+  }
+
+  /**
+   * Yêu cầu gia hạn thuê
+   * @param {string} masterOrderId - ID của master order
+   * @param {object} extendData - { extendDays, extendFee, notes }
+   */
+  async extendRental(masterOrderId, extendData) {
+    try {
+      const response = await api.post(
+        `/rental-orders/${masterOrderId}/extend-rental`,
+        extendData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể tạo yêu cầu gia hạn"
+      );
     }
   }
 }

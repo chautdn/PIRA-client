@@ -28,6 +28,7 @@ import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
 import ActiveRentals from "./pages/owner/ActiveRentals";
+import ShipmentsPage from "./pages/shipper/Shipments";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
@@ -376,6 +377,16 @@ export default function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <DisputeDetail />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
+                  {/* Shipper shipments */}
+                  <Route
+                    path="/shipments"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["SHIPPER"]}>
+                        <ShipmentsPage />
                       </RoleProtectedRoute>
                     }
                   />

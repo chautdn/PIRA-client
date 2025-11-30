@@ -4,9 +4,13 @@ import { useRentalOrder } from "../context/RentalOrderContext";
 import { useAuth } from "../hooks/useAuth";
 import toast from "react-hot-toast";
 import api from "../services/api";
+import rentalOrderService from "../services/rentalOrder";
 import EarlyReturnRequestModal from "../components/rental/EarlyReturnRequestModal";
 import CreateDisputeModal from "../components/dispute/CreateDisputeModal";
 import { useDispute } from "../context/DisputeContext";
+import ExtendRentalModal from "../components/rental/ExtendRentalModal";
+import ManageShipmentModal from "../components/owner/ManageShipmentModal";
+import RenterShipmentModal from "../components/rental/RenterShipmentModal";
 import {
   ArrowLeft,
   Package,
@@ -24,6 +28,7 @@ import {
   Star,
   MessageCircle,
   RotateCcw,
+  Plus,
 } from "lucide-react";
 
 const RentalOrderDetailPage = () => {
@@ -46,6 +51,8 @@ const RentalOrderDetailPage = () => {
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const { createDispute } = useDispute();
+  const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
 
   // Check if this is a payment return
   const payment = searchParams.get("payment");
@@ -97,6 +104,7 @@ const RentalOrderDetailPage = () => {
     
     return false;
   };
+  const action = searchParams.get("action"); // Check for "extend" action
 
   // Load order detail first
   useEffect(() => {
@@ -105,6 +113,13 @@ const RentalOrderDetailPage = () => {
       loadOrderDetail(id);
     }
   }, [id]);
+
+  // Open extend modal if action parameter is set
+  useEffect(() => {
+    if (action === "extend" && currentOrder && currentOrder.status === "ACTIVE") {
+      setShowExtendRentalModal(true);
+    }
+  }, [action, currentOrder]);
 
   // Then handle payment verification if needed
   useEffect(() => {
@@ -241,6 +256,7 @@ const RentalOrderDetailPage = () => {
       OWNER_REJECTED: "bg-red-100 text-red-800",
       READY_FOR_CONTRACT: "bg-purple-100 text-purple-800",
       CONTRACT_SIGNED: "bg-green-100 text-green-800",
+      DELIVERED: "bg-blue-100 text-blue-800",
       ACTIVE: "bg-green-100 text-green-800",
       COMPLETED: "bg-gray-100 text-gray-800",
       CANCELLED: "bg-red-100 text-red-800",
@@ -258,6 +274,7 @@ const RentalOrderDetailPage = () => {
       OWNER_REJECTED: "Chủ từ chối",
       READY_FOR_CONTRACT: "Sẵn sàng ký HĐ",
       CONTRACT_SIGNED: "Đã ký HĐ",
+      DELIVERED: "Đã giao hàng",
       ACTIVE: "Đang thuê",
       COMPLETED: "Hoàn thành",
       CANCELLED: "Đã hủy",
@@ -282,9 +299,10 @@ const RentalOrderDetailPage = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const isOwner = currentOrder.subOrders?.some(
-    (subOrder) => subOrder.owner?._id === user._id
-  );
+  const isOwner = !!currentOrder.subOrders?.some((subOrder) => {
+    const ownerId = subOrder.owner?._id ?? subOrder.owner;
+    return ownerId && String(ownerId) === String(user?._id);
+  });
 
   const isRenter = currentOrder.renter?._id === user._id;
 
@@ -302,6 +320,27 @@ const RentalOrderDetailPage = () => {
     } catch (error) {
       console.error("Error handling owner action:", error);
       alert("Có lỗi xảy ra khi thực hiện hành động");
+    }
+  };
+
+  const handleRenterConfirm = async (subOrderId) => {
+    try {
+      toast.loading('Đang gửi xác nhận...');
+      const response = await rentalOrderService.renterConfirmDelivered(subOrderId);
+      
+      console.log('✅ Renter confirmation response:', response);
+      
+      toast.dismiss();
+      toast.success('Cảm ơn — bạn đã xác nhận đã nhận hàng.');
+      
+      // Add small delay to ensure backend processing is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await loadOrderDetail(id);
+    } catch (error) {
+      toast.dismiss();
+      console.error('Renter confirm failed', error);
+      toast.error(error.response?.data?.message || error.message || 'Không thể xác nhận đã nhận hàng');
     }
   };
 
@@ -356,12 +395,43 @@ const RentalOrderDetailPage = () => {
             )}
 
             {currentOrder.status === "ACTIVE" && isRenter && (
+              <>
+                <button
+                  onClick={() => setShowExtendRentalModal(true)}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Gia hạn</span>
+                </button>
+                <button
+                  onClick={() => setShowEarlyReturnModal(true)}
+                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>Trả hàng sớm</span>
+                </button>
+              </>
+            )}
+
+            {/* Renter: manage shipment button */}
+            {isRenter && (currentOrder.status === 'ACTIVE' || currentOrder.status === 'CONTRACT_SIGNED') && (
               <button
-                onClick={() => setShowEarlyReturnModal(true)}
-                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
+                onClick={() => setShowShipmentModal(true)}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
               >
-                <RotateCcw className="w-5 h-5" />
-                <span>Trả hàng sớm</span>
+                <Package className="w-5 h-5" />
+                <span>Quản lí vận chuyển</span>
+              </button>
+            )}
+
+            {/* Owner: manage shipment button visible after contract signed */}
+            {isOwner && currentOrder.status === 'CONTRACT_SIGNED' && (
+              <button
+                onClick={() => setShowShipmentModal(true)}
+                className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
+              >
+                <FileText className="w-5 h-5" />
+                <span>Quản lí vận chuyển</span>
               </button>
             )}
           </div>
@@ -699,7 +769,7 @@ const RentalOrderDetailPage = () => {
                             </span>
 
                             {isOwner &&
-                              subOrder.owner?._id === user._id &&
+                              (String(subOrder.owner?._id ?? subOrder.owner) === String(user?._id)) &&
                               subOrder.status ===
                                 "PENDING_CONFIRMATION" && (
                                 <div className="flex items-center space-x-2">
@@ -725,6 +795,19 @@ const RentalOrderDetailPage = () => {
                                   </button>
                                 </div>
                               )}
+
+                            {/* Renter: confirm received button (when shipment marked DELIVERED) */}
+                            {isRenter && subOrder.status === 'DELIVERED' && (
+                              <div className="flex items-center ml-2">
+                                <button
+                                  onClick={() => handleRenterConfirm(subOrder._id)}
+                                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center space-x-1"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Xác nhận đã nhận hàng</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1181,6 +1264,40 @@ const RentalOrderDetailPage = () => {
           }}
           onSubmit={handleDisputeSubmit}
           rentalOrder={currentOrder}
+        />
+      )}
+
+      {/* Extend Rental Modal */}
+      {showExtendRentalModal && currentOrder && (
+        <ExtendRentalModal
+          isOpen={showExtendRentalModal}
+          onClose={() => setShowExtendRentalModal(false)}
+          masterOrder={currentOrder}
+          onSuccess={() => {
+            setShowExtendRentalModal(false);
+            loadOrderDetail(id);
+          }}
+        />
+      )}
+
+      {/* Manage Shipment Modal */}
+      {showShipmentModal && currentOrder && isRenter && (
+        <RenterShipmentModal
+          isOpen={showShipmentModal}
+          onClose={() => setShowShipmentModal(false)}
+          masterOrder={currentOrder}
+          onConfirmReceived={() => loadOrderDetail(id)}
+        />
+      )}
+
+      {/* Owner Manage Shipment Modal */}
+      {showShipmentModal && currentOrder.subOrders && isOwner && (
+        <ManageShipmentModal
+          isOpen={showShipmentModal}
+          onClose={() => setShowShipmentModal(false)}
+          subOrder={currentOrder.subOrders[0]}
+          masterOrder={currentOrder}
+          onSuccess={() => loadOrderDetail(id)}
         />
       )}
     </div>
