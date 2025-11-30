@@ -429,7 +429,7 @@ const AdminDisputeDetail = () => {
                     </div>
                   )}
                   {dispute.evidence?.photos?.length > 0 && (
-                    <div>
+                    <div className="mb-3">
                       <p className="text-sm font-medium text-gray-700 mb-2">Hình ảnh ({dispute.evidence.photos.length}):</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {dispute.evidence.photos.map((photo, idx) => (
@@ -453,8 +453,29 @@ const AdminDisputeDetail = () => {
                       </div>
                     </div>
                   )}
-                  {(!dispute.evidence?.photos || dispute.evidence.photos.length === 0) && (
-                    <p className="text-sm text-gray-500">Không có hình ảnh</p>
+                  {dispute.evidence?.videos?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Video ({dispute.evidence.videos.length}):</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {dispute.evidence.videos.map((video, idx) => (
+                          <div key={idx}>
+                            <video
+                              controls
+                              className="w-full rounded border"
+                              style={{ maxHeight: '250px' }}
+                            >
+                              <source src={video} type="video/mp4" />
+                              Trình duyệt không hỗ trợ video.
+                            </video>
+                            <p className="text-xs text-gray-500 mt-1 text-center">Video {idx + 1}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(!dispute.evidence?.photos || dispute.evidence.photos.length === 0) && 
+                   (!dispute.evidence?.videos || dispute.evidence.videos.length === 0) && (
+                    <p className="text-sm text-gray-500">Không có bằng chứng hình ảnh/video</p>
                   )}
                 </div>
               </div>
@@ -473,7 +494,7 @@ const AdminDisputeDetail = () => {
                       </div>
                     )}
                     {dispute.respondentResponse.evidence.photos?.length > 0 && (
-                      <div>
+                      <div className="mb-3">
                         <p className="text-sm font-medium text-gray-700 mb-2">
                           Hình ảnh ({dispute.respondentResponse.evidence.photos.length}):
                         </p>
@@ -499,9 +520,33 @@ const AdminDisputeDetail = () => {
                         </div>
                       </div>
                     )}
+                    {dispute.respondentResponse.evidence.videos?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Video ({dispute.respondentResponse.evidence.videos.length}):
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {dispute.respondentResponse.evidence.videos.map((video, idx) => (
+                            <div key={idx}>
+                              <video
+                                controls
+                                className="w-full rounded border"
+                                style={{ maxHeight: '250px' }}
+                              >
+                                <source src={video} type="video/mp4" />
+                                Trình duyệt không hỗ trợ video.
+                              </video>
+                              <p className="text-xs text-gray-500 mt-1 text-center">Video {idx + 1}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {(!dispute.respondentResponse.evidence.photos || 
-                      dispute.respondentResponse.evidence.photos.length === 0) && (
-                      <p className="text-sm text-gray-500">Không có hình ảnh</p>
+                      dispute.respondentResponse.evidence.photos.length === 0) &&
+                     (!dispute.respondentResponse.evidence.videos || 
+                      dispute.respondentResponse.evidence.videos.length === 0) && (
+                      <p className="text-sm text-gray-500">Không có bằng chứng hình ảnh/video</p>
                     )}
                   </div>
                 </div>
