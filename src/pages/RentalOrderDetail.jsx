@@ -503,9 +503,9 @@ const RentalOrderDetailPage = () => {
                             ? "Nhận trực tiếp"
                             : "Giao tận nơi"}
                         </p>
-                        {currentOrder.shippingAddress && (
+                        {currentOrder.deliveryAddress && (
                           <p className="text-sm text-gray-600 truncate">
-                            {currentOrder.shippingAddress.address}
+                            {currentOrder.deliveryAddress.streetAddress}
                           </p>
                         )}
                       </div>
@@ -563,9 +563,6 @@ const RentalOrderDetailPage = () => {
                         <p className="font-medium">
                           {currentOrder.renter?.profile?.fullName || "Không rõ"}
                         </p>
-                        <p className="text-sm text-gray-600">
-                          ID: {currentOrder.renter?._id}
-                        </p>
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <Phone className="w-4 h-4" />
@@ -589,21 +586,21 @@ const RentalOrderDetailPage = () => {
                       <MapPin className="w-5 h-5 text-green-600" />
                       <span>Địa chỉ giao hàng</span>
                     </h3>
-                    {currentOrder.shippingAddress ? (
+                    {currentOrder.deliveryAddress ? (
                       <div className="space-y-2">
                         <p className="font-medium">
-                          {currentOrder.shippingAddress.receiverName || currentOrder.shippingAddress.name}
+                          {currentOrder.deliveryAddress.contactName}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {currentOrder.shippingAddress.receiverPhone || currentOrder.shippingAddress.phone}
+                          {currentOrder.deliveryAddress.contactPhone}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {currentOrder.shippingAddress.address || currentOrder.shippingAddress.streetAddress}
+                          {currentOrder.deliveryAddress.streetAddress}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {currentOrder.shippingAddress.ward},{" "}
-                          {currentOrder.shippingAddress.district},{" "}
-                          {currentOrder.shippingAddress.province || currentOrder.shippingAddress.city}
+                          {currentOrder.deliveryAddress.ward}
+                          {currentOrder.deliveryAddress.district && `, ${currentOrder.deliveryAddress.district}`}
+                          {`, ${currentOrder.deliveryAddress.city}`}
                         </p>
                       </div>
                     ) : (
@@ -622,22 +619,42 @@ const RentalOrderDetailPage = () => {
                     <div className="space-y-3">
                       <div>
                         <p className="text-sm text-gray-600">Phương thức:</p>
-                        <p className="font-medium">{currentOrder.paymentMethod || "PayOS"}</p>
+                        <p className="font-medium">
+                          {currentOrder.paymentMethod === "WALLET" ? "Ví điện tử" : 
+                           currentOrder.paymentMethod === "PAYOS" ? "PayOS" :
+                           currentOrder.paymentMethod === "BANK_TRANSFER" ? "Chuyển khoản ngân hàng" :
+                           currentOrder.paymentMethod === "COD" ? "Thanh toán khi nhận hàng" :
+                           currentOrder.paymentMethod || "PayOS"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Trạng thái:</p>
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                          currentOrder.paymentStatus === "COMPLETED" 
+                          currentOrder.paymentStatus === "PAID" 
                             ? "bg-green-100 text-green-800" 
+                            : currentOrder.paymentStatus === "PARTIALLY_PAID"
+                            ? "bg-blue-100 text-blue-800"
                             : "bg-yellow-100 text-yellow-800"
                         }`}>
-                          {currentOrder.paymentStatus === "COMPLETED" ? "Đã thanh toán" : "Chưa thanh toán"}
+                          {currentOrder.paymentStatus === "PAID" ? "Đã thanh toán" : 
+                           currentOrder.paymentStatus === "PARTIALLY_PAID" ? "Thanh toán một phần" : 
+                           "Chưa thanh toán"}
                         </span>
                       </div>
-                      {currentOrder.paidAt && (
+                      {(currentOrder.paymentInfo?.transactionId || currentOrder.updatedAt) && (
                         <div>
-                          <p className="text-sm text-gray-600">Ngày thanh toán:</p>
-                          <p className="font-medium">{formatDate(currentOrder.paidAt)}</p>
+                          <p className="text-sm text-gray-600">
+                            {currentOrder.paymentInfo?.transactionId ? "Mã giao dịch:" : "Ngày cập nhật:"}
+                          </p>
+                          <p className="font-medium">
+                            {currentOrder.paymentInfo?.transactionId || formatDate(currentOrder.updatedAt)}
+                          </p>
+                        </div>
+                      )}
+                      {currentOrder.paymentInfo?.paymentDetails?.message && (
+                        <div>
+                          <p className="text-sm text-gray-600">Chi tiết:</p>
+                          <p className="font-medium text-sm text-green-600">{currentOrder.paymentInfo.paymentDetails.message}</p>
                         </div>
                       )}
                     </div>
@@ -921,15 +938,19 @@ const RentalOrderDetailPage = () => {
                   </div>
 
                   {/* Payment status */}
-                  {currentOrder.status !== "DRAFT" && (
+                  {(currentOrder.paymentStatus === "PAID" || currentOrder.paymentStatus === "PARTIALLY_PAID") && (
                     <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        currentOrder.paymentStatus === "PAID" ? "bg-green-500" : "bg-blue-500"
+                      }`}>
                         <DollarSign className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">Thanh toán hoàn tất</p>
+                        <p className="font-medium">
+                          {currentOrder.paymentStatus === "PAID" ? "Thanh toán hoàn tất" : "Thanh toán một phần"}
+                        </p>
                         <p className="text-sm text-gray-600">
-                          Đã thanh toán thành công
+                          {currentOrder.paymentStatus === "PAID" ? "Đã thanh toán thành công" : "Đã thanh toán cọc"}
                         </p>
                       </div>
                     </div>
