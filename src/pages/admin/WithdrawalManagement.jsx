@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { adminService } from "../../services/admin";
 import { motion } from "framer-motion";
 import {
@@ -10,17 +11,22 @@ import {
   AlertCircle,
   DollarSign,
   Wallet,
+  Eye,
+  TrendingUp,
+  Shield,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import useChatSocket from "../../hooks/useChatSocket";
 
 const WithdrawalManagement = () => {
+  const navigate = useNavigate();
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     status: "",
     page: 1,
     limit: 20,
+    riskLevel: "",
   });
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -37,12 +43,13 @@ const WithdrawalManagement = () => {
   });
   const [systemWallet, setSystemWallet] = useState(null);
   const [loadingWallet, setLoadingWallet] = useState(true);
+  const [enhancedView, setEnhancedView] = useState(false);
   const { socket } = useChatSocket();
 
   useEffect(() => {
     fetchWithdrawals();
     fetchSystemWallet();
-  }, [filters]);
+  }, [filters, enhancedView]);
 
   // Listen for system wallet updates via socket
   useEffect(() => {
@@ -99,7 +106,12 @@ const WithdrawalManagement = () => {
   const fetchWithdrawals = async () => {
     try {
       setLoading(true);
-      const result = await adminService.getWithdrawals(filters);
+      
+      // Use enhanced endpoint if enhanced view is enabled
+      const result = enhancedView 
+        ? await adminService.getEnhancedWithdrawals(filters)
+        : await adminService.getWithdrawals(filters);
+        
       setWithdrawals(result.withdrawals || []);
       setPagination(result.pagination || {});
     } catch (error) {
@@ -155,6 +167,35 @@ const WithdrawalManagement = () => {
     setSelectedWithdrawal(withdrawal);
     setActionData({ ...actionData, status });
     setShowModal(true);
+  };
+
+  const viewDetailedAnalysis = (withdrawalId) => {
+    navigate(`/admin/withdrawals/${withdrawalId}/analysis`);
+  };
+
+  const getRiskBadge = (riskLevel) => {
+    if (!riskLevel) return null;
+    
+    const colors = {
+      LOW: "bg-green-100 text-green-800",
+      MEDIUM: "bg-yellow-100 text-yellow-800", 
+      HIGH: "bg-orange-100 text-orange-800",
+      VERY_HIGH: "bg-red-100 text-red-800",
+    };
+
+    const labels = {
+      LOW: "THẤP",
+      MEDIUM: "TRUNG BÌNH",
+      HIGH: "CAO", 
+      VERY_HIGH: "RẤT CAO",
+    };
+    
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colors[riskLevel]}`}>
+        <Shield className="w-3 h-3 mr-1" />
+        {labels[riskLevel]}
+      </span>
+    );
   };
 
   const getStatusBadge = (status) => {
@@ -246,7 +287,7 @@ const WithdrawalManagement = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4 items-center">
           <select
             value={filters.status}
             onChange={(e) =>
@@ -261,6 +302,40 @@ const WithdrawalManagement = () => {
             <option value="rejected">Đã từ chối</option>
             <option value="cancelled">Đã hủy</option>
           </select>
+
+          {enhancedView && (
+            <select
+              value={filters.riskLevel}
+              onChange={(e) =>
+                setFilters({ ...filters, riskLevel: e.target.value, page: 1 })
+              }
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Tất cả mức rủi ro</option>
+              <option value="LOW">Rủi ro thấp</option>
+              <option value="MEDIUM">Rủi ro trung bình</option>
+              <option value="HIGH">Rủi ro cao</option>
+              <option value="VERY_HIGH">Rủi ro rất cao</option>
+            </select>
+          )}
+
+          <div className="flex-1"></div>
+          
+          <div className="text-sm text-gray-500 hidden md:block">
+            💡 Nhấn vào dòng để xem phân tích chi tiết
+          </div>
+          
+          <button
+            onClick={() => setEnhancedView(!enhancedView)}
+            className={`px-4 py-2 rounded-lg border transition-colors ${
+              enhancedView
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+            }`}
+          >
+            <TrendingUp className="w-4 h-4 inline mr-2" />
+            {enhancedView ? "Chế độ nâng cao" : "Chế độ cơ bản"}
+          </button>
         </div>
       </div>
 
@@ -289,6 +364,11 @@ const WithdrawalManagement = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ngân hàng
                   </th>
+                  {enhancedView && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Rủi ro
+                    </th>
+                  )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Trạng thái
                   </th>
@@ -302,7 +382,11 @@ const WithdrawalManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {withdrawals.map((withdrawal) => (
-                  <tr key={withdrawal._id} className="hover:bg-gray-50">
+                  <tr 
+                    key={withdrawal._id} 
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => viewDetailedAnalysis(withdrawal._id)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
@@ -330,6 +414,16 @@ const WithdrawalManagement = () => {
                         {withdrawal.bankDetails?.accountHolderName}
                       </div>
                     </td>
+                    {enhancedView && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getRiskBadge(withdrawal.riskAssessment?.level)}
+                        {withdrawal.riskAssessment && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Điểm: {withdrawal.riskAssessment.score}/100
+                          </div>
+                        )}
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(withdrawal.status)}
                     </td>
@@ -337,36 +431,28 @@ const WithdrawalManagement = () => {
                       {formatDate(withdrawal.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {withdrawal.status === "pending" && (
-                        <button
-                          onClick={() =>
-                            openActionModal(withdrawal, "processing")
-                          }
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mr-2"
-                        >
-                          Xử lý
-                        </button>
-                      )}
-                      {withdrawal.status === "processing" && (
-                        <>
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        {withdrawal.status === "pending" && (
                           <button
                             onClick={() =>
-                              openActionModal(withdrawal, "completed")
+                              openActionModal(withdrawal, "processing")
                             }
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg mr-2"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
                           >
-                            Duyệt
+                            Tiếp nhận
                           </button>
-                          <button
-                            onClick={() =>
-                              openActionModal(withdrawal, "rejected")
-                            }
-                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
-                          >
-                            Từ chối
-                          </button>
-                        </>
-                      )}
+                        )}
+                        {withdrawal.status === "processing" && (
+                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                            Đang xử lý
+                          </span>
+                        )}
+                        {(withdrawal.status === "completed" || withdrawal.status === "rejected" || withdrawal.status === "cancelled") && (
+                          <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                            Đã xử lý
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -418,7 +504,7 @@ const WithdrawalManagement = () => {
             className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
           >
             <h3 className="text-xl font-bold mb-4">
-              {actionData.status === "processing" && "Bắt đầu xử lý"}
+              {actionData.status === "processing" && "Tiếp nhận xử lý"}
               {actionData.status === "completed" && "Duyệt rút tiền"}
               {actionData.status === "rejected" && "Từ chối rút tiền"}
             </h3>
