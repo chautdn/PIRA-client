@@ -7,6 +7,7 @@ import { formatCurrency } from '../../utils/constants';
 import ContractSigningModal from '../../components/common/ContractSigningModal';
 import ManageShipmentModal from '../../components/owner/ManageShipmentModal';
 import OwnerShipmentModal from '../../components/owner/OwnerShipmentModal';
+import ManageExtensionRequestsModal from '../../components/owner/ManageExtensionRequestsModal';
 
 const OwnerRentalRequests = () => {
   const { user } = useAuth();
@@ -20,6 +21,7 @@ const OwnerRentalRequests = () => {
   const [showSigningInModal, setShowSigningInModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [showOwnerShipmentModal, setShowOwnerShipmentModal] = useState(false);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -304,6 +306,12 @@ const OwnerRentalRequests = () => {
               🔄 Reload
             </button>
             <button
+              onClick={() => setShowExtensionModal(true)}
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+            >
+              📅 Quản lí gia hạn
+            </button>
+            <button
               onClick={() => {
                 if (selectedSubOrder && (selectedSubOrder.status === 'CONTRACT_SIGNED' || selectedSubOrder.status === 'ACTIVE' || selectedSubOrder.status === 'DELIVERED') && selectedSubOrder.masterOrder?.deliveryMethod === 'DELIVERY') {
                   setShowOwnerShipmentModal(true);
@@ -410,17 +418,6 @@ const OwnerRentalRequests = () => {
                         >
                           📋 Chi tiết
                         </button>
-                        {(s.status === 'CONTRACT_SIGNED' || s.status === 'ACTIVE' || s.status === 'DELIVERED') && s.masterOrder?.deliveryMethod === 'DELIVERY' && (
-                          <button
-                            onClick={() => {
-                              setSelectedSubOrder(s);
-                              setShowShipmentModal(true);
-                            }}
-                            className="text-sm bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition-colors"
-                          >
-                             Yêu cầu vận chuyển
-                          </button>
-                        )}
                         {s.status === 'OWNER_CONFIRMED' && (
                           <button 
                             onClick={() => {
@@ -500,6 +497,20 @@ const OwnerRentalRequests = () => {
             subOrder={selectedSubOrder}
             masterOrder={selectedSubOrder.masterOrder}
             onConfirmReceived={() => refreshSubOrderData(selectedSubOrder._id)}
+          />
+        )}
+
+        {/* Extension Requests Modal */}
+        {showExtensionModal && (
+          <ManageExtensionRequestsModal
+            isOpen={showExtensionModal}
+            onClose={() => setShowExtensionModal(false)}
+            onSuccess={() => {
+              fetchSubOrders();
+              if (selectedSubOrder) {
+                refreshSubOrderData(selectedSubOrder._id);
+              }
+            }}
           />
         )}
       </div>

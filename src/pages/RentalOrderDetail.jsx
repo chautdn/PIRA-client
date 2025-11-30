@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import api from "../services/api";
 import rentalOrderService from "../services/rentalOrder";
 import EarlyReturnRequestModal from "../components/rental/EarlyReturnRequestModal";
+import ExtendRentalModal from "../components/rental/ExtendRentalModal";
 import ManageShipmentModal from "../components/owner/ManageShipmentModal";
 import {
   ArrowLeft,
@@ -24,6 +25,7 @@ import {
   Star,
   MessageCircle,
   RotateCcw,
+  Plus,
 } from "lucide-react";
 
 const RentalOrderDetailPage = () => {
@@ -43,11 +45,13 @@ const RentalOrderDetailPage = () => {
   const [confirmAction, setConfirmAction] = useState(null); // 'confirm' or 'reject'
   const [rejectReason, setRejectReason] = useState("");
   const [showEarlyReturnModal, setShowEarlyReturnModal] = useState(false);
+  const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
 
   // Check if this is a payment return
   const payment = searchParams.get("payment");
   const orderCode = searchParams.get("orderCode");
+  const action = searchParams.get("action"); // Check for "extend" action
 
   // Load order detail first
   useEffect(() => {
@@ -56,6 +60,13 @@ const RentalOrderDetailPage = () => {
       loadOrderDetail(id);
     }
   }, [id]);
+
+  // Open extend modal if action parameter is set
+  useEffect(() => {
+    if (action === "extend" && currentOrder && currentOrder.status === "ACTIVE") {
+      setShowExtendRentalModal(true);
+    }
+  }, [action, currentOrder]);
 
   // Then handle payment verification if needed
   useEffect(() => {
@@ -319,13 +330,22 @@ const RentalOrderDetailPage = () => {
             )}
 
             {currentOrder.status === "ACTIVE" && isRenter && (
-              <button
-                onClick={() => setShowEarlyReturnModal(true)}
-                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
-              >
-                <RotateCcw className="w-5 h-5" />
-                <span>Trả hàng sớm</span>
-              </button>
+              <>
+                <button
+                  onClick={() => setShowExtendRentalModal(true)}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Gia hạn</span>
+                </button>
+                <button
+                  onClick={() => setShowEarlyReturnModal(true)}
+                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>Trả hàng sớm</span>
+                </button>
+              </>
             )}
 
             {/* Owner: manage shipment button visible after contract signed */}
@@ -1045,6 +1065,19 @@ const RentalOrderDetailPage = () => {
             setShowEarlyReturnModal(false);
             loadOrderDetail(id);
             toast.success("Tạo yêu cầu trả hàng sớm thành công!");
+          }}
+        />
+      )}
+
+      {/* Extend Rental Modal */}
+      {showExtendRentalModal && currentOrder && (
+        <ExtendRentalModal
+          isOpen={showExtendRentalModal}
+          onClose={() => setShowExtendRentalModal(false)}
+          masterOrder={currentOrder}
+          onSuccess={() => {
+            setShowExtendRentalModal(false);
+            loadOrderDetail(id);
           }}
         />
       )}

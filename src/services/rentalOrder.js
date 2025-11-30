@@ -462,6 +462,44 @@ class RentalOrderService {
       throw new Error(error.response?.data?.message || "Không thể ký hợp đồng");
     }
   }
+
+  /**
+   * Tính phí gia hạn
+   * @param {string} masterOrderId - ID của master order
+   * @param {number} extendDays - Số ngày gia hạn
+   */
+  async calculateExtendFee(masterOrderId, extendDays) {
+    try {
+      const response = await api.post(
+        `/rental-orders/${masterOrderId}/calculate-extend-fee`,
+        { extendDays }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể tính phí gia hạn"
+      );
+    }
+  }
+
+  /**
+   * Yêu cầu gia hạn thuê
+   * @param {string} masterOrderId - ID của master order
+   * @param {object} extendData - { extendDays, extendFee, notes }
+   */
+  async extendRental(masterOrderId, extendData) {
+    try {
+      const response = await api.post(
+        `/rental-orders/${masterOrderId}/extend-rental`,
+        extendData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể tạo yêu cầu gia hạn"
+      );
+    }
+  }
 }
 
 export default new RentalOrderService();

@@ -8,6 +8,7 @@ import api from "../services/api";
 import earlyReturnApi from "../services/earlyReturn.Api";
 import rentalOrderService from "../services/rentalOrder";
 import EarlyReturnRequestModal from "../components/rental/EarlyReturnRequestModal";
+import ExtendRentalModal from "../components/rental/ExtendRentalModal";
 import RenterShipmentModal from "../components/rental/RenterShipmentModal";
 import OrderFilters from "../components/rental/OrderFilters";
 import OrdersTable from "../components/rental/OrdersTable";
@@ -30,6 +31,7 @@ const RentalOrdersPage = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [showEarlyReturnModal, setShowEarlyReturnModal] = useState(false);
+  const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
   const [loadingEarlyReturns, setLoadingEarlyReturns] = useState(false);
@@ -205,6 +207,12 @@ const RentalOrdersPage = () => {
   const handleEarlyReturn = (subOrder) => {
     setSelectedSubOrder(subOrder);
     setShowEarlyReturnModal(true);
+  };
+
+  const handleExtendRental = (order) => {
+    setSelectedOrder(order);
+    setShowExtendRentalModal(true);
+    setShowDetailModal(false);
   };
 
   const closeDetailModal = () => {
@@ -462,6 +470,7 @@ const RentalOrdersPage = () => {
             order={selectedOrder}
             onClose={closeDetailModal}
             onEarlyReturn={handleEarlyReturn}
+            onExtendRental={handleExtendRental}
             earlyReturnRequest={getOrderEarlyReturnRequest(selectedOrder)}
           />
         )}
@@ -484,6 +493,26 @@ const RentalOrdersPage = () => {
               });
               loadEarlyReturnRequests();
               toast.success("Tạo yêu cầu trả hàng sớm thành công!");
+            }}
+          />
+        )}
+
+        {/* Extend Rental Modal */}
+        {showExtendRentalModal && selectedOrder && (
+          <ExtendRentalModal
+            isOpen={showExtendRentalModal}
+            onClose={() => {
+              setShowExtendRentalModal(false);
+              setSelectedOrder(null);
+            }}
+            masterOrder={selectedOrder}
+            onSuccess={() => {
+              setShowExtendRentalModal(false);
+              setSelectedOrder(null);
+              loadMyOrders({
+                status: statusFilter !== "all" ? statusFilter : undefined,
+              });
+              toast.success("Yêu cầu gia hạn đã được gửi!");
             }}
           />
         )}

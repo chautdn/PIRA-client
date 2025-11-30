@@ -11,6 +11,7 @@ import {
   FileText,
   RotateCcw,
   AlertCircle,
+  Plus,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { ownerProductApi } from "../../services/ownerProduct.Api";
@@ -29,6 +30,7 @@ const OrderDetailModal = ({
   order,
   onClose,
   onEarlyReturn,
+  onExtendRental,
   earlyReturnRequest,
 }) => {
   const navigate = useNavigate();
@@ -486,16 +488,25 @@ const OrderDetailModal = ({
                 );
               }
               return (
-                <button
-                  onClick={() => {
-                    onEarlyReturn(order.subOrders[0]);
-                    onClose();
-                  }}
-                  className="flex items-center space-x-2 bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Trả hàng sớm</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => onExtendRental(order)}
+                    className="flex items-center space-x-2 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Gia hạn</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onEarlyReturn(order.subOrders[0]);
+                      onClose();
+                    }}
+                    className="flex items-center space-x-2 bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Trả hàng sớm</span>
+                  </button>
+                </>
               );
             })()}
           <button
