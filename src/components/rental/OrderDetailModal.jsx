@@ -470,8 +470,8 @@ const OrderDetailModal = ({
               <span>Ký hợp đồng</span>
             </button>
           )}
-          {order.status === "ACTIVE" &&
-            order.subOrders?.[0] &&
+          {order.subOrders?.[0] &&
+            order.subOrders[0].products?.some(p => p.productStatus === 'ACTIVE') &&
             (() => {
               if (earlyReturnRequest) {
                 return (
