@@ -5,6 +5,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { WalletProvider } from "../context/WalletContext";
 import { CartProvider } from "../context/CartContext";
 import { NotificationProvider } from "../context/NotificationContext";
+import { DisputeProvider } from "../context/DisputeContext";
 
 // Create a client with proper configuration for chat
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ const AppProviders = ({ children }) => {
         <WalletProvider>
           <CartProvider>
             <NotificationProvider>
+              <DisputeProvider>
               {children}
               {/* Toast notifications */}
               <Toaster
@@ -79,6 +81,8 @@ const AppProviders = ({ children }) => {
                   dismissible: true,
                 }}
               />
+            
+             </DisputeProvider>
             </NotificationProvider>
           </CartProvider>
         </WalletProvider>

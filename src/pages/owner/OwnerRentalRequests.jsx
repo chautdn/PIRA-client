@@ -5,6 +5,9 @@ import rentalOrderService from '../../services/rentalOrder';
 import { toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/constants';
 import ContractSigningModal from '../../components/common/ContractSigningModal';
+import ManageShipmentModal from '../../components/owner/ManageShipmentModal';
+import OwnerShipmentModal from '../../components/owner/OwnerShipmentModal';
+import ManageExtensionRequestsModal from '../../components/owner/ManageExtensionRequestsModal';
 
 const OwnerRentalRequests = () => {
   const { user } = useAuth();
@@ -16,6 +19,9 @@ const OwnerRentalRequests = () => {
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showSigningInModal, setShowSigningInModal] = useState(false);
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
+  const [showOwnerShipmentModal, setShowOwnerShipmentModal] = useState(false);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -245,7 +251,11 @@ const OwnerRentalRequests = () => {
       OWNER_REJECTED: 'bg-red-100 text-red-800',
       READY_FOR_CONTRACT: 'bg-blue-100 text-blue-800',
       PENDING_CONTRACT: 'bg-blue-100 text-blue-800',
-      CONTRACT_SIGNED: 'bg-purple-100 text-purple-800'
+      CONTRACTED: 'bg-purple-100 text-purple-800',
+      CONTRACT_SIGNED: 'bg-green-100 text-green-800',
+      DELIVERED: 'bg-green-100 text-green-800',
+      COMPLETED: 'bg-green-100 text-green-800',
+      CANCELLED: 'bg-red-100 text-red-800'
     };
 
     const labels = {
@@ -255,7 +265,11 @@ const OwnerRentalRequests = () => {
       OWNER_REJECTED: 'Đã từ chối',
       READY_FOR_CONTRACT: 'Sẵn sàng hợp đồng',
       PENDING_CONTRACT: 'Chờ ký hợp đồng',
-      CONTRACT_SIGNED: 'Đã ký hợp đồng'
+      CONTRACTED: 'Đã ký hợp đồng',
+      CONTRACT_SIGNED: 'Đã ký hợp đồng ✓',
+      DELIVERED: 'Đã giao',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy'
     };
 
     return (
@@ -290,6 +304,29 @@ const OwnerRentalRequests = () => {
               className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
             >
               🔄 Reload
+            </button>
+            <button
+              onClick={() => setShowExtensionModal(true)}
+              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+            >
+              📅 Quản lí gia hạn
+            </button>
+            <button
+              onClick={() => {
+                if (selectedSubOrder && (selectedSubOrder.status === 'CONTRACT_SIGNED' || selectedSubOrder.status === 'ACTIVE' || selectedSubOrder.status === 'DELIVERED') && selectedSubOrder.masterOrder?.deliveryMethod === 'DELIVERY') {
+                  setShowOwnerShipmentModal(true);
+                } else {
+                  toast.error('Vui lòng chọn một đơn hàng có vận chuyển để quản lí');
+                }
+              }}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                selectedSubOrder && (selectedSubOrder.status === 'CONTRACT_SIGNED' || selectedSubOrder.status === 'ACTIVE' || selectedSubOrder.status === 'DELIVERED') && selectedSubOrder.masterOrder?.deliveryMethod === 'DELIVERY'
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              disabled={!selectedSubOrder || (selectedSubOrder.status !== 'CONTRACT_SIGNED' && selectedSubOrder.status !== 'ACTIVE' && selectedSubOrder.status !== 'DELIVERED') || selectedSubOrder.masterOrder?.deliveryMethod !== 'DELIVERY'}
+            >
+              🚚 Quản lí VC
             </button>
           </div>
         </div>
@@ -359,7 +396,11 @@ const OwnerRentalRequests = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {subOrders.map((s) => (
-                  <tr key={s._id} className="hover:bg-gray-50">
+                  <tr 
+                    key={s._id} 
+                    className={`hover:bg-blue-50 cursor-pointer transition-colors ${selectedSubOrder?._id === s._id ? 'bg-blue-100' : 'hover:bg-gray-50'}`}
+                    onClick={() => setSelectedSubOrder(s)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{s.subOrderNumber}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.masterOrder?.renter?.profile?.firstName || ''} {s.masterOrder?.renter?.profile?.lastName || ''} </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{(s.products || []).length}</td>
@@ -425,6 +466,50 @@ const OwnerRentalRequests = () => {
             onClose={() => {
               setShowContractSigning(false);
               setSelectedContractId(null);
+            }}
+          />
+        )}
+
+        {/* Shipment Modal - For requesting shipment */}
+        {showShipmentModal && selectedSubOrder && (
+          <ManageShipmentModal
+            isOpen={showShipmentModal}
+            onClose={() => {
+              setShowShipmentModal(false);
+              setSelectedSubOrder(null);
+            }}
+            subOrder={selectedSubOrder}
+            masterOrder={selectedSubOrder.masterOrder}
+            onSuccess={() => {
+              refreshSubOrderData(selectedSubOrder._id);
+              setShowShipmentModal(false);
+            }}
+          />
+        )}
+
+        {/* Owner Shipment Modal - For viewing and confirming shipment */}
+        {showOwnerShipmentModal && selectedSubOrder && (
+          <OwnerShipmentModal
+            isOpen={showOwnerShipmentModal}
+            onClose={() => {
+              setShowOwnerShipmentModal(false);
+            }}
+            subOrder={selectedSubOrder}
+            masterOrder={selectedSubOrder.masterOrder}
+            onConfirmReceived={() => refreshSubOrderData(selectedSubOrder._id)}
+          />
+        )}
+
+        {/* Extension Requests Modal */}
+        {showExtensionModal && (
+          <ManageExtensionRequestsModal
+            isOpen={showExtensionModal}
+            onClose={() => setShowExtensionModal(false)}
+            onSuccess={() => {
+              fetchSubOrders();
+              if (selectedSubOrder) {
+                refreshSubOrderData(selectedSubOrder._id);
+              }
             }}
           />
         )}

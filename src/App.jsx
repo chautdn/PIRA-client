@@ -28,6 +28,7 @@ import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
 import ActiveRentals from "./pages/owner/ActiveRentals";
+import ShipmentsPage from "./pages/shipper/Shipments";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
@@ -74,6 +75,12 @@ import ContractSigning from "./components/rental/ContractSigning";
 import RenterConfirmationSummary from "./pages/RenterConfirmationSummary";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
 import VoucherRedeem from "./pages/voucher/VoucherRedeem";
+
+// Dispute pages
+import DisputesPage from "./pages/DisputesPage";
+import DisputeDetail from "./components/dispute/DisputeDetail";
+import AdminDisputeManagement from "./pages/admin/AdminDisputeManagement";
+import AdminDisputeDetail from "./pages/admin/AdminDisputeDetail";
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -304,14 +311,6 @@ export default function App() {
                     }
                   />
                   <Route
-                    path="/rental-orders/:id"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <RentalOrderDetailPage />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
                     path="/rental-orders/:masterOrderId/confirmation-summary"
                     element={
                       <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
@@ -345,6 +344,14 @@ export default function App() {
                       </RoleProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/rental-orders/:id"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RentalOrderDetailPage />
+                      </RoleProtectedRoute>
+                    }
+                  />
 
                   {/* Voucher routes */}
                   <Route
@@ -352,6 +359,34 @@ export default function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <VoucherRedeem />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
+                  {/* Dispute routes */}
+                  <Route
+                    path="/disputes"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <DisputesPage />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/disputes/:disputeId"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <DisputeDetail />
+                      </RoleProtectedRoute>
+                    }
+                  />
+
+                  {/* Shipper shipments */}
+                  <Route
+                    path="/shipments"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["SHIPPER"]}>
+                        <ShipmentsPage />
                       </RoleProtectedRoute>
                     }
                   />
@@ -387,6 +422,8 @@ export default function App() {
                       path="reports/:reportId"
                       element={<AdminReportDetail />}
                     />
+                    <Route path="disputes" element={<AdminDisputeManagement />} />
+                    <Route path="disputes/:disputeId" element={<AdminDisputeDetail />} />
                     <Route path="bank-accounts" element={<BankManagement />} />
                     <Route
                       path="bank-accounts/:userId"

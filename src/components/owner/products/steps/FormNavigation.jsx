@@ -109,7 +109,11 @@ const FormNavigation = ({
         <motion.button
           type="button"
           onClick={isLastStep ? onSubmit : onNext}
-          disabled={isSubmitting || hasInsufficientBalance || (isLastStep && hasNotAgreedToTerms)}
+          disabled={
+            isSubmitting ||
+            hasInsufficientBalance ||
+            (isLastStep && hasNotAgreedToTerms)
+          }
           className={`ml-auto px-8 py-3 rounded-xl font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
             isLastStep
               ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg"

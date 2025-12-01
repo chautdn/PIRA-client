@@ -207,6 +207,22 @@ const UserDropdown = () => {
               <span className="mr-3 text-lg">⚙️</span>
               Settings
             </Link>
+
+              {(() => {
+                const role = (user?.role || '').toString();
+                const rolesArray = Array.isArray(user?.roles) ? user.roles : (user?.roles ? [user.roles] : []);
+                const isShipper = role.toUpperCase() === 'SHIPPER' || rolesArray.map(r => String(r).toUpperCase()).includes('SHIPPER');
+                return isShipper ? (
+                  <Link
+                    to="/shipments"
+                    className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <span className="mr-3 text-lg">🚚</span>
+                    Quản lí vận chuyển
+                  </Link>
+                ) : null;
+              })()}
           </div>
 
           {/* Logout */}

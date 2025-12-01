@@ -74,12 +74,13 @@ const RentalOrderForm = () => {
       contactPhone: (user && user.profile && user.profile.phone) ? user.profile.phone : '',
       contactName: (user && user.profile && user.profile.fullName) ? user.profile.fullName : ''
     },
-    deliveryMethod: 'PICKUP'
+    deliveryMethod: 'DELIVERY',
   }));
 
     const [errors, setErrors] = useState({});
     const [step, setStep] = useState(1);
     const [groupedProducts, setGroupedProducts] = useState({});
+    const [sourceItems, setSourceItems] = useState([]); // Store the items being processed
     const [totalShipping, setTotalShipping] = useState(0);
     const [showPaymentSelector, setShowPaymentSelector] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
@@ -156,6 +157,10 @@ const RentalOrderForm = () => {
       } else {
         return;
       }
+      
+      // Store sourceItems in state for later use when submitting
+      setSourceItems(sourceItems);
+      
       const grouped = {};
       let earliestStart = null;
       let latestEnd = null;
@@ -366,11 +371,14 @@ const RentalOrderForm = () => {
                 latitude: group.owner.address?.coordinates?.latitude || null,
                 longitude: group.owner.address?.coordinates?.longitude || null,
               };
+              console.log("group", group);
+              console.log("Owner Location:", ownerLocation);
 
               const userLocation = {
                 latitude: orderData.deliveryAddress.latitude || null,
                 longitude: orderData.deliveryAddress.longitude || null,
               };
+              console.log("User Location:", userLocation);
 
               const hasOwnerCoords =
                 ownerLocation.latitude && ownerLocation.longitude;
@@ -421,21 +429,26 @@ const RentalOrderForm = () => {
                 }));
 
                 const shippingData = {
-                  subOrderId: `batch-${deliveryDate}-${ownerId}`,
-                  ownerLocation,
-                  userLocation,
-                  products,
-                };
-
+  subOrderId: `batch-${deliveryDate}-${ownerId}`,
+  ownerAddress: {
+    latitude: group.owner.address?.coordinates?.latitude || null,
+    longitude: group.owner.address?.coordinates?.longitude || null,
+    streetAddress: group.owner.address?.streetAddress || "Địa chỉ không xác định", // Thêm streetAddress
+  },
+  deliveryAddress: {
+    latitude: orderData.deliveryAddress.latitude || null,
+    longitude: orderData.deliveryAddress.longitude || null,
+    streetAddress: orderData.deliveryAddress.streetAddress || "Địa chỉ không xác định", // Thêm streetAddress
+  },
+  products,
+};
                 console.log(
                   `🚚 Calculating batch shipping for ${deliveryDate}:`,
                   products.length,
                   "products"
                 );
                 const shippingResponse =
-                  await rentalOrderContext.calculateProductShipping(
-                    shippingData
-                  );
+                  await calculateShipping(shippingData);
 
                 if (
                   shippingResponse?.success &&
@@ -658,6 +671,8 @@ const RentalOrderForm = () => {
           totalAmount: totals.grandTotal,
           paymentTransactionId: paymentResult.transactionId,
           paymentMessage: paymentResult.message,
+          // Pass the items being processed (not selectedItems from location.state)
+          selectedItems: sourceItems,
           // COD specific fields
           ...(paymentMethod === "COD" && {
             depositAmount: paymentResult.depositAmount,

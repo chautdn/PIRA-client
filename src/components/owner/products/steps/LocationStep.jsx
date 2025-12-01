@@ -21,7 +21,8 @@ const LocationStep = ({ formData, errors, handleInputChange, onSaveDraft }) => {
         name: "location",
         value: {
           address: {
-            streetAddress: locationData.streetAddress || locationData.fullAddress || "",
+            streetAddress:
+              locationData.streetAddress || locationData.fullAddress || "",
             ward: locationData.ward || "",
             district: locationData.district || "",
           },
@@ -33,7 +34,7 @@ const LocationStep = ({ formData, errors, handleInputChange, onSaveDraft }) => {
         },
       },
     };
-    
+
     handleInputChange(locationObject);
   };
 
@@ -50,23 +51,22 @@ const LocationStep = ({ formData, errors, handleInputChange, onSaveDraft }) => {
       </div>
 
       {/* Current Location Display */}
-      {(formData.location?.address?.streetAddress || formData.location?.coordinates?.latitude) && (
+      {(formData.location?.address?.streetAddress ||
+        formData.location?.coordinates?.latitude) && (
         <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
           <div className="flex items-start gap-3">
             <icons.FiMapPin className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <h4 className="font-bold text-green-900 mb-1">Địa Chỉ Đã Chọn</h4>
               <p className="text-sm text-green-800">
-                {formData.location.address?.streetAddress || "Địa chỉ đã chọn từ bản đồ"}
-                {formData.location.address?.ward && `, ${formData.location.address.ward}`}
-                {formData.location.address?.district && `, ${formData.location.address.district}`}
+                {formData.location.address?.streetAddress ||
+                  "Địa chỉ đã chọn từ bản đồ"}
+                {formData.location.address?.ward &&
+                  `, ${formData.location.address.ward}`}
+                {formData.location.address?.district &&
+                  `, ${formData.location.address.district}`}
                 {formData.location.city && `, ${formData.location.city}`}
               </p>
-              {formData.location.coordinates?.latitude && formData.location.coordinates?.longitude && (
-                <div className="text-xs text-green-700 mt-1">
-                  ✅ Tọa độ: {formData.location.coordinates.latitude.toFixed(6)}, {formData.location.coordinates.longitude.toFixed(6)}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -112,7 +112,8 @@ const LocationStep = ({ formData, errors, handleInputChange, onSaveDraft }) => {
           <div className="flex items-start space-x-2">
             <icons.BsBuildings className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <span>
-              Có thể gặp tại văn phòng, trung tâm thương mại hoặc địa điểm công cộng
+              Có thể gặp tại văn phòng, trung tâm thương mại hoặc địa điểm công
+              cộng
             </span>
           </div>
         </div>

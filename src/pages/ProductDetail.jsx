@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { productService } from '../services/product';
 import { reviewService } from '../services/review';
 import { useCart } from '../context/CartContext';
@@ -32,6 +33,7 @@ export default function ProductDetail() {
   const [reviewsPage, setReviewsPage] = useState(1);
   const [reviewsTotal, setReviewsTotal] = useState(0);
   const [reviewsTarget, setReviewsTarget] = useState('PRODUCT');
+  const [ratingFilter, setRatingFilter] = useState(null); // null = all, 1-5 = specific rating
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, title: '', comment: '', photos: [] });
   const fileInputRef = useRef(null);
@@ -44,6 +46,8 @@ export default function ProductDetail() {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [availabilityModalData, setAvailabilityModalData] = useState(null);
+  const [canWriteReview, setCanWriteReview] = useState(false);
+  const [myCompletedOrders, setMyCompletedOrders] = useState([]);
 
   // Check if current user is the product owner
   const isOwner = user && product?.owner?._id === user._id;
@@ -73,14 +77,134 @@ export default function ProductDetail() {
   useEffect(() => {
     // fetch reviews when product loaded and reviews tab active
     if (activeTab === 'reviews' && product?._id) {
-      fetchReviews(product._id);
+      fetchReviews(product._id, ratingFilter);
     }
-  }, [activeTab, product?._id]);
+  }, [activeTab, product?._id, ratingFilter]);
 
-  const fetchReviews = async (productId) => {
+  // Check if user can write review (must have rented this product with COMPLETED order)
+  useEffect(() => {
+    const checkCanWriteReview = async () => {
+      if (!user || !product?._id) {
+        console.log('⏭️  Skipping review check - user or product missing');
+        setCanWriteReview(false);
+        return;
+      }
+
+      try {
+        console.log('🔍 Starting review eligibility check...');
+        console.log('👤 Current user:', user._id);
+        console.log('📦 Current product:', product._id);
+        
+        // Fetch ALL orders (don't filter by status on backend)
+        const response = await rentalOrderService.getMyOrders({ limit: 100 });
+        console.log('📡 Full API Response:', response);
+        console.log('📡 Response keys:', Object.keys(response));
+        
+        // Extract orders from response - try multiple paths
+        let allOrders = [];
+        
+        // Path 1: { metadata: { orders: [...] } }
+        if (response?.metadata?.orders) {
+          allOrders = response.metadata.orders;
+          console.log('✅ Found orders in metadata.orders, count:', allOrders.length);
+        } 
+        // Path 2: { data: { metadata: { orders: [...] } } }
+        else if (response?.data?.metadata?.orders) {
+          allOrders = response.data.metadata.orders;
+          console.log('✅ Found orders in data.metadata.orders, count:', allOrders.length);
+        }
+        // Path 3: { data: [...] }
+        else if (response?.data && Array.isArray(response.data)) {
+          allOrders = response.data;
+          console.log('✅ Found orders in data (array), count:', allOrders.length);
+        }
+        // Path 4: Direct array
+        else if (Array.isArray(response)) {
+          allOrders = response;
+          console.log('✅ Response is direct array, count:', allOrders.length);
+        }
+        
+        console.log('📋 Total orders found:', allOrders.length);
+        
+        // Filter to COMPLETED orders only
+        const orders = allOrders.filter(o => o.status === 'COMPLETED');
+        console.log('📋 Completed orders:', orders.length);
+        
+        if (orders.length === 0) {
+          console.log('⚠️  No completed orders found for user');
+          setCanWriteReview(false);
+          setMyCompletedOrders([]);
+          return;
+        }
+        
+        // Check if current product is in any completed order
+        let hasRented = false;
+        
+        for (const masterOrder of orders) {
+          console.log('🔍 Checking MasterOrder:', masterOrder._id, 'status:', masterOrder.status, 'renter:', masterOrder.renter);
+          
+          // Iterate through subOrders
+          const subOrders = Array.isArray(masterOrder.subOrders) ? masterOrder.subOrders : [];
+          console.log('   SubOrders count:', subOrders.length);
+          
+          for (let i = 0; i < subOrders.length; i++) {
+            const subOrder = subOrders[i];
+            // Handle both populated and unpopulated subOrder references
+            const subOrderData = typeof subOrder === 'object' ? subOrder : {};
+            console.log('   SubOrder[' + i + ']:', subOrderData._id || subOrder, 'status:', subOrderData.status);
+            
+            const products = Array.isArray(subOrderData.products) ? subOrderData.products : [];
+            console.log('   Products in subOrder[' + i + ']:', products.length);
+            
+            for (let j = 0; j < products.length; j++) {
+              const p = products[j];
+              const productData = typeof p === 'object' ? p : {};
+              const productRef = productData.product;
+              const productId = typeof productRef === 'object' ? productRef?._id : productRef;
+              
+              console.log('   Product[' + j + ']:', {
+                productId: String(productId),
+                currentProductId: String(product._id),
+                match: String(productId) === String(product._id)
+              });
+              
+              // Compare both as strings to handle ObjectId/String conversions
+              if (String(productId) === String(product._id)) {
+                hasRented = true;
+                console.log('✅ Product found! User can write review');
+                break;
+              }
+            }
+            
+            if (hasRented) break;
+          }
+          
+          if (hasRented) break;
+        }
+        
+        if (!hasRented) {
+          console.log('❌ Product not found in completed orders');
+        }
+        
+        setCanWriteReview(hasRented);
+        setMyCompletedOrders(orders);
+      } catch (err) {
+        console.error('Error checking review eligibility:', err);
+        setCanWriteReview(false);
+      }
+    };
+
+    checkCanWriteReview();
+  }, [user, product?._id]);
+
+  const fetchReviews = async (productId, filterRating = null) => {
     try {
       setReviewsLoading(true);
-      const res = await reviewService.listByProduct(productId, { page: reviewsPage, limit: 10, target: reviewsTarget });
+      const params = { page: reviewsPage, limit: 10, target: reviewsTarget };
+      if (filterRating) {
+        params.rating = filterRating;
+      }
+      const res = await reviewService.listByProduct(productId, params);
       const items = res.data?.data || [];
       const pagination = res.data?.pagination || {};
       
@@ -116,9 +240,22 @@ export default function ProductDetail() {
     }
   };
 
+  const handleHelpfulResponse = async (reviewId, responseId, response) => {
+    try {
+      const res = await reviewService.helpful(reviewId, 'helpful', { userId: user?._id, target: 'response', responseId });
+      const updated = res.data?.data;
+      if (updated) {
+        setReviews((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+      }
+    } catch (err) {
+      console.error('Error toggling response helpful', err);
+    }
+  };
+
   const changeReviewsTarget = (target) => {
     setReviewsTarget(target);
     setReviewsPage(1);
+    setRatingFilter(null); // Reset rating filter when changing target
     // directly fetch first page for new target
     (async () => {
       try {
@@ -186,8 +323,8 @@ export default function ProductDetail() {
   };
 
   const submitNewReview = async () => {
-    if (!newReview.comment || !newReview.rating) {
-      alert('Vui lòng nhập đủ nội dung và đánh giá');
+    if (!newReview.rating) {
+      toast.error('Vui lòng chọn đánh giá sao');
       return;
     }
     try {
@@ -219,12 +356,35 @@ export default function ProductDetail() {
   console.log('Review created successfully:', response.data);
   setShowWriteModal(false);
   // refresh first page for current target
+  console.log('📝 About to refresh reviews, target:', reviewsTarget);
   await changeReviewsTarget(reviewsTarget);
   setNewReview({ rating: 5, title: '', comment: '', photos: [], type: reviewsTarget });
   if (fileInputRef.current) fileInputRef.current.value = null;
+  toast.success('Đánh giá đã được gửi thành công!');
     } catch (err) {
       console.error('Error creating review', err);
-      alert('Lỗi khi gửi đánh giá');
+      // Check for duplicate review error - differentiate by type
+      const errorMessage = err.response?.data?.message || '';
+      
+      // Check if it's a duplicate review based on the target type
+      if (errorMessage.toLowerCase().includes('bình luận 1 lần cho sản phẩm')) {
+        toast.error('Bạn đã đánh giá sản phẩm này rồi');
+      } else if (errorMessage.toLowerCase().includes('bình luận 1 lần cho người')) {
+        toast.error('Bạn đã đánh giá chủ sở hữu này rồi');
+      } else if (errorMessage.toLowerCase().includes('bình luận 1 lần')) {
+        // Generic duplicate message from backend
+        if (reviewsTarget === 'PRODUCT') {
+          toast.error('Bạn đã đánh giá sản phẩm này rồi');
+        } else if (reviewsTarget === 'OWNER') {
+          toast.error('Bạn đã đánh giá chủ sở hữu này rồi');
+        } else {
+          toast.error('Bạn đã đánh giá rồi');
+        }
+      } else if (errorMessage.toLowerCase().includes('hoàn thành một đơn hàng')) {
+        toast.error('Bạn phải hoàn thành một đơn hàng với người này để đánh giá');
+      } else {
+        toast.error('Lỗi khi gửi đánh giá');
+      }
     }
   };
 
@@ -241,9 +401,10 @@ export default function ProductDetail() {
   await reviewService.reply(reviewId, fd);
       fetchReviews(product._id);
       setReplyBoxOpen((prev) => ({ ...prev, [reviewId]: false }));
+      toast.success('Phản hồi đã được gửi thành công!');
     } catch (err) {
       console.error('Error replying to review', err);
-      alert('Lỗi khi gửi phản hồi');
+      toast.error('Lỗi khi gửi phản hồi');
     }
   };
 
@@ -295,7 +456,13 @@ export default function ProductDetail() {
             <div className="mt-2 text-sm text-gray-500 flex items-center justify-between">
               <div className="flex gap-3">
                 <button onClick={() => setOpenReply((s) => !s)} className="hover:underline">Trả lời</button>
-                <button className="hover:underline">Like</button>
+                <button 
+                  onClick={() => handleHelpfulResponse(productId, resp._id, resp)}
+                  className={`flex items-center gap-1 ${(resp.likedBy || []).some(u => user && u && u.toString() === user?._id) ? 'text-red-500 font-semibold' : 'hover:text-gray-700'}`}
+                >
+                  <span>👍</span>
+                  <span>{(resp.likedBy || []).length > 0 ? `${(resp.likedBy || []).length}` : 'Like'}</span>
+                </button>
               </div>
               <div className="relative">
                 <button onClick={() => setMenuOpenLocal((s) => !s)} className="p-1 rounded-full hover:bg-gray-100">
@@ -313,9 +480,35 @@ export default function ProductDetail() {
             {/* Edit local response */}
             {editingLocal.text !== undefined && (
               <div className="mt-2">
-                <textarea value={editingLocal.text} onChange={(e) => setEditingLocal({ text: e.target.value })} className="w-full p-2 border rounded mb-2" rows={3} />
+                <textarea value={editingLocal.text} onChange={(e) => setEditingLocal((s) => ({ ...s, text: e.target.value }))} className="w-full p-2 border rounded mb-2" rows={3} />
+                <div className="mb-2">
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/*"
+                    onChange={(e) => setEditingLocal((s) => ({ ...s, newPhotos: Array.from(e.target.files || []) }))} 
+                    className="w-full p-2 border rounded"
+                  />
+                  {editingLocal.newPhotos && editingLocal.newPhotos.length > 0 && (
+                    <div className="mt-2">
+                      <div className="text-sm font-semibold text-gray-700 mb-2">Sẽ thêm {editingLocal.newPhotos.length} ảnh:</div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {editingLocal.newPhotos.map((photo, idx) => (
+                          <div key={idx} className="relative">
+                            <img 
+                              src={URL.createObjectURL(photo)} 
+                              alt={`Preview ${idx}`}
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <div className="text-xs text-center text-gray-600 mt-1 truncate">{photo.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div className="flex gap-2">
-                  <button onClick={async () => { await handleSaveEditResponse(productId, resp._id, editingLocal.text); setEditingLocal({}); }} className="px-4 py-2 bg-green-500 text-white rounded">Lưu</button>
+                  <button onClick={async () => { await handleSaveEditResponse(productId, resp._id, editingLocal.text, editingLocal.newPhotos); setEditingLocal({}); }} className="px-4 py-2 bg-green-500 text-white rounded">Lưu</button>
                   <button onClick={() => setEditingLocal({})} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
                 </div>
               </div>
@@ -338,21 +531,33 @@ export default function ProductDetail() {
       await reviewService.remove(reviewId);
       // refresh
       fetchReviews(product._id);
+      toast.success('Đánh giá đã được xóa');
     } catch (err) {
       console.error('Error deleting review', err);
-      alert('Lỗi khi xóa đánh giá');
+      toast.error('Lỗi khi xóa đánh giá');
     }
   };
 
   const handleSaveEditReview = async (reviewId) => {
     try {
-      const body = { title: editingReview.title, comment: editingReview.text };
-      await reviewService.update(reviewId, body);
+      const fd = new FormData();
+      fd.append('title', editingReview.title || '');
+      fd.append('comment', editingReview.text || '');
+      
+      // Thêm ảnh mới nếu có
+      if (editingReview.newPhotos && editingReview.newPhotos.length > 0) {
+        for (const photo of editingReview.newPhotos) {
+          fd.append('photos', photo);
+        }
+      }
+      
+      await reviewService.update(reviewId, fd);
       setEditingReview({});
       fetchReviews(product._id);
+      toast.success('Đánh giá đã được cập nhật');
     } catch (err) {
       console.error('Error saving review edit', err);
-      alert('Lỗi khi lưu chỉnh sửa');
+      toast.error('Lỗi khi lưu chỉnh sửa');
     }
   };
 
@@ -360,19 +565,31 @@ export default function ProductDetail() {
     try {
       await reviewService.deleteResponse(reviewId, responseId);
       fetchReviews(product._id);
+      toast.success('Phản hồi đã được xóa');
     } catch (err) {
       console.error('Error deleting response', err);
-      alert('Lỗi khi xóa phản hồi');
+      toast.error('Lỗi khi xóa phản hồi');
     }
   };
 
-  const handleSaveEditResponse = async (reviewId, responseId, text) => {
+  const handleSaveEditResponse = async (reviewId, responseId, text, newPhotos = []) => {
     try {
-      await reviewService.updateResponse(reviewId, responseId, { comment: text });
+      const fd = new FormData();
+      fd.append('comment', text || '');
+      
+      // Thêm ảnh mới nếu có
+      if (newPhotos && newPhotos.length > 0) {
+        for (const photo of newPhotos) {
+          fd.append('photos', photo);
+        }
+      }
+      
+      await reviewService.updateResponse(reviewId, responseId, fd);
       fetchReviews(product._id);
+      toast.success('Phản hồi đã được cập nhật');
     } catch (err) {
       console.error('Error saving response edit', err);
-      alert('Lỗi khi lưu chỉnh sửa phản hồi');
+      toast.error('Lỗi khi lưu chỉnh sửa phản hồi');
     }
   };
 
@@ -649,34 +866,20 @@ export default function ProductDetail() {
       duration: getRentalDays()
     };
 
-    // Create a direct rental order (bypass cart)
-    const directRentalData = {
-      products: [{
-        product: product._id,
-        owner: product.owner._id,
-        quantity: quantity,
-        rental: rentalData,
-        pricing: {
-          dailyRate: product.pricing.dailyRate,
-          totalRental: product.pricing.dailyRate * quantity * getRentalDays(),
-          totalDeposit: (product.pricing.deposit || 0) * quantity
-        }
-      }],
-      rentalPeriod: rentalData,
-      deliveryMethod: 'PICKUP', // Default to pickup for direct rental
-      totalAmount: getTotalPrice()
-    };
-
-    // Navigate to rental order form with pre-filled data
-    navigate('/rental-order/create', { 
-      state: { 
-        directRental: true,
-        orderData: directRentalData,
-        product: product,
-        quantity: quantity,
-        rental: rentalData
-      } 
-    });
+    try {
+      // Add product to cart with openDrawer=false to prevent drawer opening
+      const result = await addToCartContext(product, quantity, rentalData, false);
+      
+      if (result.success) {
+        // Navigate to cart page without opening drawer
+        navigate('/cart');
+      } else {
+        alert(`❌ ${result.error || 'Không thể thêm vào giỏ hàng'}`);
+      }
+    } catch (error) {
+      const errorMsg = error.message || 'Không thể thêm vào giỏ hàng';
+      alert(`❌ ${errorMsg}`);
+    }
   };
 
   const handleMessageOwner = async () => {
@@ -1155,12 +1358,17 @@ export default function ProductDetail() {
                                 const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                                 const delay = 0.12 * idx; // stagger from top -> bottom
                                 const duration = 0.7 + idx * 0.12; // slightly longer for later bars
+                                const isActive = ratingFilter === s;
                                 return (
-                                  <div key={s} className="flex items-center gap-4">
-                                    <div className="w-8 text-sm text-gray-700">{s}★</div>
-                                    <div className="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
+                                  <div 
+                                    key={s} 
+                                    className="flex items-center gap-4 cursor-pointer group"
+                                    onClick={() => setRatingFilter(isActive ? null : s)}
+                                  >
+                                    <div className={`w-8 text-sm font-medium transition-colors ${isActive ? 'text-yellow-600' : 'text-gray-700 group-hover:text-yellow-600'}`}>{s}★</div>
+                                    <div className={`flex-1 rounded-full h-3 overflow-hidden transition-colors ${isActive ? 'bg-yellow-300' : 'bg-gray-200 group-hover:bg-gray-300'}`}>
                                       <motion.div
-                                        className="h-3 bg-yellow-400 rounded-full"
+                                        className={`h-3 rounded-full transition-colors ${isActive ? 'bg-yellow-600' : 'bg-yellow-400'}`}
                                         initial={{ width: 0 }}
                                         animate={{ width: `${pct}%` }}
                                         transition={{ duration, delay, ease: 'easeOut' }}
@@ -1180,7 +1388,12 @@ export default function ProductDetail() {
                               <button onClick={() => changeReviewsTarget('OWNER')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'OWNER' ? 'bg-emerald-400 text-white' : 'bg-white text-emerald-800 border border-emerald-100'}`}>Chủ sở hữu</button>
                               <button onClick={() => changeReviewsTarget('SHIPPER')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'SHIPPER' ? 'bg-indigo-500 text-white' : 'bg-white text-indigo-700 border border-indigo-100'}`}>Shipper</button>
                             </div>
-                            <button onClick={openWriteModal} className="mt-2 w-full py-3 bg-violet-600 text-white rounded-xl shadow-lg">Viết đánh giá ({targetLabel(reviewsTarget)})</button>
+                            {canWriteReview && (
+                              <button onClick={openWriteModal} className="mt-2 w-full py-3 bg-violet-600 text-white rounded-xl shadow-lg">Viết đánh giá ({targetLabel(reviewsTarget)})</button>
+                            )}
+                            {!canWriteReview && user && (
+                              <div className="mt-2 w-full py-3 bg-gray-300 text-gray-600 text-center rounded-xl text-sm">Chỉ xem đánh giá</div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1256,7 +1469,13 @@ export default function ProductDetail() {
                                 <div className="mt-3 text-sm text-gray-500 flex items-center gap-4 justify-between">
                                   <div className="flex items-center gap-4">
                                     <button className="hover:underline" onClick={() => toggleReplyBox(r._id)}>Phản hồi</button>
-                                    <button className="hover:underline" onClick={() => handleHelpful(r)}>{(r.likedBy || []).some(u => user && u && u.toString() === user?._id) ? 'Đã thích' : 'Like'}</button>
+                                    <button 
+                                      onClick={() => handleHelpful(r)}
+                                      className={`flex items-center gap-1 ${(r.likedBy || []).some(u => user && u && u.toString() === user?._id) ? 'text-red-500 font-semibold' : 'hover:underline text-gray-500'}`}
+                                    >
+                                      <span>👍</span>
+                                      <span>{(r.likedBy || []).length > 0 ? `${(r.likedBy || []).length}` : 'Like'}</span>
+                                    </button>
                                     {r.responses && r.responses.length > 0 && (
                                       <span className="text-gray-400">Xem tất cả {r.responses.length} phản hồi</span>
                                     )}
@@ -1271,15 +1490,40 @@ export default function ProductDetail() {
                                         <button onClick={() => { setEditingReview({ id: r._id, text: r.comment, title: r.title || '' }); setMenuOpen({}); }} className="w-full text-left px-3 py-2 hover:bg-gray-50">Chỉnh sửa</button>
                                         <button onClick={async () => { if (confirm('Bạn muốn xóa đánh giá này?')) { await handleDeleteReview(r._id); setMenuOpen({}); } }} className="w-full text-left px-3 py-2 text-red-600 hover:bg-gray-50">Xóa</button>
                                       </div>
-                                    )}
+                                    )}git 
                                   </div>
                                 </div>
 
                                 {/* Edit review inline */}
                                 {editingReview.id === r._id && (
                                   <div className="mt-3 p-3 border border-gray-100 rounded">
-                                    <input value={editingReview.title} onChange={(e) => setEditingReview((s) => ({ ...s, title: e.target.value }))} placeholder="Tiêu đề (tùy chọn)" className="w-full p-2 border rounded mb-2" />
                                     <textarea value={editingReview.text} onChange={(e) => setEditingReview((s) => ({ ...s, text: e.target.value }))} className="w-full p-2 border rounded mb-2" rows={3} />
+                                    <div className="mb-2">
+                                      <input 
+                                        type="file" 
+                                        multiple 
+                                        accept="image/*"
+                                        onChange={(e) => setEditingReview((s) => ({ ...s, newPhotos: Array.from(e.target.files || []) }))} 
+                                        className="w-full p-2 border rounded"
+                                      />
+                                      {editingReview.newPhotos && editingReview.newPhotos.length > 0 && (
+                                        <div className="mt-2">
+                                          <div className="text-sm font-semibold text-gray-700 mb-2">Sẽ thêm {editingReview.newPhotos.length} ảnh:</div>
+                                          <div className="grid grid-cols-4 gap-2">
+                                            {editingReview.newPhotos.map((photo, idx) => (
+                                              <div key={idx} className="relative">
+                                                <img 
+                                                  src={URL.createObjectURL(photo)} 
+                                                  alt={`Preview ${idx}`}
+                                                  className="w-full h-24 object-cover rounded border"
+                                                />
+                                                <div className="text-xs text-center text-gray-600 mt-1 truncate">{photo.name}</div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                     <div className="flex gap-2">
                                       <button onClick={async () => { await handleSaveEditReview(r._id); }} className="px-4 py-2 bg-green-500 text-white rounded">Lưu</button>
                                       <button onClick={() => setEditingReview({})} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>

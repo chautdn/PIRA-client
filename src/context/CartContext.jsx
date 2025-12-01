@@ -81,7 +81,7 @@ export const CartProvider = ({ children }) => {
   };
 
   // Add to cart
-  const addToCart = async (product, quantity = 1, rental = null) => {
+  const addToCart = async (product, quantity = 1, rental = null, openDrawer = true) => {
     try {
       setLoading(true);
       
@@ -165,7 +165,9 @@ export const CartProvider = ({ children }) => {
 
       setCart(cartItems);
       updateCartStats(cartItems);
-      setIsCartOpen(true);
+      if (openDrawer) {
+        setIsCartOpen(true);
+      }
       return { success: true, warning: warning };
     } catch (error) {
       console.error("Add to cart error:", error);
