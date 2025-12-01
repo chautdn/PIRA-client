@@ -12,8 +12,10 @@ import {
   Package,
   Tag,
   TrendingDown,
+  Lightbulb,
 } from "lucide-react";
 import MapSelector from "../common/MapSelector";
+import AddressSelectionModal from "./AddressSelectionModal";
 import PaymentMethodSelector from "../common/PaymentMethodSelector";
 import VoucherSelector from "../voucher/VoucherSelector";
 import { toast } from "../common/Toast";
@@ -24,6 +26,7 @@ import systemPromotionService from "../../services/systemPromotion";
 const RentalOrderForm = () => {
   try {
     const { user } = useAuth();
+    console.log("RentalOrderForm: Auth user:", user);
     const { cart: cartItems, clearCart } = useCart();
     const rentalOrderContext = useRentalOrder();
     const {
@@ -71,8 +74,10 @@ const RentalOrderForm = () => {
       ward: '',
       district: '',
       city: '',
-      contactPhone: (user && user.profile && user.profile.phone) ? user.profile.phone : '',
-      contactName: (user && user.profile && user.profile.fullName) ? user.profile.fullName : ''
+      contactPhone: (user && (user.phone || (user.profile && user.profile.phone))) ? (user.phone || user.profile.phone) : '',
+      contactName: (user && (user.profile && (user.profile.firstName || user.profile.lastName)))
+        ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
+        : (user && user.profile && user.profile.fullName) || ''
     },
     deliveryMethod: 'DELIVERY',
   }));
@@ -89,18 +94,97 @@ const RentalOrderForm = () => {
     const [activePromotion, setActivePromotion] = useState(null);
     const [loadingPromotion, setLoadingPromotion] = useState(true);
     const [selectedVoucher, setSelectedVoucher] = useState(null);
+    const [showShippingModal, setShowShippingModal] = useState(false);
+    const [selectedShippingInfo, setSelectedShippingInfo] = useState(null);
 
-    // Update contact info when user changes
+    // Address related states
+    const [userAddresses, setUserAddresses] = useState(() => (user && user.addresses) ? user.addresses : (user && user.address ? [{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }] : []));
+    const [loadingAddresses, setLoadingAddresses] = useState(false);
+    const [showAddressModal, setShowAddressModal] = useState(false);
+
     useEffect(() => {
-      if (user && user.profile) {
+      // Keep userAddresses in sync with user from context
+      if (user) {
+        if (user.addresses && Array.isArray(user.addresses)) {
+          setUserAddresses(user.addresses);
+        } else if (user.address) {
+          setUserAddresses([{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }]);
+        } else {
+          setUserAddresses([]);
+        }
+      }
+    }, [user]);
+
+    // When user addresses load, pre-fill orderData.deliveryAddress with default address (local only)
+    useEffect(() => {
+      if (!userAddresses || userAddresses.length === 0) return;
+
+      const hasAddressInOrder = !!(
+        orderData.deliveryAddress.streetAddress ||
+        orderData.deliveryAddress.latitude ||
+        orderData.deliveryAddress.longitude
+      );
+
+      if (hasAddressInOrder) return; // don't overwrite if user already interacted with address
+
+      const defaultAddress = userAddresses.find((a) => a.isDefault) || userAddresses[0];
+      if (!defaultAddress) return;
+
+      setOrderData((prev) => ({
+        ...prev,
+        deliveryAddress: {
+          ...prev.deliveryAddress,
+          streetAddress: defaultAddress.streetAddress || defaultAddress.formattedAddress || "",
+          ward: defaultAddress.ward || defaultAddress.subLocality || "",
+          district: defaultAddress.district || "",
+          city: defaultAddress.city || defaultAddress.locality || "",
+          contactPhone: defaultAddress.phone || defaultAddress.contactPhone || prev.deliveryAddress.contactPhone,
+          contactName: defaultAddress.contactName || prev.deliveryAddress.contactName,
+          latitude: (defaultAddress.coordinates && defaultAddress.coordinates.latitude) || defaultAddress.latitude || prev.deliveryAddress.latitude,
+          longitude: (defaultAddress.coordinates && defaultAddress.coordinates.longitude) || defaultAddress.longitude || prev.deliveryAddress.longitude,
+        },
+      }));
+    }, [userAddresses]);
+
+    const handleAddressFromModal = (address) => {
+      if (!address) return;
+      setOrderData((prev) => ({
+        ...prev,
+        deliveryAddress: {
+          ...prev.deliveryAddress,
+          streetAddress: address.streetAddress || address.formattedAddress || "",
+          ward: address.ward || address.subLocality || "",
+          district: address.district || "",
+          city: address.city || address.locality || "",
+          contactPhone: address.phone || address.contactPhone || prev.deliveryAddress.contactPhone,
+          contactName: address.contactName || prev.deliveryAddress.contactName,
+          latitude: (address.coordinates && address.coordinates.latitude) || address.latitude || prev.deliveryAddress.latitude,
+          longitude: (address.coordinates && address.coordinates.longitude) || address.longitude || prev.deliveryAddress.longitude,
+        },
+      }));
+      setShowAddressModal(false);
+      try {
+        // toast is imported earlier
+        toast.success("Đã cập nhật địa chỉ giao hàng!");
+      } catch (e) {
+        console.log("Address updated");
+      }
+    };
+
+    // Update contact info when user changes (use top-level phone and profile name parts)
+    useEffect(() => {
+      if (user) {
+        const phoneFromUser = user.phone || (user.profile && user.profile.phone) || '';
+        const nameFromProfile = (user.profile && (user.profile.firstName || user.profile.lastName))
+          ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
+          : (user.profile && user.profile.fullName) || '';
+
         setOrderData((prev) => ({
           ...prev,
           deliveryAddress: {
             ...prev.deliveryAddress,
-            contactPhone:
-              user.profile.phone || prev.deliveryAddress.contactPhone,
-            contactName:
-              user.profile.fullName || prev.deliveryAddress.contactName,
+            contactPhone: phoneFromUser || prev.deliveryAddress.contactPhone,
+            contactName: nameFromProfile || prev.deliveryAddress.contactName,
           },
         }));
       }
@@ -323,9 +407,6 @@ const RentalOrderForm = () => {
       }
 
       try {
-        // NEW LOGIC: Calculate shipping per SubOrder (per Owner) with delivery batches
-        // Each Owner's products are grouped by delivery date separately
-
         let masterTotalShipping = 0;
         const updatedGroups = { ...groupedProducts };
 
@@ -366,148 +447,120 @@ const RentalOrderForm = () => {
           )) {
             deliveryCount++;
 
-            try {
-              const ownerLocation = {
-                latitude: group.owner.address?.coordinates?.latitude || null,
-                longitude: group.owner.address?.coordinates?.longitude || null,
-              };
-              console.log("group", group);
-              console.log("Owner Location:", ownerLocation);
+            const ownerLocation = {
+              latitude: group.owner.address?.coordinates?.latitude || null,
+              longitude: group.owner.address?.coordinates?.longitude || null,
+            };
+            console.log("Owner Location:", ownerLocation);
 
-              const userLocation = {
-                latitude: orderData.deliveryAddress.latitude || null,
-                longitude: orderData.deliveryAddress.longitude || null,
-              };
-              console.log("User Location:", userLocation);
+            const userLocation = {
+              latitude: orderData.deliveryAddress.latitude || null,
+              longitude: orderData.deliveryAddress.longitude || null,
+            };
+            console.log("User Location:", userLocation);
 
-              const hasOwnerCoords =
-                ownerLocation.latitude && ownerLocation.longitude;
-              const hasUserCoords =
-                userLocation.latitude && userLocation.longitude;
-
-              let batchFee = 0;
-              let batchInfo = null;
-
-              if (!hasOwnerCoords || !hasUserCoords) {
-                // Fallback: Default fee calculation per delivery batch
-                const baseShippingFee = 20000; // 20k per delivery trip
-                const perProductFee = 3000; // 3k per product in batch
-                const totalQuantity = batchProducts.reduce(
-                  (sum, p) => sum + (p.quantity || 1),
-                  0
-                );
-                batchFee = baseShippingFee + perProductFee * totalQuantity;
-
-                batchInfo = {
-                  deliveryDate,
-                  batchSize: batchProducts.length,
-                  batchQuantity: totalQuantity,
-                  deliveryFee: batchFee,
-                  distance: hasOwnerCoords
-                    ? "Chưa có địa chỉ nhận"
-                    : "Chưa có địa chỉ gửi",
-                  fallback: true,
-                  products: batchProducts.map((p) => ({
-                    productId: p.product._id,
-                    quantity: p.quantity || 1,
-                    allocatedFee: Math.round(batchFee / batchProducts.length),
-                  })),
-                };
-
-                console.warn(
-                  `⚠️ Owner ${group.owner.profile?.firstName} batch ${deliveryDate} - Missing coords, fallback: ${batchFee}`
-                );
-              } else {
-                // Use backend API to calculate exact shipping for this batch
-                const products = batchProducts.map((item) => ({
-                  product: item.product._id,
-                  quantity: item.quantity || 1,
-                  rentalPeriod: item.rental || {
-                    startDate: orderData.rentalPeriod.startDate,
-                    endDate: orderData.rentalPeriod.endDate,
-                  },
-                }));
-
-                const shippingData = {
-  subOrderId: `batch-${deliveryDate}-${ownerId}`,
-  ownerAddress: {
-    latitude: group.owner.address?.coordinates?.latitude || null,
-    longitude: group.owner.address?.coordinates?.longitude || null,
-    streetAddress: group.owner.address?.streetAddress || "Địa chỉ không xác định", // Thêm streetAddress
-  },
-  deliveryAddress: {
-    latitude: orderData.deliveryAddress.latitude || null,
-    longitude: orderData.deliveryAddress.longitude || null,
-    streetAddress: orderData.deliveryAddress.streetAddress || "Địa chỉ không xác định", // Thêm streetAddress
-  },
-  products,
-};
-                console.log(
-                  `🚚 Calculating batch shipping for ${deliveryDate}:`,
-                  products.length,
-                  "products"
-                );
-                const shippingResponse =
-                  await calculateShipping(shippingData);
-
-                if (
-                  shippingResponse?.success &&
-                  shippingResponse.metadata?.shipping
-                ) {
-                  const shipping = shippingResponse.metadata.shipping;
-                  batchFee = shipping.totalShippingFee || 20000;
-
-                  batchInfo = {
-                    deliveryDate,
-                    batchSize: batchProducts.length,
-                    batchQuantity: batchProducts.reduce(
-                      (sum, p) => sum + (p.quantity || 1),
-                      0
-                    ),
-                    deliveryFee: batchFee,
-                    distance: shipping.distance,
-                    fallback: false,
-                    deliveryBatches: shipping.deliveryBatches || [],
-                    products: shipping.productFees || [],
-                    summary: shipping.summary,
-                  };
-                } else {
-                  // API failed, use fallback
-                  batchFee = 25000;
-                  batchInfo = {
-                    deliveryDate,
-                    deliveryFee: batchFee,
-                    fallback: true,
-                    error: "API calculation failed",
-                  };
-                }
-              }
-
-              // Add batch fee to SubOrder total
-              subOrderTotalShipping += batchFee;
-              subOrderDeliveries.push(batchInfo);
-
-              console.log(
-                `✅ Delivery batch ${deliveryDate} - Owner ${
-                  group.owner.profile?.firstName
-                }: ${batchFee.toLocaleString("vi-VN")}đ`
+            // Kiểm tra tọa độ - KHÔNG fallback, báo lỗi rõ ràng
+            if (!ownerLocation.latitude || !ownerLocation.longitude) {
+              throw new Error(
+                `Chủ sản phẩm ${group.owner.profile?.firstName || "Unknown"} chưa có tọa độ địa chỉ. Vui lòng liên hệ chủ sản phẩm cập nhật địa chỉ.`
               );
-            } catch (error) {
-              console.error(
-                `❌ Error calculating batch ${deliveryDate} for owner ${ownerId}:`,
-                error
-              );
-
-              // Fallback for this batch
-              const fallbackFee = 25000;
-              subOrderTotalShipping += fallbackFee;
-              subOrderDeliveries.push({
-                deliveryDate,
-                deliveryFee: fallbackFee,
-                fallback: true,
-                error: error.message,
-              });
             }
+
+            if (!userLocation.latitude || !userLocation.longitude) {
+              throw new Error(
+                "Địa chỉ giao hàng chưa có tọa độ. Vui lòng chọn địa chỉ trên bản đồ."
+              );
+            }
+
+            // Use backend API to calculate exact shipping for this batch
+            const products = batchProducts.map((item) => ({
+              product: item.product._id,
+              quantity: item.quantity || 1,
+              rentalPeriod: item.rental || {
+                startDate: orderData.rentalPeriod.startDate,
+                endDate: orderData.rentalPeriod.endDate,
+              },
+            }));
+
+            const shippingData = {
+              subOrderId: `batch-${deliveryDate}-${ownerId}`,
+              ownerAddress: {
+                latitude: ownerLocation.latitude,
+                longitude: ownerLocation.longitude,
+                streetAddress: group.owner.address?.streetAddress || "Địa chỉ không xác định",
+              },
+              deliveryAddress: {
+                latitude: userLocation.latitude,
+                longitude: userLocation.longitude,
+                streetAddress: orderData.deliveryAddress.streetAddress || "Địa chỉ không xác định",
+              },
+              products,
+            };
+
+            console.log(
+              `🚚 Calculating batch shipping for ${deliveryDate}:`,
+              products.length,
+              "products"
+            );
+
+            const shippingResponse = await calculateShipping(shippingData);
+            console.log("📦 Shipping API full response:", JSON.stringify(shippingResponse, null, 2));
+
+            // Xử lý response từ API
+            // Response có thể có nhiều format:
+            // 1. Trực tiếp: { distance: 20.5, fee: 120000, success: true, ... }
+            // 2. Wrapped: { data: { shipping: {...} } }
+            // 3. Wrapped: { metadata: { shipping: {...} } }
+            let shipping;
+            
+            if (shippingResponse?.distance !== undefined && shippingResponse?.fee !== undefined) {
+              // Format 1: Response trực tiếp là shipping object
+              shipping = shippingResponse;
+            } else {
+              // Format 2 & 3: Response wrapped
+              shipping = 
+                shippingResponse?.data?.shipping || 
+                shippingResponse?.metadata?.shipping ||
+                shippingResponse?.shipping;
+            }
+            
+            console.log("📦 Extracted shipping data:", shipping);
+            
+            if (!shipping || !shipping.distance || !shipping.fee) {
+              console.error("❌ Invalid shipping data:", shippingResponse);
+              throw new Error(
+                shippingResponse?.message || "Không thể tính phí ship từ API - Dữ liệu không hợp lệ"
+              );
+            }
+            const batchFee = shipping.fee || 0;
+
+            const batchInfo = {
+              deliveryDate,
+              batchSize: batchProducts.length,
+              batchQuantity: batchProducts.reduce(
+                (sum, p) => sum + (p.quantity || 1),
+                0
+              ),
+              deliveryFee: batchFee,
+              distance: shipping.distance,
+              distanceMeters: shipping.distanceMeters,
+              estimatedTime: shipping.estimatedTime,
+              shippingDetails: shipping.shippingDetails,
+              products: batchProducts.map((p, idx) => ({
+                productId: p.product._id,
+                quantity: p.quantity || 1,
+                allocatedFee: Math.round(batchFee / batchProducts.length),
+              })),
+            };
+
+            subOrderTotalShipping += batchFee;
+            subOrderDeliveries.push(batchInfo);
+
+            console.log(
+              `✅ Delivery batch ${deliveryDate} - Owner ${
+                group.owner.profile?.firstName
+              }: ${batchFee.toLocaleString("vi-VN")}đ (${shipping.distance.toFixed(2)}km)`
+            );
           }
 
           // Update SubOrder shipping info
@@ -515,8 +568,8 @@ const RentalOrderForm = () => {
           updatedGroups[ownerId].deliveryInfo = {
             deliveryCount,
             deliveryBatches: subOrderDeliveries,
-            distance: subOrderDeliveries[0]?.distance || "Unknown",
-            summary: `${deliveryCount} lần giao hàng`,
+            distance: subOrderDeliveries[0]?.distance || 0,
+            summary: `${deliveryCount} lần giao hàng - ${subOrderDeliveries[0]?.distance?.toFixed(2) || 0}km`,
           };
 
           masterTotalShipping += subOrderTotalShipping;
@@ -1221,6 +1274,72 @@ const RentalOrderForm = () => {
                                           đ
                                         </span>
                                       </div>
+                                      {orderData.deliveryMethod === "DELIVERY" && group.shippingFee > 0 && (() => {
+                                        // Calculate shipping fee for this product
+                                        let productShippingFee = 0;
+                                        const deliveryDate = item.rental?.startDate 
+                                          ? new Date(item.rental.startDate).toLocaleDateString("vi-VN")
+                                          : null;
+
+                                        // Try to find from productFees
+                                        if (group.deliveryInfo?.productFees) {
+                                          const productFee = group.deliveryInfo.productFees.find(
+                                            (fee) => fee.productId === item.product._id
+                                          );
+                                          if (productFee) {
+                                            productShippingFee = productFee.allocatedFee || 0;
+                                          }
+                                        }
+
+                                        // Fallback to batch calculation by delivery date
+                                        if (productShippingFee === 0 && group.deliveryInfo?.deliveryBatches && deliveryDate) {
+                                          const productBatch = group.deliveryInfo.deliveryBatches.find(
+                                            (batch) => batch.deliveryDate === deliveryDate
+                                          );
+                                          if (productBatch) {
+                                            productShippingFee = Math.round(
+                                              productBatch.deliveryFee / productBatch.batchSize
+                                            );
+                                          }
+                                        }
+
+                                        // Final fallback - group products by delivery date and calculate per batch
+                                        if (productShippingFee === 0 && deliveryDate) {
+                                          // Count products with same delivery date
+                                          const productsOnSameDate = group.products.filter(p => {
+                                            const pDate = p.rental?.startDate 
+                                              ? new Date(p.rental.startDate).toLocaleDateString("vi-VN")
+                                              : null;
+                                            return pDate === deliveryDate;
+                                          });
+                                          
+                                          // Get unique delivery dates to calculate number of deliveries
+                                          const uniqueDates = [...new Set(
+                                            group.products.map(p => 
+                                              p.rental?.startDate 
+                                                ? new Date(p.rental.startDate).toLocaleDateString("vi-VN")
+                                                : null
+                                            ).filter(d => d !== null)
+                                          )];
+                                          
+                                          const numDeliveries = uniqueDates.length || 1;
+                                          const feePerDelivery = Math.round((group.shippingFee || 0) / numDeliveries);
+                                          const productsInBatch = productsOnSameDate.length || 1;
+                                          
+                                          productShippingFee = Math.round(feePerDelivery / productsInBatch);
+                                        }
+
+                                        return productShippingFee > 0 ? (
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">
+                                              Phí vận chuyển:
+                                            </span>
+                                            <span className="font-semibold text-blue-600">
+                                              {productShippingFee.toLocaleString("vi-VN")}đ
+                                            </span>
+                                          </div>
+                                        ) : null;
+                                      })()}
                                     </div>
                                   </div>
                                 </div>
@@ -1229,375 +1348,20 @@ const RentalOrderForm = () => {
                           })}
                         </div>
 
-                        {/* Delivery Batch Shipping Information */}
-                        {orderData.deliveryMethod === "DELIVERY" && (
-                          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                            <h4 className="font-medium text-blue-800 mb-2">
-                              🚚 Thông tin vận chuyển
-                            </h4>
-
-                            {/* SubOrder Level Shipping */}
-                            <div className="mb-3 p-3 bg-white rounded border">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="text-gray-700 font-medium">
-                                  Tổng phí vận chuyển SubOrder:
-                                </span>
-                                <span className="font-bold text-blue-700 text-lg">
-                                  {(group.shippingFee || 0).toLocaleString(
-                                    "vi-VN"
-                                  )}
-                                  đ
-                                </span>
-                              </div>
-
-                              {/* Shipping Calculation Explanation */}
-                              {group.deliveryInfo && (
-                                <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
-                                  <div className="font-medium text-blue-800 mb-1">
-                                    💡 Cách tính phí:
-                                  </div>
-                                  <div className="text-blue-700 space-y-1">
-                                    <div>
-                                      • Phí ship = Số lần giao hàng × (15,000đ
-                                      cơ bản + Khoảng cách × 5,000đ/km)
-                                    </div>
-                                    <div>
-                                      • Sản phẩm cùng ngày giao = 1 lần giao = 1
-                                      phí ship
-                                    </div>
-                                    <div>
-                                      • Phí ship được chia đều cho các sản phẩm
-                                      trong cùng chuyến giao
-                                    </div>
-                                    <div>
-                                      • Tối thiểu: 20,000đ/lần giao | Tối đa:
-                                      100,000đ/lần giao
-                                    </div>
-                                    {group.deliveryInfo.distance && (
-                                      <div>
-                                        • Khoảng cách:{" "}
-                                        {typeof group.deliveryInfo.distance ===
-                                        "object"
-                                          ? group.deliveryInfo.distance.km
-                                          : group.deliveryInfo.distance}
-                                        km
-                                      </div>
-                                    )}
-                                    {group.deliveryInfo.summary && (
-                                      <div>
-                                        • Tổng:{" "}
-                                        {group.deliveryInfo.deliveryCount} lần
-                                        giao ×{" "}
-                                        {Math.round(
-                                          (group.shippingFee || 0) /
-                                            (group.deliveryInfo.deliveryCount ||
-                                              1)
-                                        ).toLocaleString("vi-VN")}
-                                        đ ={" "}
-                                        {(
-                                          group.shippingFee || 0
-                                        ).toLocaleString("vi-VN")}
-                                        đ
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Shipping Per Product */}
-                              <div className="mt-2 space-y-1">
-                                <div className="text-xs text-gray-600 font-medium mb-1">
-                                  📦 Chi tiết phí ship theo sản phẩm:
-                                </div>
-                                {group.products.map((item, prodIndex) => {
-                                  // Calculate shipping fee per product based on delivery batch system
-                                  let productDuration = 1;
-                                  let deliveryDate = null;
-
-                                  if (
-                                    item.rental?.startDate &&
-                                    item.rental?.endDate
-                                  ) {
-                                    const startDate = new Date(
-                                      item.rental.startDate
-                                    );
-                                    const endDate = new Date(
-                                      item.rental.endDate
-                                    );
-                                    const diffTime = Math.abs(
-                                      endDate - startDate
-                                    );
-                                    productDuration =
-                                      Math.ceil(
-                                        diffTime / (1000 * 60 * 60 * 24)
-                                      ) || 1;
-                                    deliveryDate =
-                                      startDate.toLocaleDateString("vi-VN");
-                                  }
-
-                                  console.log(
-                                    `🔍 Product ${prodIndex} - ${item.product.title}:`,
-                                    {
-                                      productId: item.product._id,
-                                      deliveryInfo: group.deliveryInfo,
-                                      productFees:
-                                        group.deliveryInfo?.productFees,
-                                      productShippingDetails:
-                                        group.deliveryInfo
-                                          ?.productShippingDetails,
-                                    }
-                                  );
-
-                                  // Find product shipping fee from detailed shipping info
-                                  let productShippingFee = 0;
-                                  let deliveryBatchInfo = null;
-
-                                  // Try to find product shipping fee from backend calculation
-                                  if (group.deliveryInfo?.productFees) {
-                                    // Look for product fee by productId
-                                    const productFee =
-                                      group.deliveryInfo.productFees.find(
-                                        (fee) =>
-                                          fee.productId === item.product._id
-                                      );
-
-                                    if (productFee) {
-                                      productShippingFee =
-                                        productFee.allocatedFee || 0;
-                                      deliveryBatchInfo = {
-                                        deliveryDate: new Date(
-                                          productFee.deliveryDate
-                                        ).toLocaleDateString("vi-VN"),
-                                        batchSize:
-                                          productFee.breakdown?.batchSize || 1,
-                                        totalBatchFee:
-                                          productFee.breakdown?.deliveryFee ||
-                                          0,
-                                        distance: productFee.distance,
-                                      };
-                                    }
-                                  }
-
-                                  // If not found in productFees, try deliveryBatches
-                                  if (
-                                    productShippingFee === 0 &&
-                                    group.deliveryInfo?.productShippingDetails
-                                  ) {
-                                    const productDetail =
-                                      group.deliveryInfo.productShippingDetails.find(
-                                        (batch) =>
-                                          batch.products?.some(
-                                            (p) =>
-                                              p.productId === item.product._id
-                                          )
-                                      );
-
-                                    if (productDetail) {
-                                      const productInfo =
-                                        productDetail.products.find(
-                                          (p) =>
-                                            p.productId === item.product._id
-                                        );
-                                      productShippingFee =
-                                        productInfo?.allocatedFee || 0;
-                                      deliveryBatchInfo = {
-                                        deliveryDate: new Date(
-                                          productDetail.deliveryDate
-                                        ).toLocaleDateString("vi-VN"),
-                                        batchSize: productDetail.batchSize,
-                                        totalBatchFee:
-                                          productDetail.deliveryFee,
-                                      };
-                                    }
-                                  }
-
-                                  // Final fallback - divide total shipping equally
-                                  if (productShippingFee === 0) {
-                                    const totalProductCount =
-                                      group.products.length;
-                                    productShippingFee = Math.round(
-                                      (group.shippingFee || 0) /
-                                        totalProductCount
-                                    );
-                                    deliveryBatchInfo = {
-                                      deliveryDate:
-                                        deliveryDate || "Chưa xác định",
-                                      batchSize: totalProductCount,
-                                      totalBatchFee: group.shippingFee || 0,
-                                      note: "Phí được chia đều (fallback)",
-                                    };
-                                  }
-
-                                  return (
-                                    <div
-                                      key={prodIndex}
-                                      className="bg-gray-50 p-2 rounded border-l-2 border-blue-300"
-                                    >
-                                      <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                          <div className="font-medium text-gray-700 text-xs">
-                                            {item.product.title ||
-                                              item.product.name}
-                                          </div>
-                                          <div className="text-xs text-gray-500 mt-1 space-y-1">
-                                            <div>
-                                              📦 SL: {item.quantity} | ⏱️{" "}
-                                              {productDuration} ngày
-                                            </div>
-                                            {deliveryDate && (
-                                              <div>
-                                                🚚 Giao ngày: {deliveryDate}
-                                              </div>
-                                            )}
-                                            {deliveryBatchInfo && (
-                                              <div className="text-xs text-blue-600">
-                                                📋 Batch:{" "}
-                                                {deliveryBatchInfo.batchSize} SP
-                                                ={" "}
-                                                {deliveryBatchInfo.totalBatchFee?.toLocaleString(
-                                                  "vi-VN"
-                                                )}
-                                                đ
-                                                {deliveryBatchInfo.distance && (
-                                                  <span className="ml-1">
-                                                    (
-                                                    {deliveryBatchInfo.distance}
-                                                    km)
-                                                  </span>
-                                                )}
-                                                {deliveryBatchInfo.note && (
-                                                  <div className="text-orange-600 mt-1">
-                                                    {deliveryBatchInfo.note}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <div className="text-right">
-                                          <span className="font-semibold text-blue-600 text-sm">
-                                            {productShippingFee.toLocaleString(
-                                              "vi-VN"
-                                            )}
-                                            đ
-                                          </span>
-                                          {deliveryBatchInfo && (
-                                            <div className="text-xs text-gray-500">
-                                              /{deliveryBatchInfo.batchSize} SP
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* Delivery Batch Details */}
-                            {group.deliveryInfo ? (
-                              <div className="space-y-2">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                                  <div>
-                                    <span className="text-gray-600">
-                                      Số lần giao:
-                                    </span>
-                                    <span className="ml-2 font-semibold text-green-700">
-                                      {group.deliveryInfo.deliveryCount || 1}{" "}
-                                      lần
-                                    </span>
-                                  </div>
-                                  {group.deliveryInfo.distance && (
-                                    <div>
-                                      <span className="text-gray-600">
-                                        Khoảng cách:
-                                      </span>
-                                      <span className="ml-2 text-gray-800">
-                                        {group.deliveryInfo.distance.km ||
-                                          group.deliveryInfo.distance}
-                                        km
-                                      </span>
-                                    </div>
-                                  )}
-                                  {group.deliveryInfo.summary && (
-                                    <div>
-                                      <span className="text-gray-600">
-                                        Trung bình/lần:
-                                      </span>
-                                      <span className="ml-2 text-gray-800">
-                                        {Math.round(
-                                          (group.shippingFee || 0) /
-                                            (group.deliveryInfo.deliveryCount ||
-                                              1)
-                                        ).toLocaleString("vi-VN")}
-                                        đ
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Delivery Batches Breakdown */}
-                                {group.deliveryInfo.deliveryBatches &&
-                                  group.deliveryInfo.deliveryBatches.length >
-                                    0 && (
-                                    <div className="mt-3 border-t pt-2">
-                                      <div className="text-xs text-gray-600 mb-2 flex items-center">
-                                        <Package className="w-3 h-3 mr-1" />
-                                        Chi tiết giao hàng theo ngày:
-                                      </div>
-                                      <div className="space-y-1 max-h-24 overflow-y-auto">
-                                        {group.deliveryInfo.deliveryBatches.map(
-                                          (batch, index) => (
-                                            <div
-                                              key={index}
-                                              className="text-xs bg-white p-2 rounded border"
-                                            >
-                                              <div className="flex justify-between items-center">
-                                                <span className="text-gray-700">
-                                                  Ngày{" "}
-                                                  {new Date(
-                                                    batch.deliveryDate
-                                                  ).toLocaleDateString("vi-VN")}
-                                                </span>
-                                                <span className="font-medium text-blue-600">
-                                                  {batch.deliveryFee?.toLocaleString(
-                                                    "vi-VN"
-                                                  )}
-                                                  đ
-                                                </span>
-                                              </div>
-                                              <div className="text-gray-500 mt-1">
-                                                {batch.batchSize ||
-                                                  batch.products?.length ||
-                                                  0}{" "}
-                                                sản phẩm,
-                                                {batch.batchQuantity || 0} món
-                                              </div>
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                {/* Error Display */}
-                                {group.deliveryInfo.error && (
-                                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
-                                    ⚠️ {group.deliveryInfo.error}
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              // Fallback display when no delivery info
-                              <div className="text-sm text-gray-600">
-                                <div className="flex items-center">
-                                  <span>
-                                    💡 Nhấn "Tính phí ship" để xem chi tiết giao
-                                    hàng theo ngày
-                                  </span>
-                                </div>
-                              </div>
-                            )}
+                        {/* Shipping Info Button */}
+                        {orderData.deliveryMethod === "DELIVERY" && group.deliveryInfo && group.shippingFee > 0 && (
+                          <div className="mt-4 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedShippingInfo(group);
+                                setShowShippingModal(true);
+                              }}
+                              className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors"
+                            >
+                              <Lightbulb className="w-4 h-4" />
+                              <span className="text-sm font-medium">Cách tính phí vận chuyển</span>
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1626,6 +1390,15 @@ const RentalOrderForm = () => {
 </label>
               </div>
             </div>
+            
+            {showAddressModal && (
+              <AddressSelectionModal
+                isOpen={showAddressModal}
+                onClose={() => setShowAddressModal(false)}
+                userAddresses={userAddresses}
+                onSelect={handleAddressFromModal}
+              />
+            )}
 
               {orderData.deliveryMethod === "OWNER_DELIVERY" && (
                 <div className="bg-white rounded-lg shadow-md p-6">
@@ -1678,90 +1451,9 @@ const RentalOrderForm = () => {
                         </p>
                       )}
 
-                      {/* Map location status */}
-                      {orderData.deliveryAddress.latitude &&
-                        orderData.deliveryAddress.longitude && (
-                          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                            <p className="text-sm text-green-700 flex items-center">
-                              <span className="mr-2">✅</span>
-                              Địa chỉ đã được chọn từ bản đồ - Không cần nhập
-                              thủ công
-                            </p>
-                          </div>
-                        )}
-
-                      {/* Fallback manual input - only show if no map location */}
-                      {!orderData.deliveryAddress.latitude &&
-                        !orderData.deliveryAddress.longitude && (
-                          <div className="mt-2">
-                            <input
-                              type="text"
-                              value={orderData.deliveryAddress.streetAddress}
-                              onChange={(e) =>
-                                setOrderData((prev) => ({
-                                  ...prev,
-                                  deliveryAddress: {
-                                    ...prev.deliveryAddress,
-                                    streetAddress: e.target.value,
-                                  },
-                                }))
-                              }
-                              placeholder="Hoặc nhập thủ công: Số nhà, tên đường..."
-                              className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              💡 Khuyến khích chọn từ bản đồ để có địa chỉ chính
-                              xác nhất
-                            </p>
-                          </div>
-                        )}
+                      
                     </div>
-                    {/* Chỉ hiển thị các trường này nếu chưa chọn từ map */}
-                    {!orderData.deliveryAddress.latitude &&
-                      !orderData.deliveryAddress.longitude && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2">
-                              Phường/Xã
-                            </label>
-                            <input
-                              type="text"
-                              value={orderData.deliveryAddress.ward}
-                              onChange={(e) =>
-                                setOrderData((prev) => ({
-                                  ...prev,
-                                  deliveryAddress: {
-                                    ...prev.deliveryAddress,
-                                    ward: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                              placeholder="Nhập phường/xã..."
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-2">
-                              Quận/Huyện
-                            </label>
-                            <input
-                              type="text"
-                              value={orderData.deliveryAddress.district}
-                              onChange={(e) =>
-                                setOrderData((prev) => ({
-                                  ...prev,
-                                  deliveryAddress: {
-                                    ...prev.deliveryAddress,
-                                    district: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                              placeholder="Nhập quận/huyện..."
-                            />
-                          </div>
-                        </div>
-                      )}
+                   
 
                     {/* Hiển thị thông tin địa chỉ từ map (read-only) */}
                     {orderData.deliveryAddress.latitude &&
@@ -1880,7 +1572,7 @@ const RentalOrderForm = () => {
                   </button>
                 </div>
               )}
-
+  
               {/* Order Action */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-center">
@@ -2137,6 +1829,152 @@ const RentalOrderForm = () => {
             onSelectMethod={handlePaymentMethodSelect}
             onClose={() => setShowPaymentSelector(false)}
           />
+        )}
+
+        {/* Shipping Calculation Modal */}
+        {showShippingModal && selectedShippingInfo && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  💡 Cách tính phí vận chuyển
+                </h3>
+                <button
+                  onClick={() => setShowShippingModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <span className="text-2xl">×</span>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Total Shipping Fee */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 font-medium">
+                      Tổng phí vận chuyển:
+                    </span>
+                    <span className="font-bold text-blue-700 text-xl">
+                      {(selectedShippingInfo.shippingFee || 0).toLocaleString("vi-VN")}đ
+                    </span>
+                  </div>
+                </div>
+
+                {/* Calculation Formula */}
+                {selectedShippingInfo.deliveryInfo && (
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                    <h4 className="font-medium text-gray-800 mb-3">📝 Công thức tính:</h4>
+                    <div className="text-sm text-gray-700 space-y-2">
+                      <div className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>Phí ship = Số lần giao hàng × (15,000đ cơ bản + Khoảng cách × 5,000đ/km)</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>Sản phẩm cùng ngày giao = 1 lần giao = 1 phí ship</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>Phí ship được chia đều cho các sản phẩm trong cùng chuyến giao</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="mr-2">•</span>
+                        <span>Tối thiểu: 20,000đ/lần giao | Tối đa: 100,000đ/lần giao</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Delivery Statistics */}
+                {selectedShippingInfo.deliveryInfo && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="bg-white border rounded-lg p-3">
+                      <div className="text-xs text-gray-600 mb-1">Số lần giao</div>
+                      <div className="text-lg font-semibold text-green-700">
+                        {selectedShippingInfo.deliveryInfo.deliveryCount || 1} lần
+                      </div>
+                    </div>
+                    {selectedShippingInfo.deliveryInfo.distance && (
+                      <div className="bg-white border rounded-lg p-3">
+                        <div className="text-xs text-gray-600 mb-1">Khoảng cách</div>
+                        <div className="text-lg font-semibold text-gray-800">
+                          {typeof selectedShippingInfo.deliveryInfo.distance === "number"
+                            ? selectedShippingInfo.deliveryInfo.distance.toFixed(2)
+                            : selectedShippingInfo.deliveryInfo.distance}
+                          km
+                        </div>
+                      </div>
+                    )}
+                    <div className="bg-white border rounded-lg p-3">
+                      <div className="text-xs text-gray-600 mb-1">Trung bình/lần</div>
+                      <div className="text-lg font-semibold text-gray-800">
+                        {Math.round(
+                          (selectedShippingInfo.shippingFee || 0) /
+                            (selectedShippingInfo.deliveryInfo?.deliveryCount || 1)
+                        ).toLocaleString("vi-VN")}
+                        đ
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Delivery Batches Breakdown */}
+                {selectedShippingInfo.deliveryInfo?.deliveryBatches &&
+                  selectedShippingInfo.deliveryInfo.deliveryBatches.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-gray-800 flex items-center">
+                        <Package className="w-4 h-4 mr-2" />
+                        Chi tiết giao hàng theo ngày:
+                      </h4>
+                      <div className="space-y-2">
+                        {selectedShippingInfo.deliveryInfo.deliveryBatches.map((batch, index) => (
+                          <div key={index} className="bg-white border rounded-lg p-3">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-medium text-gray-700">
+                                📅 {new Date(batch.deliveryDate).toLocaleDateString("vi-VN")}
+                              </span>
+                              <span className="font-bold text-blue-600">
+                                {batch.deliveryFee?.toLocaleString("vi-VN")}đ
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {batch.batchSize || batch.products?.length || 0} sản phẩm, {batch.batchQuantity || 0} món
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Calculation Example */}
+                {selectedShippingInfo.deliveryInfo?.summary && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-800 mb-2">✅ Tính toán:</h4>
+                    <div className="text-sm text-gray-700">
+                      {selectedShippingInfo.deliveryInfo.deliveryCount} lần giao ×{" "}
+                      {Math.round(
+                        (selectedShippingInfo.shippingFee || 0) /
+                          (selectedShippingInfo.deliveryInfo.deliveryCount || 1)
+                      ).toLocaleString("vi-VN")}
+                      đ ={" "}
+                      <span className="font-semibold text-green-700">
+                        {(selectedShippingInfo.shippingFee || 0).toLocaleString("vi-VN")}đ
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="sticky bottom-0 bg-white border-t p-4">
+                <button
+                  onClick={() => setShowShippingModal(false)}
+                  className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Deposit Payment Modal for COD */}

@@ -103,6 +103,91 @@ const earlyReturnApi = {
   },
 
   /**
+   * Calculate additional fee BEFORE creating request
+   * @param {Object} data - { subOrderId, newAddress }
+   * @returns {Promise}
+   */
+  calculateAdditionalFee: async (data) => {
+    try {
+      const response = await api.post("/early-returns/calculate-fee", data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Calculate fee error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Pay upfront shipping fee BEFORE creating request
+   * @param {Object} data - { subOrderId, amount, paymentMethod, addressInfo }
+   * @returns {Promise}
+   */
+  payUpfrontShippingFee: async (data) => {
+    try {
+      const response = await api.post(
+        "/early-returns/pay-upfront-shipping",
+        data
+      );
+      return response.data;
+    } catch (error) {
+      console.error("❌ Pay upfront shipping error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update return address and calculate additional shipping fee
+   * @param {string} id - Request ID
+   * @param {Object} data - { returnAddress }
+   * @returns {Promise}
+   */
+  updateAddress: async (id, data) => {
+    try {
+      const response = await api.put(`/early-returns/${id}/address`, data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Update address error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Pay additional shipping fee
+   * @param {string} id - Request ID
+   * @param {Object} data - { paymentMethod: 'wallet' | 'payos' }
+   * @returns {Promise}
+   */
+  payAdditionalShipping: async (id, data) => {
+    try {
+      const response = await api.post(
+        `/early-returns/${id}/pay-additional-shipping`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      console.error("❌ Pay additional shipping error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Verify additional shipping payment (for PayOS)
+   * @param {string} orderCode - PayOS order code
+   * @returns {Promise}
+   */
+  verifyAdditionalShippingPayment: async (orderCode) => {
+    try {
+      const response = await api.get(
+        `/early-returns/verify-additional-shipping/${orderCode}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("❌ Verify payment error:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Create owner review for renter (Owner only)
    * @param {string} id - Request ID
    * @param {Object} reviewData - { rating, comment, title, detailedRating, photos }

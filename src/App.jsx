@@ -79,6 +79,8 @@ import ContractSigning from "./components/rental/ContractSigning";
 import RenterConfirmationSummary from "./pages/RenterConfirmationSummary";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
 import VoucherRedeem from "./pages/voucher/VoucherRedeem";
+import RentalOrderShippingPaymentSuccess from "./pages/RentalOrderShippingPaymentSuccess";
+import RentalOrderShippingPaymentCancel from "./pages/RentalOrderShippingPaymentCancel";
 
 // Dispute pages
 import DisputesPage from "./pages/DisputesPage";
@@ -361,6 +363,22 @@ export default function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <RentalOrderDetailPage />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/shipping-payment-success"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                        <RentalOrderShippingPaymentSuccess />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/shipping-payment-cancel"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                        <RentalOrderShippingPaymentCancel />
                       </RoleProtectedRoute>
                     }
                   />

@@ -19,6 +19,7 @@ import {
   calculateDuration,
   getEarlyReturnStatusColor,
   getEarlyReturnStatusText,
+  formatDateTime
 } from "../../utils/orderHelpers";
 
 // Sub-components for better organization
@@ -127,6 +128,13 @@ const OrderRow = ({
   earlyReturnRequest,
   navigate
 }) => {
+  // Check if subOrder has any products with ACTIVE status
+  const hasActiveProducts = useMemo(() => {
+    if (!order.subOrders || !order.subOrders[0]) return false;
+    const subOrder = order.subOrders[0];
+    return subOrder.products?.some(p => p.productStatus === 'ACTIVE') || false;
+  }, [order.subOrders]);
+
   const totalAmount = useMemo(() => {
     return (
       (order.totalAmount || 0) +
@@ -199,8 +207,8 @@ const OrderRow = ({
 
 
 
-    // Early Return
-    if (order.status === "ACTIVE" && order.subOrders?.[0]) {
+    // Early Return - Only show if has products with ACTIVE status
+    if (order.subOrders?.[0] && hasActiveProducts) {
       if (earlyReturnRequest) {
         actions.push(
           <EarlyReturnBadge key="early-return-status" request={earlyReturnRequest} />
@@ -240,7 +248,7 @@ const OrderRow = ({
       {/* Created Date - Hidden on mobile */}
       <td className="px-4 py-4 whitespace-nowrap hidden sm:table-cell">
         <div className="text-sm text-gray-600">
-          {formatDate(order.createdAt)}
+          {formatDateTime(order.createdAt)}
         </div>
       </td>
 
