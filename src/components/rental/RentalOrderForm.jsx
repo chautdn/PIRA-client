@@ -80,6 +80,7 @@ const RentalOrderForm = () => {
     const [errors, setErrors] = useState({});
     const [step, setStep] = useState(1);
     const [groupedProducts, setGroupedProducts] = useState({});
+    const [sourceItems, setSourceItems] = useState([]); // Store the items being processed
     const [totalShipping, setTotalShipping] = useState(0);
     const [showPaymentSelector, setShowPaymentSelector] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
@@ -156,6 +157,10 @@ const RentalOrderForm = () => {
       } else {
         return;
       }
+      
+      // Store sourceItems in state for later use when submitting
+      setSourceItems(sourceItems);
+      
       const grouped = {};
       let earliestStart = null;
       let latestEnd = null;
@@ -666,6 +671,8 @@ const RentalOrderForm = () => {
           totalAmount: totals.grandTotal,
           paymentTransactionId: paymentResult.transactionId,
           paymentMessage: paymentResult.message,
+          // Pass the items being processed (not selectedItems from location.state)
+          selectedItems: sourceItems,
           // COD specific fields
           ...(paymentMethod === "COD" && {
             depositAmount: paymentResult.depositAmount,
