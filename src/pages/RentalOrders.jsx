@@ -156,6 +156,10 @@ const RentalOrdersPage = () => {
       navigate("/rental-orders", { replace: true });
       return;
     }
+    const formatTime = (timeStr) => {
+      const date = new Date(timeStr);
+      return date.toLocaleString();
+    }
 
     // Check for success messages from URL params
     const signed = searchParams.get("signed");

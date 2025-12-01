@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { ownerProductApi } from "../../services/ownerProduct.Api";
 import ProductCard from "../../components/common/ProductCard";
 import ConfirmModal from "../../components/owner/ConfirmModal";
-import { FiPlus, FiEdit, FiEyeOff, FiEye, FiTrash2 } from "react-icons/fi";
+import PromoteProductModal from "../../components/owner/PromoteProductModal";
+import { FiPlus, FiEdit, FiEyeOff, FiEye, FiTrash2, FiTrendingUp } from "react-icons/fi";
 
 // Product Action Buttons Component
 const ProductActionButtons = ({
@@ -13,6 +14,7 @@ const ProductActionButtons = ({
   onHide,
   onUnhide,
   onDelete,
+  onPromote,
 }) => {
   const [showActions, setShowActions] = useState(false);
   const isHidden = product.status === "OWNER_HIDDEN";
@@ -49,6 +51,19 @@ const ProductActionButtons = ({
               <FiEdit className="w-4 h-4" />
               <span>Chỉnh sửa</span>
             </button>
+
+            <button
+              onClick={() => {
+                onPromote(product);
+                setShowActions(false);
+              }}
+              className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-blue-700"
+            >
+              <FiTrendingUp className="w-4 h-4" />
+              <span>{product.isPromoted ? "Quảng cáo lại" : "Quảng cáo"}</span>
+            </button>
+
+            <div className="border-t border-gray-200 my-1"></div>
 
             {isHidden ? (
               <button
@@ -114,6 +129,12 @@ export default function OwnerProducts() {
     productId: null,
     loading: false,
     errorMessage: null,
+  });
+
+  // Promotion modal state
+  const [promoteModalState, setPromoteModalState] = useState({
+    isOpen: false,
+    product: null,
   });
 
   useEffect(() => {
@@ -184,6 +205,25 @@ export default function OwnerProducts() {
       productId,
       loading: false,
     });
+  };
+
+  const handlePromote = (product) => {
+    setPromoteModalState({
+      isOpen: true,
+      product,
+    });
+  };
+
+  const closePromoteModal = () => {
+    setPromoteModalState({
+      isOpen: false,
+      product: null,
+    });
+  };
+
+  const handlePromoteSuccess = () => {
+    closePromoteModal();
+    loadProducts(); // Reload products to show updated promotion status
   };
 
   const closeModal = () => {
@@ -426,6 +466,7 @@ export default function OwnerProducts() {
                   onHide={handleHide}
                   onUnhide={handleUnhide}
                   onDelete={handleDelete}
+                  onPromote={handlePromote}
                 />
 
                 {/* Status Badge - Positioned to avoid conflict with promotion badge */}
@@ -596,6 +637,15 @@ export default function OwnerProducts() {
         loading={modalState.loading}
         cancelText={modalState.type === "error" ? null : "Hủy"}
       />
+
+      {/* Promote Product Modal */}
+      {promoteModalState.isOpen && promoteModalState.product && (
+        <PromoteProductModal
+          product={promoteModalState.product}
+          onClose={closePromoteModal}
+          onSuccess={handlePromoteSuccess}
+        />
+      )}
     </div>
   );
 }

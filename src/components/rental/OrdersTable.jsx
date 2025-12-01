@@ -19,6 +19,7 @@ import {
   calculateDuration,
   getEarlyReturnStatusColor,
   getEarlyReturnStatusText,
+  formatDateTime
 } from "../../utils/orderHelpers";
 
 // Sub-components for better organization
@@ -240,7 +241,7 @@ const OrderRow = ({
       {/* Created Date - Hidden on mobile */}
       <td className="px-4 py-4 whitespace-nowrap hidden sm:table-cell">
         <div className="text-sm text-gray-600">
-          {formatDate(order.createdAt)}
+          {formatDateTime(order.createdAt)}
         </div>
       </td>
 
