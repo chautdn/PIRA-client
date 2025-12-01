@@ -63,6 +63,8 @@ import AdminReportDetail from "./pages/admin/AdminReportDetail";
 import BankManagement from "./pages/admin/BankManagement";
 import AdminBankDetail from "./pages/admin/AdminBankDetail";
 import WithdrawalManagement from "./pages/admin/WithdrawalManagement";
+import TransactionManagement from "./pages/admin/TransactionManagement";
+import TransactionDetail from "./pages/admin/TransactionDetail";
 import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
@@ -381,6 +383,14 @@ export default function App() {
                     <Route
                       path="products/:productId"
                       element={<AdminProductDetail />}
+                    />
+                    <Route
+                      path="transactions"
+                      element={<TransactionManagement />}
+                    />
+                    <Route
+                      path="transactions/:transactionId"
+                      element={<TransactionDetail />}
                     />
                     <Route
                       path="promotions"
