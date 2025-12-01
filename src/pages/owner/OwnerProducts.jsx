@@ -5,7 +5,14 @@ import { ownerProductApi } from "../../services/ownerProduct.Api";
 import ProductCard from "../../components/common/ProductCard";
 import ConfirmModal from "../../components/owner/ConfirmModal";
 import PromoteProductModal from "../../components/owner/PromoteProductModal";
-import { FiPlus, FiEdit, FiEyeOff, FiEye, FiTrash2, FiTrendingUp } from "react-icons/fi";
+import {
+  FiPlus,
+  FiEdit,
+  FiEyeOff,
+  FiEye,
+  FiTrash2,
+  FiTrendingUp,
+} from "react-icons/fi";
 
 // Product Action Buttons Component
 const ProductActionButtons = ({

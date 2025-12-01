@@ -84,9 +84,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
     try {
       // Check wallet balance if paying with wallet
       if (paymentMethod === "wallet" && balance < pricing.totalAmount) {
-        toast.error(
-          "Số dư ví không đủ. Vui lòng nạp thêm tiền vào ví."
-        );
+        toast.error("Số dư ví không đủ. Vui lòng nạp thêm tiền vào ví.");
         setLoading(false);
         return;
       }
@@ -141,15 +139,14 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
           className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-100"
           onClick={(e) => e.stopPropagation()}
         >
-            {/* Header */}
+          {/* Header */}
           <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-3xl">
             <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-2xl font-bold mb-1">
-                  Quảng Cáo Sản Phẩm
-                </h2>
+                <h2 className="text-2xl font-bold mb-1">Quảng Cáo Sản Phẩm</h2>
                 <p className="text-blue-100">
-                  Làm cho sản phẩm của bạn nổi bật và xuất hiện ở vị trí hàng đầu!
+                  Làm cho sản phẩm của bạn nổi bật và xuất hiện ở vị trí hàng
+                  đầu!
                 </p>
               </div>
               <button
@@ -158,7 +155,8 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
               >
                 <X size={24} />
               </button>
-            </div>            {/* Product Preview */}
+            </div>{" "}
+            {/* Product Preview */}
             {product && (
               <div className="mt-4 bg-white/10 backdrop-blur rounded-xl p-3 flex items-center gap-3">
                 {product.images && product.images[0] && (
@@ -231,7 +229,8 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                           Thay thế quảng cáo hiện tại
                         </div>
                         <div className="text-sm text-gray-600">
-                          Thay thế ngay lập tức quảng cáo hiện tại bằng quảng cáo mới này
+                          Thay thế ngay lập tức quảng cáo hiện tại bằng quảng
+                          cáo mới này
                         </div>
                       </div>
                     </div>
@@ -263,7 +262,8 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                           Đặt lịch sau khi hết hạn
                         </div>
                         <div className="text-sm text-gray-600">
-                          Quảng cáo này sẽ tự động kích hoạt khi quảng cáo hiện tại kết thúc
+                          Quảng cáo này sẽ tự động kích hoạt khi quảng cáo hiện
+                          tại kết thúc
                         </div>
                       </div>
                     </div>
