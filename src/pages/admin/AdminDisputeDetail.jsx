@@ -12,6 +12,7 @@ import {
 } from '../../utils/disputeHelpers';
 import AdminResponseModal from '../../components/dispute/AdminResponseModal';
 import AdminFinalProcessModal from '../../components/dispute/AdminFinalProcessModal';
+import ShipperDamageResolveModal from '../../components/dispute/ShipperDamageResolveModal';
 import NegotiationRoom from '../../components/dispute/NegotiationRoom';
 import ThirdPartySection from '../../components/dispute/ThirdPartySection';
 
@@ -22,6 +23,7 @@ const AdminDisputeDetail = () => {
   const { currentDispute, isLoading, loadDisputeDetail } = useDispute();
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showFinalProcessModal, setShowFinalProcessModal] = useState(false);
+  const [showShipperDamageModal, setShowShipperDamageModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -51,6 +53,7 @@ const AdminDisputeDetail = () => {
   const dispute = currentDispute;
   const canReview = dispute.status === 'RESPONDENT_REJECTED';
   const canProcessNegotiationResult = dispute.status === 'NEGOTIATION_AGREED';
+  const canResolveShipperDamage = dispute.status === 'ADMIN_REVIEW' && dispute.type === 'DAMAGED_BY_SHIPPER';
 
   return (
     <div className="space-y-6">
@@ -92,6 +95,38 @@ const AdminDisputeDetail = () => {
             </p>
           </div>
         </div>
+
+        {/* Shipper Damage Resolution */}
+        {canResolveShipperDamage && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    Tranh chấp lỗi vận chuyển
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <p>
+                      Đây là tranh chấp về hư hỏng trong quá trình vận chuyển. 
+                      Cần thu thập bằng chứng từ shipper và đơn vị vận chuyển để xử lý.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowShipperDamageModal(true)}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium"
+            >
+              Xử lý tranh chấp lỗi shipper
+            </button>
+          </div>
+        )}
 
         {canReview && (
           <div className="mt-4 pt-4 border-t">
@@ -633,6 +668,17 @@ const AdminDisputeDetail = () => {
         isOpen={showFinalProcessModal}
         onClose={() => setShowFinalProcessModal(false)}
         dispute={dispute}
+      />
+
+      {/* Shipper Damage Resolve Modal */}
+      <ShipperDamageResolveModal
+        isOpen={showShipperDamageModal}
+        onClose={() => setShowShipperDamageModal(false)}
+        dispute={dispute}
+        onSuccess={() => {
+          // Reload dispute detail after successful resolution
+          loadDisputeDetail(disputeId);
+        }}
       />
     </div>
   );
