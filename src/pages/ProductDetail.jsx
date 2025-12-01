@@ -866,14 +866,18 @@ export default function ProductDetail() {
       duration: getRentalDays()
     };
 
-    // Add product to cart
-    const result = await addToCartContext(product, quantity, rentalData);
-    
-    if (result.success) {
-      // Navigate to cart page to checkout
-      navigate('/cart');
-    } else {
-      alert(`❌ ${result.error || 'Không thể thêm vào giỏ hàng'}`);
+    try {
+      // Call API directly without opening cart drawer
+      const result = await cartApiService.addToCart(product._id, quantity, rentalData);
+      if (result?.items) {
+        // Navigate to cart without opening drawer
+        navigate('/cart');
+      } else {
+        alert('❌ Không thể thêm vào giỏ hàng');
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || 'Không thể thêm vào giỏ hàng';
+      alert(`❌ ${errorMsg}`);
     }
   };
 
