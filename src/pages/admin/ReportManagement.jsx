@@ -273,19 +273,16 @@ const ReportManagement = () => {
   return (
     <div className="space-y-6 p-6 bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
       {/* Header with Gradient */}
-      <div className="bg-gradient-to-r from-red-600 via-orange-600 to-pink-600 rounded-2xl shadow-2xl p-8 text-white">
-        <div className="flex items-center justify-between">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
-              <span className="text-5xl">🚨</span>
-              Quản lý Báo cáo
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-3xl">🚨</span>
+              Quản lý Báo Cáo
             </h1>
-            <p className="text-orange-100 text-lg">Quản lý và xử lý các báo cáo vi phạm trong hệ thống</p>
+            <p className="text-gray-600 mt-1">Quản lý và xử lý các báo cáo vi phạm trong hệ thống </p>
           </div>
-          <button className="px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
-            <span>📥</span>
-            Export CSV
-          </button>
+          
         </div>
       </div>
 
@@ -628,18 +625,7 @@ const ReportManagement = () => {
                         >
                           <span>👁️</span> Xem chi tiết
                         </button>
-                        {report.status === 'PENDING' && (
-                          <select
-                            onChange={(e) => handleStatusChange(report._id, e.target.value)}
-                            className="px-3 py-2 border-2 border-gray-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all cursor-pointer"
-                            defaultValue=""
-                          >
-                            <option value="" disabled>Cập nhật</option>
-                            <option value="REVIEWED">👀 Đã xem</option>
-                            <option value="RESOLVED">✅ Giải quyết</option>
-                            <option value="DISMISSED">❌ Hủy bỏ</option>
-                          </select>
-                        )}
+                        
                       </div>
                     </td>
                   </tr>

@@ -65,26 +65,35 @@ const AdminDisputeManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý Tranh chấp</h1>
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-3xl">⚖️</span>
+              Quản lý Tranh Chấp
+            </h1>
+            <p className="text-gray-600 mt-1">Quản lý và theo dõi toàn bộ tranh chấp trong hệ thống</p>
+          </div>
+          
+        </div>
       </div>
 
       {/* Statistics */}
       {statistics && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="text-sm text-gray-600">Tổng số</div>
             <div className="text-2xl font-bold text-gray-900">{statistics.total || 0}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="text-sm text-gray-600">Chờ xử lý</div>
             <div className="text-2xl font-bold text-orange-600">{statistics.pending || 0}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="text-sm text-gray-600">Đang xử lý</div>
             <div className="text-2xl font-bold text-blue-600">{statistics.inProgress || 0}</div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="text-sm text-gray-600">Đã giải quyết</div>
             <div className="text-2xl font-bold text-green-600">{statistics.resolved || 0}</div>
           </div>

@@ -359,19 +359,16 @@ const UserManagement = () => {
       )}
       
       {/* Header with Gradient */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 text-white">
-        <div className="flex items-center justify-between">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
-              <span className="text-5xl">👥</span>
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-3xl">👥</span>
               Quản lý Users
             </h1>
-            <p className="text-blue-100 text-lg">Quản lý và theo dõi toàn bộ người dùng trong hệ thống</p>
+            <p className="text-gray-600 mt-1">Quản lý và theo dõi toàn bộ người dùng trong hệ thống</p>
           </div>
-          <button className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
-            <span>📥</span>
-            Export CSV
-          </button>
+          
         </div>
       </div>
 
