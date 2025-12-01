@@ -118,8 +118,27 @@ const ShipmentService = {
     } catch (err) {
       throw new Error(err.response?.data?.message || err.message || 'Không thể lấy danh sách shipment');
     }
+  },
+
+  // Cancel shipment pickup (shipper cannot pickup from owner)
+  async cancelShipmentPickup(shipmentId) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/cancel-pickup`);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể hủy vận chuyển');
+    }
+  },
+
+  // Reject delivery - renter doesn't accept the delivered goods
+  async rejectDelivery(shipmentId, data = {}) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/reject-delivery`, data);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể ghi nhận renter không nhận hàng');
+    }
   }
 };
 
 export default ShipmentService;
-

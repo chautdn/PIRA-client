@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import ShipmentService from '../../services/shipment';
 import { formatCurrency } from '../../utils/constants';
 import chatService from '../../services/chat';
+import ShipmentManagementModal from '../../components/shipper/ShipmentManagementModal';
 
 export default function ShipmentsPage() {
   const { user } = useAuth();
@@ -24,6 +25,8 @@ export default function ShipmentsPage() {
   const [selectedFilesForUpload, setSelectedFilesForUpload] = useState(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadModalShipment, setUploadModalShipment] = useState(null);
+  const [managementModalOpen, setManagementModalOpen] = useState(false);
+  const [selectedShipmentForManagement, setSelectedShipmentForManagement] = useState(null);
   const [uploadAction, setUploadAction] = useState(null);
   const [proofModalOpen, setProofModalOpen] = useState(false);
   const [proofModalShipment, setProofModalShipment] = useState(null);
@@ -291,6 +294,22 @@ export default function ShipmentsPage() {
     await promptForFilesWithPreview(s, action);
   };
 
+  const handleOpenManagementModal = (shipment) => {
+    setSelectedShipmentForManagement(shipment);
+    setManagementModalOpen(true);
+  };
+
+  const handleManagementSuccess = async () => {
+    // Refresh shipments after successful management
+    try {
+      const resp = await ShipmentService.listMyShipments();
+      const data = resp.data || resp;
+      setShipments(Array.isArray(data) ? data : (data.data || data));
+    } catch (err) {
+      console.error('Failed to refresh shipments', err);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-gray-800">Quản lí vận chuyển</h1>
@@ -415,7 +434,8 @@ export default function ShipmentsPage() {
                         key={s._id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-blue-50 transition-colors"
+                        className="hover:bg-blue-50 transition-colors cursor-pointer"
+                        onClick={() => (s.status === 'SHIPPER_CONFIRMED' || s.status === 'IN_TRANSIT') && handleOpenManagementModal(s)}
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.shipmentId}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.subOrder?._id || s.subOrder}</td>
@@ -459,7 +479,8 @@ export default function ShipmentsPage() {
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 flex-wrap">
                               <button 
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   const customer = s.customerInfo || {};
                                   const renter = s.subOrder?.masterOrder?.renter;
                                   const name = customer.name || renter?.profile?.fullName || renter?.profile?.firstName || 'N/A';
@@ -487,33 +508,6 @@ export default function ShipmentsPage() {
                                   className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors text-xs"
                                 >
                                   Nhận
-                                </button>
-                              )}
-
-                              {s.status === 'SHIPPER_CONFIRMED' && (
-                                <button 
-                                  onClick={() => handleUploadAction(s, 'pickup')}
-                                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors text-xs"
-                                >
-                                  📸 Pickup
-                                </button>
-                              )}
-
-                              {s.status === 'IN_TRANSIT' && (
-                                <button 
-                                  onClick={() => handleUploadAction(s, 'deliver')}
-                                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition-colors text-xs"
-                                >
-                                  📸 Deliver
-                                </button>
-                              )}
-
-                              {proofs[s._id] && (proofs[s._id].imagesBeforeDelivery?.length > 0 || proofs[s._id].imagesAfterDelivery?.length > 0) && (
-                                <button
-                                  onClick={() => openProofModal(s)}
-                                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-medium transition-colors text-xs"
-                                >
-                                  🖼️ Proof
                                 </button>
                               )}
                             </div>
@@ -636,15 +630,6 @@ export default function ShipmentsPage() {
                             className="px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
                           >
                             📸 Pickup
-                          </button>
-                        )}
-
-                        {s.status === 'IN_TRANSIT' && (
-                          <button 
-                            onClick={() => handleUploadAction(s, 'deliver')}
-                            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm"
-                          >
-                            📸 Deliver
                           </button>
                         )}
 
@@ -984,6 +969,14 @@ export default function ShipmentsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Shipment Management Modal */}
+      <ShipmentManagementModal
+        shipment={selectedShipmentForManagement}
+        isOpen={managementModalOpen}
+        onClose={() => setManagementModalOpen(false)}
+        onSuccess={handleManagementSuccess}
+      />
     </div>
   );
 }

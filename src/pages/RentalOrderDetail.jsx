@@ -323,26 +323,7 @@ const RentalOrderDetailPage = () => {
     }
   };
 
-  const handleRenterConfirm = async (subOrderId) => {
-    try {
-      toast.loading('Đang gửi xác nhận...');
-      const response = await rentalOrderService.renterConfirmDelivered(subOrderId);
-      
-      console.log('✅ Renter confirmation response:', response);
-      
-      toast.dismiss();
-      toast.success('Cảm ơn — bạn đã xác nhận đã nhận hàng.');
-      
-      // Add small delay to ensure backend processing is complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      await loadOrderDetail(id);
-    } catch (error) {
-      toast.dismiss();
-      console.error('Renter confirm failed', error);
-      toast.error(error.response?.data?.message || error.message || 'Không thể xác nhận đã nhận hàng');
-    }
-  };
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -413,27 +394,7 @@ const RentalOrderDetailPage = () => {
               </>
             )}
 
-            {/* Renter: manage shipment button */}
-            {isRenter && (currentOrder.status === 'ACTIVE' || currentOrder.status === 'CONTRACT_SIGNED') && (
-              <button
-                onClick={() => setShowShipmentModal(true)}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-              >
-                <Package className="w-5 h-5" />
-                <span>Quản lí vận chuyển</span>
-              </button>
-            )}
 
-            {/* Owner: manage shipment button visible after contract signed */}
-            {isOwner && currentOrder.status === 'CONTRACT_SIGNED' && (
-              <button
-                onClick={() => setShowShipmentModal(true)}
-                className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
-              >
-                <FileText className="w-5 h-5" />
-                <span>Quản lí vận chuyển</span>
-              </button>
-            )}
           </div>
         </div>
 
@@ -796,18 +757,7 @@ const RentalOrderDetailPage = () => {
                                 </div>
                               )}
 
-                            {/* Renter: confirm received button (when shipment marked DELIVERED) */}
-                            {isRenter && subOrder.status === 'DELIVERED' && (
-                              <div className="flex items-center ml-2">
-                                <button
-                                  onClick={() => handleRenterConfirm(subOrder._id)}
-                                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center space-x-1"
-                                >
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span>Xác nhận đã nhận hàng</span>
-                                </button>
-                              </div>
-                            )}
+
                           </div>
                         </div>
 
@@ -1280,26 +1230,7 @@ const RentalOrderDetailPage = () => {
         />
       )}
 
-      {/* Manage Shipment Modal */}
-      {showShipmentModal && currentOrder && isRenter && (
-        <RenterShipmentModal
-          isOpen={showShipmentModal}
-          onClose={() => setShowShipmentModal(false)}
-          masterOrder={currentOrder}
-          onConfirmReceived={() => loadOrderDetail(id)}
-        />
-      )}
 
-      {/* Owner Manage Shipment Modal */}
-      {showShipmentModal && currentOrder.subOrders && isOwner && (
-        <ManageShipmentModal
-          isOpen={showShipmentModal}
-          onClose={() => setShowShipmentModal(false)}
-          subOrder={currentOrder.subOrders[0]}
-          masterOrder={currentOrder}
-          onSuccess={() => loadOrderDetail(id)}
-        />
-      )}
     </div>
   );
 };

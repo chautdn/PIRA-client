@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, DollarSign, AlertCircle, Loader, Check } from "lucide-react";
+import { X, Calendar, DollarSign, AlertCircle, Loader, Check, CreditCard, Wallet as WalletIcon } from "lucide-react";
 import Portal from "../common/Portal";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -19,6 +19,7 @@ const ExtendRentalModal = ({
   const [newEndDate, setNewEndDate] = useState("");
   const [extendFee, setExtendFee] = useState(0);
   const [notes, setNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("WALLET");
 
   // Get rental period from first product of first suborder
   const getProductRentalPeriod = () => {
@@ -119,6 +120,8 @@ const ExtendRentalModal = ({
           extendDays: extendDays,
           extensionFee: extendFee,
           notes: notes,
+          paymentMethod: paymentMethod,
+          newEndDate: newEndDate,
         }
       );
 
@@ -224,6 +227,59 @@ const ExtendRentalModal = ({
                 </div>
                 <p className="text-xs text-gray-500">
                   Phí sẽ được tính dựa trên giá thuê ban đầu
+                </p>
+              </div>
+
+              {/* Payment Method Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <CreditCard className="w-4 h-4 inline mr-2" />
+                  Phương thức thanh toán
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("WALLET")}
+                    className={`p-3 rounded-lg border-2 transition flex flex-col items-center space-y-1 ${
+                      paymentMethod === "WALLET"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
+                    }`}
+                  >
+                    <WalletIcon className="w-5 h-5" />
+                    <span className="text-xs font-medium">Ví</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("PAYOS")}
+                    className={`p-3 rounded-lg border-2 transition flex flex-col items-center space-y-1 ${
+                      paymentMethod === "PAYOS"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
+                    }`}
+                  >
+                    <CreditCard className="w-5 h-5" />
+                    <span className="text-xs font-medium">PayOS</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("COD")}
+                    className={`p-3 rounded-lg border-2 transition flex flex-col items-center space-y-1 ${
+                      paymentMethod === "COD"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
+                    }`}
+                  >
+                    <DollarSign className="w-5 h-5" />
+                    <span className="text-xs font-medium">COD</span>
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {paymentMethod === "WALLET" && "Thanh toán từ ví của bạn"}
+                  {paymentMethod === "PAYOS" && "Thanh toán qua ngân hàng/thẻ tín dụng"}
+                  {paymentMethod === "COD" && "Thanh toán khi nhận hàng"}
                 </p>
               </div>
 

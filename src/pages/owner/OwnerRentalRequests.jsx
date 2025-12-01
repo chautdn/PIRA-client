@@ -311,23 +311,6 @@ const OwnerRentalRequests = () => {
             >
               📅 Quản lí gia hạn
             </button>
-            <button
-              onClick={() => {
-                if (selectedSubOrder && (selectedSubOrder.status === 'CONTRACT_SIGNED' || selectedSubOrder.status === 'ACTIVE' || selectedSubOrder.status === 'DELIVERED') && selectedSubOrder.masterOrder?.deliveryMethod === 'DELIVERY') {
-                  setShowOwnerShipmentModal(true);
-                } else {
-                  toast.error('Vui lòng chọn một đơn hàng có vận chuyển để quản lí');
-                }
-              }}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                selectedSubOrder && (selectedSubOrder.status === 'CONTRACT_SIGNED' || selectedSubOrder.status === 'ACTIVE' || selectedSubOrder.status === 'DELIVERED') && selectedSubOrder.masterOrder?.deliveryMethod === 'DELIVERY'
-                  ? 'bg-blue-500 text-white hover:bg-blue-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              disabled={!selectedSubOrder || (selectedSubOrder.status !== 'CONTRACT_SIGNED' && selectedSubOrder.status !== 'ACTIVE' && selectedSubOrder.status !== 'DELIVERED') || selectedSubOrder.masterOrder?.deliveryMethod !== 'DELIVERY'}
-            >
-              🚚 Quản lí VC
-            </button>
           </div>
         </div>
 
