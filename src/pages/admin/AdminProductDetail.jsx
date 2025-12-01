@@ -15,6 +15,22 @@ const AdminProductDetail = () => {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsPage, setReviewsPage] = useState(1);
   const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    newStatus: '',
+    currentStatus: '',
+    productTitle: '',
+    message: ''
+  });
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+
+  // Show notification function
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 3000);
+  };
 
   useEffect(() => {
     loadProduct();
@@ -49,9 +65,32 @@ const AdminProductDetail = () => {
   };
 
   const handleStatusChange = async (newStatus) => {
+    if (newStatus === product.status) return; // No change
+    
+    const statusLabels = {
+      'ACTIVE': 'Kích hoạt',
+      'INACTIVE': 'Vô hiệu hóa', 
+      'PENDING': 'Chờ duyệt',
+      'SUSPENDED': 'Tạm khóa'
+    };
+
+    const currentStatusLabel = statusLabels[product.status] || product.status;
+    const newStatusLabel = statusLabels[newStatus] || newStatus;
+
+    setConfirmDialog({
+      show: true,
+      newStatus: newStatus,
+      currentStatus: product.status,
+      productTitle: product.title,
+      message: `Bạn có chắc chắn muốn thay đổi trạng thái sản phẩm từ "${currentStatusLabel}" thành "${newStatusLabel}"?`
+    });
+  };
+
+  const confirmStatusChange = async () => {
     try {
       setActionLoading(true);
       
+      const { newStatus } = confirmDialog;
       console.log('Updating product status:', productId, newStatus);
       const updatedData = await adminService.updateProductStatus(productId, newStatus);
       console.log('Status update response:', updatedData);
@@ -62,16 +101,27 @@ const AdminProductDetail = () => {
       const statusMessages = {
         'ACTIVE': 'kích hoạt',
         'INACTIVE': 'vô hiệu hóa',
-        'PENDING': 'đưa về chờ duyệt'
+        'PENDING': 'đưa về chờ duyệt',
+        'SUSPENDED': 'tạm khóa'
       };
       
-      alert(`Đã ${statusMessages[newStatus]} sản phẩm thành công!`);
+      showNotification(`Đã ${statusMessages[newStatus]} sản phẩm thành công!`, 'success');
+      
+      // Close dialog
+      setConfirmDialog({ show: false, newStatus: '', currentStatus: '', productTitle: '', message: '' });
+      
     } catch (err) {
-      alert(err.message || 'Có lỗi xảy ra khi cập nhật trạng thái');
+      showNotification(err.message || 'Có lỗi xảy ra khi cập nhật trạng thái', 'error');
       console.error('Update status error:', err);
+      // Close dialog even on error
+      setConfirmDialog({ show: false, newStatus: '', currentStatus: '', productTitle: '', message: '' });
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const cancelStatusChange = () => {
+    setConfirmDialog({ show: false, newStatus: '', currentStatus: '', productTitle: '', message: '' });
   };
 
 
@@ -731,6 +781,86 @@ const AdminProductDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Notification */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className={`p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
+            notification.type === 'success' 
+              ? 'bg-green-500 text-white' 
+              : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">
+                {notification.type === 'success' ? '✅' : '❌'}
+              </span>
+              <span className="font-medium">{notification.message}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {confirmDialog.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                Xác nhận thay đổi trạng thái
+              </h3>
+              <div className="text-gray-600 space-y-2">
+                <p className="font-medium">
+                  Sản phẩm: {confirmDialog.productTitle}
+                </p>
+                <p>{confirmDialog.message}</p>
+                <div className="flex items-center justify-center space-x-4 mt-4">
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    confirmDialog.currentStatus === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                    confirmDialog.currentStatus === 'INACTIVE' ? 'bg-gray-100 text-gray-800' :
+                    confirmDialog.currentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {confirmDialog.currentStatus}
+                  </span>
+                  <span className="text-gray-400">→</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    confirmDialog.newStatus === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                    confirmDialog.newStatus === 'INACTIVE' ? 'bg-gray-100 text-gray-800' :
+                    confirmDialog.newStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {confirmDialog.newStatus}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={cancelStatusChange}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-0.5"
+              >
+                ❌ Hủy
+              </button>
+              <button
+                onClick={confirmStatusChange}
+                disabled={actionLoading}
+                className={`flex-1 px-6 py-3 text-white font-semibold rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 shadow-lg disabled:opacity-50 ${
+                  confirmDialog.newStatus === 'ACTIVE' ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' :
+                  confirmDialog.newStatus === 'INACTIVE' ? 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700' :
+                  confirmDialog.newStatus === 'PENDING' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' :
+                  'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                }`}
+              >
+                {actionLoading ? '⏳ Đang xử lý...' : '✅ Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
