@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import useChat from "../../hooks/useChat";
+import ConfirmModal from "../common/ConfirmModal";
 
 const MessageItem = ({ message, isCurrentUser, showAvatar }) => {
   const [showActions, setShowActions] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { deleteMessage } = useChat();
 
   const formatMessageTime = (timestamp) => {
@@ -14,14 +16,22 @@ const MessageItem = ({ message, isCurrentUser, showAvatar }) => {
     }
   };
 
-  const handleDeleteMessage = async () => {
-    if (window.confirm("Are you sure you want to delete this message?")) {
-      try {
-        await deleteMessage(message._id);
-      } catch (error) {
-        console.error("Failed to delete message:", error);
-      }
+  const handleDeleteMessage = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteMessage = async () => {
+    try {
+      await deleteMessage(message._id);
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      console.error("Failed to delete message:", error);
+      setShowDeleteConfirm(false);
     }
+  };
+
+  const cancelDeleteMessage = () => {
+    setShowDeleteConfirm(false);
   };
 
   const senderName = message.senderId?.profile
@@ -156,6 +166,17 @@ const MessageItem = ({ message, isCurrentUser, showAvatar }) => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Message"
+        message="Are you sure you want to delete this message? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={confirmDeleteMessage}
+        onCancel={cancelDeleteMessage}
+      />
     </div>
   );
 };

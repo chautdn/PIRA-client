@@ -170,6 +170,22 @@ const chatService = {
     }
   },
 
+  // Delete conversation for current user
+  deleteConversation: async (conversationId) => {
+    try {
+      if (!conversationId) {
+        throw new Error("Conversation ID is required");
+      }
+
+      const response = await api.delete(`/chat/${conversationId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Failed to delete conversation"
+      );
+    }
+  },
+
   // Upload image for message
   uploadImage: async (imageFile) => {
     try {

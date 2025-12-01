@@ -82,6 +82,7 @@ const NotificationBell = () => {
       REVIEW: "Đánh giá",
       DISPUTE: "Tranh chấp",
       PROMOTION: "Khuyến mãi",
+      PROMOTION_PAYMENT: "Thanh toán quảng cáo",
       SYSTEM: "Hệ thống",
       REMINDER: "Nhắc nhở",
       WITHDRAWAL: "Rút tiền",

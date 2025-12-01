@@ -6,7 +6,10 @@ import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../context/CartContext";
 import api from "../services/api";
 import earlyReturnApi from "../services/earlyReturn.Api";
+import rentalOrderService from "../services/rentalOrder";
 import EarlyReturnRequestModal from "../components/rental/EarlyReturnRequestModal";
+import ExtendRentalModal from "../components/rental/ExtendRentalModal";
+import RenterShipmentModal from "../components/rental/RenterShipmentModal";
 import OrderFilters from "../components/rental/OrderFilters";
 import OrdersTable from "../components/rental/OrdersTable";
 import OrderDetailModal from "../components/rental/OrderDetailModal";
@@ -27,6 +30,7 @@ const RentalOrdersPage = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEarlyReturnModal, setShowEarlyReturnModal] = useState(false);
+  const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
   const [loadingEarlyReturns, setLoadingEarlyReturns] = useState(false);
@@ -183,14 +187,42 @@ const RentalOrdersPage = () => {
     setShowDetailModal(true);
   };
 
+  const handleRenterConfirm = async (subOrderId) => {
+    try {
+      toast.loading('Đang gửi xác nhận...');
+      await rentalOrderService.renterConfirmDelivered(subOrderId);
+      toast.dismiss();
+      toast.success('Bạn đã xác nhận đã nhận hàng.');
+      // reload orders and early return requests
+      loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+      loadEarlyReturnRequests();
+    } catch (error) {
+      toast.dismiss();
+      console.error('Renter confirm failed', error);
+      toast.error(error.response?.data?.message || error.message || 'Không thể xác nhận đã nhận hàng');
+    }
+  };
+
   const handleEarlyReturn = (subOrder) => {
     setSelectedSubOrder(subOrder);
     setShowEarlyReturnModal(true);
   };
 
+  const handleExtendRental = (order) => {
+    setSelectedOrder(order);
+    setShowExtendRentalModal(true);
+    setShowDetailModal(false);
+  };
+
   const closeDetailModal = () => {
     setSelectedOrder(null);
     setShowDetailModal(false);
+  };
+
+  const handleShipmentConfirmReceived = async () => {
+    // Reload orders and early returns
+    await loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+    loadEarlyReturnRequests();
   };
 
   const currentOrders = myOrders;
@@ -293,18 +325,8 @@ const RentalOrdersPage = () => {
           </div>
         </div>
 
-        {/* Early Returns Tab */}
-        {activeTab === "early-returns" && (
-          <EarlyReturnsTab
-            earlyReturnRequests={earlyReturnRequests}
-            isLoading={loadingEarlyReturns}
-          />
-        )}
-
-        {/* Orders Tab */}
-        {activeTab === "orders" && (
-          <>
-            {/* Header */}
+        {/* Orders List */}
+        <>
             <div className="bg-white rounded-lg shadow-md mb-6">
               <div className="border-b border-gray-200">
                 <div className="px-6 py-4">
@@ -356,7 +378,9 @@ const RentalOrdersPage = () => {
                 orders={filteredOrders}
                 onViewDetail={handleViewDetail}
                 onEarlyReturn={handleEarlyReturn}
+                onSelectOrder={setSelectedOrder}
                 earlyReturnRequests={earlyReturnRequests}
+                onRenterConfirm={handleRenterConfirm}
               />
             )}
 
@@ -406,8 +430,7 @@ const RentalOrdersPage = () => {
                 </button>
               </div>
             )}
-          </>
-        )}
+        </>
 
         {/* Detail Modal */}
         {showDetailModal && selectedOrder && (
@@ -415,6 +438,7 @@ const RentalOrdersPage = () => {
             order={selectedOrder}
             onClose={closeDetailModal}
             onEarlyReturn={handleEarlyReturn}
+            onExtendRental={handleExtendRental}
             earlyReturnRequest={getOrderEarlyReturnRequest(selectedOrder)}
           />
         )}
@@ -437,6 +461,26 @@ const RentalOrdersPage = () => {
               });
               loadEarlyReturnRequests();
               toast.success("Tạo yêu cầu trả hàng sớm thành công!");
+            }}
+          />
+        )}
+
+        {/* Extend Rental Modal */}
+        {showExtendRentalModal && selectedOrder && (
+          <ExtendRentalModal
+            isOpen={showExtendRentalModal}
+            onClose={() => {
+              setShowExtendRentalModal(false);
+              setSelectedOrder(null);
+            }}
+            masterOrder={selectedOrder}
+            onSuccess={() => {
+              setShowExtendRentalModal(false);
+              setSelectedOrder(null);
+              loadMyOrders({
+                status: statusFilter !== "all" ? statusFilter : undefined,
+              });
+              toast.success("Yêu cầu gia hạn đã được gửi!");
             }}
           />
         )}

@@ -228,18 +228,23 @@ const SystemPromotionManagement = () => {
       <AnimatePresence>
         {showCreateModal && (
           <CreatePromotionModal
-            onClose={() => setShowCreateModal(false)}
+            promotion={selectedPromotion}
+            onClose={() => {
+              setShowCreateModal(false);
+              setSelectedPromotion(null);
+            }}
             onSuccess={() => {
               setShowCreateModal(false);
+              setSelectedPromotion(null);
               loadPromotions();
             }}
           />
         )}
       </AnimatePresence>
 
-      {/* View Details Modal */}
+      {/* View Details Modal - Only show if not in edit mode */}
       <AnimatePresence>
-        {selectedPromotion && (
+        {selectedPromotion && !showCreateModal && (
           <ViewPromotionModal
             promotion={selectedPromotion}
             onClose={() => setSelectedPromotion(null)}
@@ -251,28 +256,66 @@ const SystemPromotionManagement = () => {
 };
 
 // Create Promotion Modal Component
-const CreatePromotionModal = ({ onClose, onSuccess }) => {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    // No code needed - system promotions auto-apply
-    startDate: "",
-    endDate: "",
-    systemPromotion: {
-      shippingDiscountValue: "",
-      discountType: "PERCENTAGE",
-      applyTo: "ALL_ORDERS",
-      minOrderValue: 0,
-    },
-    banner: {
-      displayOnHome: true,
-      bannerTitle: "",
-      bannerDescription: "",
-      bannerImage: "",
-      backgroundColor: "#4F46E5",
-      textColor: "#FFFFFF",
-    },
-  });
+const CreatePromotionModal = ({ promotion, onClose, onSuccess }) => {
+  const isEditMode = !!promotion;
+  
+  const getInitialFormData = () => {
+    if (isEditMode) {
+      // Convert dates to datetime-local format
+      const startDate = new Date(promotion.startDate);
+      const endDate = new Date(promotion.endDate);
+      
+      // Adjust for timezone offset to display correct local time
+      const startDateLocal = new Date(startDate.getTime() - startDate.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 16);
+      const endDateLocal = new Date(endDate.getTime() - endDate.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 16);
+      
+      return {
+        title: promotion.title || "",
+        description: promotion.description || "",
+        startDate: startDateLocal,
+        endDate: endDateLocal,
+        systemPromotion: {
+          shippingDiscountValue: promotion.systemPromotion?.shippingDiscountValue || "",
+          discountType: promotion.systemPromotion?.discountType || "PERCENTAGE",
+          applyTo: promotion.systemPromotion?.applyTo || "ALL_ORDERS",
+          minOrderValue: promotion.systemPromotion?.minOrderValue || 0,
+        },
+        banner: {
+          displayOnHome: promotion.banner?.displayOnHome ?? true,
+          bannerTitle: promotion.banner?.bannerTitle || "",
+          bannerDescription: promotion.banner?.bannerDescription || "",
+          bannerImage: promotion.banner?.bannerImage || "",
+          backgroundColor: promotion.banner?.backgroundColor || "#4F46E5",
+          textColor: promotion.banner?.textColor || "#FFFFFF",
+        },
+      };
+    }
+    
+    return {
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      systemPromotion: {
+        shippingDiscountValue: "",
+        discountType: "PERCENTAGE",
+        applyTo: "ALL_ORDERS",
+        minOrderValue: 0,
+      },
+      banner: {
+        displayOnHome: true,
+        bannerTitle: "",
+        bannerDescription: "",
+        bannerImage: "",
+        backgroundColor: "#4F46E5",
+        textColor: "#FFFFFF",
+      },
+    };
+  };
+  
+  const [formData, setFormData] = useState(getInitialFormData());
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -300,11 +343,17 @@ const CreatePromotionModal = ({ onClose, onSuccess }) => {
       }
 
       console.log("✅ Validation passed, sending to API...");
-      const response = await systemPromotionService.create(formData);
+      
+      let response;
+      if (isEditMode) {
+        response = await systemPromotionService.update(promotion._id, formData);
+        toast.success("Promotion updated successfully!");
+      } else {
+        response = await systemPromotionService.create(formData);
+        toast.success("Promotion created successfully! Users have been notified.");
+      }
+      
       console.log("✅ API response:", response);
-      toast.success(
-        "Promotion created successfully! Users have been notified."
-      );
       onSuccess();
     } catch (error) {
       console.error("❌ Error creating promotion:", error);
@@ -357,10 +406,13 @@ const CreatePromotionModal = ({ onClose, onSuccess }) => {
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                Create System Promotion
+                {isEditMode ? "Edit System Promotion" : "Create System Promotion"}
               </h2>
               <p className="text-gray-600 mt-1">
-                Create a new shipping discount promotion
+                {isEditMode 
+                  ? "Update the shipping discount promotion details"
+                  : "Create a new shipping discount promotion"
+                }
               </p>
             </div>
             <button
@@ -685,7 +737,10 @@ const CreatePromotionModal = ({ onClose, onSuccess }) => {
               disabled={loading}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Creating..." : "Create Promotion"}
+              {loading 
+                ? (isEditMode ? "Updating..." : "Creating...") 
+                : (isEditMode ? "Update Promotion" : "Create Promotion")
+              }
             </button>
           </div>
         </form>

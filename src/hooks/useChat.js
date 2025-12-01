@@ -147,6 +147,25 @@ const useChat = (conversationId = null) => {
     },
   });
 
+  const deleteConversationMutation = useMutation({
+    mutationFn: (conversationId) => chatService.deleteConversation(conversationId),
+    onSuccess: (data, deletedConversationId) => {
+      // Remove conversation from cache
+      queryClient.setQueryData(["conversations"], (oldData) => {
+        if (!oldData?.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.filter((conv) => conv._id !== deletedConversationId),
+        };
+      });
+
+      toast.success("Conversation deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   // CRITICAL: Stable callback functions
   const fetchConversations = useCallback(() => {
     refetchConversations();
@@ -223,6 +242,13 @@ const useChat = (conversationId = null) => {
     [deleteMessageMutation]
   );
 
+  const deleteConversation = useCallback(
+    (conversationId) => {
+      return deleteConversationMutation.mutateAsync(conversationId);
+    },
+    [deleteConversationMutation]
+  );
+
   // Update messages in real-time
   const updateMessagesCache = useCallback(
     (newMessage) => {
@@ -282,6 +308,20 @@ const useChat = (conversationId = null) => {
     [queryClient]
   );
 
+  // Remove message from cache (for real-time socket updates)
+  const removeMessageFromCache = useCallback(
+    (messageId, messageConversationId) => {
+      queryClient.setQueryData(["messages", messageConversationId], (oldData) => {
+        if (!oldData?.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.filter((msg) => msg._id !== messageId),
+        };
+      });
+    },
+    [queryClient]
+  );
+
   return {
     // Data
     conversations: conversationsData?.data || [],
@@ -307,10 +347,12 @@ const useChat = (conversationId = null) => {
     findExistingConversation,
     markAsRead,
     deleteMessage,
+    deleteConversation,
 
     // Real-time updates
     updateMessagesCache,
     updateConversationsCache,
+    removeMessageFromCache,
 
     // State management
     selectedConversation,
@@ -320,6 +362,7 @@ const useChat = (conversationId = null) => {
     sendingMessage: sendMessageMutation.isPending,
     creatingConversation: createConversationMutation.isPending,
     deletingMessage: deleteMessageMutation.isPending,
+    deletingConversation: deleteConversationMutation.isPending,
   };
 };
 

@@ -1,9 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import useChat from "../../hooks/useChat";
 import useChatSocket from "../../hooks/useChatSocket";
 import { useAuth } from "../../hooks/useAuth";
 import Loading from "../common/Loading";
+import ConfirmModal from "../common/ConfirmModal";
+import { MoreVertical, Trash2 } from "lucide-react";
 
 const ChatSidebar = () => {
   const navigate = useNavigate();
@@ -14,17 +16,65 @@ const ChatSidebar = () => {
     conversationsLoading,
     fetchConversations,
     setSelectedConversation,
+    deleteConversation,
+    deletingConversation,
   } = useChat();
   const { isUserOnline } = useChatSocket();
+
+  const [showDropdown, setShowDropdown] = useState(null); // Track which conversation's dropdown is open
+  const [confirmDelete, setConfirmDelete] = useState(null); // Track conversation to delete
 
   // CRITICAL: Load conversations only once on mount
   useEffect(() => {
     fetchConversations();
   }, []); // CRITICAL: Empty dependency array
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowDropdown(null);
+    };
+
+    if (showDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showDropdown]);
+
   const handleConversationClick = (conversation) => {
     setSelectedConversation(conversation);
     navigate(`/chat/${conversation._id}`);
+  };
+
+  const handleDeleteConversation = async (convId, e) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete
+    setShowDropdown(null);
+    setConfirmDelete(convId);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (confirmDelete) {
+      try {
+        await deleteConversation(confirmDelete);
+        
+        // If we're currently viewing the deleted conversation, navigate to chat home
+        if (confirmDelete === conversationId) {
+          navigate("/chat");
+        }
+      } catch (error) {
+        // Error is already handled by the hook with toast
+      }
+      setConfirmDelete(null);
+    }
+  };
+
+  const cancelDeleteConversation = () => {
+    setConfirmDelete(null);
+  };
+
+  const toggleDropdown = (conversationId, e) => {
+    e.stopPropagation(); // Prevent navigation when clicking menu
+    setShowDropdown(showDropdown === conversationId ? null : conversationId);
   };
 
   const formatLastMessageTime = (timestamp) => {
@@ -116,7 +166,7 @@ const ChatSidebar = () => {
                 <div
                   key={conversation._id}
                   onClick={() => handleConversationClick(conversation)}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors relative ${
                     isSelected ? "bg-blue-50 border-r-2 border-blue-500" : ""
                   }`}
                 >
@@ -188,6 +238,40 @@ const ChatSidebar = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* Three-dot menu */}
+                    <div className="relative flex-shrink-0">
+                      <button
+                        onClick={(e) => toggleDropdown(conversation._id, e)}
+                        className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                        disabled={deletingConversation}
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-500" />
+                      </button>
+
+                      {/* Dropdown menu */}
+                      {showDropdown === conversation._id && (
+                        <>
+                          {/* Backdrop to close dropdown */}
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setShowDropdown(null)}
+                          ></div>
+                          
+                          {/* Dropdown content */}
+                          <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 min-w-[140px]">
+                            <button
+                              onClick={(e) => handleDeleteConversation(conversation._id, e)}
+                              disabled={deletingConversation}
+                              className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 text-sm disabled:opacity-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              {deletingConversation ? "Deleting..." : "Delete"}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -195,6 +279,17 @@ const ChatSidebar = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        title="Delete Conversation"
+        message="Are you sure you want to delete this conversation? This will remove it from your chat list."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={confirmDeleteConversation}
+        onCancel={cancelDeleteConversation}
+      />
     </div>
   );
 };

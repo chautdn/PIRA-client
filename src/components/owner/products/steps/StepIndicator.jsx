@@ -8,11 +8,10 @@ const STEP_LABELS = [
   { number: 3, label: "Hình Ảnh", icon: icons.BiImage },
   { number: 4, label: "Giá Cả", icon: icons.BiMoney },
   { number: 5, label: "Địa Điểm", icon: icons.BiMapPin },
-  { number: 6, label: "Giao Hàng", icon: icons.FiMapPin },
-  { number: 7, label: "Quảng Cáo", icon: icons.BiCrown },
+  { number: 6, label: "Quảng Cáo", icon: icons.BiCrown },
 ];
 
-const StepIndicator = ({ currentStep, totalSteps = 7, onStepClick }) => {
+const StepIndicator = ({ currentStep, totalSteps = 6, onStepClick }) => {
   return (
     <div className="mb-8">
       {/* Progress Bar */}

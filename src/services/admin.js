@@ -1010,6 +1010,59 @@ class AdminService {
       throw error;
     }
   }
+
+  // ========== WITHDRAWAL FINANCIAL ANALYSIS ==========
+  async getWithdrawalFinancialAnalysis(withdrawalId) {
+    try {
+      const response = await api.get(`/admin/withdrawals/${withdrawalId}/financial-analysis`);
+
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return response.data.data || response.data.metadata || response.data;
+    } catch (error) {
+      console.error("Error fetching withdrawal financial analysis:", error);
+      throw error;
+    }
+  }
+
+  async getUserFinancialProfile(userId) {
+    try {
+      const response = await api.get(`/admin/users/${userId}/financial-profile`);
+
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return response.data.data || response.data.metadata || response.data;
+    } catch (error) {
+      console.error("Error fetching user financial profile:", error);
+      throw error;
+    }
+  }
+
+  async getEnhancedWithdrawals(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await api.get(
+        `/admin/withdrawals/enhanced?${queryParams.toString()}`
+      );
+
+      if (response.data.success) {
+        return response.data.data;
+      }
+      return response.data.data || response.data.metadata || response.data;
+    } catch (error) {
+      console.error("Error fetching enhanced withdrawals:", error);
+      throw error;
+    }
+  }
 }
 
 // Create and export admin service instance
@@ -1047,4 +1100,10 @@ export const {
   bulkUpdateProducts,
   sendNotification,
   broadcastNotification,
+  getWithdrawals,
+  getSystemWallet,
+  updateWithdrawalStatus,
+  getWithdrawalFinancialAnalysis,
+  getUserFinancialProfile,
+  getEnhancedWithdrawals,
 } = adminService;
