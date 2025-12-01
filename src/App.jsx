@@ -28,6 +28,7 @@ import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
 import ActiveRentals from "./pages/owner/ActiveRentals";
+import OwnerStatistics from "./pages/owner/OwnerStatistics";
 import ShipmentsPage from "./pages/shipper/Shipments";
 
 // Wallet pages
@@ -63,6 +64,8 @@ import AdminReportDetail from "./pages/admin/AdminReportDetail";
 import BankManagement from "./pages/admin/BankManagement";
 import AdminBankDetail from "./pages/admin/AdminBankDetail";
 import WithdrawalManagement from "./pages/admin/WithdrawalManagement";
+import TransactionManagement from "./pages/admin/TransactionManagement";
+import TransactionDetail from "./pages/admin/TransactionDetail";
 import WithdrawalDetailAnalysis from "./pages/admin/WithdrawalDetailAnalysis";
 import MyReports from "./pages/auth/MyReports";
 
@@ -233,6 +236,14 @@ export default function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <ActiveRentals />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.OWNER_STATISTICS}
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <OwnerStatistics />
                       </RoleProtectedRoute>
                     }
                   />
@@ -408,6 +419,14 @@ export default function App() {
                     <Route
                       path="products/:productId"
                       element={<AdminProductDetail />}
+                    />
+                    <Route
+                      path="transactions"
+                      element={<TransactionManagement />}
+                    />
+                    <Route
+                      path="transactions/:transactionId"
+                      element={<TransactionDetail />}
                     />
                     <Route
                       path="promotions"

@@ -67,7 +67,7 @@ const OwnerMenuDropdown = ({ user }) => {
       icon: "",
       label: "Thống Kê",
       description: "Xem doanh thu và báo cáo",
-      route: "#", // TODO: Add analytics route
+      route: ROUTES.OWNER_STATISTICS,
     },
   ];
 

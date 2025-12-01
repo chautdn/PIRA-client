@@ -914,6 +914,103 @@ class AdminService {
     }
   }
 
+  // ========== TRANSACTION MANAGEMENT ==========
+  async getAllTransactions(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await api.get(
+        `/admin/transactions?${queryParams.toString()}`
+      );
+
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      throw error;
+    }
+  }
+
+  async getTransactionById(transactionId) {
+    try {
+      const response = await api.get(`/admin/transactions/${transactionId}`);
+
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error("Error fetching transaction detail:", error);
+      throw error;
+    }
+  }
+
+  async getTransactionStats(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await api.get(
+        `/admin/transactions/stats?${queryParams.toString()}`
+      );
+
+      if (response.data.success) {
+        return response.data;
+      }
+      return response.data.metadata || response.data;
+    } catch (error) {
+      console.error("Error fetching transaction stats:", error);
+      throw error;
+    }
+  }
+
+  async exportTransactions(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const response = await api.get(
+        `/admin/transactions/export?${queryParams.toString()}`,
+        {
+          responseType: 'blob'
+        }
+      );
+
+      // Create blob link to download CSV
+      const href = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(href);
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error exporting transactions:", error);
+      throw error;
+    }
+  }
+
   // ========== WITHDRAWAL FINANCIAL ANALYSIS ==========
   async getWithdrawalFinancialAnalysis(withdrawalId) {
     try {
@@ -1006,6 +1103,10 @@ export const {
   getWithdrawals,
   getSystemWallet,
   updateWithdrawalStatus,
+  getAllTransactions,
+  getTransactionById,
+  getTransactionStats,
+  exportTransactions,
   getWithdrawalFinancialAnalysis,
   getUserFinancialProfile,
   getEnhancedWithdrawals,

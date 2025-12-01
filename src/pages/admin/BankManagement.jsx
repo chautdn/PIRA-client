@@ -138,7 +138,7 @@ const BankManagement = () => {
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-xl shadow-2xl p-8 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
               <span className="text-5xl">🏦</span>
               Xác minh Tài khoản Ngân hàng
             </h1>

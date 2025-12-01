@@ -21,8 +21,21 @@
       }).format(price);
     };
 
+    // Tính tổng tiền cho các sản phẩm đã chọn
+    const getSelectedItemsTotal = () => {
+      if (selectedItems.size === 0) return cartTotal;
+      return cart
+        .filter(item => selectedItems.has(item._id))
+        .reduce((total, item) => {
+          const price = item.product.pricing?.dailyRate || 0;
+          const days = item.rental?.duration || 1;
+          return total + price * days * item.quantity;
+        }, 0);
+    };
+
     // Không có phí nền tảng khi thuê sản phẩm
-    const finalTotal = cartTotal;
+    const selectedItemsTotal = getSelectedItemsTotal();
+    const finalTotal = selectedItemsTotal;
 
     const handleClearCart = () => {
       if (window.confirm("Bạn có chắc muốn xóa toàn bộ giỏ hàng?")) {
@@ -699,7 +712,7 @@
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Tạm tính</span>
-                    <span className="font-semibold">{formatPrice(cartTotal)}</span>
+                    <span className="font-semibold">{formatPrice(selectedItemsTotal)}</span>
                   </div>
                 
                   <div className="flex justify-between text-gray-600">

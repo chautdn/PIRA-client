@@ -28,6 +28,7 @@ export const ROUTES = {
   CHAT_PRODUCT: "/chat/product/:productId/:ownerId",
   OWNER_PRODUCTS: "/owner/products",
   OWNER_CREATE_PRODUCT: "/owner/products/create",
+  OWNER_STATISTICS: "/owner/statistics",
   MY_REPORTS: "/my-reports",
   OWNER_ACTIVE_RENTALS: "/owner/active-rentals",
   ADMIN: {
