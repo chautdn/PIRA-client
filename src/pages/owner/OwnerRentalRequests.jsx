@@ -1091,26 +1091,6 @@ const SubOrderDetailModal = ({
                             </div>
                           )}
                         </div>
-
-                        {item.productStatus === 'PENDING' && (
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => onConfirmItem(subOrder._id, index)}
-                              className="px-4 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
-                            >
-                              ✓ Xác nhận
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedItemIndex(index);
-                                setShowRejectModal(true);
-                              }}
-                              className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
-                            >
-                              ✗ Từ chối
-                            </button>
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
