@@ -363,9 +363,7 @@ const ProductManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Tổng Sản phẩm</p>
               <p className="text-3xl font-bold text-gray-900">{pagination.totalProducts.toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-blue-100 p-4 rounded-full">
-              <span className="text-3xl">📦</span>
-            </div>
+            
           </div>
         </div>
 
@@ -375,9 +373,7 @@ const ProductManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Đang hoạt động</p>
               <p className="text-3xl font-bold text-gray-900">{products.filter(p => p.status === 'ACTIVE').length}</p>
             </div>
-            <div className="bg-green-100 p-4 rounded-full">
-              <span className="text-3xl">✅</span>
-            </div>
+            
           </div>
         </div>
 
@@ -387,9 +383,7 @@ const ProductManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Chờ duyệt</p>
               <p className="text-3xl font-bold text-gray-900">{products.filter(p => p.status === 'PENDING').length}</p>
             </div>
-            <div className="bg-yellow-100 p-4 rounded-full">
-              <span className="text-3xl">⏳</span>
-            </div>
+            
           </div>
         </div>
 
@@ -399,9 +393,7 @@ const ProductManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Trang hiện tại</p>
               <p className="text-3xl font-bold text-gray-900">{pagination.currentPage}<span className="text-lg text-gray-500">/{pagination.totalPages}</span></p>
             </div>
-            <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">📄</span>
-            </div>
+            
           </div>
         </div>
       </div>

@@ -64,7 +64,7 @@ const OwnerMenuDropdown = ({ user }) => {
       route: "/disputes",
     },
     {
-      icon: "",
+      icon: "📊",
       label: "Thống Kê",
       description: "Xem doanh thu và báo cáo",
       route: ROUTES.OWNER_STATISTICS,

@@ -380,9 +380,7 @@ const UserManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Tổng Users</p>
               <p className="text-3xl font-bold text-gray-900">{(stats?.total || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-blue-100 p-4 rounded-full">
-              <span className="text-3xl">👥</span>
-            </div>
+            
           </div>
         </div>
 
@@ -392,9 +390,7 @@ const UserManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Đang hoạt động</p>
               <p className="text-3xl font-bold text-gray-900">{(stats?.active || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-green-100 p-4 rounded-full">
-              <span className="text-3xl">✅</span>
-            </div>
+           
           </div>
         </div>
 
@@ -404,9 +400,7 @@ const UserManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Chủ sở hữu</p>
               <p className="text-3xl font-bold text-gray-900">{(stats?.owners || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-orange-100 p-4 rounded-full">
-              <span className="text-3xl">🏠</span>
-            </div>
+            
           </div>
         </div>
 
@@ -416,9 +410,7 @@ const UserManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Người thuê</p>
               <p className="text-3xl font-bold text-gray-900">{(stats?.renters || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">👤</span>
-            </div>
+            
           </div>
         </div>
       </div>

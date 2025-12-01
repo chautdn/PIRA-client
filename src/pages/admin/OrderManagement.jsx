@@ -308,9 +308,7 @@ const OrderManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Tổng Đơn hàng</p>
               <p className="text-3xl font-bold text-gray-900">{(stats?.total || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-blue-100 p-4 rounded-full">
-              <span className="text-3xl">📋</span>
-            </div>
+            
           </div>
         </div>
 
@@ -320,9 +318,7 @@ const OrderManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Đang hoạt động</p>
               <p className="text-3xl font-bold text-gray-900">{(stats?.active || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-green-100 p-4 rounded-full">
-              <span className="text-3xl">🟢</span>
-            </div>
+            
           </div>
         </div>
 
@@ -332,9 +328,7 @@ const OrderManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Chờ xử lý</p>
               <p className="text-3xl font-bold text-gray-900">{(stats?.pending || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-yellow-100 p-4 rounded-full">
-              <span className="text-3xl">⏳</span>
-            </div>
+           
           </div>
         </div>
 
@@ -344,9 +338,7 @@ const OrderManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Hoàn thành</p>
               <p className="text-3xl font-bold text-gray-900">{(stats?.completed || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">✅</span>
-            </div>
+            
           </div>
         </div>
       </div>

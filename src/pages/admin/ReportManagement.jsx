@@ -294,9 +294,7 @@ const ReportManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Tổng Báo cáo</p>
               <p className="text-3xl font-bold text-gray-900">{(pagination?.total || 0).toLocaleString('vi-VN')}</p>
             </div>
-            <div className="bg-red-100 p-4 rounded-full">
-              <span className="text-3xl">🚨</span>
-            </div>
+            
           </div>
         </div>
 
@@ -306,9 +304,7 @@ const ReportManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Chờ xử lý</p>
               <p className="text-3xl font-bold text-gray-900">{reports.filter(r => r.status === 'PENDING').length}</p>
             </div>
-            <div className="bg-yellow-100 p-4 rounded-full">
-              <span className="text-3xl">⏳</span>
-            </div>
+            
           </div>
         </div>
 
@@ -318,9 +314,7 @@ const ReportManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Đã giải quyết</p>
               <p className="text-3xl font-bold text-gray-900">{reports.filter(r => r.status === 'RESOLVED').length}</p>
             </div>
-            <div className="bg-green-100 p-4 rounded-full">
-              <span className="text-3xl">✅</span>
-            </div>
+            
           </div>
         </div>
 
@@ -330,9 +324,7 @@ const ReportManagement = () => {
               <p className="text-gray-500 text-sm font-medium mb-1">Trang hiện tại</p>
               <p className="text-3xl font-bold text-gray-900">{pagination?.currentPage || 1}<span className="text-lg text-gray-500">/{pagination?.totalPages || 1}</span></p>
             </div>
-            <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">📄</span>
-            </div>
+            
           </div>
         </div>
       </div>
