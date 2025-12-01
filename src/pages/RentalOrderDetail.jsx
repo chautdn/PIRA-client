@@ -398,23 +398,15 @@ const RentalOrderDetailPage = () => {
               </button>
             )}
 
-            {currentOrder.status === "ACTIVE" && isRenter && (
-              <>
-                <button
-                  onClick={() => setShowExtendRentalModal(true)}
-                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Gia hạn</span>
-                </button>
-                <button
-                  onClick={() => setShowEarlyReturnModal(true)}
-                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                  <span>Trả hàng sớm</span>
-                </button>
-              </>
+            {isRenter && 
+              currentOrder.subOrders?.[0]?.products?.some(p => p.productStatus === 'ACTIVE') && (
+              <button
+                onClick={() => setShowExtendRentalModal(true)}
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Gia hạn</span>
+              </button>
             )}
 
             {/* Renter: manage shipment button */}
@@ -1044,6 +1036,27 @@ const RentalOrderDetailPage = () => {
                                   </p>
                                 </div>
                               </div>
+
+                              {/* Early Return button or status for ACTIVE products */}
+                              {isRenter && productItem.productStatus === 'ACTIVE' && (
+                                productItem.earlyReturn?.requested ? (
+                                  <div className="w-full px-4 py-2 bg-orange-50 border-2 border-orange-200 text-orange-700 rounded-lg text-sm font-medium flex items-center justify-center space-x-2 mb-2">
+                                    <RotateCcw className="w-4 h-4" />
+                                    <span>Đã yêu cầu trả sớm</span>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowEarlyReturnModal(true);
+                                    }}
+                                    className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2 mb-2"
+                                  >
+                                    <RotateCcw className="w-4 h-4" />
+                                    <span>Trả hàng sớm</span>
+                                  </button>
+                                )
+                              )}
 
                               {/* Dispute button */}
                               {canCreateDispute(
