@@ -867,16 +867,17 @@ export default function ProductDetail() {
     };
 
     try {
-      // Call API directly without opening cart drawer
-      const result = await cartApiService.addToCart(product._id, quantity, rentalData);
-      if (result?.items) {
-        // Navigate to cart without opening drawer
+      // Add product to cart with openDrawer=false to prevent drawer opening
+      const result = await addToCartContext(product, quantity, rentalData, false);
+      
+      if (result.success) {
+        // Navigate to cart page without opening drawer
         navigate('/cart');
       } else {
-        alert('❌ Không thể thêm vào giỏ hàng');
+        alert(`❌ ${result.error || 'Không thể thêm vào giỏ hàng'}`);
       }
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.message || 'Không thể thêm vào giỏ hàng';
+      const errorMsg = error.message || 'Không thể thêm vào giỏ hàng';
       alert(`❌ ${errorMsg}`);
     }
   };
