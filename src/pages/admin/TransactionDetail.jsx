@@ -413,6 +413,235 @@ const TransactionDetail = () => {
           </div>
         </div>
 
+        {/* User Statistics Section */}
+        {transaction.userStats && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span>📊</span>
+              Thống kê người dùng
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Transaction History Stats */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-800 mb-3">Lịch sử giao dịch</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Tổng giao dịch:</span>
+                    <span className="font-medium">{transaction.userStats.transactionHistory.totalTransactions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Thành công:</span>
+                    <span className="font-medium text-green-600">{transaction.userStats.transactionHistory.successfulTransactions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Thất bại:</span>
+                    <span className="font-medium text-red-600">{transaction.userStats.transactionHistory.failedTransactions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Tổng giá trị:</span>
+                    <span className="font-medium">{formatAmount(transaction.userStats.transactionHistory.totalAmount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Trung bình:</span>
+                    <span className="font-medium">{formatAmount(transaction.userStats.transactionHistory.averageAmount || 0)}</span>
+                  </div>
+                  {transaction.userStats.transactionHistory.firstTransaction && (
+                    <div className="flex justify-between">
+                      <span>Giao dịch đầu:</span>
+                      <span className="font-medium text-xs">{formatDate(transaction.userStats.transactionHistory.firstTransaction)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Wallet Information */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-semibold text-green-800 mb-3">Thông tin ví</h4>
+                <div className="space-y-2 text-sm">
+                  {transaction.userStats.wallet ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Số dư hiện tại:</span>
+                        <span className="font-medium text-green-600">{formatAmount(transaction.userStats.wallet.balance)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Ví tạo lúc:</span>
+                        <span className="font-medium text-xs">{formatDate(transaction.userStats.wallet.createdAt)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Cập nhật cuối:</span>
+                        <span className="font-medium text-xs">{formatDate(transaction.userStats.wallet.updatedAt)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-gray-600">Chưa có ví</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Bank Account Information */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h4 className="font-semibold text-purple-800 mb-3">Thông tin ngân hàng</h4>
+                <div className="space-y-2 text-sm">
+                  {transaction.user?.bankAccount ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Ngân hàng:</span>
+                        <span className="font-medium">{transaction.user.bankAccount.bankName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Chủ TK:</span>
+                        <span className="font-medium">{transaction.user.bankAccount.accountHolder}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Số TK:</span>
+                        <span className="font-mono text-xs">***{transaction.user.bankAccount.accountNumber?.slice(-4)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Xác minh:</span>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          transaction.user.bankAccount.verificationStatus === 'verified' ? 'bg-green-100 text-green-800' :
+                          transaction.user.bankAccount.verificationStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {transaction.user.bankAccount.verificationStatus === 'verified' ? 'Đã xác minh' :
+                           transaction.user.bankAccount.verificationStatus === 'pending' ? 'Chờ xác minh' : 'Chưa xác minh'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-gray-600">Chưa có thông tin ngân hàng</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Transactions */}
+            {transaction.userStats.recentTransactions && transaction.userStats.recentTransactions.length > 0 && (
+              <div className="mt-6">
+                <h4 className="font-semibold text-gray-800 mb-3">5 giao dịch gần nhất</h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Loại</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Số tiền</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mô tả</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {transaction.userStats.recentTransactions.map((recentTx, index) => (
+                        <tr key={index} className={`hover:bg-gray-50 ${recentTx._id === transaction._id ? 'bg-yellow-50 border-yellow-200' : ''}`}>
+                          <td className="px-4 py-2 text-sm">
+                            {getTypeBadge(recentTx.type)}
+                          </td>
+                          <td className="px-4 py-2 text-sm font-medium">
+                            <span className={recentTx.type === 'withdrawal' ? 'text-red-600' : 'text-green-600'}>
+                              {recentTx.type === 'withdrawal' ? '-' : '+'}
+                              {formatAmount(recentTx.amount)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 text-sm">
+                            {getStatusBadge(recentTx.status)}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-600">
+                            {formatDate(recentTx.createdAt)}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-600 max-w-xs truncate">
+                            {recentTx.description || 'Không có mô tả'}
+                            {recentTx._id === transaction._id && (
+                              <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                                Giao dịch hiện tại
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* User Account Information */}
+        {transaction.user && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <span>👤</span>
+              Thông tin tài khoản chi tiết
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold text-gray-700 mb-3">Thông tin cá nhân</h4>
+                <div className="space-y-3">
+                  {transaction.user.profile?.phone && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Điện thoại:</span>
+                      <span className="font-medium">{transaction.user.profile.phone}</span>
+                    </div>
+                  )}
+                  {transaction.user.profile?.dateOfBirth && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Ngày sinh:</span>
+                      <span className="font-medium">{formatDate(transaction.user.profile.dateOfBirth)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tham gia:</span>
+                    <span className="font-medium">{formatDate(transaction.user.createdAt)}</span>
+                  </div>
+                  {transaction.user.kycStatus && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">KYC:</span>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        transaction.user.kycStatus === 'verified' ? 'bg-green-100 text-green-800' :
+                        transaction.user.kycStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {transaction.user.kycStatus === 'verified' ? 'Đã xác minh' :
+                         transaction.user.kycStatus === 'pending' ? 'Chờ xác minh' : 'Chưa xác minh'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Trạng thái TK:</span>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      transaction.user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {transaction.user.status === 'ACTIVE' ? 'Hoạt động' : 'Bị khóa'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-gray-700 mb-3">Hành động quản trị</h4>
+                <div className="space-y-3">
+                  <Link
+                    to={`/admin/users/${transaction.user._id}`}
+                    className="block w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-center text-sm"
+                  >
+                    🔍 Xem chi tiết người dùng
+                  </Link>
+                  {transaction.user.bankAccount && (
+                    <Link
+                      to={`/admin/bank-accounts/${transaction.user._id}`}
+                      className="block w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-center text-sm"
+                    >
+                      🏦 Xem thông tin ngân hàng
+                    </Link>
+                  )}
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Balance Information */}
         {(transaction.balanceBefore !== undefined || transaction.balanceAfter !== undefined) && (
           <div className="bg-white rounded-lg shadow-md p-6 mt-6">
