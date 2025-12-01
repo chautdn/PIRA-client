@@ -225,6 +225,16 @@ export const ownerProductApi = {
     }
   },
 
+  // GET /api/owner-products/rental-requests/:subOrderId - Get single rental request detail
+  getSubOrderDetail: async (subOrderId) => {
+    try {
+      const response = await api.get(`/owner-products/rental-requests/${subOrderId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // POST /api/owner-products/rental-requests/:subOrderId/items/:itemIndex/confirm
   confirmProductItem: async (subOrderId, itemIndex) => {
     try {
