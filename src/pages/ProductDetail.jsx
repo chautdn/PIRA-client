@@ -866,34 +866,15 @@ export default function ProductDetail() {
       duration: getRentalDays()
     };
 
-    // Create a direct rental order (bypass cart)
-    const directRentalData = {
-      products: [{
-        product: product._id,
-        owner: product.owner._id,
-        quantity: quantity,
-        rental: rentalData,
-        pricing: {
-          dailyRate: product.pricing.dailyRate,
-          totalRental: product.pricing.dailyRate * quantity * getRentalDays(),
-          totalDeposit: (product.pricing.deposit || 0) * quantity
-        }
-      }],
-      rentalPeriod: rentalData,
-      deliveryMethod: 'PICKUP', // Default to pickup for direct rental
-      totalAmount: getTotalPrice()
-    };
-
-    // Navigate to rental order form with pre-filled data
-    navigate('/rental-order/create', { 
-      state: { 
-        directRental: true,
-        orderData: directRentalData,
-        product: product,
-        quantity: quantity,
-        rental: rentalData
-      } 
-    });
+    // Add product to cart
+    const result = await addToCartContext(product, quantity, rentalData);
+    
+    if (result.success) {
+      // Navigate to cart page to checkout
+      navigate('/cart');
+    } else {
+      alert(`❌ ${result.error || 'Không thể thêm vào giỏ hàng'}`);
+    }
   };
 
   const handleMessageOwner = async () => {
