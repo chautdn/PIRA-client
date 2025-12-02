@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, MapPin, AlertCircle, Loader, Check, Wallet, CreditCard, ArrowLeft } from "lucide-react";
+import {
+  X,
+  Calendar,
+  MapPin,
+  AlertCircle,
+  Loader,
+  Check,
+  Wallet,
+  CreditCard,
+  ArrowLeft,
+} from "lucide-react";
 import Portal from "../common/Portal";
 import MapSelector from "../common/MapSelector";
 import toast from "react-hot-toast";
@@ -103,8 +113,10 @@ const EarlyReturnRequestModal = ({
 
   // Calculate shipping fee before showing form
   const calculateShippingFee = async () => {
-    if (!formData.returnAddress?.coordinates?.latitude || 
-        !formData.returnAddress?.coordinates?.longitude) {
+    if (
+      !formData.returnAddress?.coordinates?.latitude ||
+      !formData.returnAddress?.coordinates?.longitude
+    ) {
       toast.error("Vui lòng chọn địa chỉ trên bản đồ trước");
       return;
     }
@@ -122,21 +134,24 @@ const EarlyReturnRequestModal = ({
       setFeeCalculationResult(response.metadata);
 
       if (response.metadata.requiresPayment) {
-        toast(`💰 Phí ship thêm: ${response.metadata.additionalFee?.toLocaleString()}đ`, {
-          icon: '💰',
-          duration: 4000,
-        });
+        toast(
+          `💰 Phí ship thêm: ${response.metadata.additionalFee?.toLocaleString()}đ`,
+          {
+            icon: "💰",
+            duration: 4000,
+          }
+        );
       } else {
-        toast.success("✅ Địa chỉ mới gần hơn hoặc bằng địa chỉ gốc - Không phí thêm!");
+        toast.success(
+          "✅ Địa chỉ mới gần hơn hoặc bằng địa chỉ gốc - Không phí thêm!"
+        );
       }
-      
+
       // Always go to review step for user confirmation
       setCurrentStep(2);
     } catch (error) {
       console.error("Fee calculation error:", error);
-      toast.error(
-        error.response?.data?.message || "Không thể tính phí ship"
-      );
+      toast.error(error.response?.data?.message || "Không thể tính phí ship");
     } finally {
       setCalculatingFee(false);
     }
@@ -147,20 +162,68 @@ const EarlyReturnRequestModal = ({
     setLoading(true);
 
     try {
-      const createResponse = await earlyReturnApi.create({
+      // Prepare return address - remove empty fields
+      let cleanedReturnAddress = undefined;
+      if (!formData.useOriginalAddress && formData.returnAddress) {
+        cleanedReturnAddress = {
+          streetAddress: formData.returnAddress.streetAddress,
+          ward: formData.returnAddress.ward,
+          district: formData.returnAddress.district,
+          city: formData.returnAddress.city,
+          province: formData.returnAddress.province,
+          coordinates: formData.returnAddress.coordinates,
+        };
+
+        // Only include contactPhone if it's not empty
+        // Backend will fill it from renter.phone if missing
+        if (
+          formData.returnAddress.contactPhone &&
+          formData.returnAddress.contactPhone.trim()
+        ) {
+          cleanedReturnAddress.contactPhone =
+            formData.returnAddress.contactPhone;
+        }
+      }
+
+      const requestPayload = {
         subOrderId: subOrder._id,
         requestedReturnDate: formData.requestedReturnDate,
         useOriginalAddress: formData.useOriginalAddress,
-        returnAddress: formData.useOriginalAddress
-          ? undefined
-          : formData.returnAddress,
-      });
+        returnAddress: cleanedReturnAddress,
+      };
+
+      // Add addressInfo if there was an upfront shipping fee payment
+      if (feeCalculationResult?.requiresPayment) {
+        requestPayload.addressInfo = {
+          originalDistance: feeCalculationResult.originalDistance,
+          newDistance: feeCalculationResult.newDistance,
+          newAddress: formData.returnAddress,
+        };
+      }
+
+      console.log(
+        "[CreateRequest] Sending payload:",
+        JSON.stringify(requestPayload, null, 2)
+      );
+
+      const createResponse = await earlyReturnApi.create(requestPayload);
 
       toast.success("✅ Yêu cầu trả hàng sớm đã được gửi!");
       onSuccess && onSuccess();
       onClose();
     } catch (error) {
       console.error("Create early return error:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      console.error(
+        "Full error:",
+        JSON.stringify(error.response?.data, null, 2)
+      );
+
+      if (error.response?.data?.errors) {
+        console.error("Validation errors:", error.response.data.errors);
+      }
+
       toast.error(
         error.response?.data?.message || "Có lỗi xảy ra khi tạo yêu cầu"
       );
@@ -216,19 +279,22 @@ const EarlyReturnRequestModal = ({
         },
       });
 
-      if (paymentMethod === 'wallet') {
+      if (paymentMethod === "wallet") {
         toast.success("✅ Thanh toán phí ship thành công!");
         // After successful wallet payment, create the request
         await createEarlyReturnRequest();
-      } else if (paymentMethod === 'payos') {
+      } else if (paymentMethod === "payos") {
         // Store form data and fee info in sessionStorage for after redirect
-        sessionStorage.setItem('earlyReturnFormData', JSON.stringify({
-          subOrderId: subOrder._id,
-          formData,
-          feeCalculationResult,
-          orderCode: response.metadata.orderCode,
-        }));
-        
+        sessionStorage.setItem(
+          "earlyReturnFormData",
+          JSON.stringify({
+            subOrderId: subOrder._id,
+            formData,
+            feeCalculationResult,
+            orderCode: response.metadata.orderCode,
+          })
+        );
+
         toast.loading("🔄 Chuyển đến trang thanh toán...", { duration: 2000 });
         setTimeout(() => {
           window.location.href = response.metadata.checkoutUrl;
@@ -267,18 +333,23 @@ const EarlyReturnRequestModal = ({
     <div className="p-6 space-y-6">
       {/* Review Information */}
       <div className="space-y-4">
-        <h3 className="font-semibold text-gray-900 text-lg">Xác nhận thông tin</h3>
-        
+        <h3 className="font-semibold text-gray-900 text-lg">
+          Xác nhận thông tin
+        </h3>
+
         {/* Return Date */}
         <div className="bg-gray-50 rounded-xl p-4">
           <p className="text-sm text-gray-600 mb-1">Ngày trả hàng</p>
           <p className="font-medium text-gray-900">
-            {new Date(formData.requestedReturnDate).toLocaleDateString("vi-VN", {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
+            {new Date(formData.requestedReturnDate).toLocaleDateString(
+              "vi-VN",
+              {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }
+            )}
           </p>
         </div>
 
@@ -298,7 +369,8 @@ const EarlyReturnRequestModal = ({
               <p className="font-medium text-gray-900 mb-1">Địa chỉ mới</p>
               <p className="text-sm text-gray-700">
                 {formData.returnAddress?.streetAddress},{" "}
-                {formData.returnAddress?.ward}, {formData.returnAddress?.district},{" "}
+                {formData.returnAddress?.ward},{" "}
+                {formData.returnAddress?.district},{" "}
                 {formData.returnAddress?.city}
               </p>
               <p className="text-sm text-gray-600 mt-2">
@@ -318,11 +390,21 @@ const EarlyReturnRequestModal = ({
                   ⚠️ Địa chỉ mới xa hơn - Cần thanh toán phí thêm
                 </p>
                 <div className="text-sm text-yellow-800 space-y-1">
-                  <p>Khoảng cách gốc: {feeCalculationResult?.originalDistance?.toFixed(1)} km</p>
-                  <p>Khoảng cách mới: {feeCalculationResult?.newDistance?.toFixed(1)} km</p>
-                  <p>Chênh lệch: +{feeCalculationResult?.distanceDiff?.toFixed(1)} km</p>
+                  <p>
+                    Khoảng cách gốc:{" "}
+                    {feeCalculationResult?.originalDistance?.toFixed(1)} km
+                  </p>
+                  <p>
+                    Khoảng cách mới:{" "}
+                    {feeCalculationResult?.newDistance?.toFixed(1)} km
+                  </p>
+                  <p>
+                    Chênh lệch: +
+                    {feeCalculationResult?.distanceDiff?.toFixed(1)} km
+                  </p>
                   <p className="font-bold text-yellow-900 mt-2 text-base">
-                    💰 Phí ship thêm: {feeCalculationResult?.additionalFee?.toLocaleString()}đ
+                    💰 Phí ship thêm:{" "}
+                    {feeCalculationResult?.additionalFee?.toLocaleString()}đ
                   </p>
                 </div>
               </div>
@@ -358,7 +440,7 @@ const EarlyReturnRequestModal = ({
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại</span>
         </button>
-        
+
         <div className="flex gap-3">
           <button
             type="button"
@@ -368,7 +450,7 @@ const EarlyReturnRequestModal = ({
           >
             Hủy
           </button>
-          
+
           {feeCalculationResult?.requiresPayment ? (
             <button
               type="button"
@@ -415,16 +497,26 @@ const EarlyReturnRequestModal = ({
               Địa chỉ mới xa hơn địa chỉ gốc
             </p>
             <div className="text-sm text-yellow-800 space-y-1">
-              <p>Khoảng cách gốc: {feeCalculationResult?.originalDistance?.toFixed(1)} km</p>
-              <p>Khoảng cách mới: {feeCalculationResult?.newDistance?.toFixed(1)} km</p>
-              <p>Chênh lệch: +{feeCalculationResult?.distanceDiff?.toFixed(1)} km</p>
+              <p>
+                Khoảng cách gốc:{" "}
+                {feeCalculationResult?.originalDistance?.toFixed(1)} km
+              </p>
+              <p>
+                Khoảng cách mới: {feeCalculationResult?.newDistance?.toFixed(1)}{" "}
+                km
+              </p>
+              <p>
+                Chênh lệch: +{feeCalculationResult?.distanceDiff?.toFixed(1)} km
+              </p>
               <p className="font-semibold text-yellow-900 mt-2">
-                Phí ship thêm: {feeCalculationResult?.additionalFee?.toLocaleString()}đ
+                Phí ship thêm:{" "}
+                {feeCalculationResult?.additionalFee?.toLocaleString()}đ
               </p>
             </div>
             <div className="mt-3 bg-white border border-yellow-300 rounded-lg p-3">
               <p className="text-xs text-yellow-900 font-medium">
-                ⚠️ Bạn cần thanh toán phí ship thêm trước khi tạo yêu cầu trả hàng sớm
+                ⚠️ Bạn cần thanh toán phí ship thêm trước khi tạo yêu cầu trả
+                hàng sớm
               </p>
             </div>
           </div>
@@ -433,11 +525,13 @@ const EarlyReturnRequestModal = ({
 
       {/* Payment Methods */}
       <div>
-        <h3 className="font-medium text-gray-900 mb-3">Chọn phương thức thanh toán</h3>
-        
+        <h3 className="font-medium text-gray-900 mb-3">
+          Chọn phương thức thanh toán
+        </h3>
+
         {/* Wallet Payment */}
         <button
-          onClick={() => handlePayment('wallet')}
+          onClick={() => handlePayment("wallet")}
           disabled={loading || balance < feeCalculationResult?.additionalFee}
           className="w-full mb-3 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -463,7 +557,7 @@ const EarlyReturnRequestModal = ({
 
         {/* PayOS Payment */}
         <button
-          onClick={() => handlePayment('payos')}
+          onClick={() => handlePayment("payos")}
           disabled={loading}
           className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all disabled:opacity-50"
         >
@@ -548,177 +642,185 @@ const EarlyReturnRequestModal = ({
 
             {/* Content */}
             {currentStep === 1 ? (
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">{/* Rental Period Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                  <div className="flex-1 text-sm text-blue-900">
-                    <p className="font-medium mb-1">Thời gian thuê gốc:</p>
-                    <p>
-                      Từ{" "}
-                      {new Date(rentalPeriod?.startDate).toLocaleDateString(
-                        "vi-VN"
-                      )}{" "}
-                      đến{" "}
-                      {new Date(rentalPeriod?.endDate).toLocaleDateString(
-                        "vi-VN"
-                      )}
-                    </p>
-                    <p className="text-blue-700 mt-2">
-                      💡 Ngày trả phải trước ngày kết thúc ít nhất 1 ngày
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Return Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Calendar className="w-4 h-4 inline mr-2" />
-                  Ngày muốn trả hàng <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.requestedReturnDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      requestedReturnDate: e.target.value,
-                    }))
-                  }
-                  min={minDate}
-                  max={maxDate}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Chọn từ {new Date(minDate).toLocaleDateString("vi-VN")} đến{" "}
-                  {new Date(maxDate).toLocaleDateString("vi-VN")}
-                </p>
-              </div>
-
-              {/* Address Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  <MapPin className="w-4 h-4 inline mr-2" />
-                  Địa chỉ trả hàng <span className="text-red-500">*</span>
-                </label>
-
-                {/* Radio Options */}
-                <div className="space-y-3 mb-4">
-                  <label className="flex items-start space-x-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      checked={formData.useOriginalAddress}
-                      onChange={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          useOriginalAddress: true,
-                        }))
-                      }
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">Dùng địa chỉ gốc</p>
-                      {defaultAddress && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          {defaultAddress.streetAddress}, {defaultAddress.ward},{" "}
-                          {defaultAddress.district}, {defaultAddress.city}
-                        </p>
-                      )}
-                    </div>
-                  </label>
-
-                  <label className="flex items-start space-x-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      checked={!formData.useOriginalAddress}
-                      onChange={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          useOriginalAddress: false,
-                        }))
-                      }
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">Chọn địa chỉ mới</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Chọn địa chỉ khác trên bản đồ VietMap
+              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                {/* Rental Period Info */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div className="flex-1 text-sm text-blue-900">
+                      <p className="font-medium mb-1">Thời gian thuê gốc:</p>
+                      <p>
+                        Từ{" "}
+                        {new Date(rentalPeriod?.startDate).toLocaleDateString(
+                          "vi-VN"
+                        )}{" "}
+                        đến{" "}
+                        {new Date(rentalPeriod?.endDate).toLocaleDateString(
+                          "vi-VN"
+                        )}
+                      </p>
+                      <p className="text-blue-700 mt-2">
+                        💡 Ngày trả phải trước ngày kết thúc ít nhất 1 ngày
                       </p>
                     </div>
-                  </label>
+                  </div>
                 </div>
 
-                {/* Map Selector for New Address */}
-                {!formData.useOriginalAddress && (
-                  <div className="space-y-3">
-                    <MapSelector
-                      onLocationSelect={handleAddressSelect}
-                      initialAddress={formData.returnAddress?.streetAddress}
-                      placeholder="Nhấn để chọn địa chỉ trên bản đồ VietMap..."
-                      className="mb-3"
-                    />
+                {/* Return Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="w-4 h-4 inline mr-2" />
+                    Ngày muốn trả hàng <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.requestedReturnDate}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        requestedReturnDate: e.target.value,
+                      }))
+                    }
+                    min={minDate}
+                    max={maxDate}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Chọn từ {new Date(minDate).toLocaleDateString("vi-VN")} đến{" "}
+                    {new Date(maxDate).toLocaleDateString("vi-VN")}
+                  </p>
+                </div>
 
-                    {/* Show selected address details */}
-                    {formData.returnAddress?.coordinates?.latitude &&
-                      formData.returnAddress?.coordinates?.longitude && (
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                          <div className="flex items-start space-x-2">
-                            <Check className="w-5 h-5 text-green-600 mt-0.5" />
-                            <div className="flex-1">
-                              <p className="font-medium text-green-900 mb-1">
-                                ✅ Địa chỉ đã chọn:
-                              </p>
-                              <p className="text-sm text-green-800">
-                                {formData.returnAddress.streetAddress}
-                                {formData.returnAddress.ward &&
-                                  `, ${formData.returnAddress.ward}`}
-                                {formData.returnAddress.district &&
-                                  `, ${formData.returnAddress.district}`}
-                                {formData.returnAddress.city &&
-                                  `, ${formData.returnAddress.city}`}
-                              </p>
-                              <p className="text-xs text-green-700 mt-1">
-                                Tọa độ:{" "}
-                                {formData.returnAddress.coordinates.latitude.toFixed(
-                                  6
-                                )}
-                                ,{" "}
-                                {formData.returnAddress.coordinates.longitude.toFixed(
-                                  6
-                                )}
-                              </p>
+                {/* Address Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    <MapPin className="w-4 h-4 inline mr-2" />
+                    Địa chỉ trả hàng <span className="text-red-500">*</span>
+                  </label>
+
+                  {/* Radio Options */}
+                  <div className="space-y-3 mb-4">
+                    <label className="flex items-start space-x-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                      <input
+                        type="radio"
+                        checked={formData.useOriginalAddress}
+                        onChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            useOriginalAddress: true,
+                          }))
+                        }
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium">Dùng địa chỉ gốc</p>
+                        {defaultAddress && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            {defaultAddress.streetAddress},{" "}
+                            {defaultAddress.ward}, {defaultAddress.district},{" "}
+                            {defaultAddress.city}
+                          </p>
+                        )}
+                      </div>
+                    </label>
+
+                    <label className="flex items-start space-x-3 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                      <input
+                        type="radio"
+                        checked={!formData.useOriginalAddress}
+                        onChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            useOriginalAddress: false,
+                          }))
+                        }
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium">Chọn địa chỉ mới</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Chọn địa chỉ khác trên bản đồ VietMap
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Map Selector for New Address */}
+                  {!formData.useOriginalAddress && (
+                    <div className="space-y-3">
+                      <MapSelector
+                        onLocationSelect={handleAddressSelect}
+                        initialAddress={formData.returnAddress?.streetAddress}
+                        placeholder="Nhấn để chọn địa chỉ trên bản đồ VietMap..."
+                        className="mb-3"
+                      />
+
+                      {/* Show selected address details */}
+                      {formData.returnAddress?.coordinates?.latitude &&
+                        formData.returnAddress?.coordinates?.longitude && (
+                          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                            <div className="flex items-start space-x-2">
+                              <Check className="w-5 h-5 text-green-600 mt-0.5" />
+                              <div className="flex-1">
+                                <p className="font-medium text-green-900 mb-1">
+                                  ✅ Địa chỉ đã chọn:
+                                </p>
+                                <p className="text-sm text-green-800">
+                                  {formData.returnAddress.streetAddress}
+                                  {formData.returnAddress.ward &&
+                                    `, ${formData.returnAddress.ward}`}
+                                  {formData.returnAddress.district &&
+                                    `, ${formData.returnAddress.district}`}
+                                  {formData.returnAddress.city &&
+                                    `, ${formData.returnAddress.city}`}
+                                </p>
+                                <p className="text-xs text-green-700 mt-1">
+                                  Tọa độ:{" "}
+                                  {formData.returnAddress.coordinates.latitude.toFixed(
+                                    6
+                                  )}
+                                  ,{" "}
+                                  {formData.returnAddress.coordinates.longitude.toFixed(
+                                    6
+                                  )}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                  </div>
-                )}
-              </div>
+                        )}
+                    </div>
+                  )}
+                </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  disabled={loading || calculatingFee}
-                  className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading || calculatingFee}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
-                >
-                  {(loading || calculatingFee) && <Loader className="w-4 h-4 animate-spin" />}
-                  <span>
-                    {calculatingFee ? "Đang tính phí..." : loading ? "Đang xử lý..." : "Tiếp tục"}
-                  </span>
-                </button>
-              </div>
-            </form>
+                {/* Actions */}
+                <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={loading || calculatingFee}
+                    className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || calculatingFee}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                  >
+                    {(loading || calculatingFee) && (
+                      <Loader className="w-4 h-4 animate-spin" />
+                    )}
+                    <span>
+                      {calculatingFee
+                        ? "Đang tính phí..."
+                        : loading
+                        ? "Đang xử lý..."
+                        : "Tiếp tục"}
+                    </span>
+                  </button>
+                </div>
+              </form>
             ) : currentStep === 2 ? (
               renderReviewStep()
             ) : (

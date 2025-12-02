@@ -103,6 +103,38 @@ const earlyReturnApi = {
   },
 
   /**
+   * Update early return request (Renter only)
+   * @param {string} id - Request ID
+   * @param {Object} data - { requestedReturnDate, returnAddress, notes }
+   * @returns {Promise}
+   */
+  update: async (id, data) => {
+    try {
+      const response = await api.put(`/early-returns/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Update request error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete early return request (Renter only)
+   * Restores original return date in SubOrder
+   * @param {string} id - Request ID
+   * @returns {Promise}
+   */
+  delete: async (id) => {
+    try {
+      const response = await api.delete(`/early-returns/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Delete request error:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Calculate additional fee BEFORE creating request
    * @param {Object} data - { subOrderId, newAddress }
    * @returns {Promise}

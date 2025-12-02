@@ -148,13 +148,13 @@ export default function Home() {
 
   const getPromotionTierName = (tier) => {
     const tierNames = {
-      1: "Premium",
-      2: "Gold",
-      3: "Silver",
-      4: "Bronze",
-      5: "Basic",
+      1: "Cao Cấp",
+      2: "Nổi Bật",
+      3: "Phổ Biến",
+      4: "Tăng Tốc",
+      5: "Cơ Bản",
     };
-    return tierNames[tier] || "Featured";
+    return tierNames[tier] || "Nổi Bật";
   };
 
   const getPromotionTierColor = (tier) => {
