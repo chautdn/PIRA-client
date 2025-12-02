@@ -145,11 +145,11 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       setLoading(true);
       setError('');
 
-      // Call API to cancel shipment
-      await ShipmentService.cancelShipmentPickup(shipment._id);
+      // Call API to report owner no-show
+      await ShipmentService.ownerNoShow(shipment._id, { notes: '' });
 
       // Show success toast
-      toast.success('✅ Đơn hàng đã bị hủy thành công!', {
+      toast.success('✅ Đã ghi nhận chủ không có mặt để giao hàng!', {
         duration: 3,
         position: 'top-right'
       });
@@ -163,12 +163,46 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
         onSuccess?.();
       }, 1500);
     } catch (err) {
-      setError(err.message || 'Lỗi khi hủy vận chuyển');
-      toast.error(err.message || 'Lỗi khi hủy vận chuyển');
+      setError(err.message || 'Lỗi khi ghi nhận owner no-show');
+      toast.error(err.message || 'Lỗi khi ghi nhận owner no-show');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleCannotPickupRenter = async () => {
+    if (!window.confirm('⚠️ Bạn chắc chắn không thể liên lạc được với renter khi trả hàng?\n\nShipment sẽ bị ghi nhận là trả hàng thất bại, chủ hàng sẽ mở tranh chấp để giải quyết.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      // Call API to report return failed
+      await ShipmentService.returnFailed(shipment._id, { notes: '' });
+
+      // Show success toast
+      toast.success('✅ Đã ghi nhận không liên lạc được với renter!', {
+        duration: 3,
+        position: 'top-right'
+      });
+
+      // Update status
+      setCurrentStatus('CANCELLED');
+      
+      // Close modal after 1.5s
+      setTimeout(() => {
+        onClose?.();
+        onSuccess?.();
+      }, 1500);
+    } catch (err) {
+      setError(err.message || 'Lỗi khi ghi nhận không liên lạc được renter');
+      toast.error(err.message || 'Lỗi khi ghi nhận không liên lạc được renter');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleRenterReject = async () => {
     if (!rejectNotes.trim()) {
@@ -474,19 +508,38 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                       </button>
                       
                       {/* Button: Cannot Pickup */}
-                      <button
-                        onClick={handleCannotPickup}
-                        disabled={loading}
-                        className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
-                      >
-                        {loading ? (
-                          <>⏳ Đang xử lý...</>
-                        ) : (
-                          <>
-                            <AlertCircle size={20} /> Không thể nhận hàng từ {isReturnShipment ? renterName : ownerName}
-                          </>
-                        )}
-                      </button>
+                      {currentStatus === 'SHIPPER_CONFIRMED' && !isReturnShipment && (
+                        <button
+                          onClick={handleCannotPickup}
+                          disabled={loading}
+                          className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          {loading ? (
+                            <>⏳ Đang xử lý...</>
+                          ) : (
+                            <>
+                              <AlertCircle size={20} /> Không thể nhận hàng từ {ownerName}
+                            </>
+                          )}
+                        </button>
+                      )}
+                      
+                      {/* Button: Cannot Contact Renter for RETURN pickup */}
+                      {currentStatus === 'SHIPPER_CONFIRMED' && isReturnShipment && (
+                        <button
+                          onClick={handleCannotPickupRenter}
+                          disabled={loading}
+                          className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          {loading ? (
+                            <>⏳ Đang xử lý...</>
+                          ) : (
+                            <>
+                              <AlertCircle size={20} /> Không thể liên lạc được với renter
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
