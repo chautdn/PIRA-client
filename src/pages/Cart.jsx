@@ -4,15 +4,21 @@
   import { useCart } from "../context/CartContext";
   import { ROUTES } from "../utils/constants";
   import rentalOrderService from "../services/rentalOrder";
+  import { useAuth } from "../hooks/useAuth";
+  import KycWarningModal from "../components/common/KycWarningModal";
+  import { checkKYCRequirements } from "../utils/kycVerification";
 
   const Cart = () => {
     const { cart, cartTotal, updateQuantityByItemId, updateRental, updateRentalByItemId, removeFromCartById, clearCart, cartData } = useCart();
     const navigate = useNavigate();
+    const { user, refreshUser } = useAuth();
     const [editingDates, setEditingDates] = React.useState({});
     const [selectedItems, setSelectedItems] = React.useState(new Set());
     const [selectAll, setSelectAll] = React.useState(false);
     const [showAvailabilityModal, setShowAvailabilityModal] = React.useState(false);
     const [availabilityWarnings, setAvailabilityWarnings] = React.useState([]);
+    const [showKycWarningModal, setShowKycWarningModal] = React.useState(false);
+    const [kycMissingRequirements, setKycMissingRequirements] = React.useState([]);
 
     const formatPrice = (price) => {
       return new Intl.NumberFormat("vi-VN", {
@@ -358,6 +364,27 @@
 
     // Handle rent selected items
     const handleRentSelected = async () => {
+      // Check KYC requirements first
+      if (user) {
+        // Refresh user data to get latest info from backend
+        let currentUser = user;
+        try {
+          if (refreshUser) {
+            currentUser = await refreshUser();
+          }
+        } catch (error) {
+          console.error('Failed to refresh user data:', error);
+          // Continue with cached user data
+        }
+
+        const kycCheck = checkKYCRequirements(currentUser);
+        if (!kycCheck.isComplete) {
+          setKycMissingRequirements(kycCheck.missing);
+          setShowKycWarningModal(true);
+          return;
+        }
+      }
+
       const selectedCartItems = cart.filter(item => selectedItems.has(item._id));
       if (selectedCartItems.length === 0) return;
       
@@ -379,6 +406,27 @@
 
     // Handle rent all items
     const handleRentAll = async () => {
+      // Check KYC requirements first
+      if (user) {
+        // Refresh user data to get latest info from backend
+        let currentUser = user;
+        try {
+          if (refreshUser) {
+            currentUser = await refreshUser();
+          }
+        } catch (error) {
+          console.error('Failed to refresh user data:', error);
+          // Continue with cached user data
+        }
+
+        const kycCheck = checkKYCRequirements(currentUser);
+        if (!kycCheck.isComplete) {
+          setKycMissingRequirements(kycCheck.missing);
+          setShowKycWarningModal(true);
+          return;
+        }
+      }
+
       if (cart.length === 0) return;
       
       const unavailableItems = await checkCartAvailability(cart);
@@ -915,6 +963,13 @@
           </motion.div>
         </div>
       )}
+
+      {/* KYC Warning Modal */}
+      <KycWarningModal
+        isOpen={showKycWarningModal}
+        onClose={() => setShowKycWarningModal(false)}
+        missingRequirements={kycMissingRequirements}
+      />
         </div>
     );
   };
