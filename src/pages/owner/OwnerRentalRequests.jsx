@@ -185,20 +185,12 @@ const OwnerRentalRequests = () => {
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{subOrder.subOrderNumber}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(subOrder.createdAt).toLocaleDateString('vi-VN')}
-                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <User size={16} className="text-gray-400 mr-2" />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {subOrder.masterOrder?.renter?.profile?.fullName || 'N/A'}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {subOrder.masterOrder?.renter?.email}
-                            </div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {subOrder.masterOrder?.renter?.profile?.fullName || 'N/A'}
                           </div>
                         </div>
                       </td>
@@ -206,12 +198,6 @@ const OwnerRentalRequests = () => {
                         <div className="text-sm text-gray-900">
                           {subOrder.products?.length || 0} sản phẩm
                         </div>
-                        {subOrder.products?.[0] && (
-                          <div className="text-xs text-gray-500 truncate max-w-xs">
-                            {subOrder.products[0].product?.title}
-                            {subOrder.products.length > 1 && ` +${subOrder.products.length - 1} sản phẩm khác`}
-                          </div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-blue-600">
@@ -220,9 +206,6 @@ const OwnerRentalRequests = () => {
                             (subOrder.pricing?.subtotalDeposit || 0) +
                             (subOrder.pricing?.shippingFee || 0)
                           )}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {subOrder.products?.[0]?.rentalDays || 0} ngày
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

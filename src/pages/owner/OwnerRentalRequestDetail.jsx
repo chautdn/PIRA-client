@@ -35,7 +35,19 @@ const OwnerRentalRequestDetail = () => {
     try {
       setLoading(true);
       const response = await ownerProductApi.getSubOrderDetail(subOrderId);
-      setSubOrder(response.data || response);
+      const subOrderData = response.data || response;
+      console.log('🔍 SubOrder Data:', subOrderData);
+      console.log('🔍 SubOrder Status:', subOrderData?.status);
+      console.log('🔍 MasterOrder:', subOrderData?.masterOrder);
+      console.log('🔍 Delivery Address:', subOrderData?.masterOrder?.deliveryAddress);
+      console.log('🔍 Contract:', subOrderData?.contract);
+      if (subOrderData?.contract) {
+        console.log('🔍 Contract ID:', subOrderData.contract._id || subOrderData.contract);
+        console.log('🔍 Contract Signatures:', subOrderData.contract.signatures);
+        console.log('🔍 Owner Signed:', subOrderData.contract.signatures?.owner?.signed);
+        console.log('🔍 Renter Signed:', subOrderData.contract.signatures?.renter?.signed);
+      }
+      setSubOrder(subOrderData);
     } catch (error) {
       console.error('Lỗi tải chi tiết yêu cầu thuê:', error);
       toast.error('Không thể tải chi tiết yêu cầu thuê');
@@ -352,7 +364,7 @@ const OwnerRentalRequestDetail = () => {
                       {/* Product Image */}
                       <div className="flex-shrink-0">
                         <img
-                          src={item.product?.images?.[0] || '/placeholder-product.png'}
+                          src={item.product?.images?.[0]?.url || '/placeholder-product.png'}
                           alt={item.product?.title}
                           className="w-24 h-24 object-cover rounded-lg border border-gray-200"
                         />
@@ -374,11 +386,11 @@ const OwnerRentalRequestDetail = () => {
                         <div className="flex items-center gap-4 text-sm mb-3">
                           <div>
                             <span className="text-gray-600">Giá thuê: </span>
-                            <span className="font-semibold text-blue-600">{formatCurrency(item.pricingSnapshot?.pricePerDay)}/ngày</span>
+                            <span className="font-semibold text-blue-600">{formatCurrency(item.rentalRate)}/ngày</span>
                           </div>
                           <div>
                             <span className="text-gray-600">Cọc: </span>
-                            <span className="font-semibold text-amber-600">{formatCurrency(item.pricingSnapshot?.depositPrice)}</span>
+                            <span className="font-semibold text-amber-600">{formatCurrency(item.depositRate)}</span>
                           </div>
                         </div>
 
@@ -386,9 +398,11 @@ const OwnerRentalRequestDetail = () => {
                         <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
                           <Calendar size={16} />
                           <span>
-                            {new Date(item.startDate).toLocaleDateString('vi-VN')} - {new Date(item.endDate).toLocaleDateString('vi-VN')}
+                            {new Date(item.rentalPeriod?.startDate).toLocaleDateString('vi-VN')} - {new Date(item.rentalPeriod?.endDate).toLocaleDateString('vi-VN')}
                           </span>
-                          <span className="text-gray-400">({item.rentalDays} ngày)</span>
+                          <span className="text-gray-400">
+                            ({item.rentalPeriod?.duration?.value} {item.rentalPeriod?.duration?.unit === 'DAY' ? 'ngày' : item.rentalPeriod?.duration?.unit === 'WEEK' ? 'tuần' : 'tháng'})
+                          </span>
                         </div>
 
                         {/* Rejection Reason */}
@@ -464,12 +478,12 @@ const OwnerRentalRequestDetail = () => {
 
                 {subOrder.contract ? (
                   <div className="space-y-4">
-                    {subOrder.contract.ownerSignature ? (
+                    {subOrder.contract.signatures?.owner?.signed ? (
                       <>
                         <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
                           <p className="text-sm text-green-700 font-semibold">
                             ✅ Bạn đã ký hợp đồng. 
-                            {subOrder.contract.renterSignature 
+                            {subOrder.contract.signatures?.renter?.signed 
                               ? ' Người thuê cũng đã ký. Hợp đồng đã có hiệu lực.'
                               : ' Đang chờ người thuê ký hợp đồng.'}
                           </p>
@@ -478,7 +492,7 @@ const OwnerRentalRequestDetail = () => {
                           onClick={handleSignContract}
                           className="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
                         >
-                          📄 Xem hợp đồng
+                          📄 Xem lại hợp đồng
                         </button>
                       </>
                     ) : (
@@ -526,10 +540,6 @@ const OwnerRentalRequestDetail = () => {
                   <p className="text-sm text-gray-600">Email</p>
                   <p className="font-semibold text-gray-900">{subOrder.masterOrder?.renter?.email || 'N/A'}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Số điện thoại</p>
-                  <p className="font-semibold text-gray-900">{subOrder.masterOrder?.renter?.phone || 'N/A'}</p>
-                </div>
               </div>
             </div>
 
@@ -540,7 +550,23 @@ const OwnerRentalRequestDetail = () => {
                 <h2 className="text-xl font-bold text-gray-900">Địa chỉ giao hàng</h2>
               </div>
 
-              <p className="text-gray-900">{subOrder.masterOrder?.deliveryInfo?.address || 'N/A'}</p>
+              {subOrder.masterOrder?.deliveryAddress ? (
+                <div className="space-y-2">
+                  <p className="text-gray-900 font-medium">
+                    {subOrder.masterOrder.deliveryAddress.streetAddress}
+                  </p>
+                  <p className="text-gray-600 text-sm">
+                    {[
+                      subOrder.masterOrder.deliveryAddress.ward,
+                      subOrder.masterOrder.deliveryAddress.district,
+                      subOrder.masterOrder.deliveryAddress.city,
+                      subOrder.masterOrder.deliveryAddress.province
+                    ].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-500">Chưa có địa chỉ giao hàng</p>
+              )}
             </div>
 
             {/* Pricing Summary */}
@@ -627,10 +653,49 @@ const OwnerRentalRequestDetail = () => {
             <div className="bg-white p-6 rounded-xl max-w-md w-full mx-4 shadow-2xl">
               <h3 className="text-xl font-bold mb-4 text-gray-900">❌ Từ chối sản phẩm</h3>
               {subOrder.products[selectedItemIndex] && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="font-semibold">{subOrder.products[selectedItemIndex].product?.title}</div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    Số lượng: {subOrder.products[selectedItemIndex].quantity}
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  {/* Product Image and Title */}
+                  <div className="flex gap-3 mb-3">
+                    <img
+                      src={subOrder.products[selectedItemIndex].product?.images?.[0]?.url || '/placeholder-product.png'}
+                      alt={subOrder.products[selectedItemIndex].product?.title}
+                      className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                    />
+                    <div className="flex-1">
+                      <div className="font-semibold text-gray-900 mb-1">
+                        {subOrder.products[selectedItemIndex].product?.title}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Số lượng: {subOrder.products[selectedItemIndex].quantity}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Pricing */}
+                  <div className="flex items-center gap-4 text-sm mb-2">
+                    <div>
+                      <span className="text-gray-600">Giá thuê: </span>
+                      <span className="font-semibold text-blue-600">
+                        {formatCurrency(subOrder.products[selectedItemIndex].rentalRate)}/ngày
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Cọc: </span>
+                      <span className="font-semibold text-amber-600">
+                        {formatCurrency(subOrder.products[selectedItemIndex].depositRate)}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Rental Period */}
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar size={14} />
+                    <span>
+                      {new Date(subOrder.products[selectedItemIndex].rentalPeriod?.startDate).toLocaleDateString('vi-VN')} - {new Date(subOrder.products[selectedItemIndex].rentalPeriod?.endDate).toLocaleDateString('vi-VN')}
+                    </span>
+                    <span className="text-gray-400">
+                      ({subOrder.products[selectedItemIndex].rentalPeriod?.duration?.value} {subOrder.products[selectedItemIndex].rentalPeriod?.duration?.unit === 'DAY' ? 'ngày' : subOrder.products[selectedItemIndex].rentalPeriod?.duration?.unit === 'WEEK' ? 'tuần' : 'tháng'})
+                    </span>
                   </div>
                 </div>
               )}
