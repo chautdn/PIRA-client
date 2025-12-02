@@ -95,9 +95,13 @@ export const NotificationProvider = ({ children }) => {
 
   // Fetch notifications on mount
   useEffect(() => {
+    console.log('🔍 [NotificationContext] useEffect triggered - isAuthenticated:', isAuthenticated, 'user:', user?._id);
     if (isAuthenticated && user) {
+      console.log('✅ [NotificationContext] User authenticated, fetching notifications and unread count');
       fetchNotifications();
       fetchUnreadCount();
+    } else {
+      console.log('❌ [NotificationContext] User not authenticated or user is null');
     }
   }, [isAuthenticated, user]);
 
@@ -146,13 +150,16 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const fetchUnreadCount = async () => {
+    console.log('🚀 [NotificationContext] fetchUnreadCount CALLED');
     try {
+      console.log('🌐 [NotificationContext] About to call notificationService.getUnreadCount()');
       const count = await notificationService.getUnreadCount();
       console.log('🔢 [NotificationContext] Unread count fetched:', count);
       console.log('🔢 [NotificationContext] Dispatching SET_UNREAD_COUNT');
       dispatch({ type: 'SET_UNREAD_COUNT', payload: count });
     } catch (error) {
       console.error('❌ [NotificationContext] Error fetching unread count:', error);
+      console.error('❌ [NotificationContext] Error details:', error.response?.data || error.message);
     }
   };
 
