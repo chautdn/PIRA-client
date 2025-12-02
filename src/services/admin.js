@@ -5,7 +5,7 @@ class AdminService {
   // Dashboard APIs
   async getDashboardStats() {
     try {
-      const response = await api.get("/admin/dashboard");
+      const response = await api.get('/admin/dashboard');
       console.log("AdminService getDashboardStats - Full response:", response);
       console.log(
         "AdminService getDashboardStats - Response data:",

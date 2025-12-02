@@ -18,12 +18,12 @@ const AdminLayout = () => {
 
   const menuItems = [
     {
-      name: "Dashboard",
+      name: "Quản lý hệ thống",
       path: "/admin",
       icon: "📊",
     },
     {
-      name: "Quản lý User",
+      name: "Quản lý người dùng",
       path: "/admin/users",
       icon: "👥",
     },
