@@ -10,13 +10,15 @@ import { useAuth } from '../hooks/useAuth'; // Added for authentication
 import { ROUTES } from '../utils/constants'; // Added for route constants
 import ReportModal from './ReportModal';
 import rentalOrderService from '../services/rentalOrder';
+import KycWarningModal from '../components/common/KycWarningModal';
+import { checkKYCRequirements } from '../utils/kycVerification';
 
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart: addToCartContext, loading: cartLoading } = useCart();
-  const { user } = useAuth(); // Added to get current user
+  const { user, refreshUser } = useAuth(); // Added to get current user
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,6 +50,8 @@ export default function ProductDetail() {
   const [availabilityModalData, setAvailabilityModalData] = useState(null);
   const [canWriteReview, setCanWriteReview] = useState(false);
   const [myCompletedOrders, setMyCompletedOrders] = useState([]);
+  const [showKycWarningModal, setShowKycWarningModal] = useState(false);
+  const [kycMissingRequirements, setKycMissingRequirements] = useState([]);
 
   // Check if current user is the product owner
   const isOwner = user && product?.owner?._id === user._id;
@@ -840,6 +844,25 @@ export default function ProductDetail() {
     if (!user) {
       alert('⚠️ Vui lòng đăng nhập để thuê sản phẩm');
       navigate('/auth/login', { state: { from: `/products/${id}` } });
+      return;
+    }
+
+    // Refresh user data to get latest info from backend
+    let currentUser = user;
+    try {
+      if (refreshUser) {
+        currentUser = await refreshUser();
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+      // Continue with cached user data
+    }
+
+    // Check KYC requirements with fresh user data
+    const kycCheck = checkKYCRequirements(currentUser);
+    if (!kycCheck.isComplete) {
+      setKycMissingRequirements(kycCheck.missing);
+      setShowKycWarningModal(true);
       return;
     }
 
@@ -2221,6 +2244,13 @@ export default function ProductDetail() {
           </motion.div>
         </div>
       )}
+
+      {/* KYC Warning Modal */}
+      <KycWarningModal
+        isOpen={showKycWarningModal}
+        onClose={() => setShowKycWarningModal(false)}
+        missingRequirements={kycMissingRequirements}
+      />
     </div>
   );
 }
