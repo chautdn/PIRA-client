@@ -426,10 +426,14 @@ class RentalOrderService {
   // Renter confirms delivered for a suborder (fallback endpoint on server)
   async renterConfirmDelivered(subOrderId) {
     try {
-      const response = await api.post(`/rental-orders/suborders/${subOrderId}/confirm-delivered`);
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/confirm-delivered`
+      );
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Không thể xác nhận đã nhận hàng');
+      throw new Error(
+        error.response?.data?.message || "Không thể xác nhận đã nhận hàng"
+      );
     }
   }
 
@@ -439,29 +443,33 @@ class RentalOrderService {
    */
   async ownerConfirmDelivered(subOrderId) {
     try {
-      const response = await api.post(`/rental-orders/suborders/${subOrderId}/owner-confirm-delivered`);
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Không thể xác nhận đã nhận hàng trả');
-    }
-  }
-
-  /**
-   * Ký hợp đồng
-   * @param {string} contractId - ID của hợp đồng
-   * @param {object} signData - { signature, agreementConfirmed, signatureMethod }
-   */
-  async signContract(contractId, signData) {
-    try {
       const response = await api.post(
-        `/rental-orders/contracts/${contractId}/sign`,
-        signData
+        `/rental-orders/suborders/${subOrderId}/owner-confirm-delivered`
       );
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || "Không thể ký hợp đồng");
+      throw new Error(
+        error.response?.data?.message || "Không thể xác nhận đã nhận hàng trả"
+      );
     }
   }
+
+  // /**
+  //  * Ký hợp đồng
+  //  * @param {string} contractId - ID của hợp đồng
+  //  * @param {object} signData - { signature, agreementConfirmed, signatureMethod }
+  //  */
+  // async signContract(contractId, signData) {
+  //   try {
+  //     const response = await api.post(
+  //       `/rental-orders/contracts/${contractId}/sign`,
+  //       signData
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     throw new Error(error.response?.data?.message || "Không thể ký hợp đồng");
+  //   }
+  // }
 
   /**
    * Tính phí gia hạn
@@ -497,6 +505,83 @@ class RentalOrderService {
     } catch (error) {
       throw new Error(
         error.response?.data?.message || "Không thể tạo yêu cầu gia hạn"
+      );
+    }
+  }
+
+  // ============================================================================
+  // CONTRACT EDITING APIs
+  // ============================================================================
+
+  /**
+   * Get contract for editing (owner only, before signing)
+   * @param {string} contractId - Contract ID
+   */
+  async getContractForEditing(contractId) {
+    try {
+      const response = await api.get(
+        `/rental-orders/contracts/${contractId}/edit`
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể lấy thông tin hợp đồng"
+      );
+    }
+  }
+
+  /**
+   * Update contract editable terms (owner only, before signing)
+   * @param {string} contractId - Contract ID
+   * @param {object} editData - { additionalTerms, customClauses, specialConditions }
+   */
+  async updateContractTerms(contractId, editData) {
+    try {
+      const response = await api.put(
+        `/rental-orders/contracts/${contractId}/terms`,
+        editData
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể cập nhật điều khoản"
+      );
+    }
+  }
+
+  /**
+   * Add a single term to contract (owner only, before signing)
+   * @param {string} contractId - Contract ID
+   * @param {object} term - { title, content }
+   */
+  async addContractTerm(contractId, term) {
+    try {
+      const response = await api.post(
+        `/rental-orders/contracts/${contractId}/terms`,
+        term
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể thêm điều khoản"
+      );
+    }
+  }
+
+  /**
+   * Remove a term from contract (owner only, before signing)
+   * @param {string} contractId - Contract ID
+   * @param {string} termId - Term ID to remove
+   */
+  async removeContractTerm(contractId, termId) {
+    try {
+      const response = await api.delete(
+        `/rental-orders/contracts/${contractId}/terms/${termId}`
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || "Không thể xóa điều khoản"
       );
     }
   }
