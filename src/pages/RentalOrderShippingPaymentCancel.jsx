@@ -25,15 +25,15 @@ const RentalOrderShippingPaymentCancel = () => {
             Thanh toán đã bị hủy
           </h2>
           <p className="text-gray-600">
-            Bạn đã hủy thanh toán phí ship thêm. Yêu cầu trả hàng sớm của bạn vẫn
-            đang chờ thanh toán.
+            Bạn đã hủy thanh toán phí ship thêm. Yêu cầu trả hàng sớm của bạn
+            vẫn đang chờ thanh toán.
           </p>
         </div>
 
         {/* Actions */}
         <div className="space-y-3">
           <button
-            onClick={() => navigate(`/rental-orders/${requestId || ''}`)}
+            onClick={() => navigate(`/rental-orders/${requestId || ""}`)}
             className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
           >
             <RotateCcw className="w-5 h-5" />
@@ -52,8 +52,9 @@ const RentalOrderShippingPaymentCancel = () => {
         {/* Info */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
           <p className="text-sm text-blue-900">
-            💡 <span className="font-medium">Lưu ý:</span> Bạn vẫn có thể thanh toán sau.
-            Yêu cầu trả hàng sớm sẽ không được xử lý cho đến khi thanh toán thành công.
+            💡 <span className="font-medium">Lưu ý:</span> Bạn vẫn có thể thanh
+            toán sau. Yêu cầu trả hàng sớm sẽ không được xử lý cho đến khi thanh
+            toán thành công.
           </p>
         </div>
       </motion.div>

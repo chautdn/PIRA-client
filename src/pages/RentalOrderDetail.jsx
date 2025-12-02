@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useRentalOrder } from "../context/RentalOrderContext";
 import { useAuth } from "../hooks/useAuth";
+import { useEarlyReturn } from "../hooks/useEarlyReturn";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import rentalOrderService from "../services/rentalOrder";
@@ -53,6 +54,8 @@ const RentalOrderDetailPage = () => {
   const { createDispute } = useDispute();
   const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
+  const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
+  const { getRenterRequests, deleteRequest } = useEarlyReturn();
 
   // Check if this is a payment return
   const payment = searchParams.get("payment");
@@ -114,9 +117,52 @@ const RentalOrderDetailPage = () => {
     }
   }, [id]);
 
+  // Fetch early return requests for this order
+  const fetchEarlyReturnRequests = async () => {
+    if (!currentOrder || !currentOrder._id) return;
+
+    try {
+      const response = await getRenterRequests();
+
+      // Extract requests array from response (could be in data, metadata, or direct)
+      const requests =
+        response?.requests ||
+        response?.metadata?.requests ||
+        response?.data?.requests ||
+        [];
+
+      console.log("[RentalOrderDetail] Response structure:", response);
+      console.log("[RentalOrderDetail] Extracted requests:", requests);
+
+      // Filter requests for this specific order's subOrders
+      const orderSubOrderIds =
+        currentOrder.subOrders?.map((sub) => sub._id) || [];
+      const filteredRequests = requests.filter((req) =>
+        orderSubOrderIds.includes(req.subOrder?._id || req.subOrder)
+      );
+      console.log(
+        "[RentalOrderDetail] Early return requests loaded:",
+        filteredRequests
+      );
+      setEarlyReturnRequests(filteredRequests);
+    } catch (error) {
+      console.error("Failed to fetch early return requests:", error);
+      setEarlyReturnRequests([]); // Set to empty array on error
+    }
+  };
+
+  // Load early return requests for this order
+  useEffect(() => {
+    fetchEarlyReturnRequests();
+  }, [currentOrder]);
+
   // Open extend modal if action parameter is set
   useEffect(() => {
-    if (action === "extend" && currentOrder && currentOrder.status === "ACTIVE") {
+    if (
+      action === "extend" &&
+      currentOrder &&
+      currentOrder.status === "ACTIVE"
+    ) {
       setShowExtendRentalModal(true);
     }
   }, [action, currentOrder]);
@@ -325,22 +371,28 @@ const RentalOrderDetailPage = () => {
 
   const handleRenterConfirm = async (subOrderId) => {
     try {
-      toast.loading('Đang gửi xác nhận...');
-      const response = await rentalOrderService.renterConfirmDelivered(subOrderId);
-      
-      console.log('✅ Renter confirmation response:', response);
-      
+      toast.loading("Đang gửi xác nhận...");
+      const response = await rentalOrderService.renterConfirmDelivered(
+        subOrderId
+      );
+
+      console.log("✅ Renter confirmation response:", response);
+
       toast.dismiss();
-      toast.success('Cảm ơn — bạn đã xác nhận đã nhận hàng.');
-      
+      toast.success("Cảm ơn — bạn đã xác nhận đã nhận hàng.");
+
       // Add small delay to ensure backend processing is complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       await loadOrderDetail(id);
     } catch (error) {
       toast.dismiss();
-      console.error('Renter confirm failed', error);
-      toast.error(error.response?.data?.message || error.message || 'Không thể xác nhận đã nhận hàng');
+      console.error("Renter confirm failed", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể xác nhận đã nhận hàng"
+      );
     }
   };
 
@@ -398,30 +450,34 @@ const RentalOrderDetailPage = () => {
               </button>
             )}
 
-            {isRenter && 
-              currentOrder.subOrders?.[0]?.products?.some(p => p.productStatus === 'ACTIVE') && (
-              <button
-                onClick={() => setShowExtendRentalModal(true)}
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Gia hạn</span>
-              </button>
-            )}
+            {isRenter &&
+              currentOrder.subOrders?.[0]?.products?.some(
+                (p) => p.productStatus === "ACTIVE"
+              ) && (
+                <button
+                  onClick={() => setShowExtendRentalModal(true)}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Gia hạn</span>
+                </button>
+              )}
 
             {/* Renter: manage shipment button */}
-            {isRenter && (currentOrder.status === 'ACTIVE' || currentOrder.status === 'CONTRACT_SIGNED') && (
-              <button
-                onClick={() => setShowShipmentModal(true)}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-              >
-                <Package className="w-5 h-5" />
-                <span>Quản lí vận chuyển</span>
-              </button>
-            )}
+            {isRenter &&
+              (currentOrder.status === "ACTIVE" ||
+                currentOrder.status === "CONTRACT_SIGNED") && (
+                <button
+                  onClick={() => setShowShipmentModal(true)}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                >
+                  <Package className="w-5 h-5" />
+                  <span>Quản lí vận chuyển</span>
+                </button>
+              )}
 
             {/* Owner: manage shipment button visible after contract signed */}
-            {isOwner && currentOrder.status === 'CONTRACT_SIGNED' && (
+            {isOwner && currentOrder.status === "CONTRACT_SIGNED" && (
               <button
                 onClick={() => setShowShipmentModal(true)}
                 className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
@@ -461,6 +517,16 @@ const RentalOrderDetailPage = () => {
                   0
                 ) || 0}
                 )
+              </button>
+              <button
+                onClick={() => setActiveTab("earlyReturns")}
+                className={`py-4 px-2 border-b-2 font-medium text-sm ${
+                  activeTab === "earlyReturns"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Yêu Cầu Trả Sớm
               </button>
               <button
                 onClick={() => setActiveTab("timeline")}
@@ -807,9 +873,9 @@ const RentalOrderDetailPage = () => {
                             </span>
 
                             {isOwner &&
-                              (String(subOrder.owner?._id ?? subOrder.owner) === String(user?._id)) &&
-                              subOrder.status ===
-                                "PENDING_CONFIRMATION" && (
+                              String(subOrder.owner?._id ?? subOrder.owner) ===
+                                String(user?._id) &&
+                              subOrder.status === "PENDING_CONFIRMATION" && (
                                 <div className="flex items-center space-x-2">
                                   <button
                                     onClick={() =>
@@ -835,10 +901,12 @@ const RentalOrderDetailPage = () => {
                               )}
 
                             {/* Renter: confirm received button (when shipment marked DELIVERED) */}
-                            {isRenter && subOrder.status === 'DELIVERED' && (
+                            {isRenter && subOrder.status === "DELIVERED" && (
                               <div className="flex items-center ml-2">
                                 <button
-                                  onClick={() => handleRenterConfirm(subOrder._id)}
+                                  onClick={() =>
+                                    handleRenterConfirm(subOrder._id)
+                                  }
                                   className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center space-x-1"
                                 >
                                   <CheckCircle className="w-4 h-4" />
@@ -1038,25 +1106,57 @@ const RentalOrderDetailPage = () => {
                               </div>
 
                               {/* Early Return button or status for ACTIVE products */}
-                              {isRenter && productItem.productStatus === 'ACTIVE' && (
-                                productItem.earlyReturn?.requested ? (
-                                  <div className="w-full px-4 py-2 bg-orange-50 border-2 border-orange-200 text-orange-700 rounded-lg text-sm font-medium flex items-center justify-center space-x-2 mb-2">
-                                    <RotateCcw className="w-4 h-4" />
-                                    <span>Đã yêu cầu trả sớm</span>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setShowEarlyReturnModal(true);
-                                    }}
-                                    className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2 mb-2"
-                                  >
-                                    <RotateCcw className="w-4 h-4" />
-                                    <span>Trả hàng sớm</span>
-                                  </button>
-                                )
-                              )}
+                              {isRenter &&
+                                productItem.productStatus === "ACTIVE" &&
+                                (() => {
+                                  // Check if there's an early return request for this subOrder
+                                  const hasEarlyReturnRequest =
+                                    earlyReturnRequests.some((req) => {
+                                      const reqSubOrderId =
+                                        req.subOrder?._id || req.subOrder;
+                                      const currentSubOrderId = subOrder._id;
+                                      const match =
+                                        (reqSubOrderId === currentSubOrderId ||
+                                          String(reqSubOrderId) ===
+                                            String(currentSubOrderId)) &&
+                                        req.status !== "CANCELLED";
+
+                                      console.log("[Button Check]", {
+                                        reqSubOrderId,
+                                        currentSubOrderId,
+                                        reqStatus: req.status,
+                                        match,
+                                        requestNumber: req.requestNumber,
+                                      });
+
+                                      return match;
+                                    });
+
+                                  console.log("[Early Return Check]", {
+                                    subOrderId: subOrder._id,
+                                    hasRequest: hasEarlyReturnRequest,
+                                    totalRequests: earlyReturnRequests.length,
+                                    requests: earlyReturnRequests,
+                                  });
+
+                                  return hasEarlyReturnRequest ? (
+                                    <div className="w-full px-4 py-2 bg-orange-50 border-2 border-orange-200 text-orange-700 rounded-lg text-sm font-medium flex items-center justify-center space-x-2 mb-2">
+                                      <RotateCcw className="w-4 h-4" />
+                                      <span>Đã yêu cầu trả sớm</span>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowEarlyReturnModal(true);
+                                      }}
+                                      className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2 mb-2"
+                                    >
+                                      <RotateCcw className="w-4 h-4" />
+                                      <span>Trả hàng sớm</span>
+                                    </button>
+                                  );
+                                })()}
 
                               {/* Dispute button */}
                               {canCreateDispute(
@@ -1127,6 +1227,217 @@ const RentalOrderDetailPage = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "earlyReturns" && (
+              <div className="space-y-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+                    <RotateCcw className="w-5 h-5 text-orange-600" />
+                    <span>Yêu Cầu Trả Sớm</span>
+                  </h3>
+
+                  {earlyReturnRequests.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <RotateCcw className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p>Chưa có yêu cầu trả sớm nào</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {earlyReturnRequests.map((request) => {
+                        const subOrder = currentOrder.subOrders?.find(
+                          (sub) =>
+                            sub._id === request.subOrder?._id ||
+                            sub._id === request.subOrder
+                        );
+
+                        return (
+                          <div
+                            key={request._id}
+                            className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
+                          >
+                            <div className="flex items-start space-x-4 mb-4">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-3">
+                                  <span className="font-semibold text-gray-900">
+                                    Mã yêu cầu: {request.requestNumber}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      request.status === "ACTIVE"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "bg-gray-100 text-gray-800"
+                                    }`}
+                                  >
+                                    {request.status === "ACTIVE"
+                                      ? "Đang hoạt động"
+                                      : "Đã hủy"}
+                                  </span>
+                                </div>
+
+                                {/* Products in this subOrder */}
+                                {subOrder?.products &&
+                                  subOrder.products.length > 0 && (
+                                    <div className="mb-4">
+                                      <p className="text-sm font-medium text-gray-700 mb-2">
+                                        Sản phẩm:
+                                      </p>
+                                      <div className="space-y-2">
+                                        {subOrder.products.map(
+                                          (productItem, idx) => (
+                                            <div
+                                              key={idx}
+                                              className="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg"
+                                            >
+                                              <img
+                                                src={
+                                                  productItem.product
+                                                    ?.images?.[0]?.url ||
+                                                  "/placeholder.jpg"
+                                                }
+                                                alt={productItem.product?.name}
+                                                className="w-16 h-16 object-cover rounded-lg"
+                                              />
+                                              <div className="flex-1">
+                                                <p className="font-medium text-sm">
+                                                  {productItem.product?.name}
+                                                </p>
+                                                <div className="flex items-center space-x-4 mt-1 text-xs text-gray-600">
+                                                  <span>
+                                                    Số lượng:{" "}
+                                                    {productItem.quantity}
+                                                  </span>
+                                                  <span>
+                                                    Giá thuê:{" "}
+                                                    {productItem.rentalRate?.toLocaleString(
+                                                      "vi-VN"
+                                                    )}
+                                                    đ
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-gray-600 mt-2">
+                                        Chủ cho thuê:{" "}
+                                        {subOrder.owner?.profile?.fullName ||
+                                          "Không rõ"}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                <div className="grid grid-cols-2 gap-3 text-sm bg-orange-50 p-3 rounded-lg">
+                                  <div>
+                                    <p className="text-gray-600">
+                                      Ngày trả ban đầu:
+                                    </p>
+                                    <p className="font-medium">
+                                      {new Date(
+                                        request.originalReturnDate
+                                      ).toLocaleDateString("vi-VN")}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-gray-600">
+                                      Ngày trả sớm:
+                                    </p>
+                                    <p className="font-medium text-orange-600">
+                                      {new Date(
+                                        request.requestedReturnDate
+                                      ).toLocaleDateString("vi-VN")}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {request.reason && (
+                                  <div className="mt-3 text-sm">
+                                    <p className="text-gray-600">Lý do:</p>
+                                    <p className="text-gray-900">
+                                      {request.reason}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {request.ownerResponse && (
+                                  <div className="mt-3 text-sm bg-gray-50 p-3 rounded">
+                                    <p className="text-gray-600">
+                                      Phản hồi từ chủ cho thuê:
+                                    </p>
+                                    <p className="text-gray-900">
+                                      {request.ownerResponse}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                              <p className="text-xs text-gray-500">
+                                Tạo lúc:{" "}
+                                {new Date(request.createdAt).toLocaleString(
+                                  "vi-VN"
+                                )}
+                              </p>
+
+                              {/* Delete button - only for ACTIVE requests */}
+                              {request.status === "ACTIVE" && isRenter && (
+                                <button
+                                  onClick={async () => {
+                                    const hasAdditionalFee =
+                                      request.additionalShipping
+                                        ?.paymentStatus === "paid" &&
+                                      request.additionalShipping
+                                        ?.additionalFee > 0;
+                                    const confirmMessage = hasAdditionalFee
+                                      ? `Bạn có chắc muốn xóa yêu cầu này?\n\nPhí ship thêm ${request.additionalShipping.additionalFee.toLocaleString()} VND sẽ được hoàn lại vào ví của bạn.\nNgày trả gốc sẽ được khôi phục.`
+                                      : "Bạn có chắc muốn xóa yêu cầu này? Ngày trả gốc sẽ được khôi phục.";
+
+                                    if (window.confirm(confirmMessage)) {
+                                      try {
+                                        const result = await deleteRequest(
+                                          request._id
+                                        );
+
+                                        if (result.refundResult?.refunded) {
+                                          toast.success(
+                                            `Xóa thành công! Đã hoàn ${result.refundResult.amount.toLocaleString()} VND vào ví.`
+                                          );
+                                        } else {
+                                          toast.success(
+                                            "Xóa yêu cầu trả sớm thành công!"
+                                          );
+                                        }
+
+                                        await loadOrderDetail(id);
+                                        await fetchEarlyReturnRequests();
+                                      } catch (error) {
+                                        console.error(
+                                          "Delete early return request failed:",
+                                          error
+                                        );
+                                        toast.error(
+                                          error.response?.data?.message ||
+                                            "Xóa yêu cầu thất bại"
+                                        );
+                                      }
+                                    }
+                                  }}
+                                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-medium transition-colors flex items-center space-x-1"
+                                >
+                                  <span>🗑️</span>
+                                  <span>Xóa</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1382,9 +1693,10 @@ const RentalOrderDetailPage = () => {
           onClose={() => setShowEarlyReturnModal(false)}
           subOrder={currentOrder.subOrders[0]}
           userAddresses={user.addresses || []}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowEarlyReturnModal(false);
-            loadOrderDetail(id);
+            await loadOrderDetail(id);
+            await fetchEarlyReturnRequests();
             toast.success("Tạo yêu cầu trả hàng sớm thành công!");
           }}
         />
