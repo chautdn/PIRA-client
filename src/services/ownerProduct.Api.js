@@ -259,4 +259,29 @@ export const ownerProductApi = {
       throw error.response?.data || error.message;
     }
   },
+
+  // GET /api/owner-products/:productId/can-edit-pricing - Check if pricing can be edited
+  canEditPricing: async (productId) => {
+    try {
+      const response = await api.get(
+        `/owner-products/${productId}/can-edit-pricing`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PUT /api/owner-products/:productId/pricing - Update product pricing
+  updatePricing: async (productId, pricingData) => {
+    try {
+      const response = await api.put(
+        `/owner-products/${productId}/pricing`,
+        pricingData
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };

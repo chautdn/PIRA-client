@@ -12,10 +12,20 @@ export default function OwnerProductEdit() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [canEditPricing, setCanEditPricing] = useState(false);
+  const [checkingPricing, setCheckingPricing] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+  });
+
+  const [pricingData, setPricingData] = useState({
+    dailyRate: "",
+    weeklyRate: "",
+    monthlyRate: "",
+    depositAmount: "",
+    depositDescription: "",
   });
 
   const [newImages, setNewImages] = useState([]);
@@ -29,6 +39,7 @@ export default function OwnerProductEdit() {
 
   useEffect(() => {
     loadProduct();
+    checkPricingEditPermission();
   }, [productId]);
 
   const loadProduct = async () => {
@@ -42,6 +53,13 @@ export default function OwnerProductEdit() {
           title: res.data.title || "",
           description: res.data.description || "",
         });
+        setPricingData({
+          dailyRate: res.data.pricing?.dailyRate || "",
+          weeklyRate: res.data.pricing?.weeklyRate || "",
+          monthlyRate: res.data.pricing?.monthlyRate || "",
+          depositAmount: res.data.pricing?.deposit?.amount || "",
+          depositDescription: res.data.pricing?.deposit?.description || "",
+        });
       }
     } catch (err) {
       console.error("Error loading product:", err);
@@ -51,9 +69,31 @@ export default function OwnerProductEdit() {
     }
   };
 
+  const checkPricingEditPermission = async () => {
+    try {
+      setCheckingPricing(true);
+      const res = await ownerProductApi.canEditPricing(productId);
+      if (res.success) {
+        setCanEditPricing(res.data.canEditPricing);
+      }
+    } catch (err) {
+      console.error("Error checking pricing permission:", err);
+    } finally {
+      setCheckingPricing(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handlePricingChange = (e) => {
+    const { name, value } = e.target;
+    setPricingData((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -146,6 +186,37 @@ export default function OwnerProductEdit() {
     }
   };
 
+  const handlePricingSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const pricingUpdate = {
+        dailyRate: parseFloat(pricingData.dailyRate),
+        depositAmount: parseFloat(pricingData.depositAmount),
+      };
+
+      const res = await ownerProductApi.updatePricing(productId, pricingUpdate);
+
+      if (res.success) {
+        setModalState({
+          isOpen: true,
+          type: "success",
+          message: "Cập nhật giá thành công!",
+        });
+        await loadProduct();
+        await checkPricingEditPermission();
+      }
+    } catch (err) {
+      console.error("Error updating pricing:", err);
+      setError(err.message || "Không thể cập nhật giá");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -206,12 +277,15 @@ export default function OwnerProductEdit() {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-medium text-blue-800">
-                Chế độ chỉnh sửa giới hạn
+                Chỉnh sửa sản phẩm
               </h3>
               <p className="mt-1 text-sm text-blue-700">
-                Bạn chỉ có thể cập nhật tên, mô tả và hình ảnh sản phẩm. Giá cả, danh mục và các
-                trường quan trọng khác không thể thay đổi để đảm bảo công bằng cho các hợp
-                đồng thuê hiện tại.
+                Bạn có thể cập nhật tên, mô tả và hình ảnh sản phẩm bất kỳ lúc nào. 
+                {canEditPricing ? (
+                  <strong className="text-green-700"> Giá cả có thể được chỉnh sửa vì sản phẩm không có yêu cầu thuê đang chờ hoặc đang được thuê.</strong>
+                ) : (
+                  <strong className="text-orange-700"> Giá cả không thể thay đổi vì sản phẩm có yêu cầu thuê đang chờ xử lý hoặc đang được thuê.</strong>
+                )}
               </p>
             </div>
           </div>
@@ -372,26 +446,135 @@ export default function OwnerProductEdit() {
                 <span className="text-gray-600">Tình trạng:</span>
                 <span className="ml-2 font-medium">{product?.condition}</span>
               </div>
-              <div>
-                <span className="text-gray-600">Giá thuê / ngày:</span>
-                <span className="ml-2 font-medium">
-                  {new Intl.NumberFormat("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  }).format(product?.pricing?.dailyRate || 0)}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-600">Đặt cọc:</span>
-                <span className="ml-2 font-medium">
-                  {new Intl.NumberFormat("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  }).format(product?.pricing?.deposit?.amount || 0)}
-                </span>
-              </div>
             </div>
           </div>
+
+          {/* Pricing Section - Editable if allowed */}
+          {canEditPricing ? (
+            <div className="bg-green-50 rounded-lg p-6 border-2 border-green-200">
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="text-lg font-semibold text-green-900">
+                  💰 Cập Nhật Giá
+                </h3>
+                <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full">
+                  Có thể chỉnh sửa
+                </span>
+              </div>
+              <p className="text-sm text-green-700 mb-4">
+                Sản phẩm không có yêu cầu thuê đang chờ xử lý hoặc đang được thuê. Bạn có thể cập nhật giá.
+              </p>
+
+              <form onSubmit={handlePricingSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Giá thuê / ngày <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="dailyRate"
+                      value={pricingData.dailyRate}
+                      onChange={handlePricingChange}
+                      required
+                      min="0"
+                      step="1000"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="Nhập giá thuê mỗi ngày"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Đặt cọc <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="depositAmount"
+                      value={pricingData.depositAmount}
+                      onChange={handlePricingChange}
+                      required
+                      min="0"
+                      step="1000"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="Số tiền đặt cọc"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    {saving ? "Đang cập nhật..." : "💾 Cập Nhật Giá"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-medium text-gray-700">
+                  Thông tin Giá (Chỉ đọc)
+                </h3>
+                {checkingPricing ? (
+                  <span className="text-xs bg-gray-400 text-white px-2 py-1 rounded-full">
+                    Đang kiểm tra...
+                  </span>
+                ) : (
+                  <span className="text-xs bg-orange-600 text-white px-2 py-1 rounded-full">
+                    Không thể chỉnh sửa
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-orange-600 mb-3 bg-orange-50 p-2 rounded">
+                ⚠️ Không thể chỉnh sửa giá vì sản phẩm có yêu cầu thuê đang chờ xử lý hoặc đang được thuê
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Giá thuê / ngày:</span>
+                  <span className="ml-2 font-medium">
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(product?.pricing?.dailyRate || 0)}
+                  </span>
+                </div>
+                {product?.pricing?.weeklyRate && (
+                  <div>
+                    <span className="text-gray-600">Giá thuê / tuần:</span>
+                    <span className="ml-2 font-medium">
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(product?.pricing?.weeklyRate)}
+                    </span>
+                  </div>
+                )}
+                {product?.pricing?.monthlyRate && (
+                  <div>
+                    <span className="text-gray-600">Giá thuê / tháng:</span>
+                    <span className="ml-2 font-medium">
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(product?.pricing?.monthlyRate)}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-gray-600">Đặt cọc:</span>
+                  <span className="ml-2 font-medium">
+                    {new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(product?.pricing?.deposit?.amount || 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-4">
