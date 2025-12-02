@@ -158,7 +158,7 @@ const ExtendRentalModal = ({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 z-10"
+            className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 z-10 max-h-[90vh] flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -177,7 +177,7 @@ const ExtendRentalModal = ({
             </div>
 
             {/* Content */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} id="extend-rental-form" className="p-6 space-y-6 overflow-y-auto flex-1">
               {/* Current End Date */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-gray-600">Ngày kết thúc hiện tại</p>
@@ -310,19 +310,21 @@ const ExtendRentalModal = ({
                   </ul>
                 </div>
               </div>
+            </form>
 
-              {/* Buttons */}
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  disabled={loading}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition disabled:opacity-50"
+            {/* Footer with Buttons */}
+            <div className="flex space-x-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition disabled:opacity-50"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
+                  form="extend-rental-form"
                   disabled={loading || getExtendDays() <= 0}
                   className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition disabled:opacity-50 flex items-center justify-center space-x-2"
                 >
@@ -339,12 +341,11 @@ const ExtendRentalModal = ({
                   )}
                 </button>
               </div>
-            </form>
-          </motion.div>
-        </div>
-      </AnimatePresence>
-    </Portal>
-  );
-};
-
-export default ExtendRentalModal;
+            </motion.div>
+          </div>
+        </AnimatePresence>
+      </Portal>
+    );
+  };
+  
+  export default ExtendRentalModal;
