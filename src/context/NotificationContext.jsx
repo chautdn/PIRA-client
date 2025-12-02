@@ -148,10 +148,11 @@ export const NotificationProvider = ({ children }) => {
   const fetchUnreadCount = async () => {
     try {
       const count = await notificationService.getUnreadCount();
-      console.log("🔢 Unread count:", count);
-      dispatch({ type: "SET_UNREAD_COUNT", payload: count });
+      console.log('🔢 [NotificationContext] Unread count fetched:', count);
+      console.log('🔢 [NotificationContext] Dispatching SET_UNREAD_COUNT');
+      dispatch({ type: 'SET_UNREAD_COUNT', payload: count });
     } catch (error) {
-      console.error("Error fetching unread count:", error);
+      console.error('❌ [NotificationContext] Error fetching unread count:', error);
     }
   };
 
