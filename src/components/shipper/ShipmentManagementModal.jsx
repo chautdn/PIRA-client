@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 import ShipmentService from '../../services/shipment';
 import { formatCurrency } from '../../utils/constants';
 import { X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -147,12 +148,23 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       // Call API to cancel shipment
       await ShipmentService.cancelShipmentPickup(shipment._id);
 
+      // Show success toast
+      toast.success('✅ Đơn hàng đã bị hủy thành công!', {
+        duration: 3,
+        position: 'top-right'
+      });
+
       // Update status
       setCurrentStatus('CANCELLED');
       
-      onSuccess?.();
+      // Close modal after 1.5s
+      setTimeout(() => {
+        onClose?.();
+        onSuccess?.();
+      }, 1500);
     } catch (err) {
       setError(err.message || 'Lỗi khi hủy vận chuyển');
+      toast.error(err.message || 'Lỗi khi hủy vận chuyển');
     } finally {
       setLoading(false);
     }
@@ -161,6 +173,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   const handleRenterReject = async () => {
     if (!rejectNotes.trim()) {
       setError('Vui lòng nhập lý do renter không nhận hàng');
+      toast.error('Vui lòng nhập lý do renter không nhận hàng');
       return;
     }
 
@@ -169,7 +182,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       setError('');
 
       const reason = rejectReason === 'PRODUCT_DAMAGED' ? 'Sản phẩm có lỗi' : 'Không liên lạc được với renter';
-      const message = `${reason}: ${rejectNotes}`;
 
       // Call API to reject delivery with reason
       await ShipmentService.rejectDelivery(shipment._id, {
@@ -177,15 +189,30 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
         notes: rejectNotes
       });
 
+      // Show success toast with reason
+      const toastMessage = rejectReason === 'PRODUCT_DAMAGED' 
+        ? '✅ Đã ghi nhận sản phẩm có lỗi!'
+        : '✅ Đã ghi nhận renter không nhận hàng!';
+      
+      toast.success(toastMessage, {
+        duration: 3,
+        position: 'top-right'
+      });
+
       // Close dialog and update status
       setShowRenterRejectDialog(false);
       setRejectReason('PRODUCT_DAMAGED');
       setRejectNotes('');
-      setCurrentStatus('DELIVERY_FAILED');
+      setCurrentStatus(rejectReason === 'PRODUCT_DAMAGED' ? 'DELIVERY_FAILED' : 'FAILED');
       
-      onSuccess?.();
+      // Close modal after 1.5s
+      setTimeout(() => {
+        onClose?.();
+        onSuccess?.();
+      }, 1500);
     } catch (err) {
       setError(err.message || 'Lỗi khi ghi nhận renter không nhận hàng');
+      toast.error(err.message || 'Lỗi khi ghi nhận renter không nhận hàng');
     } finally {
       setLoading(false);
     }
