@@ -18,7 +18,7 @@ const ImagesStep = ({ formData, errors, handleInputChange }) => {
           Hình Ảnh Sản Phẩm
         </h2>
         <p className="text-gray-600">
-          Thêm ảnh chất lượng cao để thu hút khách hàng (tối đa 10 ảnh)
+          Thêm ảnh chất lượng cao để thu hút khách hàng (tối thiểu 3 ảnh, tối đa 10 ảnh)
         </p>
       </div>
 
