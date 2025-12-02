@@ -45,6 +45,7 @@ const Profile = () => {
     phone: "",
     address: {
       streetAddress: "",
+      ward: "",
       district: "",
       city: "",
       province: "",
@@ -122,6 +123,7 @@ const Profile = () => {
         phone: userData.phone || "",
         address: {
           streetAddress: userData.address?.streetAddress || "",
+          ward: userData.address?.ward || "",
           district: userData.address?.district || "",
           city: userData.address?.city || "",
           province: userData.address?.province || "",
@@ -1166,76 +1168,49 @@ const Profile = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Địa chỉ cụ thể (tự điền từ bản đồ)
                         </label>
-                        <input
-                          type="text"
-                          value={formData.address.streetAddress}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "address",
-                              "streetAddress",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Số nhà, tên đường"
-                        />
+                        <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
+                          {formData.address.streetAddress || "Chưa cập nhật"}
+                        </div>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Quận/Huyện
+                          Phường
                         </label>
-                        <input
-                          type="text"
-                          value={formData.address.district}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "address",
-                              "district",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập quận/huyện"
-                        />
+                        <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
+                          {formData.address.ward || "Chưa cập nhật"}
+                        </div>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Thành phố
                         </label>
-                        <input
-                          type="text"
-                          value={formData.address.city}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "address",
-                              "city",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập thành phố"
-                        />
+                        <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
+                          {formData.address.city || "Chưa cập nhật"}
+                        </div>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Tỉnh/Thành phố
                         </label>
-                        <input
-                          type="text"
-                          value={formData.address.province}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "address",
-                              "province",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                          placeholder="Nhập tỉnh/thành phố"
-                        />
+                        <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
+                          {formData.address.province || "Chưa cập nhật"}
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">ℹ️</span>
+                          <div>
+                            <p className="text-sm font-medium text-blue-900">Lưu ý:</p>
+                            <p className="text-sm text-blue-700 mt-1">
+                              Địa chỉ được tự động điền khi bạn chọn vị trí trên bản đồ VietMap. 
+                              Vui lòng chọn địa chỉ chính xác để hệ thống tính phí vận chuyển đúng.
+                            </p>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="flex justify-end pt-4">
