@@ -27,6 +27,7 @@ import OwnerProducts from "./pages/owner/OwnerProducts";
 import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
+import OwnerRentalRequestDetail from "./pages/owner/OwnerRentalRequestDetail";
 import ActiveRentals from "./pages/owner/ActiveRentals";
 import OwnerStatistics from "./pages/owner/OwnerStatistics";
 import ShipmentsPage from "./pages/shipper/Shipments";
@@ -230,6 +231,14 @@ export default function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <OwnerRentalRequests />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/owner/rental-requests/:subOrderId"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <OwnerRentalRequestDetail />
                       </RoleProtectedRoute>
                     }
                   />

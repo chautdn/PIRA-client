@@ -193,6 +193,30 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
             </div>
           )}
           
+          {/* Video bằng chứng */}
+          {thirdParty.evidence.videos?.length > 0 && (
+            <div className="mt-3">
+              <p className="text-purple-700 font-medium mb-2">
+                Video bằng chứng ({thirdParty.evidence.videos.length} video):
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {thirdParty.evidence.videos.map((video, idx) => (
+                  <div key={idx} className="relative">
+                    <video
+                      controls
+                      className="w-full rounded border-2 border-purple-300"
+                      style={{ maxHeight: '300px' }}
+                    >
+                      <source src={video} type="video/mp4" />
+                      Trình duyệt không hỗ trợ video.
+                    </video>
+                    <p className="text-xs text-purple-600 mt-1 text-center">Video {idx + 1}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {/* Tài liệu đính kèm */}
           {thirdParty.evidence.documents?.length > 0 && (
             <div className="mt-3">

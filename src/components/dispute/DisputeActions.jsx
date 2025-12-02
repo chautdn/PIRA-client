@@ -30,10 +30,13 @@ const DisputeActions = ({ dispute }) => {
   const [showAgreementResponseModal, setShowAgreementResponseModal] = useState(false);
   const [showEvidenceModal, setShowEvidenceModal] = useState(false);
 
-  const userCanRespond = canRespond(dispute, user?._id);
+  // Check if it's a shipper fault dispute - users cannot respond
+  const isShipperFault = dispute.type === 'DAMAGED_BY_SHIPPER';
+  
+  const userCanRespond = !isShipperFault && canRespond(dispute, user?._id);
   const userCanRespondToAdmin = canRespondToAdminDecision(dispute, user?._id);
-  const userCanPropose = canProposeAgreement(dispute, user?._id);
-  const userCanRespondToProposal = canRespondToAgreement(dispute, user?._id);
+  const userCanPropose = !isShipperFault && canProposeAgreement(dispute, user?._id);
+  const userCanRespondToProposal = !isShipperFault && canRespondToAgreement(dispute, user?._id);
   const userCanUploadEvidence = canUploadThirdPartyEvidence(dispute, user?._id);
 
   const handleRespondToDispute = async (data) => {
@@ -64,6 +67,23 @@ const DisputeActions = ({ dispute }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Hành động</h2>
+      
+      {/* Shipper fault notice */}
+      {isShipperFault && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start">
+            <svg className="h-5 w-5 text-blue-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">Tranh chấp lỗi vận chuyển</h3>
+              <p className="mt-1 text-sm text-blue-700">
+                Admin đang xử lý với đơn vị vận chuyển. Bạn sẽ nhận được thông báo khi có kết quả.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="space-y-3">
         {userCanRespond && (
