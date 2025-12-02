@@ -14,6 +14,16 @@ const OwnerRentalRequests = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
 
+  const filterOptions = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'PENDING_CONFIRMATION', label: 'Chờ xác nhận' },
+    { value: 'PARTIALLY_CONFIRMED', label: 'Xác nhận 1 phần' },
+    { value: 'OWNER_CONFIRMED', label: 'Đã xác nhận' },
+    { value: 'READY_FOR_CONTRACT', label: 'Sẵn sàng hợp đồng' },
+    { value: 'CONTRACT_SIGNED', label: 'Đã ký hợp đồng' },
+    { value: 'COMPLETED', label: 'Hoàn thành' }
+  ];
+
   useEffect(() => {
     if (user) {
       fetchSubOrders();
@@ -72,8 +82,11 @@ const OwnerRentalRequests = () => {
       PARTIALLY_CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Xác nhận 1 phần' },
       RENTER_REJECTED: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Người thuê từ chối' },
       READY_FOR_CONTRACT: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Sẵn sàng hợp đồng' },
+      PENDING_OWNER: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Chờ chủ ký' },
+      PENDING_RENTER: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Chờ người thuê ký' },
       CONTRACT_SIGNED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã ký hợp đồng' },
       DELIVERED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã giao' },
+      IN_PROGRESS: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Đang thuê' },
       COMPLETED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
       CANCELLED: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Đã hủy' }
     };
@@ -85,15 +98,6 @@ const OwnerRentalRequests = () => {
       </span>
     );
   };
-
-  const filterOptions = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'PENDING_CONFIRMATION', label: 'Chờ xác nhận' },
-    { value: 'OWNER_CONFIRMED', label: 'Đã xác nhận' },
-    { value: 'PARTIALLY_CONFIRMED', label: 'Xác nhận 1 phần' },
-    { value: 'CONTRACT_SIGNED', label: 'Đã ký hợp đồng' },
-    { value: 'COMPLETED', label: 'Hoàn thành' }
-  ];
 
   if (loading) {
     return (
@@ -195,25 +199,25 @@ const OwnerRentalRequests = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          {subOrder.products?.length || 0} sản phẩm
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Package size={16} className="text-gray-400 mr-2" />
+                          <span className="text-sm text-gray-900">{subOrder.products?.length || 0} sản phẩm</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-blue-600">
-                          {formatCurrency(
-                            (subOrder.pricing?.subtotalRental || 0) +
-                            (subOrder.pricing?.subtotalDeposit || 0) +
-                            (subOrder.pricing?.shippingFee || 0)
-                          )}
+                        <div className="flex items-center">
+                          <CreditCard size={16} className="text-gray-400 mr-2" />
+                          <span className="text-sm font-medium text-green-600">
+                            {formatCurrency(subOrder.totalAmount)}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(subOrder.status)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <ChevronRight size={20} className="text-gray-400" />
+                        <ChevronRight size={20} className="text-gray-400 inline" />
                       </td>
                     </tr>
                   ))}
@@ -229,54 +233,31 @@ const OwnerRentalRequests = () => {
                   onClick={() => navigate(`/owner/rental-requests/${subOrder._id}`)}
                   className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="font-semibold text-gray-900">{subOrder.subOrderNumber}</div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-900">{subOrder.subOrderNumber}</span>
                     {getStatusBadge(subOrder.status)}
                   </div>
-
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <User size={16} />
-                      <span>{subOrder.masterOrder?.renter?.profile?.fullName || 'N/A'}</span>
+                    <div className="flex items-center text-gray-600">
+                      <User size={14} className="mr-2" />
+                      {subOrder.masterOrder?.renter?.profile?.fullName || 'N/A'}
                     </div>
-
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Package size={16} />
-                      <span>{subOrder.products?.length || 0} sản phẩm</span>
+                    <div className="flex items-center text-gray-600">
+                      <Package size={14} className="mr-2" />
+                      {subOrder.products?.length || 0} sản phẩm
                     </div>
-
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Calendar size={16} />
-                      <span>{new Date(subOrder.createdAt).toLocaleDateString('vi-VN')}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <CreditCard size={16} className="text-gray-600" />
-                      <span className="font-semibold text-blue-600">
-                        {formatCurrency(
-                          (subOrder.pricing?.subtotalRental || 0) +
-                          (subOrder.pricing?.subtotalDeposit || 0) +
-                          (subOrder.pricing?.shippingFee || 0)
-                        )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">
+                        <CreditCard size={14} className="inline mr-2" />
+                        Tổng:
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        {formatCurrency(subOrder.totalAmount)}
                       </span>
                     </div>
                   </div>
-
-                  <div className="mt-3 flex items-center justify-end text-blue-600 text-sm font-medium">
-                    Xem chi tiết
-                    <ChevronRight size={16} className="ml-1" />
-                  </div>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* Summary */}
-        {subOrders.length > 0 && (
-          <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
-            <div className="text-sm text-gray-600">
-              Hiển thị <span className="font-semibold text-gray-900">{subOrders.length}</span> yêu cầu thuê
             </div>
           </div>
         )}
