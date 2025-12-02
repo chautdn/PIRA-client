@@ -28,14 +28,21 @@ ChartJS.register(
 
 const RevenueChart = ({ revenueData, loading, groupBy = 'month' }) => {
   const chartData = useMemo(() => {
+    console.log('🔍 RevenueChart - revenueData:', revenueData);
+    
     if (!revenueData || !revenueData.revenueByPeriod) {
+      console.log('⚠️ RevenueChart - No data or revenueByPeriod');
       return null;
     }
 
+    console.log('📊 RevenueChart - revenueByPeriod length:', revenueData.revenueByPeriod.length);
+    
     const periods = revenueData.revenueByPeriod.map((item) => item.period);
     const revenues = revenueData.revenueByPeriod.map((item) => item.totalRevenue);
     const netRevenues = revenueData.revenueByPeriod.map((item) => item.netRevenue);
     const orderCounts = revenueData.revenueByPeriod.map((item) => item.orderCount);
+
+    console.log('📈 Chart data prepared:', { periods, revenues, netRevenues });
 
     return {
       labels: periods,
@@ -117,12 +124,15 @@ const RevenueChart = ({ revenueData, loading, groupBy = 'month' }) => {
   }
 
   if (!chartData) {
+    console.log('❌ RevenueChart - chartData is null, showing no data message');
     return (
       <div className="bg-white rounded-lg shadow-md p-6 h-96 flex items-center justify-center">
         <p className="text-gray-500">Không có dữ liệu để hiển thị</p>
       </div>
     );
   }
+
+  console.log('✅ RevenueChart - Rendering chart with data');
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">

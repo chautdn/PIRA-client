@@ -67,12 +67,18 @@ const OwnerStatistics = () => {
 
   const fetchRevenueStatistics = async () => {
     try {
+      console.log('🔄 Fetching revenue with filters:', filters);
       const response = await ownerStatisticsApi.getRevenueStatistics(filters);
+      console.log('📦 Revenue response:', response);
+      
       if (response.success) {
+        console.log('✅ Setting revenue data:', response.data);
         setRevenueData(response.data);
+      } else {
+        console.log('⚠️ Response success = false');
       }
     } catch (error) {
-      console.error('Error fetching revenue:', error);
+      console.error('❌ Error fetching revenue:', error);
     }
   };
 
