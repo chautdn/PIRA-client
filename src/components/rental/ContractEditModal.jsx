@@ -20,7 +20,13 @@ const ContractEditModal = ({ contractId, onClose, onSaved }) => {
     try {
       setLoading(true);
       const response = await rentalOrderService.getContractForEditing(contractId);
-      const contractData = response.metadata?.contract || response.data?.contract || response.contract;
+      
+      // Extract contract from response - handle both data and metadata structures
+      const contractData = response.metadata?.contract || response.data?.contract || response.contract || response;
+      
+      if (!contractData) {
+        throw new Error('Không nhận được dữ liệu hợp đồng từ server');
+      }
       
       setContract(contractData);
       
