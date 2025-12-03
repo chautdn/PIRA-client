@@ -4,30 +4,6 @@ import { MapPin, Eye } from "lucide-react";
 import promotionService from "../../services/promotion";
 
 const ProductCard = ({ product }) => {
-  // Get promotion tier badge
-  const getTierBadge = () => {
-    if (!product.isPromoted || !product.promotionTier) return null;
-
-    const config = promotionService.TIER_CONFIG[product.promotionTier];
-    if (!config) return null;
-
-    // Special styling for Tier 1 (Premium)
-    const isPremium = product.promotionTier === 1;
-
-    return (
-      <div
-        className={`absolute top-2 right-2 px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r ${
-          config.color
-        } text-white shadow-lg z-10 flex items-center gap-1 ${
-          isPremium ? "animate-pulse" : ""
-        }`}
-      >
-        <span className={isPremium ? "animate-bounce" : ""}>{config.icon}</span>
-        <span>{config.badge}</span>
-      </div>
-    );
-  };
-
   // Get card border and shadow classes based on promotion tier
   const getCardClasses = () => {
     if (!product.isPromoted || !product.promotionTier) {
@@ -74,9 +50,6 @@ const ProductCard = ({ product }) => {
       to={`/product/${product._id || product.id}`}
       className={`rounded-xl overflow-hidden bg-white transition-all duration-300 block ${getCardClasses()}`}
     >
-      {/* Promotion Badge */}
-      {product.isPromoted && getTierBadge()}
-
       {/* Product Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <img

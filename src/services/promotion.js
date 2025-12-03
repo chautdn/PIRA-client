@@ -68,10 +68,9 @@ const promotionService = {
   // Tier configuration for UI
   TIER_CONFIG: {
     1: {
-      name: "Cao Cấp",
+      name: "Được Chọn Nhiều",
       color: "from-yellow-400 to-yellow-600",
-      badge: "CAO CẤP",
-      icon: "👑",
+      badge: "ĐƯỢC CHỌN NHIỀU",
       borderColor: "border-yellow-400",
       shadowColor: "shadow-yellow-200",
       features: [
@@ -82,10 +81,9 @@ const promotionService = {
       ],
     },
     2: {
-      name: "Nổi Bật",
+      name: "Chủ Uy Tín",
       color: "from-gray-300 to-gray-500",
-      badge: "NỔI BẬT",
-      icon: "⭐",
+      badge: "CHỦ UY TÍN",
       borderColor: "border-gray-400",
       shadowColor: "shadow-gray-200",
       features: [
@@ -96,10 +94,9 @@ const promotionService = {
       ],
     },
     3: {
-      name: "Phổ Biến",
+      name: "Đánh Giá Tốt",
       color: "from-orange-400 to-orange-600",
-      badge: "PHỔ BIẾN",
-      icon: "🔥",
+      badge: "ĐÁNH GIÁ TỐT",
       borderColor: "border-orange-400",
       shadowColor: "shadow-orange-100",
       features: [
@@ -110,10 +107,9 @@ const promotionService = {
       ],
     },
     4: {
-      name: "Tăng Tốc",
+      name: "Đề Xuất",
       color: "from-blue-400 to-blue-600",
-      badge: "TĂNG TỐC",
-      icon: "⚡",
+      badge: "ĐỀ XUẤT",
       borderColor: "border-blue-400",
       shadowColor: "shadow-blue-100",
       features: [
@@ -124,10 +120,9 @@ const promotionService = {
       ],
     },
     5: {
-      name: "Cơ Bản",
+      name: "Mới Cập Nhật",
       color: "from-green-400 to-green-600",
-      badge: "CƠ BẢN",
-      icon: "✨",
+      badge: "MỚI CẬP NHẬT",
       borderColor: "border-green-400",
       shadowColor: "shadow-green-100",
       features: [

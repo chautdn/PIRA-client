@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { productService } from '../services/product';
 import { reviewService } from '../services/review';
+import recommendationService from '../services/recommendation';
 import { useCart } from '../context/CartContext';
 import { cartApiService } from '../services/cartApi';
 import { useAuth } from '../hooks/useAuth'; // Added for authentication
@@ -52,6 +53,11 @@ export default function ProductDetail() {
   const [myCompletedOrders, setMyCompletedOrders] = useState([]);
   const [showKycWarningModal, setShowKycWarningModal] = useState(false);
   const [kycMissingRequirements, setKycMissingRequirements] = useState([]);
+  const [ownerHotProducts, setOwnerHotProducts] = useState([]);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loadingCarousels, setLoadingCarousels] = useState(false);
+  const hotProductsScrollRef = useRef(null);
+  const relatedProductsScrollRef = useRef(null);
 
   // Check if current user is the product owner
   const isOwner = user && product?.owner?._id === user._id;
@@ -59,6 +65,43 @@ export default function ProductDetail() {
   useEffect(() => {
     fetchProduct();
   }, [id]);
+
+  // Fetch owner hot products and related products
+  useEffect(() => {
+    if (product?._id && product?.owner?._id) {
+      fetchOwnerHotProducts();
+      fetchRelatedProducts();
+    }
+  }, [product?._id, product?.owner?._id]);
+
+  // Auto-scroll carousels
+  useEffect(() => {
+    const scrollInterval = setInterval(() => {
+      // Scroll hot products
+      if (hotProductsScrollRef.current && ownerHotProducts.length > 0) {
+        const container = hotProductsScrollRef.current;
+        const scrollAmount = container.offsetWidth;
+        if (container.scrollLeft + container.offsetWidth >= container.scrollWidth - 10) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
+
+      // Scroll related products
+      if (relatedProductsScrollRef.current && relatedProducts.length > 0) {
+        const container = relatedProductsScrollRef.current;
+        const scrollAmount = container.offsetWidth;
+        if (container.scrollLeft + container.offsetWidth >= container.scrollWidth - 10) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
+    }, 3000); // Auto-scroll every 3 seconds
+
+    return () => clearInterval(scrollInterval);
+  }, [ownerHotProducts.length, relatedProducts.length]);
 
   // Calculate rental days when dates change
   useEffect(() => {
@@ -638,11 +681,71 @@ export default function ProductDetail() {
       console.log('Product loaded:', productData);
       console.log('Product pricing:', productData?.pricing);
       console.log('Daily rate:', productData?.pricing?.dailyRate);
+
+      // Track category click for recommendation (only if user is logged in)
+      if (user && productData?.category?._id) {
+        try {
+          await recommendationService.trackCategoryClick(productData.category._id);
+          console.log('Category click tracked for recommendation:', productData.category._id);
+        } catch (trackError) {
+          // Silent fail - don't affect user experience if tracking fails
+          console.error('Failed to track category click:', trackError);
+        }
+      }
     } catch (error) {
       console.error('Error fetching product:', error);
       setError('Không thể tải thông tin sản phẩm');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOwnerHotProducts = async () => {
+    if (!product?.owner?._id) return;
+    try {
+      setLoadingCarousels(true);
+      const response = await recommendationService.getProductsByOwner(product.owner._id, {
+        hotOnly: true,
+        limit: 10
+      });
+      if (response.success || response.metadata) {
+        const data = response.metadata || response.data || response;
+        // Exclude current product
+        const filtered = (data.products || []).filter(p => p._id !== product._id);
+        setOwnerHotProducts(filtered);
+      }
+    } catch (error) {
+      console.error('Error fetching owner hot products:', error);
+    } finally {
+      setLoadingCarousels(false);
+    }
+  };
+
+  const fetchRelatedProducts = async () => {
+    if (!product?._id) return;
+    try {
+      setLoadingCarousels(true);
+      // Try to get products from same subcategory first, fallback to category
+      const categoryId = product.subCategory?._id || product.category?._id;
+      if (!categoryId) return;
+
+      const response = await productService.list({
+        category: categoryId,
+        limit: 10,
+        sort: 'metrics.averageRating',
+        order: 'desc'
+      });
+      
+      if (response.data) {
+        const products = response.data.data?.products || response.data.products || response.data;
+        // Exclude current product
+        const filtered = (Array.isArray(products) ? products : []).filter(p => p._id !== product._id);
+        setRelatedProducts(filtered);
+      }
+    } catch (error) {
+      console.error('Error fetching related products:', error);
+    } finally {
+      setLoadingCarousels(false);
     }
   };
 
@@ -1842,7 +1945,7 @@ export default function ProductDetail() {
                         {product.owner.profile?.firstName?.[0] || product.owner.email[0].toUpperCase()}
                       </span>
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="font-bold text-gray-900 text-lg">
                         {product.owner.profile?.firstName} {product.owner.profile?.lastName}
                       </div>
@@ -1855,6 +1958,19 @@ export default function ProductDetail() {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* View All Products Button */}
+                  <motion.button
+                    onClick={() => navigate(`/owner/${product.owner._id}/products`)}
+                    className="mt-4 w-full border-2 border-green-500 text-green-600 hover:bg-green-50 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    Xem tất cả sản phẩm của chủ sở hữu
+                  </motion.button>
                 </div>
               )}
 
@@ -2251,6 +2367,230 @@ export default function ProductDetail() {
         onClose={() => setShowKycWarningModal(false)}
         missingRequirements={kycMissingRequirements}
       />
+
+      {/* Owner Hot Products Carousel */}
+      {!loading && product && ownerHotProducts.length > 0 && (
+        <motion.div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                🔥 Sản phẩm HOT của{' '}
+                <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  {product.owner?.profile?.fullName || product.owner?.email?.split('@')[0]}
+                </span>
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">Các sản phẩm được đánh giá cao nhất</p>
+            </div>
+            <Link
+              to={`/owner/${product.owner._id}/products`}
+              className="text-green-600 hover:text-green-700 font-medium text-sm flex items-center gap-1 transition-colors"
+            >
+              Xem tất cả
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+          <div className="relative">
+            {/* Left Arrow */}
+            <button
+              onClick={() => {
+                if (hotProductsScrollRef.current) {
+                  hotProductsScrollRef.current.scrollBy({ left: -280, behavior: 'smooth' });
+                }
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all hover:scale-110"
+              aria-label="Previous"
+            >
+              <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            {/* Right Arrow */}
+            <button
+              onClick={() => {
+                if (hotProductsScrollRef.current) {
+                  hotProductsScrollRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+                }
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all hover:scale-110"
+              aria-label="Next"
+            >
+              <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Scroll Container */}
+            <div 
+            ref={hotProductsScrollRef}
+            className="relative overflow-x-auto pb-4 scroll-smooth"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onMouseEnter={() => hotProductsScrollRef.current?.style.setProperty('--pause', 'paused')}
+            onMouseLeave={() => hotProductsScrollRef.current?.style.setProperty('--pause', 'running')}
+          >
+            <div className="flex gap-4" style={{ scrollSnapType: 'x mandatory' }}>
+              {ownerHotProducts.map((item, index) => (
+                <motion.div
+                  key={item._id}
+                  className="flex-shrink-0 w-64"
+                  style={{ scrollSnapAlign: 'start' }}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ y: -5 }}
+                >
+                  <Link to={`/product/${item._id}`} className="block bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden h-full">
+                    <div className="aspect-square overflow-hidden bg-gray-100">
+                      <img
+                        src={item.images?.[0]?.url || item.images?.[0] || 'https://via.placeholder.com/400x400?text=No+Image'}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x400?text=No+Image'; }}
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 h-12">
+                        {item.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-yellow-400">⭐</span>
+                          <span className="font-medium text-gray-700">
+                            {item.metrics?.averageRating?.toFixed(1) || '0.0'}
+                          </span>
+                        </div>
+                        <span className="text-gray-400 text-sm">
+                          ({item.metrics?.reviewCount || 0})
+                        </span>
+                      </div>
+                      <p className="text-green-600 font-bold text-lg">
+                        {new Intl.NumberFormat('vi-VN').format(item.pricing?.dailyRate || 0)}đ
+                        <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                      </p>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Related Products Carousel */}
+      {!loading && product && relatedProducts.length > 0 && (
+        <motion.div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              📦 Sản phẩm liên quan trong{' '}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {product.subCategory?.name || product.category?.name}
+              </span>
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">Khám phá thêm sản phẩm tương tự</p>
+          </div>
+          <div className="relative">
+            {/* Left Arrow */}
+            <button
+              onClick={() => {
+                if (relatedProductsScrollRef.current) {
+                  relatedProductsScrollRef.current.scrollBy({ left: -280, behavior: 'smooth' });
+                }
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all hover:scale-110"
+              aria-label="Previous"
+            >
+              <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            {/* Right Arrow */}
+            <button
+              onClick={() => {
+                if (relatedProductsScrollRef.current) {
+                  relatedProductsScrollRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+                }
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all hover:scale-110"
+              aria-label="Next"
+            >
+              <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Scroll Container */}
+            <div 
+            ref={relatedProductsScrollRef}
+            className="relative overflow-x-auto pb-4 scroll-smooth"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onMouseEnter={() => relatedProductsScrollRef.current?.style.setProperty('--pause', 'paused')}
+            onMouseLeave={() => relatedProductsScrollRef.current?.style.setProperty('--pause', 'running')}
+          >
+            <div className="flex gap-4" style={{ scrollSnapType: 'x mandatory' }}>
+              {relatedProducts.map((item, index) => (
+                <motion.div
+                  key={item._id}
+                  className="flex-shrink-0 w-64"
+                  style={{ scrollSnapAlign: 'start' }}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ y: -5 }}
+                >
+                  <Link to={`/product/${item._id}`} className="block bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden h-full">
+                    <div className="aspect-square overflow-hidden bg-gray-100">
+                      <img
+                        src={item.images?.[0]?.url || item.images?.[0] || 'https://via.placeholder.com/400x400?text=No+Image'}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/400x400?text=No+Image'; }}
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 h-12">
+                        {item.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-yellow-400">⭐</span>
+                          <span className="font-medium text-gray-700">
+                            {item.metrics?.averageRating?.toFixed(1) || '0.0'}
+                          </span>
+                        </div>
+                        <span className="text-gray-400 text-sm">
+                          ({item.metrics?.reviewCount || 0})
+                        </span>
+                      </div>
+                      <p className="text-green-600 font-bold text-lg">
+                        {new Intl.NumberFormat('vi-VN').format(item.pricing?.dailyRate || 0)}đ
+                        <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                      </p>
+                      <div className="mt-2 text-xs text-gray-500">
+                        Từ: {item.owner?.profile?.fullName || item.owner?.email?.split('@')[0]}
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
