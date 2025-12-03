@@ -391,6 +391,13 @@ const RentalOrderDetailPage = () => {
                   <RotateCcw className="w-5 h-5" />
                   <span>Trả hàng sớm</span>
                 </button>
+                <button
+                  onClick={() => setShowShipmentModal(true)}
+                  className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 flex items-center space-x-2"
+                >
+                  <Package className="w-5 h-5" />
+                  <span>Quản lí vận chuyển</span>
+                </button>
               </>
             )}
 
@@ -1227,6 +1234,15 @@ const RentalOrderDetailPage = () => {
             setShowExtendRentalModal(false);
             loadOrderDetail(id);
           }}
+        />
+      )}
+
+      {/* Renter Shipment Modal */}
+      {showShipmentModal && currentOrder && (
+        <RenterShipmentModal
+          isOpen={showShipmentModal}
+          onClose={() => setShowShipmentModal(false)}
+          masterOrderId={currentOrder._id}
         />
       )}
 

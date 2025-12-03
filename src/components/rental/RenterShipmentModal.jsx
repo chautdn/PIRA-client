@@ -4,22 +4,25 @@ import { toast } from 'react-hot-toast';
 import ShipmentService from '../../services/shipment';
 import rentalOrderService from '../../services/rentalOrder';
 
-export default function RenterShipmentModal({ isOpen, onClose, masterOrder, onConfirmReceived }) {
+export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, masterOrder, onConfirmReceived }) {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
+  // Use either masterOrderId or masterOrder._id
+  const orderId = masterOrderId || masterOrder?._id;
+
   useEffect(() => {
-    if (isOpen && masterOrder?._id) {
+    if (isOpen && orderId) {
       loadShipments();
     }
-  }, [isOpen, masterOrder?._id]);
+  }, [isOpen, orderId]);
 
   const loadShipments = async () => {
     setLoading(true);
     try {
       // Lấy danh sách shipment cho đơn hàng này
-      const response = await ShipmentService.getShipmentsByMasterOrder?.(masterOrder._id);
+      const response = await ShipmentService.getShipmentsByMasterOrder?.(orderId);
       if (response?.data) {
         // Lọc chỉ lấy DELIVERY shipments
         const deliveryShipments = response.data.filter(s => s.type === 'DELIVERY');

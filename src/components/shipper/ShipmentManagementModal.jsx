@@ -11,24 +11,17 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   const [deliveryImages, setDeliveryImages] = useState([]);
   const [proofData, setProofData] = useState(null);
   const [error, setError] = useState('');
-  const [currentStatus, setCurrentStatus] = useState(shipment?.status);
+  const [currentStatus, setCurrentStatus] = useState(shipment?.status || 'PENDING');
   
   // State for renter rejection
   const [showRenterRejectDialog, setShowRenterRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState('PRODUCT_DAMAGED'); // PRODUCT_DAMAGED or NO_CONTACT
   const [rejectNotes, setRejectNotes] = useState('');
 
-  // Load proof data when modal opens
-  useEffect(() => {
-    if (isOpen && shipment?._id) {
-      setCurrentStatus(shipment?.status);
-      loadProofData();
-    }
-  }, [isOpen, shipment?._id]);
-
-  const loadProofData = async () => {
+  const loadProofDataFn = async (shipmentId) => {
     try {
-      const data = await ShipmentService.getProof(shipment._id);
+      if (!shipmentId) return;
+      const data = await ShipmentService.getProof(shipmentId);
       setProofData(data.data || data);
       setPickupImages(data.data?.imagesBeforeDelivery || []);
       setDeliveryImages(data.data?.imagesAfterDelivery || []);
@@ -39,6 +32,14 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       setDeliveryImages([]);
     }
   };
+
+  // Load proof data when modal opens
+  useEffect(() => {
+    if (isOpen && shipment?._id) {
+      setCurrentStatus(shipment.status);
+      loadProofDataFn(shipment._id);
+    }
+  }, [isOpen, shipment?._id]);
 
   const handlePickupImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
@@ -79,7 +80,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       setCurrentStatus('IN_TRANSIT');
 
       // Reload proof data
-      await loadProofData();
+      await loadProofDataFn(shipment._id);
       onSuccess?.();
     } catch (err) {
       setError(err.message || 'Lỗi khi upload pickup');
@@ -127,7 +128,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       setCurrentStatus('DELIVERED');
 
       // Reload proof data
-      await loadProofData();
+      await loadProofDataFn(shipment._id);
       onSuccess?.();
     } catch (err) {
       setError(err.message || 'Lỗi khi upload delivery');
@@ -266,21 +267,23 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   // Check if delivery already uploaded (status is DELIVERED)
   const deliveryUploaded = currentStatus === 'DELIVERED';
 
-  if (!isOpen || !shipment) return null;
+  if (!isOpen || !shipment) {
+    return null;
+  }
 
-  const ownerName = shipment.subOrder?.masterOrder?.owner?.profile?.fullName ||
-                    shipment.subOrder?.masterOrder?.owner?.profile?.firstName ||
+  const ownerName = shipment?.subOrder?.masterOrder?.owner?.profile?.fullName ||
+                    shipment?.subOrder?.masterOrder?.owner?.profile?.firstName ||
                     'Chủ hàng';
   
-  const renterName = shipment.subOrder?.masterOrder?.renter?.profile?.fullName ||
-                     shipment.subOrder?.masterOrder?.renter?.profile?.firstName ||
+  const renterName = shipment?.subOrder?.masterOrder?.renter?.profile?.fullName ||
+                     shipment?.subOrder?.masterOrder?.renter?.profile?.firstName ||
                      'Người thuê';
 
-  const renterPhone = shipment.subOrder?.masterOrder?.renter?.phone || 'N/A';
-  const ownerPhone = shipment.subOrder?.masterOrder?.owner?.phone || 'N/A';
+  const renterPhone = shipment?.subOrder?.masterOrder?.renter?.phone || 'N/A';
+  const ownerPhone = shipment?.subOrder?.masterOrder?.owner?.phone || 'N/A';
   
   // Determine if this is a return shipment
-  const isReturnShipment = shipment.type === 'RETURN';
+  const isReturnShipment = shipment?.type === 'RETURN';
 
   return (
     <AnimatePresence>
