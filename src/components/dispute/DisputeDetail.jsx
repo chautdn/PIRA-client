@@ -8,7 +8,7 @@ import DisputeTimeline from './DisputeTimeline';
 import DisputeActions from './DisputeActions';
 import NegotiationRoom from './NegotiationRoom';
 import ThirdPartySection from './ThirdPartySection';
-import ExternalPaymentSection from './ExternalPaymentSection';
+import WalletDepositWarning from './WalletDepositWarning';
 
 const DisputeDetail = () => {
   const { disputeId } = useParams();
@@ -252,14 +252,12 @@ const DisputeDetail = () => {
               <NegotiationRoom dispute={currentDispute} />
             )}
 
-            {/* External Payment Section */}
-            {currentDispute.status === 'WAITING_EXTERNAL_PAYMENT' && (
-              <ExternalPaymentSection 
-                dispute={currentDispute} 
-                onUpdate={(updatedDispute) => {
-                  // Reload dispute detail sau khi update
-                  loadDisputeDetail(disputeId);
-                }}
+            {/* Wallet Deposit Warning for RESPONDENT_ACCEPTED */}
+            {currentDispute.status === 'RESPONDENT_ACCEPTED' && currentDispute.repairCost > 0 && (
+              <WalletDepositWarning 
+                dispute={currentDispute}
+                depositAmount={currentDispute.subOrder?.products?.[currentDispute.productIndex]?.totalDeposit || 0}
+                repairCost={currentDispute.repairCost}
               />
             )}
 

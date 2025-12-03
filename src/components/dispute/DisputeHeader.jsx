@@ -183,7 +183,7 @@ const DisputeHeader = ({ dispute }) => {
                           </div>
                           <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
                             <p className="text-xs text-red-700">
-                              ⚠️ <strong>Tiền cọc không đủ!</strong> Renter cần thanh toán thêm <strong>{additionalPayment.toLocaleString('vi-VN')}đ</strong> ngoài hệ thống (chuyển khoản trực tiếp cho owner).
+                              ⚠️ <strong>Tiền cọc không đủ!</strong> Renter cần nạp thêm <strong>{additionalPayment.toLocaleString('vi-VN')}đ</strong> vào ví để admin có thể xử lý thanh toán.
                             </p>
                           </div>
                         </>
