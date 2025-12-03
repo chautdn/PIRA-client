@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { productService } from "../services/product";
 import { categoryApi } from "../services/category.Api";
+import recommendationService from "../services/recommendation";
 import ProductCard from "../components/common/ProductCard";
 import VoiceSearch from "../components/common/VoiceSearch";
 import VisualSearch from "../components/common/VisualSearch";
 import { GoTriangleDown, GoTriangleRight } from "react-icons/go";
+import { FiTrendingUp, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 // === ACCORDION COMPONENT ===
 const Accordion = ({ title, children, defaultOpen = false }) => {
@@ -233,6 +235,11 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favorites, setFavorites] = useState(new Set());
+  const [trendingProducts, setTrendingProducts] = useState([]);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [carouselsLoading, setCarouselsLoading] = useState(false);
+  const trendingScrollRef = useRef(null);
+  const recommendedScrollRef = useRef(null);
   const [filters, setFilters] = useState({
     page: 1,
     limit: 12,
@@ -250,11 +257,40 @@ export default function ProductList() {
     window.scrollTo(0, 0);
     loadParentCategories();
     loadProducts();
+    loadTrendingProducts();
+    loadRecommendedProducts();
   }, []);
 
   useEffect(() => {
     loadProducts();
   }, [filters]);
+
+  // Auto-scroll carousels
+  useEffect(() => {
+    const scrollInterval = setInterval(() => {
+      if (trendingScrollRef.current && trendingProducts.length > 0) {
+        const container = trendingScrollRef.current;
+        const scrollAmount = container.offsetWidth;
+        if (container.scrollLeft + container.offsetWidth >= container.scrollWidth - 10) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
+
+      if (recommendedScrollRef.current && recommendedProducts.length > 0) {
+        const container = recommendedScrollRef.current;
+        const scrollAmount = container.offsetWidth;
+        if (container.scrollLeft + container.offsetWidth >= container.scrollWidth - 10) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(scrollInterval);
+  }, [trendingProducts.length, recommendedProducts.length]);
 
   const loadParentCategories = async () => {
     try {
@@ -334,6 +370,36 @@ export default function ProductList() {
       setProducts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTrendingProducts = async () => {
+    try {
+      setCarouselsLoading(true);
+      const response = await recommendationService.getHotProducts({ limit: 12 });
+      if (response.success || response.metadata) {
+        const data = response.metadata || response.data || response;
+        setTrendingProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error('Error loading trending products:', error);
+    } finally {
+      setCarouselsLoading(false);
+    }
+  };
+
+  const loadRecommendedProducts = async () => {
+    try {
+      setCarouselsLoading(true);
+      const response = await recommendationService.getRecommendedProducts({ limit: 12 });
+      if (response.success || response.metadata) {
+        const data = response.metadata || response.data || response;
+        setRecommendedProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error('Error loading recommended products:', error);
+    } finally {
+      setCarouselsLoading(false);
     }
   };
 
@@ -595,6 +661,213 @@ export default function ProductList() {
             )}
           </section>
         </div>
+
+        {/* Trending Products Carousel */}
+        {!loading && trendingProducts.length > 0 && (
+          <motion.div
+            className="mt-16"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                  <FiTrendingUp className="w-8 h-8 text-orange-600" />
+                  <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                    Sản phẩm thịnh hành
+                  </span>
+                </h2>
+                <p className="text-sm text-gray-600 mt-2">Sản phẩm được thuê nhiều nhất, đánh giá cao</p>
+              </div>
+            </div>
+            <div className="relative">
+              {/* Left Arrow */}
+              <button
+                onClick={() => {
+                  if (trendingScrollRef.current) {
+                    trendingScrollRef.current.scrollBy({ left: -280, behavior: 'smooth' });
+                  }
+                }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all hover:scale-110"
+                aria-label="Previous"
+              >
+                <FiChevronLeft className="w-6 h-6 text-gray-800" />
+              </button>
+              
+              {/* Right Arrow */}
+              <button
+                onClick={() => {
+                  if (trendingScrollRef.current) {
+                    trendingScrollRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+                  }
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all hover:scale-110"
+                aria-label="Next"
+              >
+                <FiChevronRight className="w-6 h-6 text-gray-800" />
+              </button>
+
+              {/* Scroll Container */}
+              <div 
+                ref={trendingScrollRef}
+                className="overflow-x-auto pb-4 scroll-smooth"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                onMouseEnter={() => trendingScrollRef.current?.style.setProperty('--pause', 'paused')}
+                onMouseLeave={() => trendingScrollRef.current?.style.setProperty('--pause', 'running')}
+              >
+                <div className="flex gap-4" style={{ scrollSnapType: 'x mandatory' }}>
+                  {trendingProducts.map((item, index) => (
+                    <motion.div
+                      key={item._id}
+                      className="flex-shrink-0 w-64"
+                      style={{ scrollSnapAlign: 'start' }}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ y: -5 }}
+                    >
+                      <Link to={`/product/${item._id}`} className="block bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden h-full">
+                        <div className="aspect-square overflow-hidden bg-gray-100">
+                          <img
+                            src={item.images?.[0]?.url || item.images?.[0] || 'https://via.placeholder.com/400x400?text=No+Image'}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.target.src = 'https://via.placeholder.com/400x400?text=No+Image'; }}
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 h-12">
+                            {item.title}
+                          </h3>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-1">
+                              <span className="text-yellow-400">⭐</span>
+                              <span className="font-medium text-gray-700">
+                                {item.metrics?.averageRating?.toFixed(1) || '0.0'}
+                              </span>
+                            </div>
+                            <span className="text-gray-400 text-sm">
+                              ({item.metrics?.reviewCount || 0})
+                            </span>
+                          </div>
+                          <p className="text-green-600 font-bold text-lg">
+                            {new Intl.NumberFormat('vi-VN').format(item.pricing?.dailyRate || 0)}đ
+                            <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                          </p>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Recommended Products Carousel */}
+        {!loading && recommendedProducts.length > 0 && (
+          <motion.div
+            className="mt-12 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                <FiStar className="w-8 h-8 text-purple-600" />
+                <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  Đề xuất dành cho bạn
+                </span>
+              </h2>
+              <p className="text-sm text-gray-600 mt-2">Dựa trên sở thích và lịch sử duyệt web của bạn</p>
+            </div>
+            <div className="relative">
+              {/* Left Arrow */}
+              <button
+                onClick={() => {
+                  if (recommendedScrollRef.current) {
+                    recommendedScrollRef.current.scrollBy({ left: -280, behavior: 'smooth' });
+                  }
+                }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all hover:scale-110"
+                aria-label="Previous"
+              >
+                <FiChevronLeft className="w-6 h-6 text-gray-800" />
+              </button>
+              
+              {/* Right Arrow */}
+              <button
+                onClick={() => {
+                  if (recommendedScrollRef.current) {
+                    recommendedScrollRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+                  }
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all hover:scale-110"
+                aria-label="Next"
+              >
+                <FiChevronRight className="w-6 h-6 text-gray-800" />
+              </button>
+
+              {/* Scroll Container */}
+              <div 
+                ref={recommendedScrollRef}
+                className="overflow-x-auto pb-4 scroll-smooth"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                onMouseEnter={() => recommendedScrollRef.current?.style.setProperty('--pause', 'paused')}
+                onMouseLeave={() => recommendedScrollRef.current?.style.setProperty('--pause', 'running')}
+              >
+                <div className="flex gap-4" style={{ scrollSnapType: 'x mandatory' }}>
+                  {recommendedProducts.map((item, index) => (
+                    <motion.div
+                      key={item._id}
+                      className="flex-shrink-0 w-64"
+                      style={{ scrollSnapAlign: 'start' }}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ y: -5 }}
+                    >
+                      <Link to={`/product/${item._id}`} className="block bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden h-full">
+                        <div className="aspect-square overflow-hidden bg-gray-100">
+                          <img
+                            src={item.images?.[0]?.url || item.images?.[0] || 'https://via.placeholder.com/400x400?text=No+Image'}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.target.src = 'https://via.placeholder.com/400x400?text=No+Image'; }}
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 h-12">
+                            {item.title}
+                          </h3>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-1">
+                              <span className="text-yellow-400">⭐</span>
+                              <span className="font-medium text-gray-700">
+                                {item.metrics?.averageRating?.toFixed(1) || '0.0'}
+                              </span>
+                            </div>
+                            <span className="text-gray-400 text-sm">
+                              ({item.metrics?.reviewCount || 0})
+                            </span>
+                          </div>
+                          <p className="text-green-600 font-bold text-lg">
+                            {new Intl.NumberFormat('vi-VN').format(item.pricing?.dailyRate || 0)}đ
+                            <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                          </p>
+                          <div className="mt-2 text-xs text-gray-500">
+                            Từ: {item.owner?.profile?.fullName || item.owner?.email?.split('@')[0]}
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

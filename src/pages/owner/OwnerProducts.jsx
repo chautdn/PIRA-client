@@ -476,11 +476,8 @@ export default function OwnerProducts() {
                   onPromote={handlePromote}
                 />
 
-                {/* Status Badge - Positioned to avoid conflict with promotion badge */}
+                {/* Status Badge */}
                 <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 items-end">
-                  {/* Promotion badge space - if product is promoted, status badge moves down */}
-                  {product.isPromoted && <div className="h-8"></div>}
-
                   {product.status === "ACTIVE" && (
                     <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
                       <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>

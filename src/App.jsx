@@ -18,6 +18,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Home from "./pages/Home";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
+import OwnerProductsPage from "./pages/OwnerProductsPage";
 import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
@@ -189,6 +190,10 @@ export default function App() {
                   <Route
                     path={ROUTES.PRODUCT_DETAIL}
                     element={<ProductDetail />}
+                  />
+                  <Route
+                    path="/owner/:ownerId/products"
+                    element={<OwnerProductsPage />}
                   />
                   <Route path={ROUTES.CART} element={<Cart />} />
                   <Route path={ROUTES.PROFILE} element={<Profile />} />

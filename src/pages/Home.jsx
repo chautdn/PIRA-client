@@ -148,13 +148,13 @@ export default function Home() {
 
   const getPromotionTierName = (tier) => {
     const tierNames = {
-      1: "Cao Cấp",
-      2: "Nổi Bật",
-      3: "Phổ Biến",
-      4: "Tăng Tốc",
-      5: "Cơ Bản",
+      1: "Được Chọn Nhiều",
+      2: "Chủ Uy Tín",
+      3: "Đánh Giá Tốt",
+      4: "Đề Xuất",
+      5: "Mới Cập Nhật",
     };
-    return tierNames[tier] || "Nổi Bật";
+    return tierNames[tier] || "Đề Xuất";
   };
 
   const getPromotionTierColor = (tier) => {
@@ -758,21 +758,6 @@ export default function Home() {
                             whileInView={{ opacity: 1 }}
                             transition={{ delay: idx * 0.05 }}
                           />
-
-                          {/* Promotion Badge with Tier */}
-                          <motion.div
-                            className={`absolute top-3 left-3 ${getPromotionTierColor(
-                              product.promotionTier
-                            )} px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm`}
-                            initial={{ scale: 0, rotate: -180 }}
-                            whileInView={{ scale: 1, rotate: 0 }}
-                            transition={{
-                              delay: idx * 0.05 + 0.2,
-                              type: "spring",
-                            }}
-                          >
-                            ⭐ {getPromotionTierName(product.promotionTier)}
-                          </motion.div>
 
                           {/* Position indicator */}
                           <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full">
