@@ -36,6 +36,9 @@ class PaymentService {
           orderNumber: orderData.orderNumber || `ORD-${Date.now()}`,
           description: orderData.description || `Thanh toán đơn thuê`,
           items: orderData.items || [],
+          totalDeposit: orderData.totalDeposit || 0,
+          totalRental: orderData.totalRental || 0,
+          totalShipping: orderData.totalShipping || 0,
         },
       });
       console.log("✅ Wallet payment processed:", response.data);
@@ -46,9 +49,7 @@ class PaymentService {
         error.response?.data?.message || "Không thể thanh toán bằng ví"
       );
     }
-  }
-
-  // Get wallet balance
+  } // Get wallet balance
   async getWalletBalance() {
     try {
       const response = await api.get("/payment/wallet/balance");

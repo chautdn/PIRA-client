@@ -209,7 +209,7 @@ const OwnerRentalRequests = () => {
                         <div className="flex items-center">
                           <CreditCard size={16} className="text-gray-400 mr-2" />
                           <span className="text-sm font-medium text-green-600">
-                            {formatCurrency(subOrder.totalAmount)}
+                            {formatCurrency(subOrder.pricing?.totalAmount)}
                           </span>
                         </div>
                       </td>

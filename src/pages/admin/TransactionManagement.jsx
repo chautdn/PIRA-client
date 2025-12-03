@@ -414,14 +414,16 @@ const TransactionManagement = () => {
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 max-w-xs">
                           {transaction.description || 
-                           (transaction.type === 'deposit' ? 'Nạp tiền vào ví hệ thống' :
+                           (transaction.type === 'deposit' ? 'Nạp tiền cọc vào ví hệ thống' :
                             transaction.type === 'withdrawal' ? 'Rút tiền từ ví hệ thống' :
                             transaction.type === 'wallet_topup' ? 'Nạp tiền vào ví qua website' :
                             transaction.type === 'wallet_withdrawal' ? 'Rút tiền từ ví qua website' :
                             transaction.type === 'order_payment' ? 'Thanh toán đơn hàng thuê' :
                             transaction.type === 'rental_payment' ? 'Thanh toán tiền thuê sản phẩm' :
                             transaction.type === 'rental_deposit' ? 'Đặt cọc thuê sản phẩm' :
+                            transaction.type === 'refund' ? 'Hoàn tiền order/payment' :
                             'Giao dịch hệ thống')}
+                            
                         </div>
                         {transaction.reference?.rentalOrderId && (
                           <div className="text-xs text-blue-600">
@@ -430,8 +432,8 @@ const TransactionManagement = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <span className={transaction.type === 'withdrawal' ? 'text-red-600' : 'text-green-600'}>
-                          {transaction.type === 'withdrawal' ? '-' : '+'}
+                        <span className={transaction.type === 'withdrawal' || transaction.type === 'refund' ? 'text-red-600' : 'text-green-600'}>
+                          {transaction.type === 'withdrawal' || transaction.type === 'refund' ? '-' : '+'}
                           {formatAmount(transaction.amount)}
                         </span>
                       </td>
