@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useDispute } from '../../context/DisputeContext';
 import { toast } from 'react-hot-toast';
 import { formatDate } from '../../utils/disputeHelpers';
 import OwnerFinalDecisionModal from './OwnerFinalDecisionModal';
+import chatService from '../../services/chat';
 
 const NegotiationRoom = ({ dispute }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { respondToOwnerDecision, escalateToThirdParty } = useDispute();
   const [showDecisionModal, setShowDecisionModal] = useState(false);
@@ -27,15 +30,41 @@ const NegotiationRoom = ({ dispute }) => {
   const hoursRemaining = Math.max(0, Math.floor((deadline - now) / (1000 * 60 * 60)));
   const isExpired = hoursRemaining === 0;
 
-  const handleOpenChat = () => {
-    console.log('🔍 Negotiation data:', negotiation);
-    console.log('🔍 ChatRoomId:', negotiation?.chatRoomId);
-    
-    if (negotiation?.chatRoomId) {
-      window.location.href = `/chat/${negotiation.chatRoomId}`;
-    } else {
-      toast.error('Phòng chat chưa được tạo. Vui lòng liên hệ admin.');
-      console.error('❌ ChatRoomId không tồn tại trong negotiation:', negotiation);
+  const handleOpenChat = async () => {
+    if (!user) {
+      toast.error('Vui lòng đăng nhập');
+      return;
+    }
+
+    try {
+      // Lấy ID của người còn lại (không phải user hiện tại)
+      const otherUserId = isComplainant 
+        ? dispute.respondent._id  // Nếu user là complainant thì chat với respondent
+        : dispute.complainant._id; // Nếu user là respondent thì chat với complainant
+      
+      // Lấy product ID từ dispute
+      const productId = dispute.productId;
+      
+      if (!otherUserId || !productId) {
+        toast.error('Không tìm thấy thông tin cần thiết');
+        return;
+      }
+      
+      // Tạo hoặc lấy conversation với người còn lại và product (giống ProductDetail)
+      const conversationResponse = await chatService.createOrGetConversation(
+        otherUserId,
+        productId
+      );
+      
+      if (conversationResponse?.data?._id) {
+        // Navigate to chat với query param để trigger refetch
+        navigate(`/chat/${conversationResponse.data._id}?refetch=true`);
+      } else {
+        throw new Error('Không thể lấy conversation ID');
+      }
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      toast.error('Không thể mở chat. Vui lòng thử lại.');
     }
   };
 

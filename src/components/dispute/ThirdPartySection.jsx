@@ -122,21 +122,6 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
         </div>
       )}
 
-      {/* Upload evidence section cho user */}
-      {!isAdmin && isShipperInfoShared && !isEvidenceUploaded && dispute.status === 'THIRD_PARTY_ESCALATED' && (
-        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <p className="text-orange-800 mb-3">
-            Bạn có thể upload bằng chứng kết quả từ bên thứ 3. Hạn cuối: {formatDate(evidenceDeadline)}
-          </p>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium"
-          >
-            Upload bằng chứng
-          </button>
-        </div>
-      )}
-
       {/* Evidence uploaded status */}
       {isEvidenceUploaded && thirdParty?.evidence && (
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 space-y-4">
