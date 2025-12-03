@@ -121,7 +121,7 @@ const ImageUploader = ({ images, onChange, error }) => {
             <p
               className={`text-xs ${error ? "text-red-500" : "text-gray-500"}`}
             >
-              PNG, JPG, GIF tối đa 10MB (Tối đa 10 ảnh)
+              PNG, JPG, GIF tối đa 10MB (Tối thiểu 3 ảnh, tối đa 10 ảnh)
             </p>
           </div>
           <input
@@ -211,10 +211,15 @@ const ImageUploader = ({ images, onChange, error }) => {
 
       {/* Image Count Info */}
       {images.length > 0 && (
-        <div className="text-sm text-gray-500 text-center">
-          {images.length} / 10 images uploaded
+        <div className="text-sm text-center">
+          <span className={images.length >= 3 ? "text-green-600 font-medium" : "text-orange-600 font-medium"}>
+            {images.length} / 10 images uploaded
+            {images.length < 3 && (
+              <span className="ml-2">⚠️ Cần thêm {3 - images.length} ảnh nữa</span>
+            )}
+          </span>
           {images.length > 0 && (
-            <span className="ml-2">
+            <span className="ml-2 text-gray-500">
               • {images.filter((img) => img.isMain).length > 0 ? "✅" : "⚠️"}{" "}
               Main image selected
             </span>

@@ -5,9 +5,11 @@ import toast from 'react-hot-toast';
 const ThirdPartyEvidenceModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     description: '',
-    images: []
+    images: [],
+    videos: []
   });
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedVideos, setSelectedVideos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -34,29 +36,61 @@ const ThirdPartyEvidenceModal = ({ isOpen, onClose, onSubmit }) => {
     }
   };
 
+  const uploadVideos = async (files) => {
+    if (!files || files.length === 0) return [];
+    
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('videos', file);
+    });
+
+    try {
+      const response = await api.post('/upload/videos', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data.videos || [];
+    } catch (error) {
+      console.error('Upload video error:', error);
+      throw new Error('Failed to upload videos');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      // Upload images first
       let imageUrls = [];
+      let videoResults = [];
+      
+      setIsUploading(true);
+      
       if (selectedFiles.length > 0) {
-        setIsUploading(true);
-        toast.loading('Đang upload ảnh...', { id: 'upload' });
+        toast.loading('Đang upload ảnh...', { id: 'upload-images' });
         imageUrls = await uploadImages(selectedFiles);
-        toast.success('Upload ảnh thành công!', { id: 'upload' });
-        setIsUploading(false);
+        toast.success(`Upload ${imageUrls.length} ảnh thành công!`, { id: 'upload-images' });
       }
+      
+      if (selectedVideos.length > 0) {
+        toast.loading('Đang upload video...', { id: 'upload-videos' });
+        videoResults = await uploadVideos(selectedVideos);
+        toast.success(`Upload ${videoResults.length} video thành công!`, { id: 'upload-videos' });
+      }
+      
+      setIsUploading(false);
 
       await onSubmit({
         officialDecision: formData.description,
-        photos: imageUrls
+        photos: imageUrls,
+        videos: videoResults.map(v => v.url)
       });
       onClose();
       // Reset form
-      setFormData({ description: '', images: [] });
+      setFormData({ description: '', images: [], videos: [] });
       setSelectedFiles([]);
+      setSelectedVideos([]);
     } catch (error) {
       console.error('Error uploading evidence:', error);
       toast.error(error.message || 'Upload thất bại');
@@ -76,6 +110,31 @@ const ThirdPartyEvidenceModal = ({ isOpen, onClose, onSubmit }) => {
     setFormData(prev => ({
       ...prev,
       images: files.map(f => URL.createObjectURL(f))
+    }));
+  };
+
+  const handleVideoChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 3) {
+      toast.error('Tối đa 3 video');
+      return;
+    }
+    
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    const oversizedFiles = files.filter(f => f.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      toast.error('Mỗi video tối đa 50MB');
+      return;
+    }
+    
+    setSelectedVideos(files);
+    setFormData(prev => ({
+      ...prev,
+      videos: files.map(f => ({
+        name: f.name,
+        size: (f.size / (1024 * 1024)).toFixed(2) + ' MB',
+        url: URL.createObjectURL(f)
+      }))
     }));
   };
 
@@ -158,6 +217,53 @@ const ThirdPartyEvidenceModal = ({ isOpen, onClose, onSubmit }) => {
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                       >
                         ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Videos */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Video bằng chứng
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="video/*"
+                onChange={handleVideoChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Tải lên tối đa 3 video. Mỗi video tối đa 50MB
+              </p>
+              {formData.videos.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {formData.videos.map((video, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                      <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{video.name}</p>
+                        <p className="text-xs text-gray-500">{video.size}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            videos: prev.videos.filter((_, i) => i !== idx)
+                          }));
+                          setSelectedVideos(prev => prev.filter((_, i) => i !== idx));
+                        }}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
                       </button>
                     </div>
                   ))}

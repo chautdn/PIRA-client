@@ -13,7 +13,6 @@ import RenterShipmentModal from "../components/rental/RenterShipmentModal";
 import OrderFilters from "../components/rental/OrderFilters";
 import OrdersTable from "../components/rental/OrdersTable";
 import OrderDetailModal from "../components/rental/OrderDetailModal";
-import EarlyReturnsTab from "../components/rental/EarlyReturnsTab";
 import { Package } from "lucide-react";
 
 const RentalOrdersPage = () => {
@@ -33,8 +32,6 @@ const RentalOrdersPage = () => {
   const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
-  const [loadingEarlyReturns, setLoadingEarlyReturns] = useState(false);
-  const [activeTab, setActiveTab] = useState("orders"); // 'orders' or 'early-returns'
 
   // Load orders on mount and status change
   useEffect(() => {
@@ -44,7 +41,6 @@ const RentalOrdersPage = () => {
 
   // Load early return requests
   const loadEarlyReturnRequests = async () => {
-    setLoadingEarlyReturns(true);
     try {
       const response = await earlyReturnApi.getRenterRequests();
 
@@ -54,8 +50,6 @@ const RentalOrdersPage = () => {
       setEarlyReturnRequests(requests);
     } catch (error) {
       console.error("Failed to load early return requests:", error);
-    } finally {
-      setLoadingEarlyReturns(false);
     }
   };
 
@@ -156,6 +150,10 @@ const RentalOrdersPage = () => {
       navigate("/rental-orders", { replace: true });
       return;
     }
+    const formatTime = (timeStr) => {
+      const date = new Date(timeStr);
+      return date.toLocaleString();
+    };
 
     // Check for success messages from URL params
     const signed = searchParams.get("signed");
@@ -189,17 +187,23 @@ const RentalOrdersPage = () => {
 
   const handleRenterConfirm = async (subOrderId) => {
     try {
-      toast.loading('Đang gửi xác nhận...');
+      toast.loading("Đang gửi xác nhận...");
       await rentalOrderService.renterConfirmDelivered(subOrderId);
       toast.dismiss();
-      toast.success('Bạn đã xác nhận đã nhận hàng.');
+      toast.success("Bạn đã xác nhận đã nhận hàng.");
       // reload orders and early return requests
-      loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+      loadMyOrders({
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      });
       loadEarlyReturnRequests();
     } catch (error) {
       toast.dismiss();
-      console.error('Renter confirm failed', error);
-      toast.error(error.response?.data?.message || error.message || 'Không thể xác nhận đã nhận hàng');
+      console.error("Renter confirm failed", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể xác nhận đã nhận hàng"
+      );
     }
   };
 
@@ -221,7 +225,9 @@ const RentalOrdersPage = () => {
 
   const handleShipmentConfirmReceived = async () => {
     // Reload orders and early returns
-    await loadMyOrders({ status: statusFilter !== 'all' ? statusFilter : undefined });
+    await loadMyOrders({
+      status: statusFilter !== "all" ? statusFilter : undefined,
+    });
     loadEarlyReturnRequests();
   };
 
@@ -297,139 +303,112 @@ const RentalOrdersPage = () => {
             </button>
           </div>
         </div>
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-2xl shadow-lg mb-6 p-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setActiveTab("orders")}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                activeTab === "orders"
-                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              📦 Đơn Thuê Của Tôi
-            </button>
-            <button
-              onClick={() => setActiveTab("early-returns")}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                activeTab === "early-returns"
-                  ? "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              🔄 Yêu Cầu Trả Sớm{" "}
-              {earlyReturnRequests.length > 0 &&
-                `(${earlyReturnRequests.length})`}
-            </button>
-          </div>
-        </div>
 
-        {/* Orders List */}
+        {/* Content */}
         <>
-            <div className="bg-white rounded-lg shadow-md mb-6">
-              <div className="border-b border-gray-200">
-                <div className="px-6 py-4">
-                  <h2 className="text-xl font-semibold text-blue-600">
-                    Đơn thuê của tôi ({(myOrders || []).length})
-                  </h2>
-                </div>
+          <div className="bg-white rounded-lg shadow-md mb-6">
+            <div className="border-b border-gray-200">
+              <div className="px-6 py-4">
+                <h2 className="text-xl font-semibold text-blue-600">
+                  Đơn thuê của tôi ({(myOrders || []).length})
+                </h2>
               </div>
-
-              {/* Filters */}
-              <OrderFilters
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-                filteredCount={filteredOrders.length}
-                totalCount={(currentOrders || []).length}
-              />
             </div>
 
-            {/* Orders List */}
-            {isLoadingOrders ? (
-              <div className="bg-white rounded-lg shadow-md p-8">
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                  <span className="ml-3">Đang tải đơn hàng...</span>
-                </div>
-              </div>
-            ) : filteredOrders.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                  {searchQuery || statusFilter !== "all"
-                    ? "Không tìm thấy đơn hàng nào"
-                    : "Chưa có đơn hàng nào"}
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!
-                </p>
-                <button
-                  onClick={() => navigate("/products")}
-                  className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-                >
-                  Xem sản phẩm
-                </button>
-              </div>
-            ) : (
-              <OrdersTable
-                orders={filteredOrders}
-                onViewDetail={handleViewDetail}
-                onEarlyReturn={handleEarlyReturn}
-                onSelectOrder={setSelectedOrder}
-                earlyReturnRequests={earlyReturnRequests}
-                onRenterConfirm={handleRenterConfirm}
-              />
-            )}
+            {/* Filters */}
+            <OrderFilters
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              filteredCount={filteredOrders.length}
+              totalCount={(currentOrders || []).length}
+            />
+          </div>
 
-            {/* Pagination */}
-            {currentPagination.pages && currentPagination.pages > 1 && (
-              <div className="mt-8 flex items-center justify-center space-x-2">
-                <button
-                  onClick={() => {
-                    const newPage = Math.max(
-                      1,
-                      (currentPagination.page || 1) - 1
-                    );
-                    loadMyOrders({
-                      page: newPage,
-                      status: statusFilter !== "all" ? statusFilter : undefined,
-                    });
-                  }}
-                  disabled={(currentPagination.page || 1) === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Trước
-                </button>
-
-                <span className="px-4 py-2">
-                  Trang {currentPagination.page || 1} /{" "}
-                  {currentPagination.pages || 1}
-                </span>
-
-                <button
-                  onClick={() => {
-                    const newPage = Math.min(
-                      currentPagination.pages || 1,
-                      (currentPagination.page || 1) + 1
-                    );
-                    loadMyOrders({
-                      page: newPage,
-                      status: statusFilter !== "all" ? statusFilter : undefined,
-                    });
-                  }}
-                  disabled={
-                    (currentPagination.page || 1) ===
-                    (currentPagination.pages || 1)
-                  }
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Sau
-                </button>
+          {/* Orders List */}
+          {isLoadingOrders ? (
+            <div className="bg-white rounded-lg shadow-md p-8">
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                <span className="ml-3">Đang tải đơn hàng...</span>
               </div>
-            )}
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                {searchQuery || statusFilter !== "all"
+                  ? "Không tìm thấy đơn hàng nào"
+                  : "Chưa có đơn hàng nào"}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!
+              </p>
+              <button
+                onClick={() => navigate("/products")}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+              >
+                Xem sản phẩm
+              </button>
+            </div>
+          ) : (
+            <OrdersTable
+              orders={filteredOrders}
+              onViewDetail={handleViewDetail}
+              onEarlyReturn={handleEarlyReturn}
+              onSelectOrder={setSelectedOrder}
+              earlyReturnRequests={earlyReturnRequests}
+              onRenterConfirm={handleRenterConfirm}
+            />
+          )}
+
+          {/* Pagination */}
+          {currentPagination.pages && currentPagination.pages > 1 && (
+            <div className="mt-8 flex items-center justify-center space-x-2">
+              <button
+                onClick={() => {
+                  const newPage = Math.max(
+                    1,
+                    (currentPagination.page || 1) - 1
+                  );
+                  loadMyOrders({
+                    page: newPage,
+                    status: statusFilter !== "all" ? statusFilter : undefined,
+                  });
+                }}
+                disabled={(currentPagination.page || 1) === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Trước
+              </button>
+
+              <span className="px-4 py-2">
+                Trang {currentPagination.page || 1} /{" "}
+                {currentPagination.pages || 1}
+              </span>
+
+              <button
+                onClick={() => {
+                  const newPage = Math.min(
+                    currentPagination.pages || 1,
+                    (currentPagination.page || 1) + 1
+                  );
+                  loadMyOrders({
+                    page: newPage,
+                    status: statusFilter !== "all" ? statusFilter : undefined,
+                  });
+                }}
+                disabled={
+                  (currentPagination.page || 1) ===
+                  (currentPagination.pages || 1)
+                }
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Sau
+              </button>
+            </div>
+          )}
         </>
 
         {/* Detail Modal */}

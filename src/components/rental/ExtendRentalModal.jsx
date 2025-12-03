@@ -23,6 +23,9 @@ const ExtendRentalModal = ({
   const order = localOrder || masterOrder;
   const subOrder = order?.subOrders?.[0];
   const products = subOrder?.products || [];
+  
+  // State to hold enriched product data
+  const [enrichedProducts, setEnrichedProducts] = useState({});
 
   // Fetch order detail if needed
   useEffect(() => {
@@ -36,6 +39,63 @@ const ExtendRentalModal = ({
         .catch(err => console.error('❌ Failed to fetch order:', err));
     }
   }, [isOpen, masterOrder]);
+
+  // Fetch product details for items without proper population
+  useEffect(() => {
+    if (products && products.length > 0) {
+      const productsToFetch = products.filter(p => {
+        const hasProductDetail = p.product && (p.product.name || p.product.thumbnail);
+        const hasEnriched = enrichedProducts[p._id];
+        return !hasEnriched && (!hasProductDetail || !p.product._id);
+      });
+
+      if (productsToFetch.length > 0) {
+        console.log('📥 Fetching product details for', productsToFetch.length, 'products');
+        
+        productsToFetch.forEach(product => {
+          // Try to get product ID from various sources
+          let productId = product.product?._id || product.productId;
+          
+          // If no ID, try to use the product reference as string
+          if (!productId && product.product) {
+            productId = typeof product.product === 'string' ? product.product : product.product?._id;
+          }
+          
+          if (productId && productId !== 'N/A') {
+            console.log(`🔍 Fetching product with ID: ${productId}`);
+            api.get(`/products/${productId}`)
+              .then(res => {
+                const fetchedProduct = res.data.data || res.data;
+                console.log(`✅ Fetched product ${productId}:`, fetchedProduct);
+                setEnrichedProducts(prev => ({
+                  ...prev,
+                  [product._id]: fetchedProduct
+                }));
+              })
+              .catch(err => {
+                console.warn(`⚠️ Failed to fetch product ${productId}:`, err.message);
+                // Still set a placeholder with product info if available
+                if (product.product && typeof product.product === 'object') {
+                  setEnrichedProducts(prev => ({
+                    ...prev,
+                    [product._id]: product.product
+                  }));
+                }
+              });
+          } else {
+            // Use product info directly if available
+            if (product.product && typeof product.product === 'object') {
+              console.log('📦 Using product info directly:', product.product);
+              setEnrichedProducts(prev => ({
+                ...prev,
+                [product._id]: product.product
+              }));
+            }
+          }
+        });
+      }
+    }
+  }, [products]);
 
   // Selected products with per-product extension dates
   const [selectedProducts, setSelectedProducts] = useState({});
@@ -140,7 +200,8 @@ const ExtendRentalModal = ({
       const product = products.find(p => p._id === productId);
       const extensionDays = getExtensionDays(productId, data.newEndDate);
       const extensionFee = getExtensionFee(product, extensionDays);
-      const productDetail = product?.product; // Populated Product document
+      // Use enriched data first, then product.product as fallback
+      const productDetail = enrichedProducts[productId] || product?.product;
       
       return {
         productId,
@@ -283,12 +344,14 @@ const ExtendRentalModal = ({
                           const dailyPrice = product.rentalRate || 0;
                           const currentEndDate = new Date(product.rentalPeriod?.endDate);
                           
-                          // Get product detail from populated product field
-                          const productDetail = product.product;
+                          // Get product detail - first from enriched data, then from product field, then fallback
+                          const enrichedData = enrichedProducts[product._id];
+                          const productDetail = enrichedData || product.product;
                           const productName = productDetail?.name || product.name || 'Sản phẩm (chưa tải tên)';
-                          const productImage = productDetail?.thumbnail;
+                          const productImage = productDetail?.thumbnail || productDetail?.images?.[0]?.url;
                           const productSku = productDetail?.sku;
-                          const productId = productDetail?._id || product.product?._id || 'N/A';
+                          // Try multiple sources for product ID
+                          const productId = productDetail?._id || enrichedData?._id || product?.product?._id || product?.productId || 'N/A';
 
                           return (
                             <div
@@ -324,7 +387,7 @@ const ExtendRentalModal = ({
                                 <div className="flex-1 min-w-0">
                                   <p className="font-bold text-gray-900 break-words">{productName}</p>
                                   <div className="text-xs text-gray-600 space-y-1 mt-2">
-                                    <p>Mã sản phẩm: <span className="font-semibold text-gray-900">{productId}</span></p>
+                                    {productId && productId !== 'N/A' && <p>Mã sản phẩm: <span className="font-semibold text-gray-900">{productId}</span></p>}
                                     {productSku && <p>SKU: <span className="font-semibold text-gray-900">{productSku}</span></p>}
                                     <p>Giá thuê: <span className="font-bold text-green-600">{dailyPrice.toLocaleString('vi-VN')}đ/ngày</span></p>
                                     <p>Ngày kết thúc: <span className="font-medium">{currentEndDate.toLocaleDateString('vi-VN')}</span></p>
@@ -393,10 +456,10 @@ const ExtendRentalModal = ({
                             {/* Product Header with Image */}
                             <div className="flex items-start space-x-4 mb-3">
                               {/* Product Image */}
-                              {productDetail?.thumbnail && (
+                              {(productDetail?.thumbnail || productDetail?.images?.[0]?.url) && (
                                 <img 
-                                  src={productDetail.thumbnail} 
-                                  alt={productDetail.name}
+                                  src={productDetail.thumbnail || productDetail.images[0].url} 
+                                  alt={productDetail?.name}
                                   className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
                                 />
                               )}
@@ -406,7 +469,6 @@ const ExtendRentalModal = ({
                                 <h4 className="text-lg font-bold text-gray-900 break-words">{productDetail?.name}</h4>
                                 <div className="text-sm text-gray-600 space-y-1 mt-2">
                                   {productDetail?.sku && <p>SKU: <span className="font-medium text-gray-900">{productDetail.sku}</span></p>}
-                                  {productDetail?.category && <p>Danh mục: <span className="font-medium text-gray-900">{productDetail.category}</span></p>}
                                   <p>Trạng thái: <span className="font-medium text-blue-600">{item.product.productStatus}</span></p>
                                 </div>
                               </div>

@@ -20,6 +20,9 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
   const [paymentMethod, setPaymentMethod] = useState("wallet");
   const [pricing, setPricing] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState("override"); // 'override' or 'after'
+  const [hasActivePromotion, setHasActivePromotion] = useState(false);
+  const [activePromotionEndDate, setActivePromotionEndDate] = useState(null);
   const modalRef = useRef(null);
   const { balance } = useWallet();
 
@@ -31,6 +34,17 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
     4: Zap,
     5: Sparkles,
   };
+
+  // Check if product has active promotion
+  useEffect(() => {
+    if (product?.isPromoted && product?.currentPromotion) {
+      setHasActivePromotion(true);
+      // Try to get end date from currentPromotion object
+      if (product.currentPromotion.endDate) {
+        setActivePromotionEndDate(new Date(product.currentPromotion.endDate));
+      }
+    }
+  }, [product]);
 
   // Calculate pricing when tier/duration changes
   useEffect(() => {
@@ -70,33 +84,45 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
     try {
       // Check wallet balance if paying with wallet
       if (paymentMethod === "wallet" && balance < pricing.totalAmount) {
-        toast.error(
-          "Insufficient wallet balance. Please top up your wallet first."
-        );
+        toast.error("Số dư ví không đủ. Vui lòng nạp thêm tiền vào ví.");
         setLoading(false);
         return;
       }
 
-      const result = await promotionService.createPromotion({
+      // Prepare promotion data
+      const promotionData = {
         productId: product._id || product.id,
         tier,
         duration,
         paymentMethod,
-      });
+      };
+
+      // Add schedule mode if there's an active promotion
+      if (hasActivePromotion) {
+        promotionData.scheduleMode = scheduleMode;
+      }
+
+      const result = await promotionService.createPromotion(promotionData);
 
       if (paymentMethod === "payos") {
         // Redirect to payment page
-        toast.success("Redirecting to payment gateway...");
+        toast.success("Đang chuyển đến cổng thanh toán...");
         setTimeout(() => {
           window.location.href = result.paymentUrl;
         }, 1000);
       } else {
-        toast.success("Product promoted successfully! 🎉");
+        if (scheduleMode === "override") {
+          toast.success("Cập nhật quảng cáo sản phẩm thành công! 🎉");
+        } else {
+          toast.success(
+            "Đã đặt lịch quảng cáo! Sẽ tự động kích hoạt sau khi quảng cáo hiện tại hết hạn. 📅"
+          );
+        }
         if (onSuccess) onSuccess();
         onClose();
       }
     } catch (error) {
-      toast.error(error.message || "Failed to promote product");
+      toast.error(error.message || "Không thể quảng cáo sản phẩm");
     } finally {
       setLoading(false);
     }
@@ -117,11 +143,10 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
           <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-3xl">
             <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-2xl font-bold mb-1">
-                  Promote Your Product
-                </h2>
+                <h2 className="text-2xl font-bold mb-1">Quảng Cáo Sản Phẩm</h2>
                 <p className="text-blue-100">
-                  Make your product stand out and appear on top!
+                  Làm cho sản phẩm của bạn nổi bật và xuất hiện ở vị trí hàng
+                  đầu!
                 </p>
               </div>
               <button
@@ -130,8 +155,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
               >
                 <X size={24} />
               </button>
-            </div>
-
+            </div>{" "}
             {/* Product Preview */}
             {product && (
               <div className="mt-4 bg-white/10 backdrop-blur rounded-xl p-3 flex items-center gap-3">
@@ -148,7 +172,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                     {promotionService.formatCurrency(
                       product.pricing?.dailyRate || 0
                     )}
-                    /day
+                    /ngày
                   </p>
                 </div>
               </div>
@@ -156,10 +180,102 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Active Promotion Warning & Schedule Mode */}
+            {hasActivePromotion && (
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-5">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <TrendingUp className="text-amber-600" size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-amber-900 mb-1">
+                      Phát hiện quảng cáo đang hoạt động
+                    </h4>
+                    <p className="text-sm text-amber-700">
+                      Sản phẩm này hiện có quảng cáo đang hoạt động
+                      {activePromotionEndDate &&
+                        ` kết thúc vào ${new Date(
+                          activePromotionEndDate
+                        ).toLocaleDateString("vi-VN")}`}
+                      . Chọn cách thức tiếp tục:
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("override")}
+                    className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                      scheduleMode === "override"
+                        ? "border-amber-500 bg-amber-100 shadow-md"
+                        : "border-amber-200 hover:border-amber-300 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          scheduleMode === "override"
+                            ? "border-amber-600 bg-amber-600"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {scheduleMode === "override" && (
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-900">
+                          Thay thế quảng cáo hiện tại
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Thay thế ngay lập tức quảng cáo hiện tại bằng quảng
+                          cáo mới này
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("after")}
+                    className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
+                      scheduleMode === "after"
+                        ? "border-blue-500 bg-blue-50 shadow-md"
+                        : "border-amber-200 hover:border-amber-300 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          scheduleMode === "after"
+                            ? "border-blue-600 bg-blue-600"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {scheduleMode === "after" && (
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-900">
+                          Đặt lịch sau khi hết hạn
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Quảng cáo này sẽ tự động kích hoạt khi quảng cáo hiện
+                          tại kết thúc
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Tier Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Select Promotion Tier
+                Chọn Gói Quảng Cáo
               </label>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {[1, 2, 3, 4, 5].map((t) => {
@@ -194,7 +310,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                       <div className="text-base font-bold text-gray-900">
                         {(pricePerDay / 1000).toFixed(0)}k
                       </div>
-                      <div className="text-xs text-gray-500">VND/day</div>
+                      <div className="text-xs text-gray-500">VND/ngày</div>
                     </button>
                   );
                 })}
@@ -204,7 +320,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
               {tier && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl">
                   <p className="font-medium text-gray-900 mb-2">
-                    {promotionService.TIER_CONFIG[tier].name} Features:
+                    Tính năng gói {promotionService.TIER_CONFIG[tier].name}:
                   </p>
                   <ul className="space-y-1">
                     {promotionService.TIER_CONFIG[tier].features.map(
@@ -226,7 +342,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
             {/* Duration */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Duration (days)
+                Thời gian (ngày)
               </label>
               <input
                 type="number"
@@ -234,13 +350,13 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                 value={duration}
                 onChange={(e) => setDuration(parseInt(e.target.value) || 1)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="Enter number of days"
+                placeholder="Nhập số ngày"
               />
               {duration >= promotionService.DISCOUNT_CONFIG.minDays && (
                 <p className="text-green-600 text-sm mt-2 flex items-center gap-1">
                   <Sparkles size={16} />
-                  {promotionService.DISCOUNT_CONFIG.percentage}% discount
-                  applied for {promotionService.DISCOUNT_CONFIG.minDays}+ days!
+                  Giảm giá {promotionService.DISCOUNT_CONFIG.percentage}% cho{" "}
+                  {promotionService.DISCOUNT_CONFIG.minDays}+ ngày!
                 </p>
               )}
             </div>
@@ -249,19 +365,19 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
             {pricing && (
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Base Price:</span>
+                  <span className="text-gray-600">Giá gốc:</span>
                   <span className="font-medium">
-                    {promotionService.formatCurrency(pricing.pricePerDay)}/day
+                    {promotionService.formatCurrency(pricing.pricePerDay)}/ngày
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Duration:</span>
-                  <span className="font-medium">{duration} days</span>
+                  <span className="text-gray-600">Thời gian:</span>
+                  <span className="font-medium">{duration} ngày</span>
                 </div>
                 {pricing.discountApplied > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>
-                      Discount ({promotionService.DISCOUNT_CONFIG.percentage}%):
+                      Giảm giá ({promotionService.DISCOUNT_CONFIG.percentage}%):
                     </span>
                     <span className="font-medium">
                       -
@@ -270,7 +386,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-lg border-t border-blue-200 pt-2">
-                  <span>Total:</span>
+                  <span>Tổng cộng:</span>
                   <span className="text-blue-600">
                     {promotionService.formatCurrency(pricing.totalAmount)}
                   </span>
@@ -281,7 +397,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
             {/* Payment Method */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Payment Method
+                Phương thức thanh toán
               </label>
               <div className="space-y-3">
                 {/* Wallet Option */}
@@ -314,10 +430,10 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                       </div>
                       <div>
                         <div className="font-medium text-gray-900">
-                          Pay with Wallet
+                          Thanh toán bằng Ví
                         </div>
                         <div className="text-sm text-gray-600">
-                          Current balance:{" "}
+                          Số dư hiện tại:{" "}
                           <span className="font-medium">
                             {promotionService.formatCurrency(balance)}
                           </span>
@@ -326,7 +442,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                     </div>
                     {pricing && balance < pricing.totalAmount && (
                       <span className="text-red-500 text-sm font-medium px-3 py-1 bg-red-50 rounded-full">
-                        Insufficient
+                        Không đủ tiền
                       </span>
                     )}
                   </div>
@@ -361,10 +477,10 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">
-                        Pay with PayOS
+                        Thanh toán bằng PayOS
                       </div>
                       <div className="text-sm text-gray-600">
-                        Secure online payment gateway
+                        Cổng thanh toán trực tuyến an toàn
                       </div>
                     </div>
                   </div>
@@ -380,7 +496,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                 className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
                 disabled={loading}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="submit"
@@ -410,10 +526,10 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Processing...
+                    Đang xử lý...
                   </span>
                 ) : (
-                  `Promote for ${
+                  `Quảng cáo với ${
                     pricing
                       ? promotionService.formatCurrency(pricing.totalAmount)
                       : "..."

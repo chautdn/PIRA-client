@@ -8,6 +8,7 @@ export const getDisputeStatusColor = (status) => {
     OPEN: 'bg-yellow-100 text-yellow-800',
     RESPONDENT_ACCEPTED: 'bg-green-100 text-green-800',
     RESPONDENT_REJECTED: 'bg-red-100 text-red-800',
+    ADMIN_REVIEW: 'bg-blue-100 text-blue-800',
     ADMIN_REVIEWING: 'bg-blue-100 text-blue-800',
     ADMIN_DECISION_MADE: 'bg-purple-100 text-purple-800',
     BOTH_ACCEPTED: 'bg-green-100 text-green-800',
@@ -29,6 +30,7 @@ export const getDisputeStatusText = (status) => {
     OPEN: 'Chờ phản hồi',
     RESPONDENT_ACCEPTED: 'Đã chấp nhận',
     RESPONDENT_REJECTED: 'Đã từ chối',
+    ADMIN_REVIEW: 'Admin đang xem xét',
     ADMIN_REVIEWING: 'Admin đang xem xét',
     ADMIN_DECISION_MADE: 'Admin đã quyết định',
     BOTH_ACCEPTED: 'Cả 2 bên đồng ý',
@@ -235,7 +237,8 @@ export const getDisputeTypesForShipment = (shipmentType) => {
       { value: 'PRODUCT_NOT_AS_DESCRIBED', label: 'Sản phẩm không đúng mô tả' },
       { value: 'MISSING_ITEMS', label: 'Thiếu phụ kiện/số lượng' },
       { value: 'DAMAGED_BY_SHIPPER', label: 'Shipper làm hỏng hàng' },
-      { value: 'DELIVERY_FAILED_RENTER', label: 'Người nhận không nhận hàng' }
+      { value: 'DELIVERY_FAILED_RENTER', label: 'Người nhận không nhận hàng' },
+      { value: 'PRODUCT_DEFECT', label: 'Sản phẩm lỗi khi đang sử dụng' }
     ];
   } else if (shipmentType === 'RETURN') {
     return [

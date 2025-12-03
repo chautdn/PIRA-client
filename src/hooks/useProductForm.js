@@ -282,7 +282,9 @@ export const useProductForm = () => {
 
       case 3: // Images
         if (!formData.images || formData.images.length === 0) {
-          newErrors.images = "Vui lòng thêm ít nhất 1 hình ảnh";
+          newErrors.images = "Vui lòng thêm ít nhất 3 hình ảnh";
+        } else if (formData.images.length < 3) {
+          newErrors.images = `Cần thêm ${3 - formData.images.length} hình ảnh nữa (tối thiểu 3 hình ảnh)`;
         }
         break;
 

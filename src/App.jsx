@@ -18,6 +18,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Home from "./pages/Home";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
+import OwnerProductsPage from "./pages/OwnerProductsPage";
 import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
@@ -27,7 +28,9 @@ import OwnerProducts from "./pages/owner/OwnerProducts";
 import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
 import PromotionSuccess from "./pages/owner/PromotionSuccess";
 import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
+import OwnerRentalRequestDetail from "./pages/owner/OwnerRentalRequestDetail";
 import ActiveRentals from "./pages/owner/ActiveRentals";
+import OwnerStatistics from "./pages/owner/OwnerStatistics";
 import ShipmentsPage from "./pages/shipper/Shipments";
 
 // Wallet pages
@@ -63,6 +66,9 @@ import AdminReportDetail from "./pages/admin/AdminReportDetail";
 import BankManagement from "./pages/admin/BankManagement";
 import AdminBankDetail from "./pages/admin/AdminBankDetail";
 import WithdrawalManagement from "./pages/admin/WithdrawalManagement";
+import TransactionManagement from "./pages/admin/TransactionManagement";
+import TransactionDetail from "./pages/admin/TransactionDetail";
+import WithdrawalDetailAnalysis from "./pages/admin/WithdrawalDetailAnalysis";
 import MyReports from "./pages/auth/MyReports";
 
 // Rental system pages
@@ -75,6 +81,8 @@ import ContractSigning from "./components/rental/ContractSigning";
 import RenterConfirmationSummary from "./pages/RenterConfirmationSummary";
 import { RentalOrderProvider } from "./context/RentalOrderContext";
 import VoucherRedeem from "./pages/voucher/VoucherRedeem";
+import RentalOrderShippingPaymentSuccess from "./pages/RentalOrderShippingPaymentSuccess";
+import RentalOrderShippingPaymentCancel from "./pages/RentalOrderShippingPaymentCancel";
 
 // Dispute pages
 import DisputesPage from "./pages/DisputesPage";
@@ -183,6 +191,10 @@ export default function App() {
                     path={ROUTES.PRODUCT_DETAIL}
                     element={<ProductDetail />}
                   />
+                  <Route
+                    path="/owner/:ownerId/products"
+                    element={<OwnerProductsPage />}
+                  />
                   <Route path={ROUTES.CART} element={<Cart />} />
                   <Route path={ROUTES.PROFILE} element={<Profile />} />
 
@@ -228,10 +240,26 @@ export default function App() {
                     }
                   />
                   <Route
+                    path="/owner/rental-requests/:subOrderId"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <OwnerRentalRequestDetail />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
                     path={ROUTES.OWNER_ACTIVE_RENTALS}
                     element={
                       <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
                         <ActiveRentals />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path={ROUTES.OWNER_STATISTICS}
+                    element={
+                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <OwnerStatistics />
                       </RoleProtectedRoute>
                     }
                   />
@@ -352,6 +380,22 @@ export default function App() {
                       </RoleProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/rental-orders/shipping-payment-success"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                        <RentalOrderShippingPaymentSuccess />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/rental-orders/shipping-payment-cancel"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                        <RentalOrderShippingPaymentCancel />
+                      </RoleProtectedRoute>
+                    }
+                  />
 
                   {/* Voucher routes */}
                   <Route
@@ -409,6 +453,14 @@ export default function App() {
                       element={<AdminProductDetail />}
                     />
                     <Route
+                      path="transactions"
+                      element={<TransactionManagement />}
+                    />
+                    <Route
+                      path="transactions/:transactionId"
+                      element={<TransactionDetail />}
+                    />
+                    <Route
                       path="promotions"
                       element={<SystemPromotionManagement />}
                     />
@@ -432,6 +484,10 @@ export default function App() {
                     <Route
                       path="withdrawals"
                       element={<WithdrawalManagement />}
+                    />
+                    <Route
+                      path="withdrawals/:withdrawalId/analysis"
+                      element={<WithdrawalDetailAnalysis />}
                     />
                     <Route
                       path="settings"

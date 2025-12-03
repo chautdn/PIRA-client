@@ -52,12 +52,6 @@ const OwnerMenuDropdown = ({ user }) => {
       route: "/owner/rental-requests",
     },
     {
-      icon: "🔄",
-      label: "Đang Cho Thuê",
-      description: "Sản phẩm đang được khách thuê",
-      route: ROUTES.OWNER_ACTIVE_RENTALS,
-    },
-    {
       icon: "⚖️",
       label: "Tranh Chấp",
       description: "Quản lý và giải quyết tranh chấp",
@@ -67,7 +61,7 @@ const OwnerMenuDropdown = ({ user }) => {
       icon: "",
       label: "Thống Kê",
       description: "Xem doanh thu và báo cáo",
-      route: "#", // TODO: Add analytics route
+      route: ROUTES.OWNER_STATISTICS,
     },
   ];
 

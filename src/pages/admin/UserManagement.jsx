@@ -34,6 +34,13 @@ const UserManagement = () => {
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTimeout, setSearchTimeout] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ 
+    show: false, 
+    userId: null, 
+    newStatus: null, 
+    userName: '', 
+    currentStatus: '' 
+  });
 
   // Show notification function
   const showNotification = (message, type = 'success') => {
@@ -159,6 +166,26 @@ const UserManagement = () => {
       console.error('Update user status error:', err);
       showNotification('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
     }
+  };
+
+  const handleStatusChangeClick = (userId, newStatus, userName, currentStatus) => {
+    setConfirmDialog({
+      show: true,
+      userId,
+      newStatus,
+      userName,
+      currentStatus
+    });
+  };
+
+  const confirmStatusChange = async () => {
+    const { userId, newStatus } = confirmDialog;
+    setConfirmDialog({ show: false, userId: null, newStatus: null, userName: '', currentStatus: '' });
+    await handleUserStatusChange(userId, newStatus);
+  };
+
+  const cancelStatusChange = () => {
+    setConfirmDialog({ show: false, userId: null, newStatus: null, userName: '', currentStatus: '' });
   };
 
   const handleUserRoleChange = async (userId, newRole) => {
@@ -662,9 +689,11 @@ const UserManagement = () => {
                         <span className="text-sm">👁️</span> Xem
                       </Link>
                       <button
-                        onClick={() => handleUserStatusChange(
+                        onClick={() => handleStatusChangeClick(
                           user._id, 
-                          user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+                          user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+                          user.profile?.firstName + ' ' + user.profile?.lastName || user.email,
+                          user.status
                         )}
                         className={`px-4 py-2 text-white text-xs font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
                           user.status === 'ACTIVE' 
@@ -833,6 +862,55 @@ const UserManagement = () => {
           <div className="flex items-center">
             <span className="text-red-500 mr-2">⚠️</span>
             <span className="text-red-800">{error}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {confirmDialog.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                Xác nhận thay đổi trạng thái
+              </h3>
+              <p className="text-gray-600">
+                Bạn có chắc chắn muốn {confirmDialog.newStatus === 'INACTIVE' ? 'khóa' : 'kích hoạt'} tài khoản của user:
+              </p>
+              <p className="font-semibold text-gray-800 mt-2">
+                {confirmDialog.userName}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Trạng thái hiện tại: 
+                <span className={`ml-1 font-medium ${
+                  confirmDialog.currentStatus === 'ACTIVE' ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {confirmDialog.currentStatus === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động'}
+                </span>
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={cancelStatusChange}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-0.5"
+              >
+                ❌ Hủy
+              </button>
+              <button
+                onClick={confirmStatusChange}
+                className={`flex-1 px-6 py-3 text-white font-semibold rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 shadow-lg ${
+                  confirmDialog.newStatus === 'INACTIVE'
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                }`}
+              >
+                {confirmDialog.newStatus === 'INACTIVE' ? '🔒 Khóa tài khoản' : '🔓 Kích hoạt'}
+              </button>
+            </div>
           </div>
         </div>
       )}

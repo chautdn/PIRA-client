@@ -13,6 +13,13 @@ const UserDetail = () => {
   const [activeTab, setActiveTab] = useState('info');
   const [loadingTab, setLoadingTab] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    type: '', // 'status' or 'role'
+    newValue: '',
+    currentValue: '',
+    message: ''
+  });
 
   // Show notification function
   const showNotification = (message, type = 'success') => {
@@ -120,25 +127,65 @@ const UserDetail = () => {
 
 
   const handleStatusChange = async (newStatus) => {
-    try {
-      await adminService.updateUserStatus(userId, newStatus);
-      setUser(prev => ({ ...prev, status: newStatus }));
-      showNotification('Cập nhật trạng thái thành công!', 'success');
-    } catch (err) {
-      console.error('Update status error:', err);
-      showNotification('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
-    }
+    if (newStatus === user.status) return; // No change
+    
+    const statusLabels = {
+      ACTIVE: 'Hoạt động',
+      INACTIVE: 'Không hoạt động', 
+      SUSPENDED: 'Tạm khóa',
+      PENDING: 'Chờ xử lý'
+    };
+
+    setConfirmDialog({
+      show: true,
+      type: 'status',
+      newValue: newStatus,
+      currentValue: user.status,
+      message: `Bạn có chắc chắn muốn thay đổi trạng thái từ "${statusLabels[user.status]}" thành "${statusLabels[newStatus]}"?`
+    });
   };
 
   const handleRoleChange = async (newRole) => {
+    if (newRole === user.role) return; // No change
+
+    const roleLabels = {
+      ADMIN: 'Quản trị viên',
+      OWNER: 'Chủ sở hữu',
+      RENTER: 'Người thuê',
+      SHIPPER: 'Shipper'
+    };
+
+    setConfirmDialog({
+      show: true,
+      type: 'role',
+      newValue: newRole,
+      currentValue: user.role,
+      message: `Bạn có chắc chắn muốn thay đổi vai trò từ "${roleLabels[user.role]}" thành "${roleLabels[newRole]}"?`
+    });
+  };
+
+  const confirmChange = async () => {
+    const { type, newValue } = confirmDialog;
+    setConfirmDialog({ show: false, type: '', newValue: '', currentValue: '', message: '' });
+
     try {
-      await adminService.updateUserRole(userId, newRole);
-      setUser(prev => ({ ...prev, role: newRole }));
-      showNotification('Cập nhật vai trò thành công!', 'success');
+      if (type === 'status') {
+        await adminService.updateUserStatus(userId, newValue);
+        setUser(prev => ({ ...prev, status: newValue }));
+        showNotification('Cập nhật trạng thái thành công!', 'success');
+      } else if (type === 'role') {
+        await adminService.updateUserRole(userId, newValue);
+        setUser(prev => ({ ...prev, role: newValue }));
+        showNotification('Cập nhật vai trò thành công!', 'success');
+      }
     } catch (err) {
-      console.error('Update role error:', err);
-      showNotification('Có lỗi xảy ra khi cập nhật vai trò!', 'error');
+      console.error(`Update ${type} error:`, err);
+      showNotification(`Có lỗi xảy ra khi cập nhật ${type === 'status' ? 'trạng thái' : 'vai trò'}!`, 'error');
     }
+  };
+
+  const cancelChange = () => {
+    setConfirmDialog({ show: false, type: '', newValue: '', currentValue: '', message: '' });
   };
 
   const getUserStatusBadge = (status) => {
@@ -1092,6 +1139,49 @@ const UserDetail = () => {
                 )}
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {confirmDialog.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-3xl">
+                  {confirmDialog.type === 'status' ? '🔄' : '👥'}
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                Xác nhận thay đổi {confirmDialog.type === 'status' ? 'trạng thái' : 'vai trò'}
+              </h3>
+              <div className="text-gray-600 space-y-2">
+                <p className="font-medium">
+                  User: {user?.profile?.firstName} {user?.profile?.lastName || user?.email}
+                </p>
+                <p>{confirmDialog.message}</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={cancelChange}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-0.5"
+              >
+                ❌ Hủy
+              </button>
+              <button
+                onClick={confirmChange}
+                className={`flex-1 px-6 py-3 text-white font-semibold rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 shadow-lg ${
+                  confirmDialog.type === 'status'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                    : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700'
+                }`}
+              >
+                ✅ Xác nhận
+              </button>
+            </div>
           </div>
         </div>
       )}

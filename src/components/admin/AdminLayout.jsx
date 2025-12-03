@@ -33,6 +33,11 @@ const AdminLayout = () => {
       icon: "📦",
     },
     {
+      name: "Quản lý Giao dịch",
+      path: "/admin/transactions",
+      icon: "💳",
+    },
+    {
       name: "Khuyến mãi Hệ thống",
       path: "/admin/promotions",
       icon: "🎁",
@@ -69,9 +74,18 @@ const AdminLayout = () => {
     },
   ];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Small delay to ensure state is cleared
+      setTimeout(() => {
+        navigate(ROUTES.HOME, { replace: true });
+      }, 100);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Navigate anyway if logout fails
+      navigate(ROUTES.HOME, { replace: true });
+    }
   };
 
   if (!user || user.role !== "ADMIN") {
