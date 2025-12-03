@@ -20,6 +20,11 @@ const NotificationBell = () => {
     fetchNotifications,
   } = useNotification();
 
+  // Debug log
+  useEffect(() => {
+    console.log('🔔 [NotificationBell] unreadCount changed:', unreadCount);
+  }, [unreadCount]);
+
   // Refresh notifications when dropdown opens
   useEffect(() => {
     if (isOpen) {
@@ -46,8 +51,31 @@ const NotificationBell = () => {
   }, [isOpen]);
 
   const handleNotificationClick = async (notification) => {
+    // Mark as read
     if (notification.status !== "READ") {
       await markAsRead(notification._id);
+    }
+
+    // Navigate based on notification action URL
+    if (notification.actions && notification.actions.length > 0) {
+      const action = notification.actions[0];
+      if (action.url) {
+        setIsOpen(false);
+        navigate(action.url);
+      }
+    } else if (notification.relatedDispute) {
+      // Fallback: Navigate to dispute detail
+      setIsOpen(false);
+      navigate(`/disputes/${notification.relatedDispute}`);
+    } else if (notification.relatedOrder) {
+      // Fallback: Navigate to order detail based on user role
+      setIsOpen(false);
+      // Check if user is owner or renter by notification type
+      if (notification.type === 'DISPUTE' && notification.data?.disputeType) {
+        navigate(`/disputes`);
+      } else {
+        navigate(`/rental-orders/${notification.relatedOrder}`);
+      }
     }
   };
 

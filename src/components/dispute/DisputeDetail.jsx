@@ -53,11 +53,52 @@ const DisputeDetail = () => {
             />
 
             {/* Respondent Response */}
-            {currentDispute.respondentResponse?.evidence && (
-              <DisputeEvidence 
-                evidence={currentDispute.respondentResponse.evidence}
-                title="Bằng chứng bên bị khiếu nại"
-              />
+            {currentDispute.respondentResponse && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Phản hồi từ bên bị khiếu nại
+                </h2>
+                
+                {/* Decision and Reason */}
+                <div className="space-y-3 mb-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-1">Quyết định</p>
+                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                      currentDispute.respondentResponse.decision === 'ACCEPTED'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {currentDispute.respondentResponse.decision === 'ACCEPTED' ? 'Chấp nhận' : 'Từ chối'}
+                    </span>
+                  </div>
+                  
+                  {currentDispute.respondentResponse.reason && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Lý do</p>
+                      <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                        {currentDispute.respondentResponse.reason}
+                      </p>
+                    </div>
+                  )}
+
+                  {currentDispute.respondentResponse.respondedAt && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Thời gian phản hồi</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(currentDispute.respondentResponse.respondedAt).toLocaleString('vi-VN')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Evidence */}
+                {currentDispute.respondentResponse.evidence && (
+                  <DisputeEvidence 
+                    evidence={currentDispute.respondentResponse.evidence}
+                    title="Bằng chứng bổ sung"
+                  />
+                )}
+              </div>
             )}
 
             {/* Admin Decision */}

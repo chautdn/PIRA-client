@@ -13,7 +13,6 @@ import RenterShipmentModal from "../components/rental/RenterShipmentModal";
 import OrderFilters from "../components/rental/OrderFilters";
 import OrdersTable from "../components/rental/OrdersTable";
 import OrderDetailModal from "../components/rental/OrderDetailModal";
-import EarlyReturnsTab from "../components/rental/EarlyReturnsTab";
 import { Package } from "lucide-react";
 
 const RentalOrdersPage = () => {
@@ -33,8 +32,6 @@ const RentalOrdersPage = () => {
   const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
-  const [loadingEarlyReturns, setLoadingEarlyReturns] = useState(false);
-  const [activeTab, setActiveTab] = useState("orders"); // 'orders' or 'early-returns'
 
   // Load orders on mount and status change
   useEffect(() => {
@@ -44,7 +41,6 @@ const RentalOrdersPage = () => {
 
   // Load early return requests
   const loadEarlyReturnRequests = async () => {
-    setLoadingEarlyReturns(true);
     try {
       const response = await earlyReturnApi.getRenterRequests();
 
@@ -54,8 +50,6 @@ const RentalOrdersPage = () => {
       setEarlyReturnRequests(requests);
     } catch (error) {
       console.error("Failed to load early return requests:", error);
-    } finally {
-      setLoadingEarlyReturns(false);
     }
   };
 
@@ -309,35 +303,8 @@ const RentalOrdersPage = () => {
             </button>
           </div>
         </div>
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-2xl shadow-lg mb-6 p-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setActiveTab("orders")}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                activeTab === "orders"
-                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              📦 Đơn Thuê Của Tôi
-            </button>
-            <button
-              onClick={() => setActiveTab("early-returns")}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                activeTab === "early-returns"
-                  ? "bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              🔄 Yêu Cầu Trả Sớm{" "}
-              {earlyReturnRequests.length > 0 &&
-                `(${earlyReturnRequests.length})`}
-            </button>
-          </div>
-        </div>
 
-        {/* Orders List */}
+        {/* Content */}
         <>
           <div className="bg-white rounded-lg shadow-md mb-6">
             <div className="border-b border-gray-200">

@@ -225,6 +225,16 @@ export const ownerProductApi = {
     }
   },
 
+  // GET /api/owner-products/rental-requests/:subOrderId - Get single rental request detail
+  getSubOrderDetail: async (subOrderId) => {
+    try {
+      const response = await api.get(`/owner-products/rental-requests/${subOrderId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // POST /api/owner-products/rental-requests/:subOrderId/items/:itemIndex/confirm
   confirmProductItem: async (subOrderId, itemIndex) => {
     try {
@@ -243,6 +253,31 @@ export const ownerProductApi = {
       const response = await api.post(
         `/owner-products/rental-requests/${subOrderId}/items/${itemIndex}/reject`,
         { reason }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // GET /api/owner-products/:productId/can-edit-pricing - Check if pricing can be edited
+  canEditPricing: async (productId) => {
+    try {
+      const response = await api.get(
+        `/owner-products/${productId}/can-edit-pricing`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // PUT /api/owner-products/:productId/pricing - Update product pricing
+  updatePricing: async (productId, pricingData) => {
+    try {
+      const response = await api.put(
+        `/owner-products/${productId}/pricing`,
+        pricingData
       );
       return response.data;
     } catch (error) {

@@ -1,10 +1,11 @@
 const DisputeEvidence = ({ evidence, title = "Bằng chứng" }) => {
   // Support both 'photos' (from model) and 'images' (legacy)
   const photos = evidence?.photos || evidence?.images || [];
+  const videos = evidence?.videos || [];
   const documents = evidence?.documents || [];
   const description = evidence?.additionalInfo || evidence?.description || '';
 
-  if (!evidence || (photos.length === 0 && documents.length === 0 && !description)) {
+  if (!evidence || (photos.length === 0 && videos.length === 0 && documents.length === 0 && !description)) {
     return null;
   }
 
@@ -41,6 +42,29 @@ const DisputeEvidence = ({ evidence, title = "Bằng chứng" }) => {
                     🔍 Xem chi tiết
                   </span>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {videos.length > 0 && (
+        <div className="mb-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">
+            Video ({videos.length})
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {videos.map((video, index) => (
+              <div key={index} className="relative">
+                <video
+                  controls
+                  className="w-full rounded-lg border border-gray-200"
+                  style={{ maxHeight: '300px' }}
+                >
+                  <source src={video} type="video/mp4" />
+                  Trình duyệt không hỗ trợ video.
+                </video>
+                <p className="text-xs text-gray-500 mt-1 text-center">Video {index + 1}</p>
               </div>
             ))}
           </div>

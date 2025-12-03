@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useRentalOrder } from '../../context/RentalOrderContext';  
-import { FileText, Signature, Check, AlertCircle, Download, User, Clock } from 'lucide-react';
+import { FileText, Signature, Check, AlertCircle, Download, User, Clock, Shield, Mail } from 'lucide-react';
 import rentalOrderService from '../../services/rentalOrder';
+import otpService from '../../services/otp';
 import { toast } from '../common/Toast';
 
 const ContractSigning = () => {
@@ -27,6 +28,17 @@ const ContractSigning = () => {
   const [error, setError] = useState('');
   const [hasAlreadySigned, setHasAlreadySigned] = useState(false);
   const [signMessage, setSignMessage] = useState('');
+
+  // OTP states
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
+  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpExpiry, setOtpExpiry] = useState(null);
+  const [remainingTime, setRemainingTime] = useState(0);
+  const [sentCount, setSentCount] = useState(0);
 
   console.log('🔍 ContractSigning - contractId:', contractId);
 
@@ -87,6 +99,90 @@ const ContractSigning = () => {
     }
   }, []);
 
+  // OTP countdown timer
+  useEffect(() => {
+    if (!otpExpiry) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((otpExpiry - now) / 1000));
+      setRemainingTime(remaining);
+
+      if (remaining === 0) {
+        setOtpSent(false);
+        setOtpCode('');
+        setOtpError('Mã OTP đã hết hạn. Vui lòng gửi lại.');
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [otpExpiry]);
+
+  // Send OTP
+  const handleSendOTP = async () => {
+    if (!contractId) {
+      toast.error('Không tìm thấy ID hợp đồng');
+      return;
+    }
+
+    if (sentCount >= 3) {
+      toast.error('Bạn đã vượt quá số lần gửi OTP (tối đa 3 lần)');
+      return;
+    }
+
+    setIsSendingOTP(true);
+    setOtpError('');
+
+    try {
+      const response = await otpService.sendContractSigningOTP(contractId);
+      
+      setOtpSent(true);
+      setOtpExpiry(response.data.expiresAt);
+      setSentCount(response.data.sentCount);
+      
+      toast.success(response.message || 'Mã OTP đã được gửi đến email của bạn');
+      console.log('✅ OTP sent successfully:', response);
+    } catch (error) {
+      console.error('❌ Error sending OTP:', error);
+      setOtpError(error.message);
+      toast.error(error.message || 'Không thể gửi mã OTP');
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+
+  // Verify OTP
+  const handleVerifyOTP = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      setOtpError('Vui lòng nhập mã OTP 6 số');
+      return;
+    }
+
+    setIsVerifyingOTP(true);
+    setOtpError('');
+
+    try {
+      const response = await otpService.verifyContractSigningOTP(contractId, otpCode);
+      
+      setOtpVerified(true);
+      toast.success('Xác minh OTP thành công! Bạn có thể ký hợp đồng.');
+      console.log('✅ OTP verified successfully');
+    } catch (error) {
+      console.error('❌ Error verifying OTP:', error);
+      setOtpError(error.message);
+      toast.error(error.message || 'Mã OTP không chính xác');
+    } finally {
+      setIsVerifyingOTP(false);
+    }
+  };
+
+  // Format countdown time
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // Mouse/Touch events for signature
   const startDrawing = (e) => {
     setIsDrawing(true);
@@ -134,6 +230,12 @@ const ContractSigning = () => {
   const handleSignContract = async () => {
     if (hasAlreadySigned) {
       toast.warning('Bạn đã ký hợp đồng này rồi!');
+      return;
+    }
+
+    if (!otpVerified) {
+      setError('Vui lòng xác minh OTP trước khi ký hợp đồng');
+      toast.error('Bạn cần xác minh mã OTP trước');
       return;
     }
 
@@ -382,6 +484,94 @@ const ContractSigning = () => {
                 Chữ ký điện tử
               </h2>
 
+              {/* OTP Verification Section */}
+              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold mb-3 flex items-center text-blue-800">
+                  <Shield className="w-5 h-5 mr-2" />
+                  Xác minh danh tính (OTP)
+                </h3>
+                
+                {!otpVerified ? (
+                  <>
+                    <p className="text-sm text-gray-700 mb-4">
+                      Để đảm bảo tính bảo mật, vui lòng xác minh danh tính bằng mã OTP được gửi qua email.
+                    </p>
+
+                    {!otpSent ? (
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={handleSendOTP}
+                          disabled={isSendingOTP || sentCount >= 3}
+                          className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          <Mail className="w-4 h-4" />
+                          <span>{isSendingOTP ? 'Đang gửi...' : 'Gửi mã xác nhận'}</span>
+                        </button>
+                        {sentCount > 0 && (
+                          <span className="text-sm text-gray-600">
+                            Đã gửi {sentCount}/3 lần
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2 text-green-600 text-sm">
+                          <Check className="w-4 h-4" />
+                          <span>Mã OTP đã được gửi đến email của bạn</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="text"
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            placeholder="Nhập mã OTP (6 số)"
+                            maxLength={6}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <button
+                            onClick={handleVerifyOTP}
+                            disabled={isVerifyingOTP || otpCode.length !== 6}
+                            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {isVerifyingOTP ? 'Đang xác minh...' : 'Xác minh'}
+                          </button>
+                        </div>
+
+                        {remainingTime > 0 && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <Clock className="w-4 h-4" />
+                            <span>Mã có hiệu lực trong: {formatTime(remainingTime)}</span>
+                          </div>
+                        )}
+
+                        {remainingTime === 0 && (
+                          <button
+                            onClick={handleSendOTP}
+                            disabled={isSendingOTP || sentCount >= 3}
+                            className="text-sm text-blue-600 hover:text-blue-800 disabled:text-gray-400"
+                          >
+                            Gửi lại mã OTP
+                          </button>
+                        )}
+
+                        {otpError && (
+                          <div className="flex items-center space-x-2 text-red-600 text-sm bg-red-50 p-2 rounded">
+                            <AlertCircle className="w-4 h-4" />
+                            <span>{otpError}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center space-x-2 text-green-600">
+                    <Check className="w-5 h-5" />
+                    <span className="font-medium">Xác minh OTP thành công! Bạn có thể ký hợp đồng.</span>
+                  </div>
+                )}
+              </div>
+
               {/* Signature Pad */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -392,18 +582,27 @@ const ContractSigning = () => {
                     ref={canvasRef}
                     width={500}
                     height={200}
-                    className="border border-gray-300 rounded cursor-crosshair w-full"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={stopDrawing}
-                    onMouseLeave={stopDrawing}
+                    className={`border border-gray-300 rounded w-full ${
+                      otpVerified ? 'cursor-crosshair' : 'cursor-not-allowed opacity-50'
+                    }`}
+                    onMouseDown={otpVerified ? startDrawing : null}
+                    onMouseMove={otpVerified ? draw : null}
+                    onMouseUp={otpVerified ? stopDrawing : null}
+                    onMouseLeave={otpVerified ? stopDrawing : null}
                   />
                 </div>
                 <div className="flex justify-between items-center mt-2">
-                  <p className="text-sm text-gray-600">Sử dụng chuột hoặc touch để ký tên</p>
+                  {otpVerified ? (
+                    <p className="text-sm text-gray-600">Sử dụng chuột hoặc touch để ký tên</p>
+                  ) : (
+                    <p className="text-sm text-orange-600 font-medium">
+                      🔒 Vui lòng xác minh OTP trước khi ký
+                    </p>
+                  )}
                   <button
                     onClick={clearSignature}
-                    className="text-red-500 text-sm hover:text-red-700"
+                    disabled={!otpVerified}
+                    className="text-red-500 text-sm hover:text-red-700 disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
                     Xóa chữ ký
                   </button>

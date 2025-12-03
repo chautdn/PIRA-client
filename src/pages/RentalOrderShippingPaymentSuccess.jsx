@@ -28,80 +28,65 @@ const RentalOrderShippingPaymentSuccess = () => {
       return;
     }
 
-    let pollInterval;
-    let stopTimer;
-
-    const verifyPaymentAndCreateRequest = async () => {
+    // When user returns from PayOS, the webhook has likely already processed the payment
+    // So we just need to create the early return request with the stored data
+    const createRequestAfterPayment = async () => {
       try {
-        // First, verify the upfront payment transaction
-        const Transaction = await import("../services/api");
-        const response = await Transaction.default.get(
-          `/transactions/${orderCode}`
-        );
-
-        if (response.data.metadata?.transaction?.status === "success") {
-          clearInterval(pollInterval);
-          clearTimeout(stopTimer);
-
-          setResult({ status: "paid", transaction: response.data.metadata.transaction });
+        const storedData = sessionStorage.getItem("earlyReturnFormData");
+        if (!storedData) {
+          setError("Không tìm thấy thông tin yêu cầu. Vui lòng thử lại.");
           setLoading(false);
-
-          toast.success("✅ Thanh toán thành công!");
-
-          // Now create the early return request
-          const storedData = sessionStorage.getItem("earlyReturnFormData");
-          if (storedData) {
-            const { formData, subOrderId } = JSON.parse(storedData);
-            
-            setCreatingRequest(true);
-            try {
-              await earlyReturnApi.create({
-                subOrderId,
-                requestedReturnDate: formData.requestedReturnDate,
-                useOriginalAddress: formData.useOriginalAddress,
-                returnAddress: formData.useOriginalAddress
-                  ? undefined
-                  : formData.returnAddress,
-                notes: formData.notes,
-              });
-
-              toast.success("✅ Yêu cầu trả hàng sớm đã được tạo!");
-              sessionStorage.removeItem("earlyReturnFormData");
-            } catch (createError) {
-              console.error("Failed to create request:", createError);
-              toast.error("Đã thanh toán nhưng không thể tạo yêu cầu. Vui lòng liên hệ hỗ trợ.");
-            } finally {
-              setCreatingRequest(false);
-            }
-          }
+          return;
         }
-      } catch (error) {
-        console.error("Verification error:", error);
-      }
-    };
 
-    // Verify immediately
-    verifyPaymentAndCreateRequest();
+        const { formData, subOrderId, feeCalculationResult } =
+          JSON.parse(storedData);
 
-    // Poll every 2 seconds
-    pollInterval = setInterval(verifyPaymentAndCreateRequest, 2000);
+        setCreatingRequest(true);
 
-    // Stop after 30 seconds
-    stopTimer = setTimeout(() => {
-      clearInterval(pollInterval);
-      setLoading(false);
+        const requestPayload = {
+          subOrderId,
+          requestedReturnDate: formData.requestedReturnDate,
+          useOriginalAddress: formData.useOriginalAddress,
+          returnAddress: formData.useOriginalAddress
+            ? undefined
+            : formData.returnAddress,
+          notes: formData.notes,
+        };
 
-      if (!result) {
-        setError(
-          "Không thể xác minh thanh toán. Vui lòng kiểm tra lại sau."
+        // Add addressInfo if there was a shipping fee payment
+        if (feeCalculationResult?.requiresPayment) {
+          requestPayload.addressInfo = {
+            originalDistance: feeCalculationResult.originalDistance,
+            newDistance: feeCalculationResult.newDistance,
+            newAddress: formData.returnAddress,
+          };
+        }
+
+        await earlyReturnApi.create(requestPayload);
+
+        toast.success(
+          "✅ Thanh toán thành công! Yêu cầu trả hàng sớm đã được tạo!"
         );
-      }
-    }, 30000);
+        sessionStorage.removeItem("earlyReturnFormData");
 
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-      if (stopTimer) clearTimeout(stopTimer);
+        setResult({ status: "paid" });
+        setLoading(false);
+      } catch (createError) {
+        console.error("Failed to create request:", createError);
+        setError("Không thể tạo yêu cầu. Vui lòng liên hệ hỗ trợ.");
+        toast.error(
+          createError.response?.data?.message ||
+            "Đã thanh toán nhưng không thể tạo yêu cầu. Vui lòng liên hệ hỗ trợ."
+        );
+        setLoading(false);
+      } finally {
+        setCreatingRequest(false);
+      }
     };
+
+    // Create request immediately (webhook has processed payment)
+    createRequestAfterPayment();
   }, [orderCode]);
 
   if (loading || creatingRequest) {
@@ -114,11 +99,11 @@ const RentalOrderShippingPaymentSuccess = () => {
         >
           <Loader className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {creatingRequest ? "Đang tạo yêu cầu trả hàng sớm..." : "Đang xác minh thanh toán"}
+            {creatingRequest
+              ? "Đang tạo yêu cầu trả hàng sớm..."
+              : "Đang xác minh thanh toán"}
           </h2>
-          <p className="text-gray-600">
-            Vui lòng đợi trong giây lát...
-          </p>
+          <p className="text-gray-600">Vui lòng đợi trong giây lát...</p>
         </motion.div>
       </div>
     );
@@ -163,9 +148,7 @@ const RentalOrderShippingPaymentSuccess = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Thanh toán thành công!
             </h2>
-            <p className="text-gray-600">
-              Yêu cầu trả hàng sớm đã được tạo
-            </p>
+            <p className="text-gray-600">Yêu cầu trả hàng sớm đã được tạo</p>
           </div>
 
           {/* Transaction Info */}
@@ -176,7 +159,9 @@ const RentalOrderShippingPaymentSuccess = () => {
                 #{result.transaction._id}
               </p>
 
-              <p className="text-sm text-gray-600 mt-3 mb-1">Phí đã thanh toán</p>
+              <p className="text-sm text-gray-600 mt-3 mb-1">
+                Phí đã thanh toán
+              </p>
               <p className="text-lg font-bold text-green-600">
                 {result.transaction.amount?.toLocaleString()}đ
               </p>
@@ -186,19 +171,19 @@ const RentalOrderShippingPaymentSuccess = () => {
           {/* Actions */}
           <div className="space-y-3">
             <button
-              onClick={() => navigate(`/rental-orders/${subOrderId || ''}`)}
+              onClick={() => navigate("/rental-orders")}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
             >
               <FileText className="w-5 h-5" />
-              <span>Xem chi tiết đơn hàng</span>
+              <span>Xem đơn hàng của tôi</span>
             </button>
 
             <button
-              onClick={() => navigate("/rental-orders")}
+              onClick={() => navigate("/")}
               className="w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2"
             >
               <Home className="w-5 h-5" />
-              <span>Về danh sách đơn hàng</span>
+              <span>Về trang chủ</span>
             </button>
           </div>
         </motion.div>
