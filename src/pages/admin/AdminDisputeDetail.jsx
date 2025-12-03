@@ -15,6 +15,7 @@ import AdminFinalProcessModal from '../../components/dispute/AdminFinalProcessMo
 import ShipperDamageResolveModal from '../../components/dispute/ShipperDamageResolveModal';
 import NegotiationRoom from '../../components/dispute/NegotiationRoom';
 import ThirdPartySection from '../../components/dispute/ThirdPartySection';
+import AdminExternalPaymentReview from '../../components/dispute/AdminExternalPaymentReview';
 
 const AdminDisputeDetail = () => {
   const { disputeId } = useParams();
@@ -54,6 +55,7 @@ const AdminDisputeDetail = () => {
   const canReview = dispute.status === 'RESPONDENT_REJECTED';
   const canProcessNegotiationResult = dispute.status === 'NEGOTIATION_AGREED';
   const canResolveShipperDamage = dispute.status === 'ADMIN_REVIEW' && dispute.type === 'DAMAGED_BY_SHIPPER';
+  const needReviewExternalPayment = dispute.status === 'ADMIN_REVIEW' && dispute.externalPayment?.ownerConfirmation?.confirmedAt;
 
   return (
     <div className="space-y-6">
@@ -95,6 +97,16 @@ const AdminDisputeDetail = () => {
             </p>
           </div>
         </div>
+
+        {/* External Payment Review */}
+        {needReviewExternalPayment && (
+          <div className="mt-4 pt-4 border-t">
+            <AdminExternalPaymentReview 
+              dispute={dispute}
+              onUpdate={() => loadDisputeDetail(disputeId)}
+            />
+          </div>
+        )}
 
         {/* Shipper Damage Resolution */}
         {canResolveShipperDamage && (

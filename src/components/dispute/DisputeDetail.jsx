@@ -8,6 +8,7 @@ import DisputeTimeline from './DisputeTimeline';
 import DisputeActions from './DisputeActions';
 import NegotiationRoom from './NegotiationRoom';
 import ThirdPartySection from './ThirdPartySection';
+import ExternalPaymentSection from './ExternalPaymentSection';
 
 const DisputeDetail = () => {
   const { disputeId } = useParams();
@@ -249,6 +250,17 @@ const DisputeDetail = () => {
               currentDispute.status === 'AGREED_AWAITING_ADMIN' ||
               currentDispute.status === 'THIRD_PARTY_ESCALATED') && (
               <NegotiationRoom dispute={currentDispute} />
+            )}
+
+            {/* External Payment Section */}
+            {currentDispute.status === 'WAITING_EXTERNAL_PAYMENT' && (
+              <ExternalPaymentSection 
+                dispute={currentDispute} 
+                onUpdate={(updatedDispute) => {
+                  // Reload dispute detail sau khi update
+                  loadDisputeDetail(disputeId);
+                }}
+              />
             )}
 
             {/* Third Party Resolution */}

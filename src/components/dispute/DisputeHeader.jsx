@@ -127,29 +127,75 @@ const DisputeHeader = ({ dispute }) => {
       </div>
 
       {/* Chi phí sửa chữa/bồi thường - chỉ hiện khi có */}
-      {dispute.repairCost > 0 && (
-        <div className="mt-4 p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3 flex-1">
-              <h3 className="text-sm font-medium text-orange-800">
-                💰 Chi phí sửa chữa/bồi thường
-              </h3>
-              <p className="mt-2 text-2xl font-bold text-orange-900">
-                {dispute.repairCost.toLocaleString('vi-VN')} VNĐ
-              </p>
-              <p className="mt-1 text-xs text-orange-700">
-                Số tiền owner yêu cầu để sửa chữa sản phẩm bị hư hại
-              </p>
+      {dispute.repairCost > 0 && (() => {
+        const depositAmount = product?.totalDeposit || 0;
+        const repairCost = dispute.repairCost;
+        const isDepositEnough = depositAmount >= repairCost;
+        const additionalPayment = repairCost - depositAmount;
+
+        return (
+          <div className="mt-4 p-4 bg-orange-50 border-l-4 border-orange-400 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-orange-800">
+                  💰 Chi phí sửa chữa/bồi thường
+                </h3>
+                <p className="mt-2 text-2xl font-bold text-orange-900">
+                  {repairCost.toLocaleString('vi-VN')} VNĐ
+                </p>
+                <p className="mt-1 text-xs text-orange-700">
+                  Số tiền owner yêu cầu để sửa chữa sản phẩm bị hư hại
+                </p>
+                
+                {/* Thông tin tiền cọc */}
+                <div className="mt-3 p-3 bg-white rounded border border-orange-200">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tiền cọc hiện có:</span>
+                      <span className="font-semibold text-gray-900">{depositAmount.toLocaleString('vi-VN')}đ</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Chi phí bồi thường:</span>
+                      <span className="font-semibold text-orange-600">-{repairCost.toLocaleString('vi-VN')}đ</span>
+                    </div>
+                    <div className="border-t border-orange-200 pt-2">
+                      {isDepositEnough ? (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-700 font-medium">Tiền cọc hoàn lại:</span>
+                            <span className="font-bold text-green-600">+{(depositAmount - repairCost).toLocaleString('vi-VN')}đ</span>
+                          </div>
+                          <p className="text-xs text-green-600 mt-2">
+                            ✓ Tiền cọc đủ để bồi thường. Số tiền còn lại sẽ được hoàn về ví của renter.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-700 font-medium">Cần trả thêm:</span>
+                            <span className="font-bold text-red-600">{additionalPayment.toLocaleString('vi-VN')}đ</span>
+                          </div>
+                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                            <p className="text-xs text-red-700">
+                              ⚠️ <strong>Tiền cọc không đủ!</strong> Renter cần thanh toán thêm <strong>{additionalPayment.toLocaleString('vi-VN')}đ</strong> ngoài hệ thống (chuyển khoản trực tiếp cho owner).
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
