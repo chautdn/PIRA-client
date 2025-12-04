@@ -12,9 +12,11 @@ import {
 } from '../../utils/disputeHelpers';
 import AdminResponseModal from '../../components/dispute/AdminResponseModal';
 import AdminFinalProcessModal from '../../components/dispute/AdminFinalProcessModal';
+import AdminOwnerDisputeFinalModal from '../../components/dispute/AdminOwnerDisputeFinalModal';
 import ShipperDamageResolveModal from '../../components/dispute/ShipperDamageResolveModal';
 import NegotiationRoom from '../../components/dispute/NegotiationRoom';
 import ThirdPartySection from '../../components/dispute/ThirdPartySection';
+import AdminProcessPayment from '../../components/dispute/AdminProcessPayment';
 
 const AdminDisputeDetail = () => {
   const { disputeId } = useParams();
@@ -23,6 +25,7 @@ const AdminDisputeDetail = () => {
   const { currentDispute, isLoading, loadDisputeDetail } = useDispute();
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showFinalProcessModal, setShowFinalProcessModal] = useState(false);
+  const [showOwnerDisputeFinalModal, setShowOwnerDisputeFinalModal] = useState(false);
   const [showShipperDamageModal, setShowShipperDamageModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -52,8 +55,10 @@ const AdminDisputeDetail = () => {
 
   const dispute = currentDispute;
   const canReview = dispute.status === 'RESPONDENT_REJECTED';
-  const canProcessNegotiationResult = dispute.status === 'NEGOTIATION_AGREED';
+  const canProcessNegotiationResult = dispute.status === 'NEGOTIATION_AGREED' && dispute.shipmentType === 'DELIVERY';
+  const canProcessOwnerDisputeResult = dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED' && dispute.shipmentType === 'RETURN';
   const canResolveShipperDamage = dispute.status === 'ADMIN_REVIEW' && dispute.type === 'DAMAGED_BY_SHIPPER';
+  const canProcessPayment = dispute.status === 'RESPONDENT_ACCEPTED' && dispute.repairCost > 0;
 
   return (
     <div className="space-y-6">
@@ -145,7 +150,18 @@ const AdminDisputeDetail = () => {
               onClick={() => setShowFinalProcessModal(true)}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
             >
-              Xử lý kết quả đàm phán
+              Xử lý kết quả đàm phán (Renter Dispute)
+            </button>
+          </div>
+        )}
+
+        {canProcessOwnerDisputeResult && (
+          <div className="mt-4 pt-4 border-t">
+            <button
+              onClick={() => setShowOwnerDisputeFinalModal(true)}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium"
+            >
+              Đưa ra quyết định cuối cùng (Owner Dispute)
             </button>
           </div>
         )}
@@ -216,6 +232,16 @@ const AdminDisputeDetail = () => {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
+              {/* Admin Process Payment */}
+              {canProcessPayment && (
+                <AdminProcessPayment 
+                  dispute={dispute}
+                  onUpdate={(updatedDispute) => {
+                    loadDisputeDetail(disputeId);
+                  }}
+                />
+              )}
+
               {/* Description */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Mô tả</h3>
@@ -663,11 +689,21 @@ const AdminDisputeDetail = () => {
         }}
       />
 
-      {/* Admin Final Process Modal */}
+      {/* Admin Final Process Modal (Renter Dispute) */}
       <AdminFinalProcessModal
         isOpen={showFinalProcessModal}
         onClose={() => setShowFinalProcessModal(false)}
         dispute={dispute}
+      />
+
+      {/* Admin Owner Dispute Final Modal */}
+      <AdminOwnerDisputeFinalModal
+        isOpen={showOwnerDisputeFinalModal}
+        onClose={() => setShowOwnerDisputeFinalModal(false)}
+        dispute={dispute}
+        onUpdate={() => {
+          loadDisputeDetail(disputeId);
+        }}
       />
 
       {/* Shipper Damage Resolve Modal */}

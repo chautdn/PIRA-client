@@ -89,7 +89,7 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                 {/* Complainant */}
                 <div className="bg-blue-50 p-3 rounded">
                   <p className="text-xs text-blue-600 font-medium mb-2">
-                    {dispute.shipmentType === 'DELIVERY' ? 'NGƯỜI THUÊ (Chủ hàng)' : 'CHỦ HÀNG (Người thuê)'}
+                    NGƯỜI THUÊ
                   </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.complainant.name}</p>
@@ -101,7 +101,7 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                 {/* Respondent */}
                 <div className="bg-orange-50 p-3 rounded">
                   <p className="text-xs text-orange-600 font-medium mb-2">
-                    {dispute.shipmentType === 'DELIVERY' ? 'CHỦ HÀNG (Người thuê)' : 'NGƯỜI THUÊ (Chủ hàng)'}
+                    CHỦ HÀNG
                   </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.respondent.name}</p>
@@ -119,21 +119,6 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
               Sau khi nhận được kết quả từ bên thứ 3, vui lòng upload bằng chứng bên dưới trước hạn <strong>{formatDate(evidenceDeadline)}</strong>.
             </p>
           </div>
-        </div>
-      )}
-
-      {/* Upload evidence section cho user */}
-      {!isAdmin && isShipperInfoShared && !isEvidenceUploaded && dispute.status === 'THIRD_PARTY_ESCALATED' && (
-        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <p className="text-orange-800 mb-3">
-            Bạn có thể upload bằng chứng kết quả từ bên thứ 3. Hạn cuối: {formatDate(evidenceDeadline)}
-          </p>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium"
-          >
-            Upload bằng chứng
-          </button>
         </div>
       )}
 
