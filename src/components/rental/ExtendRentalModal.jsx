@@ -43,57 +43,32 @@ const ExtendRentalModal = ({
   // Fetch product details for items without proper population
   useEffect(() => {
     if (products && products.length > 0) {
-      const productsToFetch = products.filter(p => {
-        const hasProductDetail = p.product && (p.product.name || p.product.thumbnail);
-        const hasEnriched = enrichedProducts[p._id];
-        return !hasEnriched && (!hasProductDetail || !p.product._id);
-      });
-
-      if (productsToFetch.length > 0) {
-        console.log('📥 Fetching product details for', productsToFetch.length, 'products');
-        
-        productsToFetch.forEach(product => {
-          // Try to get product ID from various sources
-          let productId = product.product?._id || product.productId;
-          
-          // If no ID, try to use the product reference as string
-          if (!productId && product.product) {
-            productId = typeof product.product === 'string' ? product.product : product.product?._id;
-          }
-          
-          if (productId && productId !== 'N/A') {
-            console.log(`🔍 Fetching product with ID: ${productId}`);
-            api.get(`/products/${productId}`)
-              .then(res => {
-                const fetchedProduct = res.data.data || res.data;
-                console.log(`✅ Fetched product ${productId}:`, fetchedProduct);
-                setEnrichedProducts(prev => ({
-                  ...prev,
-                  [product._id]: fetchedProduct
-                }));
-              })
-              .catch(err => {
-                console.warn(`⚠️ Failed to fetch product ${productId}:`, err.message);
-                // Still set a placeholder with product info if available
-                if (product.product && typeof product.product === 'object') {
-                  setEnrichedProducts(prev => ({
-                    ...prev,
-                    [product._id]: product.product
-                  }));
-                }
-              });
-          } else {
-            // Use product info directly if available
-            if (product.product && typeof product.product === 'object') {
-              console.log('📦 Using product info directly:', product.product);
+      products.forEach(product => {
+        // If product already has data from populate, use it directly
+        if (product.product && typeof product.product === 'object' && product.product._id) {
+          console.log('📦 Product already populated:', product.product);
+          setEnrichedProducts(prev => ({
+            ...prev,
+            [product._id]: product.product
+          }));
+        } else if (product.product && typeof product.product === 'string') {
+          // If product is just an ID string, fetch it
+          const productId = product.product;
+          console.log(`🔍 Fetching product with ID: ${productId}`);
+          api.get(`/products/${productId}`)
+            .then(res => {
+              const fetchedProduct = res.data?.data || res.data?.metadata || res.data;
+              console.log(`✅ Fetched product ${productId}:`, fetchedProduct);
               setEnrichedProducts(prev => ({
                 ...prev,
-                [product._id]: product.product
+                [product._id]: fetchedProduct
               }));
-            }
-          }
-        });
-      }
+            })
+            .catch(err => {
+              console.warn(`⚠️ Failed to fetch product ${productId}:`, err.message);
+            });
+        }
+      });
     }
   }, [products]);
 
@@ -109,7 +84,59 @@ const ExtendRentalModal = ({
     }
   }, [isOpen]);
 
-  // Handle select all
+  // Get product image safely
+  const getProductImage = (productDetail) => {
+    if (!productDetail) return null;
+    
+    console.log('🖼️ Getting image from:', productDetail);
+    
+    // Try images array first (from populated data)
+    if (productDetail.images && Array.isArray(productDetail.images) && productDetail.images.length > 0) {
+      const firstImage = productDetail.images[0];
+      console.log('✅ Using image from images array:', firstImage);
+      return typeof firstImage === 'string' ? firstImage : firstImage?.url;
+    }
+    
+    // Try thumbnail
+    if (productDetail.thumbnail) {
+      console.log('✅ Using thumbnail:', productDetail.thumbnail);
+      return productDetail.thumbnail;
+    }
+    
+    // Try single image field
+    if (productDetail.image) {
+      console.log('✅ Using image field:', productDetail.image);
+      return productDetail.image;
+    }
+    
+    if (productDetail.mainImage) {
+      console.log('✅ Using mainImage:', productDetail.mainImage);
+      return productDetail.mainImage;
+    }
+    
+    console.log('❌ No image found in product detail');
+    return null;
+  };
+
+  // Get product name safely
+  const getProductName = (productDetail) => {
+    if (!productDetail) return 'Sản phẩm (chưa tải)';
+    
+    // Try title first (from Product model)
+    if (productDetail.title) {
+      console.log('✅ Using title:', productDetail.title);
+      return productDetail.title;
+    }
+    
+    // Try name (fallback)
+    if (productDetail.name) {
+      console.log('✅ Using name:', productDetail.name);
+      return productDetail.name;
+    }
+    
+    console.log('❌ No name/title found');
+    return 'Sản phẩm (chưa tải tên)';
+  };
   const handleSelectAll = (checked) => {
     setSelectAll(checked);
     const newSelected = {};
@@ -176,17 +203,27 @@ const ExtendRentalModal = ({
 
   // Calculate extension fee for product
   const getExtensionFee = (product, extensionDays) => {
-    if (extensionDays <= 0) return 0;
+    if (extensionDays <= 0 || !product) return 0;
     
-    // Calculate based on rental rate (daily price from suborder)
+    // Get the daily rental price from the product in subOrder
     // product.rentalRate is the daily rental rate for this item in the order
     const dailyPrice = product.rentalRate || 0;
+    
+    if (!dailyPrice || dailyPrice <= 0) {
+      console.warn('⚠️ Missing rentalRate for product:', {
+        productId: product._id,
+        productName: product.product?.title || product.product?.name || 'Unknown',
+        rentalRate: product.rentalRate
+      });
+      return 0;
+    }
+    
     const fee = Math.ceil(dailyPrice * extensionDays);
     
     console.log('💰 Fee calculation:', {
-      productName: product.product?.name || product.name,
-      rentalRate: product.rentalRate,
-      dailyPrice,
+      productId: product._id,
+      productName: product.product?.title || product.product?.name || 'Unknown',
+      rentalRate: dailyPrice,
       extensionDays,
       fee
     });
@@ -229,7 +266,7 @@ const ExtendRentalModal = ({
       setLoading(true);
       
       // Send each product with its own extension details
-      const selectedProducts = validSelections.map(item => ({
+      const selectedProductsPayload = validSelections.map(item => ({
         productId: item.productId,
         newEndDate: item.newEndDate,
         extensionDays: item.extensionDays,
@@ -237,15 +274,29 @@ const ExtendRentalModal = ({
         dailyRentalPrice: item.dailyPrice
       }));
 
-      const response = await api.post('/extensions/request', {
+      console.log('📤 Sending extension request:', {
         subOrderId: subOrder._id,
-        selectedProducts
+        productCount: selectedProductsPayload.length,
+        products: selectedProductsPayload.map(p => ({
+          productId: p.productId,
+          extensionDays: p.extensionDays,
+          extensionFee: p.extensionFee,
+          dailyRentalPrice: p.dailyRentalPrice
+        })),
+        totalFee: selectedProductsPayload.reduce((sum, p) => sum + p.extensionFee, 0)
       });
 
+      const response = await api.post('/extensions/request', {
+        subOrderId: subOrder._id,
+        selectedProducts: selectedProductsPayload
+      });
+
+      console.log('✅ Extension request response:', response);
       toast.success('Gửi yêu cầu gia hạn thành công');
       onClose();
       onSuccess?.();
     } catch (error) {
+      console.error('❌ Error sending extension request:', error);
       toast.error(error.response?.data?.message || 'Lỗi gửi yêu cầu gia hạn');
     } finally {
       setLoading(false);
@@ -344,14 +395,16 @@ const ExtendRentalModal = ({
                           const dailyPrice = product.rentalRate || 0;
                           const currentEndDate = new Date(product.rentalPeriod?.endDate);
                           
-                          // Get product detail - first from enriched data, then from product field, then fallback
+                          // Product detail - use enriched first, then direct from product.product
                           const enrichedData = enrichedProducts[product._id];
                           const productDetail = enrichedData || product.product;
-                          const productName = productDetail?.name || product.name || 'Sản phẩm (chưa tải tên)';
-                          const productImage = productDetail?.thumbnail || productDetail?.images?.[0]?.url;
-                          const productSku = productDetail?.sku;
-                          // Try multiple sources for product ID
-                          const productId = productDetail?._id || enrichedData?._id || product?.product?._id || product?.productId || 'N/A';
+                          
+                          console.log('🔍 Rendering product:', { product, productDetail, enrichedData });
+                          
+                          const productName = getProductName(productDetail);
+                          const productImage = getProductImage(productDetail);
+                          const productSku = productDetail?.sku || productDetail?.code;
+                          const productId = productDetail?._id || 'N/A';
 
                           return (
                             <div
@@ -375,20 +428,32 @@ const ExtendRentalModal = ({
                                 />
                                 
                                 {/* Product Image */}
-                                {productImage && (
+                                {productImage ? (
                                   <img 
                                     src={productImage} 
                                     alt={productName}
                                     className="w-20 h-20 object-cover rounded-lg flex-shrink-0 border border-gray-200"
+                                    onError={(e) => {
+                                      console.error('❌ Image failed to load:', productImage);
+                                      e.target.style.display = 'none';
+                                    }}
                                   />
+                                ) : (
+                                  <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 border border-gray-200 flex items-center justify-center">
+                                    <span className="text-gray-400 text-xs">No Image</span>
+                                  </div>
                                 )}
 
                                 {/* Product Info */}
                                 <div className="flex-1 min-w-0">
                                   <p className="font-bold text-gray-900 break-words">{productName}</p>
                                   <div className="text-xs text-gray-600 space-y-1 mt-2">
-                                    {productId && productId !== 'N/A' && <p>Mã sản phẩm: <span className="font-semibold text-gray-900">{productId}</span></p>}
-                                    {productSku && <p>SKU: <span className="font-semibold text-gray-900">{productSku}</span></p>}
+                                    {productId && productId !== 'N/A' && (
+                                      <p>Mã sản phẩm: <span className="font-semibold text-gray-900">{productId}</span></p>
+                                    )}
+                                    {productSku && (
+                                      <p>SKU: <span className="font-semibold text-gray-900">{productSku}</span></p>
+                                    )}
                                     <p>Giá thuê: <span className="font-bold text-green-600">{dailyPrice.toLocaleString('vi-VN')}đ/ngày</span></p>
                                     <p>Ngày kết thúc: <span className="font-medium">{currentEndDate.toLocaleDateString('vi-VN')}</span></p>
                                   </div>
@@ -450,25 +515,35 @@ const ExtendRentalModal = ({
                         const currentEndDate = new Date(item.product.rentalPeriod?.endDate);
                         const newEndDate = new Date(item.newEndDate);
                         const productDetail = item.productDetail;
+                        const productName = getProductName(productDetail);
+                        const productImage = getProductImage(productDetail);
 
                         return (
                           <div key={item.productId} className="border-2 border-orange-300 rounded-lg p-4 bg-orange-50">
                             {/* Product Header with Image */}
                             <div className="flex items-start space-x-4 mb-3">
                               {/* Product Image */}
-                              {(productDetail?.thumbnail || productDetail?.images?.[0]?.url) && (
+                              {productImage ? (
                                 <img 
-                                  src={productDetail.thumbnail || productDetail.images[0].url} 
-                                  alt={productDetail?.name}
-                                  className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                                  src={productImage} 
+                                  alt={productName}
+                                  className="w-20 h-20 object-cover rounded-lg flex-shrink-0 border border-orange-200"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
                                 />
+                              ) : (
+                                <div className="w-20 h-20 bg-orange-100 rounded-lg flex-shrink-0 border border-orange-200 flex items-center justify-center">
+                                  <span className="text-orange-400 text-xs">No Image</span>
+                                </div>
                               )}
                               
                               {/* Product Info */}
                               <div className="flex-1 min-w-0">
-                                <h4 className="text-lg font-bold text-gray-900 break-words">{productDetail?.name}</h4>
+                                <h4 className="text-lg font-bold text-gray-900 break-words">{productName}</h4>
                                 <div className="text-sm text-gray-600 space-y-1 mt-2">
                                   {productDetail?.sku && <p>SKU: <span className="font-medium text-gray-900">{productDetail.sku}</span></p>}
+                                  {productDetail?.code && !productDetail?.sku && <p>Mã: <span className="font-medium text-gray-900">{productDetail.code}</span></p>}
                                   <p>Trạng thái: <span className="font-medium text-blue-600">{item.product.productStatus}</span></p>
                                 </div>
                               </div>

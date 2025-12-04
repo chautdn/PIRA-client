@@ -12,6 +12,7 @@ import { useDispute } from "../context/DisputeContext";
 import ExtendRentalModal from "../components/rental/ExtendRentalModal";
 import ManageShipmentModal from "../components/owner/ManageShipmentModal";
 import RenterShipmentModal from "../components/rental/RenterShipmentModal";
+import RenterPartialDecisionModal from "../components/rental/RenterPartialDecisionModal";
 import {
   ArrowLeft,
   Package,
@@ -48,6 +49,8 @@ const RentalOrderDetailPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [confirmAction, setConfirmAction] = useState(null); // 'confirm' or 'reject'
   const [rejectReason, setRejectReason] = useState("");
+  const [showPartialDecisionModal, setShowPartialDecisionModal] = useState(false);
+  const [partialDecisionSubOrder, setPartialDecisionSubOrder] = useState(null);
   const [showEarlyReturnModal, setShowEarlyReturnModal] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -116,6 +119,57 @@ const RentalOrderDetailPage = () => {
       loadOrderDetail(id);
     }
   }, [id]);
+
+  // Check for partial confirmation that needs renter decision
+  useEffect(() => {
+    if (currentOrder && currentOrder.subOrders) {
+      const isRenter = user?._id === currentOrder.renter?._id;
+      
+      if (isRenter) {
+        // Find subOrder waiting for renter decision
+        const pendingDecision = currentOrder.subOrders.find(
+          sub => sub.status === 'PENDING_RENTER_DECISION'
+        );
+        
+        if (pendingDecision) {
+          setPartialDecisionSubOrder(pendingDecision);
+          // Chỉ tự động hiển thị modal lần đầu tiên
+          if (!showPartialDecisionModal) {
+            setShowPartialDecisionModal(true);
+          }
+        } else {
+          // Không còn pending decision, reset state
+          setPartialDecisionSubOrder(null);
+          setShowPartialDecisionModal(false);
+        }
+      }
+    }
+  }, [currentOrder, user]);
+
+  // Handle renter decision
+  const handleRenterDecision = async (decision, result) => {
+    console.log('Renter decision:', decision, result);
+    setShowPartialDecisionModal(false);
+    setPartialDecisionSubOrder(null);
+    
+    if (decision === 'CANCELLED') {
+      toast.success(`Đã hủy đơn hàng và hoàn ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
+      // Reload order detail
+      await loadOrderDetail(id);
+    } else if (decision === 'ACCEPTED') {
+      toast.success(`Đã chấp nhận đơn hàng. Hoàn tiền: ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
+      // Reload order detail
+      await loadOrderDetail(id);
+      
+      // Tự động chuyển đến trang ký hợp đồng sau 1.5s
+      setTimeout(() => {
+        toast.loading('Đang chuyển đến trang ký hợp đồng...');
+        setTimeout(() => {
+          navigate('/rental-orders/contracts');
+        }, 800);
+      }, 1500);
+    }
+  };
 
   // Fetch early return requests for this order
   const fetchEarlyReturnRequests = async () => {
@@ -397,9 +451,56 @@ const RentalOrderDetailPage = () => {
     }
   };
 
+  // Check if has pending decision subOrder
+  const hasPendingDecision = currentOrder?.subOrders?.some(
+    sub => sub.status === 'PENDING_RENTER_DECISION'
+  );
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
+        {/* Alert Banner for Pending Decision */}
+        {hasPendingDecision && isRenter && (
+          <div className="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6 rounded-lg shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-bold text-orange-900 text-lg mb-1">
+                    ⚠️ Cần quyết định của bạn!
+                  </h3>
+                  <p className="text-orange-800 mb-2">
+                    Chủ đã xác nhận một phần sản phẩm trong đơn hàng. Vui lòng chọn hủy toàn bộ hoặc tiếp tục với phần được xác nhận.
+                  </p>
+                  <button
+                    onClick={() => {
+                      const pendingSubOrder = currentOrder.subOrders.find(
+                        sub => sub.status === 'PENDING_RENTER_DECISION'
+                      );
+                      if (pendingSubOrder) {
+                        setPartialDecisionSubOrder(pendingSubOrder);
+                        setShowPartialDecisionModal(true);
+                      }
+                    }}
+                    className="mt-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-semibold flex items-center gap-2 transition-colors"
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                    Xem chi tiết và quyết định
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  // User can dismiss the banner, but can open modal via button
+                }}
+                className="text-orange-600 hover:text-orange-800 p-1"
+              >
+                {/* Keep banner visible */}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
@@ -1740,6 +1841,19 @@ const RentalOrderDetailPage = () => {
             setShowExtendRentalModal(false);
             loadOrderDetail(id);
           }}
+        />
+      )}
+
+      {/* Renter Partial Decision Modal */}
+      {showPartialDecisionModal && partialDecisionSubOrder && (
+        <RenterPartialDecisionModal
+          isOpen={showPartialDecisionModal}
+          onClose={() => {
+            setShowPartialDecisionModal(false);
+            setPartialDecisionSubOrder(null);
+          }}
+          subOrder={partialDecisionSubOrder}
+          onDecisionMade={handleRenterDecision}
         />
       )}
 

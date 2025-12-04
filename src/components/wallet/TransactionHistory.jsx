@@ -89,13 +89,21 @@ const TransactionHistory = ({ isOpen, onClose }) => {
   const getTypeIcon = (type, isOutgoing = false) => {
     switch (type) {
       case "deposit":
+      case "DEPOSIT":
+      case "TRANSFER_IN":
         return <ArrowDownLeft className="w-4 h-4 text-green-500" />;
       case "withdrawal":
-        return <ArrowUpRight className="w-4 h-4 text-red-500" />;
+      case "WITHDRAWAL":
+      case "TRANSFER_OUT":
+        return <ArrowUpRight className="w-4 h-4 text-orange-500" />;
       case "payment":
-        return <ArrowUpRight className="w-4 h-4 text-red-500" />; // Payment (outgoing)
+      case "order_payment":
+      case "penalty":
+        return <ArrowUpRight className="w-4 h-4 text-blue-500" />; // Payment (outgoing)
       case "refund":
-        return <ArrowDownLeft className="w-4 h-4 text-blue-500" />; // Hoàn tiền
+        return <ArrowDownLeft className="w-4 h-4 text-purple-500" />; // Hoàn tiền
+      case "PROMOTION_REVENUE":
+        return <ArrowDownLeft className="w-4 h-4 text-emerald-500" />;
       default:
         // Use isOutgoing to determine direction for unknown types
         return isOutgoing ? 
@@ -107,13 +115,24 @@ const TransactionHistory = ({ isOpen, onClose }) => {
   const getTransactionTitle = (type) => {
     switch (type) {
       case "deposit":
+      case "DEPOSIT":
         return "Nạp tiền";
       case "withdrawal":
+      case "WITHDRAWAL":
         return "Rút tiền";
       case "payment":
+      case "order_payment":
         return "Thanh toán";
       case "refund":
         return "Hoàn tiền";
+      case "penalty":
+        return "Phạt";
+      case "PROMOTION_REVENUE":
+        return "Doanh thu khuyến mãi";
+      case "TRANSFER_IN":
+        return "Chuyển vào";
+      case "TRANSFER_OUT":
+        return "Chuyển ra";
       default:
         return type.charAt(0).toUpperCase() + type.slice(1);
     }
@@ -258,13 +277,13 @@ const TransactionHistory = ({ isOpen, onClose }) => {
                         <div className="text-right">
                           <div
                             className={`font-bold text-lg ${
-                              transaction.displayAmount >= 0
+                              ['deposit', 'DEPOSIT', 'refund', 'PROMOTION_REVENUE', 'TRANSFER_IN'].includes(transaction.type)
                                 ? "text-green-600"
                                 : "text-red-600"
                             }`}
                           >
-                            {transaction.displayAmount?.toLocaleString() || 
-                             (transaction.amount?.toLocaleString() || "0")}
+                            {(['deposit', 'DEPOSIT', 'refund', 'PROMOTION_REVENUE', 'TRANSFER_IN'].includes(transaction.type) ? '+' : '-')}
+                            {transaction.amount?.toLocaleString() || "0"}
                           </div>
                           <div className="text-xs text-gray-500">VND</div>
                         </div>

@@ -12,7 +12,7 @@ export default function ShipmentsPage() {
   const { socket, connected } = useChatSocket();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null); // Single date selection
   const [selectedShipmentType, setSelectedShipmentType] = useState('DELIVERY'); // Filter by type
   const [proofs, setProofs] = useState({}); // Cache proofs by shipmentId
   
@@ -203,16 +203,6 @@ export default function ShipmentsPage() {
   };
 
   const dateTypePairs = getUniqueDateTypePairs();
-  
-  // Auto-select first date when shipment type changes
-  useEffect(() => {
-    const filteredPairs = dateTypePairs.filter(pair => pair.endsWith(`-${selectedShipmentType}`));
-    if (filteredPairs.length > 0) {
-      setSelectedDate(filteredPairs[0]); // Auto-select first date
-    } else {
-      setSelectedDate(null);
-    }
-  }, [selectedShipmentType, dateTypePairs]);
   
   // Get shipments for selected date-type pair
   const shipmentsForSelectedDate = selectedDate ? datesMapByType[selectedDate] : [];
@@ -422,13 +412,14 @@ export default function ShipmentsPage() {
                     const [dateStr] = pair.split('-');
                     const count = datesMapByType[pair]?.length || 0;
                     const isDelivery = selectedShipmentType === 'DELIVERY';
+                    const isSelected = selectedDate === pair;
                     
                     return (
                       <button
                         key={pair}
-                        onClick={() => setSelectedDate(selectedDate === pair ? null : pair)}
+                        onClick={() => setSelectedDate(isSelected ? null : pair)}
                         className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                          selectedDate === pair
+                          isSelected
                             ? isDelivery
                               ? 'bg-blue-600 text-white shadow-lg'
                               : 'bg-orange-600 text-white shadow-lg'
@@ -473,7 +464,6 @@ export default function ShipmentsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Phí vận chuyển</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -483,7 +473,7 @@ export default function ShipmentsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="hover:bg-blue-50 transition-colors cursor-pointer"
-                        onClick={() => (s.status === 'SHIPPER_CONFIRMED' || s.status === 'IN_TRANSIT') && handleOpenManagementModal(s)}
+                        onClick={() => handleOpenManagementModal(s)}
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.shipmentId}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.subOrder?._id || s.subOrder}</td>
@@ -521,44 +511,6 @@ export default function ShipmentsPage() {
                             {s.tracking?.deliveredAt ? (
                               <div>Deliver: {new Date(s.tracking.deliveredAt).toLocaleTimeString('vi-VN')}</div>
                             ) : null}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const customer = s.customerInfo || {};
-                                  const renter = s.subOrder?.masterOrder?.renter;
-                                  const name = customer.name || renter?.profile?.fullName || renter?.profile?.firstName || 'N/A';
-                                  const phone = customer.phone || renter?.phone || 'N/A';
-                                  const email = customer.email || renter?.email || 'N/A';
-                                  
-                                  setSelectedCustomer({
-                                    name: name,
-                                    phone: phone,
-                                    email: email,
-                                    address: s.type === 'DELIVERY' ? s.toAddress : s.fromAddress,
-                                    type: s.type
-                                  });
-                                  setIsCustomerModalOpen(true);
-                                }}
-                                className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium transition-colors text-xs"
-                                title="Xem thông tin khách hàng"
-                              >
-                                👤 Info
-                              </button>
-
-                              {s.status === 'PENDING' && (
-                                <button 
-                                  onClick={() => handleAccept(s)}
-                                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors text-xs"
-                                >
-                                  Nhận
-                                </button>
-                              )}
-                            </div>
                           </div>
                         </td>
                       </motion.tr>

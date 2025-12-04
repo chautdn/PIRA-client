@@ -55,15 +55,23 @@ const TransactionHistory = () => {
     if (status === 'pending') return <RefreshCw className="w-5 h-5 text-yellow-500 animate-spin" />;
     if (status === 'failed') return <ArrowDownCircle className="w-5 h-5 text-red-500" />;
     
-    switch (type) {
+        switch (type) {
       case 'deposit':
+      case 'DEPOSIT':
+      case 'TRANSFER_IN':
         return <ArrowUpCircle className="w-5 h-5 text-green-500" />;
       case 'payment':
+      case 'order_payment':
+      case 'penalty':
         return <ArrowDownCircle className="w-5 h-5 text-blue-500" />;
       case 'withdrawal':
+      case 'WITHDRAWAL':
+      case 'TRANSFER_OUT':
         return <ArrowDownCircle className="w-5 h-5 text-orange-500" />;
       case 'refund':
         return <ArrowUpCircle className="w-5 h-5 text-purple-500" />;
+      case 'PROMOTION_REVENUE':
+        return <ArrowUpCircle className="w-5 h-5 text-emerald-500" />;
       default:
         return <CreditCard className="w-5 h-5 text-gray-500" />;
     }
@@ -93,11 +101,20 @@ const TransactionHistory = () => {
 
   const getTypeText = (type) => {
     switch (type) {
-      case 'deposit': return 'Nạp tiền';
-      case 'payment': return 'Thanh toán';
-      case 'withdrawal': return 'Rút tiền';
+      case 'deposit':
+      case 'DEPOSIT':
+        return 'Nạp tiền';
+      case 'payment':
+      case 'order_payment':
+        return 'Thanh toán';
+      case 'withdrawal':
+      case 'WITHDRAWAL':
+        return 'Rút tiền';
       case 'refund': return 'Hoàn tiền';
       case 'penalty': return 'Phạt';
+      case 'PROMOTION_REVENUE': return 'Doanh thu khuyến mãi';
+      case 'TRANSFER_IN': return 'Chuyển vào';
+      case 'TRANSFER_OUT': return 'Chuyển ra';
       default: return type;
     }
   };
@@ -107,12 +124,16 @@ const TransactionHistory = () => {
       case 'wallet': return 'Ví điện tử';
       case 'payos': return 'PayOS';
       case 'cod': return 'Tiền mặt';
-      default: return method;
+      case 'system_wallet': return 'Ví hệ thống';
+      default: return method || 'N/A';
     }
   };
 
   const formatAmount = (amount, type) => {
-    const sign = ['deposit', 'refund'].includes(type) ? '+' : '-';
+    // Các type TĂNG tiền (cộng): deposit, refund, PROMOTION_REVENUE, TRANSFER_IN
+    // Các type GIẢM tiền (trừ): payment, withdrawal, penalty, order_payment, TRANSFER_OUT
+    const increaseTypes = ['deposit', 'DEPOSIT', 'refund', 'PROMOTION_REVENUE', 'TRANSFER_IN'];
+    const sign = increaseTypes.includes(type) ? '+' : '-';
     return `${sign}${amount?.toLocaleString('vi-VN')}đ`;
   };
 
@@ -172,12 +193,14 @@ const TransactionHistory = () => {
                 value={filter.type}
                 onChange={(e) => setFilter(prev => ({ ...prev, type: e.target.value, page: 1 }))}
                 className="border border-gray-300 rounded px-3 py-2"
-              >
+               >
                 <option value="all">Tất cả loại</option>
                 <option value="deposit">Nạp tiền</option>
                 <option value="payment">Thanh toán</option>
                 <option value="withdrawal">Rút tiền</option>
                 <option value="refund">Hoàn tiền</option>
+                <option value="penalty">Phạt</option>
+                <option value="PROMOTION_REVENUE">Doanh thu khuyến mãi</option>
               </select>
             </div>
             <div>
@@ -264,7 +287,7 @@ const TransactionHistory = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`text-sm font-semibold ${
-                          ['deposit', 'refund'].includes(transaction.type) 
+                          ['deposit', 'DEPOSIT', 'refund', 'PROMOTION_REVENUE', 'TRANSFER_IN'].includes(transaction.type) 
                             ? 'text-green-600' 
                             : 'text-red-600'
                         }`}>

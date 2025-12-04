@@ -5,6 +5,8 @@ import { ownerProductApi } from '../../services/ownerProduct.Api';
 import { toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/constants';
 import { Package, Calendar, User, CreditCard, ChevronRight, Filter } from 'lucide-react';
+import ManageExtensionRequestsModal from '../../components/owner/ManageExtensionRequestsModal';
+import OwnerShipmentModal from '../../components/owner/OwnerShipmentModal';
 
 const OwnerRentalRequests = () => {
   const { user } = useAuth();
@@ -13,6 +15,9 @@ const OwnerRentalRequests = () => {
   const [subOrders, setSubOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const filterOptions = [
     { value: 'all', label: 'Tất cả' },
@@ -21,6 +26,7 @@ const OwnerRentalRequests = () => {
     { value: 'OWNER_CONFIRMED', label: 'Đã xác nhận' },
     { value: 'READY_FOR_CONTRACT', label: 'Sẵn sàng hợp đồng' },
     { value: 'CONTRACT_SIGNED', label: 'Đã ký hợp đồng' },
+    { value: 'ACTIVE', label: 'Đang thuê' },
     { value: 'COMPLETED', label: 'Hoàn thành' }
   ];
 
@@ -86,6 +92,7 @@ const OwnerRentalRequests = () => {
       PENDING_RENTER: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Chờ người thuê ký' },
       CONTRACT_SIGNED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã ký hợp đồng' },
       DELIVERED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã giao' },
+      ACTIVE: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Đang thuê' },
       IN_PROGRESS: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Đang thuê' },
       COMPLETED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
       CANCELLED: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Đã hủy' }
@@ -131,6 +138,15 @@ const OwnerRentalRequests = () => {
               className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
             >
               📅 Quản lí gia hạn
+            </button>
+            <button
+              onClick={() => {
+                setSelectedOrder(null);
+                setShowShipmentModal(true);
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              🚚 Quản lí vận chuyển
             </button>
           </div>
         </div>
@@ -225,7 +241,7 @@ const OwnerRentalRequests = () => {
                         <div className="flex items-center">
                           <CreditCard size={16} className="text-gray-400 mr-2" />
                           <span className="text-sm font-medium text-green-600">
-                            {formatCurrency(subOrder.totalAmount)}
+                            {formatCurrency(subOrder.pricing?.totalAmount)}
                           </span>
                         </div>
                       </td>
@@ -278,6 +294,27 @@ const OwnerRentalRequests = () => {
           </div>
         )}
       </div>
+
+      {/* Extension Management Modal */}
+      <ManageExtensionRequestsModal 
+        isOpen={showExtensionModal}
+        onClose={() => setShowExtensionModal(false)}
+        onSuccess={() => fetchSubOrders()}
+      />
+
+      {/* Shipment Management Modal */}
+      {selectedOrder && (
+        <OwnerShipmentModal
+          isOpen={showShipmentModal}
+          onClose={() => {
+            setShowShipmentModal(false);
+            setSelectedOrder(null);
+          }}
+          subOrder={selectedOrder}
+          masterOrder={selectedOrder?.masterOrder}
+          onConfirmReceived={() => fetchSubOrders()}
+        />
+      )}
     </div>
   );
 };

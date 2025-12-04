@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import rentalOrderService from '../services/rentalOrder';
 import { toast } from '../components/common/Toast';
+import RenterPartialDecisionModal from '../components/rental/RenterPartialDecisionModal';
 import {
   CheckCircle2,
   XCircle,
@@ -28,10 +29,45 @@ const RenterConfirmationSummary = () => {
   const [data, setData] = useState(null);
   const [rejectingSubOrder, setRejectingSubOrder] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showPartialDecisionModal, setShowPartialDecisionModal] = useState(false);
+  const [partialDecisionSubOrder, setPartialDecisionSubOrder] = useState(null);
 
   useEffect(() => {
     loadConfirmationSummary();
   }, [masterOrderId]);
+
+  // Check for pending decision subOrder
+  useEffect(() => {
+    if (data && data.subOrders) {
+      const pendingSubOrder = data.subOrders.find(
+        sub => sub.status === 'PENDING_RENTER_DECISION'
+      );
+      
+      if (pendingSubOrder) {
+        setPartialDecisionSubOrder(pendingSubOrder);
+        setShowPartialDecisionModal(true);
+      }
+    }
+  }, [data]);
+
+  const handleRenterDecision = async (decision, result) => {
+    console.log('Renter decision:', decision, result);
+    setShowPartialDecisionModal(false);
+    setPartialDecisionSubOrder(null);
+    
+    if (decision === 'CANCELLED') {
+      toast.success(`Đã hủy đơn hàng và hoàn ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
+    } else if (decision === 'ACCEPTED') {
+      toast.success(`Đã chấp nhận đơn hàng. Hoàn tiền: ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
+      // Auto redirect to contracts
+      setTimeout(() => {
+        navigate('/rental-orders/contracts');
+      }, 2000);
+    }
+    
+    // Reload data
+    await loadConfirmationSummary();
+  };
 
   const loadConfirmationSummary = async () => {
     try {
@@ -553,6 +589,19 @@ const RenterConfirmationSummary = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Renter Partial Decision Modal */}
+      {showPartialDecisionModal && partialDecisionSubOrder && (
+        <RenterPartialDecisionModal
+          isOpen={showPartialDecisionModal}
+          onClose={() => {
+            setShowPartialDecisionModal(false);
+            setPartialDecisionSubOrder(null);
+          }}
+          subOrder={partialDecisionSubOrder}
+          onDecisionMade={handleRenterDecision}
+        />
       )}
 
       {/* Back Button */}

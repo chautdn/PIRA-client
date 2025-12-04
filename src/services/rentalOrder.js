@@ -585,6 +585,48 @@ class RentalOrderService {
       );
     }
   }
+
+  /**
+   * Renter cancels partial order (owner confirmed only some products)
+   * @param {string} subOrderId - SubOrder ID
+   * @param {string} reason - Cancellation reason
+   */
+  async renterCancelPartialOrder(subOrderId, reason) {
+    try {
+      console.log("📤 Renter cancelling partial order:", subOrderId);
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/renter-cancel-partial`,
+        { reason }
+      );
+      console.log("✅ Partial order cancelled:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Error cancelling partial order:", error);
+      throw new Error(
+        error.response?.data?.message || "Không thể hủy đơn hàng"
+      );
+    }
+  }
+
+  /**
+   * Renter accepts partial order (agrees to continue with confirmed products)
+   * @param {string} subOrderId - SubOrder ID
+   */
+  async renterAcceptPartialOrder(subOrderId) {
+    try {
+      console.log("📤 Renter accepting partial order:", subOrderId);
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/renter-accept-partial`
+      );
+      console.log("✅ Partial order accepted:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Error accepting partial order:", error);
+      throw new Error(
+        error.response?.data?.message || "Không thể chấp nhận đơn hàng"
+      );
+    }
+  }
 }
 
 export default new RentalOrderService();
