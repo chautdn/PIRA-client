@@ -4,22 +4,25 @@ import { toast } from 'react-hot-toast';
 import ShipmentService from '../../services/shipment';
 import rentalOrderService from '../../services/rentalOrder';
 
-export default function RenterShipmentModal({ isOpen, onClose, masterOrder, onConfirmReceived }) {
+export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, masterOrder, onConfirmReceived }) {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
+  // Use either masterOrderId or masterOrder._id
+  const orderId = masterOrderId || masterOrder?._id;
+
   useEffect(() => {
-    if (isOpen && masterOrder?._id) {
+    if (isOpen && orderId) {
       loadShipments();
     }
-  }, [isOpen, masterOrder?._id]);
+  }, [isOpen, orderId]);
 
   const loadShipments = async () => {
     setLoading(true);
     try {
       // Lấy danh sách shipment cho đơn hàng này
-      const response = await ShipmentService.getShipmentsByMasterOrder?.(masterOrder._id);
+      const response = await ShipmentService.getShipmentsByMasterOrder?.(orderId);
       if (response?.data) {
         // Lọc chỉ lấy DELIVERY shipments
         const deliveryShipments = response.data.filter(s => s.type === 'DELIVERY');
@@ -175,25 +178,9 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrder, onCo
               {/* Note */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
                 <p className="text-xs text-blue-700">
-                  💡 <strong>Lưu ý:</strong> Khi bạn xác nhận "Đã nhận hàng", đơn thuê sẽ kích hoạt và tiền thuê sẽ được chuyển cho chủ sản phẩm.
+                  💡 <strong>Lưu ý:</strong> Shipper sẽ xác nhận khi hàng được giao. Đơn thuê sẽ kích hoạt sau khi shipper xác nhận.
                 </p>
               </div>
-
-              {/* Confirm Button */}
-              {!isDelivered && (isPending || isPickedUp) ? (
-                <div className="w-full bg-yellow-100 text-yellow-700 font-bold py-3 px-4 rounded-lg text-center border border-yellow-300 mb-4">
-                  ⏳ Chờ hàng được giao...
-                </div>
-              ) : isDelivered ? (
-                <button
-                  onClick={handleConfirmReceived}
-                  disabled={confirming}
-                  className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 mb-4"
-                >
-                  <CheckCircle className="w-5 h-5" />
-                  <span>{confirming ? 'Đang xác nhận...' : '✅ Xác nhận đã nhận hàng'}</span>
-                </button>
-              ) : null}
             </>
           )}
         </div>

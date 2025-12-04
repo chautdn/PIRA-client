@@ -7,7 +7,7 @@ export const getRedirectPath = (userRole) => {
     case "RENTER":
       return ROUTES.HOME;
     case "SHIPPER":
-      return ROUTES.SHIPPER_DASHBOARD; // Nếu có
+      return "/shipments"; // Redirect to shipment management page
     case "ADMIN":
       return ROUTES.ADMIN_DASHBOARD; // Nếu có
     default:

@@ -4,12 +4,15 @@ import { useAuth } from '../../hooks/useAuth';
 import ShipmentService from '../../services/shipment';
 import { formatCurrency } from '../../utils/constants';
 import chatService from '../../services/chat';
+import useChatSocket from '../../hooks/useChatSocket';
+import ShipmentManagementModal from '../../components/shipper/ShipmentManagementModal';
 
 export default function ShipmentsPage() {
   const { user } = useAuth();
+  const { socket, connected } = useChatSocket();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null); // Single date selection
   const [selectedShipmentType, setSelectedShipmentType] = useState('DELIVERY'); // Filter by type
   const [proofs, setProofs] = useState({}); // Cache proofs by shipmentId
   
@@ -24,6 +27,8 @@ export default function ShipmentsPage() {
   const [selectedFilesForUpload, setSelectedFilesForUpload] = useState(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadModalShipment, setUploadModalShipment] = useState(null);
+  const [managementModalOpen, setManagementModalOpen] = useState(false);
+  const [selectedShipmentForManagement, setSelectedShipmentForManagement] = useState(null);
   const [uploadAction, setUploadAction] = useState(null);
   const [proofModalOpen, setProofModalOpen] = useState(false);
   const [proofModalShipment, setProofModalShipment] = useState(null);
@@ -84,7 +89,40 @@ export default function ShipmentsPage() {
     load();
   }, [user]);
 
-  if (loading) return <div className="p-6">Loading shipments...</div>;
+  // Listen for real-time shipment creation
+  useEffect(() => {
+    if (!socket || !connected) return;
+
+    const handleShipmentCreated = (data) => {
+      console.log('📦 New shipment received via socket:', data.shipment);
+      
+      // Show toast notification immediately
+      const typeLabel = data.shipment.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Trả hàng';
+      const toast = require('react-hot-toast').default;
+      toast.success(`✅ ${typeLabel} mới: ${data.shipment.shipmentId}`);
+      
+      // Reload full shipment list from server to get all populated data
+      const reloadShipments = async () => {
+        try {
+          const resp = await ShipmentService.listMyShipments();
+          const data = resp.data || resp;
+          const shipmentsData = Array.isArray(data) ? data : (data.data || data);
+          console.log('✅ Reloaded shipments after socket event:', shipmentsData.length);
+          setShipments(shipmentsData);
+        } catch (err) {
+          console.error('Failed to reload shipments after socket event:', err.message);
+        }
+      };
+      
+      reloadShipments();
+    };
+
+    socket.on('shipment:created', handleShipmentCreated);
+
+    return () => {
+      socket.off('shipment:created', handleShipmentCreated);
+    };
+  }, [socket, connected]);
 
   // Format date to Vietnamese format DD/MM/YYYY
   const formatDateVN = (date) => {
@@ -92,44 +130,41 @@ export default function ShipmentsPage() {
     return new Date(date).toLocaleDateString('vi-VN');
   };
 
-  // Get all unique rental dates from shipments - organized by type and date
+  // Get all unique scheduled dates from shipments - organized by type and date
   const getAllRentalDatesWithType = () => {
     const datesMap = {}; // { 'DD/MM/YYYY-DELIVERY': [...], 'DD/MM/YYYY-RETURN': [...] }
     
     shipments.forEach((s) => {
-      // Try multiple ways to get rental period
-      let rentalPeriod = null;
-      
-      if (s.subOrder?.rentalPeriod) {
-        rentalPeriod = s.subOrder.rentalPeriod;
-      }
-      else if (s.subOrder?.masterOrder?.rentalPeriod) {
-        rentalPeriod = s.subOrder.masterOrder.rentalPeriod;
-      }
-      else if (s.subOrder?.products?.[0]?.rentalPeriod) {
-        rentalPeriod = s.subOrder.products[0].rentalPeriod;
-      }
-      else if (s.masterOrder?.rentalPeriod) {
-        rentalPeriod = s.masterOrder.rentalPeriod;
-      }
-      
       const shipmentType = s.type; // 'DELIVERY' or 'RETURN'
       let dateStr = null;
       
-      // For DELIVERY: use startDate
-      if (shipmentType === 'DELIVERY' && rentalPeriod?.startDate) {
-        dateStr = formatDateVN(rentalPeriod.startDate);
+      // Use scheduledAt from shipment - đây là ngày dự kiến thực tế
+      if (s.scheduledAt) {
+        dateStr = formatDateVN(s.scheduledAt);
+        console.log(`  ✅ [${s.shipmentId}] Got scheduledAt: ${s.scheduledAt} → ${dateStr}`);
       }
-      // For RETURN: use endDate
-      else if (shipmentType === 'RETURN' && rentalPeriod?.endDate) {
-        dateStr = formatDateVN(rentalPeriod.endDate);
-      }
-      // Fallback to createdAt if no rental period
-      else if (!rentalPeriod && s.subOrder?.createdAt) {
-        dateStr = formatDateVN(s.subOrder.createdAt);
-      }
-      else if (!rentalPeriod && s.createdAt) {
-        dateStr = formatDateVN(s.createdAt);
+      // Fallback to rental period
+      else {
+        let rentalPeriod = null;
+        if (s.subOrder?.rentalPeriod) {
+          rentalPeriod = s.subOrder.rentalPeriod;
+          console.log(`  ✅ [${s.shipmentId}] Got rentalPeriod from subOrder`);
+        }
+        else if (s.subOrder?.masterOrder?.rentalPeriod) {
+          rentalPeriod = s.subOrder.masterOrder.rentalPeriod;
+          console.log(`  ✅ [${s.shipmentId}] Got rentalPeriod from masterOrder`);
+        }
+        
+        // For DELIVERY: use startDate
+        if (shipmentType === 'DELIVERY' && rentalPeriod?.startDate) {
+          dateStr = formatDateVN(rentalPeriod.startDate);
+          console.log(`  ✅ [${s.shipmentId}] DELIVERY: Got startDate: ${rentalPeriod.startDate} → ${dateStr}`);
+        }
+        // For RETURN: use endDate
+        else if (shipmentType === 'RETURN' && rentalPeriod?.endDate) {
+          dateStr = formatDateVN(rentalPeriod.endDate);
+          console.log(`  ✅ [${s.shipmentId}] RETURN: Got endDate: ${rentalPeriod.endDate} → ${dateStr}`);
+        }
       }
       
       if (dateStr) {
@@ -139,7 +174,13 @@ export default function ShipmentsPage() {
         }
         datesMap[key].push(s);
       } else {
-        console.warn('⚠️ Shipment without date:', s.shipmentId, { rentalPeriod, subOrderCreatedAt: s.subOrder?.createdAt, shipmentCreatedAt: s.createdAt });
+        console.warn('⚠️ Shipment without date:', s.shipmentId, { 
+          scheduledAt: s.scheduledAt, 
+          rentalPeriod: s.subOrder?.rentalPeriod,
+          masterOrderRentalPeriod: s.subOrder?.masterOrder?.rentalPeriod,
+          subOrderId: s.subOrder?._id,
+          hasSubOrder: !!s.subOrder
+        });
       }
     });
     
@@ -291,25 +332,44 @@ export default function ShipmentsPage() {
     await promptForFilesWithPreview(s, action);
   };
 
+  const handleOpenManagementModal = (shipment) => {
+    setSelectedShipmentForManagement(shipment);
+    setManagementModalOpen(true);
+  };
+
+  const handleManagementSuccess = async () => {
+    // Refresh shipments after successful management
+    try {
+      const resp = await ShipmentService.listMyShipments();
+      const data = resp.data || resp;
+      setShipments(Array.isArray(data) ? data : (data.data || data));
+    } catch (err) {
+      console.error('Failed to refresh shipments', err);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">Quản lí vận chuyển</h1>
-      
-      {shipments.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-gray-500 text-lg">Không có shipment nào</p>
+      {loading ? (
+        <div className="p-6 text-center">
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
         </div>
       ) : (
-        <div>
+        <>
+          <h1 className="text-3xl font-bold mb-8 text-gray-800">Quản lí vận chuyển</h1>
+          
+          {shipments.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <p className="text-gray-500 text-lg">Không có shipment nào</p>
+            </div>
+          ) : (
+            <div>
           {/* Type Filter Buttons */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Loại đơn hàng</h2>
             <div className="flex gap-4">
               <button
-                onClick={() => {
-                  setSelectedShipmentType('DELIVERY');
-                  setSelectedDate(null);
-                }}
+                onClick={() => setSelectedShipmentType('DELIVERY')}
                 className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                   selectedShipmentType === 'DELIVERY'
                     ? 'bg-blue-600 text-white shadow-lg'
@@ -319,10 +379,7 @@ export default function ShipmentsPage() {
                 📦 Giao hàng
               </button>
               <button
-                onClick={() => {
-                  setSelectedShipmentType('RETURN');
-                  setSelectedDate(null);
-                }}
+                onClick={() => setSelectedShipmentType('RETURN')}
                 className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                   selectedShipmentType === 'RETURN'
                     ? 'bg-orange-600 text-white shadow-lg'
@@ -355,13 +412,14 @@ export default function ShipmentsPage() {
                     const [dateStr] = pair.split('-');
                     const count = datesMapByType[pair]?.length || 0;
                     const isDelivery = selectedShipmentType === 'DELIVERY';
+                    const isSelected = selectedDate === pair;
                     
                     return (
                       <button
                         key={pair}
-                        onClick={() => setSelectedDate(selectedDate === pair ? null : pair)}
+                        onClick={() => setSelectedDate(isSelected ? null : pair)}
                         className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                          selectedDate === pair
+                          isSelected
                             ? isDelivery
                               ? 'bg-blue-600 text-white shadow-lg'
                               : 'bg-orange-600 text-white shadow-lg'
@@ -406,7 +464,6 @@ export default function ShipmentsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Phí vận chuyển</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -415,7 +472,8 @@ export default function ShipmentsPage() {
                         key={s._id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-blue-50 transition-colors"
+                        className="hover:bg-blue-50 transition-colors cursor-pointer"
+                        onClick={() => handleOpenManagementModal(s)}
                       >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.shipmentId}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{s.subOrder?._id || s.subOrder}</td>
@@ -453,70 +511,6 @@ export default function ShipmentsPage() {
                             {s.tracking?.deliveredAt ? (
                               <div>Deliver: {new Date(s.tracking.deliveredAt).toLocaleTimeString('vi-VN')}</div>
                             ) : null}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <button 
-                                onClick={() => {
-                                  const customer = s.customerInfo || {};
-                                  const renter = s.subOrder?.masterOrder?.renter;
-                                  const name = customer.name || renter?.profile?.fullName || renter?.profile?.firstName || 'N/A';
-                                  const phone = customer.phone || renter?.phone || 'N/A';
-                                  const email = customer.email || renter?.email || 'N/A';
-                                  
-                                  setSelectedCustomer({
-                                    name: name,
-                                    phone: phone,
-                                    email: email,
-                                    address: s.type === 'DELIVERY' ? s.toAddress : s.fromAddress,
-                                    type: s.type
-                                  });
-                                  setIsCustomerModalOpen(true);
-                                }}
-                                className="px-3 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-medium transition-colors text-xs"
-                                title="Xem thông tin khách hàng"
-                              >
-                                👤 Info
-                              </button>
-
-                              {s.status === 'PENDING' && (
-                                <button 
-                                  onClick={() => handleAccept(s)}
-                                  className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors text-xs"
-                                >
-                                  Nhận
-                                </button>
-                              )}
-
-                              {s.status === 'SHIPPER_CONFIRMED' && (
-                                <button 
-                                  onClick={() => handleUploadAction(s, 'pickup')}
-                                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors text-xs"
-                                >
-                                  📸 Pickup
-                                </button>
-                              )}
-
-                              {s.status === 'IN_TRANSIT' && (
-                                <button 
-                                  onClick={() => handleUploadAction(s, 'deliver')}
-                                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition-colors text-xs"
-                                >
-                                  📸 Deliver
-                                </button>
-                              )}
-
-                              {proofs[s._id] && (proofs[s._id].imagesBeforeDelivery?.length > 0 || proofs[s._id].imagesAfterDelivery?.length > 0) && (
-                                <button
-                                  onClick={() => openProofModal(s)}
-                                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-medium transition-colors text-xs"
-                                >
-                                  🖼️ Proof
-                                </button>
-                              )}
-                            </div>
                           </div>
                         </td>
                       </motion.tr>
@@ -639,15 +633,6 @@ export default function ShipmentsPage() {
                           </button>
                         )}
 
-                        {s.status === 'IN_TRANSIT' && (
-                          <button 
-                            onClick={() => handleUploadAction(s, 'deliver')}
-                            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors text-sm"
-                          >
-                            📸 Deliver
-                          </button>
-                        )}
-
                         {proofs[s._id] && (proofs[s._id].imagesBeforeDelivery?.length > 0 || proofs[s._id].imagesAfterDelivery?.length > 0) && (
                           <button
                             onClick={() => openProofModal(s)}
@@ -673,7 +658,9 @@ export default function ShipmentsPage() {
           {!selectedDate && (
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow p-8 text-center">
               <p className="text-gray-600 text-lg mb-2">👆 Chọn một ngày để xem danh sách đơn hàng</p>
-              <p className="text-gray-500 text-sm">Tổng cộng: {shipments.length} đơn hàng</p>
+              <p className="text-gray-500 text-sm">
+                Tổng cộng: {shipments.filter(s => s.type === selectedShipmentType).length} đơn hàng {selectedShipmentType === 'DELIVERY' ? 'giao hàng' : 'nhận trả'}
+              </p>
             </div>
           )}
         </div>
@@ -984,6 +971,16 @@ export default function ShipmentsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+        </>
+      )}
+
+      {/* Shipment Management Modal */}
+      <ShipmentManagementModal
+        shipment={selectedShipmentForManagement}
+        isOpen={managementModalOpen}
+        onClose={() => setManagementModalOpen(false)}
+        onSuccess={handleManagementSuccess}
+      />
     </div>
   );
 }

@@ -1,0 +1,805 @@
+import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import ShipmentService from '../../services/shipment';
+import { formatCurrency } from '../../utils/constants';
+import { X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
+
+export default function ShipmentManagementModal({ shipment, isOpen, onClose, onSuccess }) {
+  const [loading, setLoading] = useState(false);
+  const [pickupImages, setPickupImages] = useState([]);
+  const [deliveryImages, setDeliveryImages] = useState([]);
+  const [proofData, setProofData] = useState(null);
+  const [error, setError] = useState('');
+  const [currentStatus, setCurrentStatus] = useState(shipment?.status || 'PENDING');
+  
+  // State for renter rejection
+  const [showRenterRejectDialog, setShowRenterRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState('PRODUCT_DAMAGED'); // PRODUCT_DAMAGED or NO_CONTACT
+  const [rejectNotes, setRejectNotes] = useState('');
+
+  const loadProofDataFn = async (shipmentId) => {
+    try {
+      if (!shipmentId) return;
+      const data = await ShipmentService.getProof(shipmentId);
+      setProofData(data.data || data);
+      setPickupImages(data.data?.imagesBeforeDelivery || []);
+      setDeliveryImages(data.data?.imagesAfterDelivery || []);
+    } catch (err) {
+      console.log('Could not load proof:', err.message);
+      setProofData(null);
+      setPickupImages([]);
+      setDeliveryImages([]);
+    }
+  };
+
+  // Load proof data when modal opens
+  useEffect(() => {
+    if (isOpen && shipment?._id) {
+      setCurrentStatus(shipment.status);
+      loadProofDataFn(shipment._id);
+    }
+  }, [isOpen, shipment?._id]);
+
+  const handlePickupImageUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    // Chỉ thêm vào list để preview, chưa upload
+    setPickupImages(prev => [...prev, ...files]);
+    setError('');
+  };
+
+  const handleConfirmPickup = async () => {
+    try {
+      if (pickupImages.length === 0) {
+        setError('Vui lòng tải lên ít nhất 1 ảnh pickup');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+
+      const formData = new FormData();
+      pickupImages.forEach(file => {
+        // Handle both File objects and URLs
+        if (typeof file === 'string') {
+          // URL - already uploaded, skip
+          return;
+        }
+        formData.append('images', file);
+      });
+
+      // Upload only new files
+      if (formData.has('images')) {
+        await ShipmentService.uploadProof(shipment._id, formData);
+      }
+
+      // Mark as IN_TRANSIT (picked up)
+      await ShipmentService.pickupShipment(shipment._id);
+
+      // Update current status immediately
+      setCurrentStatus('IN_TRANSIT');
+
+      // Reload proof data
+      await loadProofDataFn(shipment._id);
+      onSuccess?.();
+    } catch (err) {
+      setError(err.message || 'Lỗi khi upload pickup');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeliveryImageUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    // Chỉ thêm vào list để preview, chưa upload
+    setDeliveryImages(prev => [...prev, ...files]);
+    setError('');
+  };
+
+  const handleConfirmDelivery = async () => {
+    try {
+      if (deliveryImages.length === 0) {
+        setError('Vui lòng tải lên ít nhất 1 ảnh delivery');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+
+      const formData = new FormData();
+      deliveryImages.forEach(file => {
+        // Handle both File objects and URLs
+        if (typeof file === 'string') {
+          // URL - already uploaded, skip
+          return;
+        }
+        formData.append('images', file);
+      });
+
+      // Upload only new files
+      if (formData.has('images')) {
+        await ShipmentService.uploadProof(shipment._id, formData);
+      }
+
+      // Mark as DELIVERED
+      await ShipmentService.deliverShipment(shipment._id);
+
+      // Update current status immediately
+      setCurrentStatus('DELIVERED');
+
+      // Reload proof data
+      await loadProofDataFn(shipment._id);
+      onSuccess?.();
+    } catch (err) {
+      setError(err.message || 'Lỗi khi upload delivery');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCannotPickup = async () => {
+    if (!window.confirm('⚠️ Bạn chắc chắn không thể nhận hàng từ owner?\n\nShipment sẽ bị hủy, owner sẽ bị trừ 20 điểm creditScore, và người thuê sẽ được hoàn lại tiền (không hoàn phí ship).')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      // Call API to report owner no-show
+      await ShipmentService.ownerNoShow(shipment._id, { notes: '' });
+
+      // Show success toast
+      toast.success('✅ Đã ghi nhận chủ không có mặt để giao hàng!', {
+        duration: 3,
+        position: 'top-right'
+      });
+
+      // Update status
+      setCurrentStatus('CANCELLED');
+      
+      // Close modal after 1.5s
+      setTimeout(() => {
+        onClose?.();
+        onSuccess?.();
+      }, 1500);
+    } catch (err) {
+      setError(err.message || 'Lỗi khi ghi nhận owner no-show');
+      toast.error(err.message || 'Lỗi khi ghi nhận owner no-show');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCannotPickupRenter = async () => {
+    if (!window.confirm('⚠️ Bạn chắc chắn không thể liên lạc được với renter khi trả hàng?\n\nShipment sẽ bị ghi nhận là trả hàng thất bại, chủ hàng sẽ mở tranh chấp để giải quyết.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      // Call API to report return failed
+      await ShipmentService.returnFailed(shipment._id, { notes: '' });
+
+      // Show success toast
+      toast.success('✅ Đã ghi nhận không liên lạc được với renter!', {
+        duration: 3,
+        position: 'top-right'
+      });
+
+      // Update status
+      setCurrentStatus('CANCELLED');
+      
+      // Close modal after 1.5s
+      setTimeout(() => {
+        onClose?.();
+        onSuccess?.();
+      }, 1500);
+    } catch (err) {
+      setError(err.message || 'Lỗi khi ghi nhận không liên lạc được renter');
+      toast.error(err.message || 'Lỗi khi ghi nhận không liên lạc được renter');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleRenterReject = async () => {
+    if (!rejectNotes.trim()) {
+      setError('Vui lòng nhập lý do renter không nhận hàng');
+      toast.error('Vui lòng nhập lý do renter không nhận hàng');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const reason = rejectReason === 'PRODUCT_DAMAGED' ? 'Sản phẩm có lỗi' : 'Không liên lạc được với renter';
+
+      // Call API to reject delivery with reason
+      await ShipmentService.rejectDelivery(shipment._id, {
+        reason: rejectReason,
+        notes: rejectNotes
+      });
+
+      // Show success toast with reason
+      const toastMessage = rejectReason === 'PRODUCT_DAMAGED' 
+        ? '✅ Đã ghi nhận sản phẩm có lỗi!'
+        : '✅ Đã ghi nhận renter không nhận hàng!';
+      
+      toast.success(toastMessage, {
+        duration: 3,
+        position: 'top-right'
+      });
+
+      // Close dialog and update status
+      setShowRenterRejectDialog(false);
+      setRejectReason('PRODUCT_DAMAGED');
+      setRejectNotes('');
+      setCurrentStatus(rejectReason === 'PRODUCT_DAMAGED' ? 'DELIVERY_FAILED' : 'FAILED');
+      
+      // Close modal after 1.5s
+      setTimeout(() => {
+        onClose?.();
+        onSuccess?.();
+      }, 1500);
+    } catch (err) {
+      setError(err.message || 'Lỗi khi ghi nhận renter không nhận hàng');
+      toast.error(err.message || 'Lỗi khi ghi nhận renter không nhận hàng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removePickupImage = (index) => {
+    setPickupImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeDeliveryImage = (index) => {
+    setDeliveryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Check if pickup already uploaded (status is IN_TRANSIT or DELIVERED)
+  const pickupUploaded = currentStatus === 'IN_TRANSIT' || currentStatus === 'DELIVERED';
+
+  // Check if delivery already uploaded (status is DELIVERED)
+  const deliveryUploaded = currentStatus === 'DELIVERED';
+
+  if (!isOpen || !shipment) {
+    return null;
+  }
+
+  const ownerName = shipment?.subOrder?.masterOrder?.owner?.profile?.fullName ||
+                    shipment?.subOrder?.masterOrder?.owner?.profile?.firstName ||
+                    'Chủ hàng';
+  
+  const renterName = shipment?.subOrder?.masterOrder?.renter?.profile?.fullName ||
+                     shipment?.subOrder?.masterOrder?.renter?.profile?.firstName ||
+                     'Người thuê';
+
+  const renterPhone = shipment?.subOrder?.masterOrder?.renter?.phone || 'N/A';
+  const ownerPhone = shipment?.subOrder?.masterOrder?.owner?.phone || 'N/A';
+  
+  // Determine if this is a return shipment
+  const isReturnShipment = shipment?.type === 'RETURN';
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
+        <motion.div
+          className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6 flex items-center justify-between z-10">
+            <div>
+              <p className="text-blue-100 text-sm mt-1">Shipment ID: {shipment.shipmentId}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Warning if not applicable status */}
+            {shipment?.status !== 'SHIPPER_CONFIRMED' && shipment?.status !== 'IN_TRANSIT' && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">⚠️</span>
+                  <div>
+                    <h3 className="font-bold text-yellow-900 mb-1">Chú ý</h3>
+                    <p className="text-sm text-yellow-800">
+                      Shipment này đang ở trạng thái <strong>{shipment?.status}</strong>. 
+                      Bạn chỉ có thể quản lí vận chuyển khi shipment ở trạng thái <strong>SHIPPER_CONFIRMED</strong> hoặc <strong>IN_TRANSIT</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Top Section - Order & Renter Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Order Info */}
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <span className="text-lg">📋</span> Thông tin đơn hàng
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Mã shipment:</span>
+                    <span className="font-semibold text-gray-900">{shipment.shipmentId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Loại:</span>
+                    <span className="font-semibold text-gray-900">
+                      {shipment.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Phí vận chuyển:</span>
+                    <span className="font-semibold text-green-600">{formatCurrency(shipment.fee || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Trạng thái:</span>
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                      shipment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                      shipment.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                      shipment.status === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {shipment.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Renter Info */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-orange-200">
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <span className="text-lg">👤</span> Thông tin người thuê
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-600 block text-xs mb-1">Tên địa chỉ điện thoại</span>
+                    <span className="font-semibold text-gray-900">{renterName}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 block text-xs mb-1">Số điện thoại</span>
+                    <a href={`tel:${renterPhone}`} className="font-semibold text-blue-600 hover:underline">
+                      {renterPhone}
+                    </a>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 block text-xs mb-1">Địa chỉ giao/nhận</span>
+                    <div className="font-semibold text-gray-900 text-xs leading-relaxed">
+                      {shipment.toAddress?.streetAddress && <div>{shipment.toAddress.streetAddress}</div>}
+                      {shipment.toAddress?.ward && <div>{shipment.toAddress.ward}</div>}
+                      {shipment.toAddress?.district && <div>{shipment.toAddress.district}</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              {/* Section 1: Pickup Images */}
+              <div className="mb-8">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 mb-4 border-l-4 border-blue-500">
+                  <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                    <span className="text-lg">📸</span> 
+                    {isReturnShipment 
+                      ? `Chụp ảnh lúc nhận hàng từ ${renterName}` 
+                      : `Chụp ảnh lúc nhận hàng từ ${ownerName}`}
+                  </h3>
+                  <p className="text-sm text-blue-800">
+                    {isReturnShipment
+                      ? 'Tải lên ảnh chứng minh khi nhận hàng trả từ người thuê (tối thiểu 1 ảnh)'
+                      : 'Tải lên ảnh chứng minh khi nhận hàng từ chủ hàng (tối thiểu 1 ảnh)'}
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-lg border-2 border-dashed border-blue-300 p-6">
+                  {pickupImages.length < 3 && !pickupUploaded && (
+                    <label className="block cursor-pointer">
+                      <div className="flex flex-col items-center justify-center py-6">
+                        <Upload className="text-blue-500 mb-2" size={32} />
+                        <p className="text-sm font-semibold text-gray-700">Nhấn để tải ảnh lên</p>
+                        <p className="text-xs text-gray-500 mt-1">hoặc kéo thả ảnh vào đây</p>
+                        <p className="text-xs text-gray-400 mt-2">Tối đa 3 ảnh ({pickupImages.length}/3)</p>
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handlePickupImageUpload}
+                        disabled={loading}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+
+                  {pickupImages.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {pickupImages.map((file, idx) => (
+                        <div key={idx} className="relative group">
+                          <img
+                            src={typeof file === 'string' ? file : URL.createObjectURL(file)}
+                            alt={`pickup-${idx}`}
+                            className="w-full h-24 object-cover rounded-lg shadow-sm"
+                          />
+                          {!pickupUploaded && !deliveryUploaded && (
+                            <button
+                              onClick={() => removePickupImage(idx)}
+                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded max-w-[90%] truncate">
+                            {typeof file === 'string' ? '✓' : '●'} {idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                      {pickupImages.length < 3 && !pickupUploaded && !deliveryUploaded && (
+                        <label className="border-2 border-dashed border-blue-300 rounded-lg h-24 flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors">
+                          <div className="text-center">
+                            <Upload className="text-blue-400 mx-auto mb-1" size={20} />
+                            <span className="text-xs text-blue-600 font-semibold">Thêm</span>
+                          </div>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handlePickupImageUpload}
+                            disabled={loading}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pickup Status */}
+                <div className="mt-4">
+                  {pickupUploaded ? (
+                    <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-center gap-3">
+                      <CheckCircle2 className="text-green-600 flex-shrink-0" size={24} />
+                      <div>
+                        <p className="font-bold text-green-900">Đã xác nhận pickup</p>
+                        <p className="text-sm text-green-700">Status: IN_TRANSIT</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleConfirmPickup}
+                        disabled={pickupImages.length === 0 || loading}
+                        className={`w-full px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all ${
+                          pickupImages.length > 0 && !loading
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                        }`}
+                      >
+                        {loading ? (
+                          <>
+                            <CheckCircle2 size={20} /> ⏳ Đang xử lý...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={20} /> 
+                            {isReturnShipment 
+                              ? `Xác nhận đã nhận hàng từ ${renterName}`
+                              : `Xác nhận đã nhận hàng từ ${ownerName}`}
+                          </>
+                        )}
+                      </button>
+                      
+                      {/* Button: Cannot Pickup */}
+                      {currentStatus === 'SHIPPER_CONFIRMED' && !isReturnShipment && (
+                        <button
+                          onClick={handleCannotPickup}
+                          disabled={loading}
+                          className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          {loading ? (
+                            <>⏳ Đang xử lý...</>
+                          ) : (
+                            <>
+                              <AlertCircle size={20} /> Không thể nhận hàng từ {ownerName}
+                            </>
+                          )}
+                        </button>
+                      )}
+                      
+                      {/* Button: Cannot Contact Renter for RETURN pickup */}
+                      {currentStatus === 'SHIPPER_CONFIRMED' && isReturnShipment && (
+                        <button
+                          onClick={handleCannotPickupRenter}
+                          disabled={loading}
+                          className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          {loading ? (
+                            <>⏳ Đang xử lý...</>
+                          ) : (
+                            <>
+                              <AlertCircle size={20} /> Không thể liên lạc được với renter
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 2: Delivery Images */}
+              <div className="mb-8">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-lg p-4 mb-4 border-l-4 border-green-500">
+                  <h3 className="font-bold text-green-900 mb-2 flex items-center gap-2">
+                    <span className="text-lg">📸</span> 
+                    {isReturnShipment 
+                      ? `Chụp ảnh lúc giao hàng tới ${ownerName}` 
+                      : `Chụp ảnh lúc giao hàng tới ${renterName}`}
+                  </h3>
+                  <p className="text-sm text-green-800">
+                    {isReturnShipment
+                      ? 'Tải lên ảnh chứng minh khi giao hàng cho chủ hàng (tối thiểu 1 ảnh)'
+                      : 'Tải lên ảnh chứng minh khi giao hàng cho người thuê (tối thiểu 1 ảnh)'}
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-lg border-2 border-dashed border-green-300 p-6">
+                  {deliveryImages.length < 4 && !deliveryUploaded && pickupUploaded && (
+                    <label className="block cursor-pointer">
+                      <div className="flex flex-col items-center justify-center py-6">
+                        <Upload className="text-green-500 mb-2" size={32} />
+                        <p className="text-sm font-semibold text-gray-700">Nhấn để tải ảnh lên</p>
+                        <p className="text-xs text-gray-500 mt-1">hoặc kéo thả ảnh vào đây</p>
+                        <p className="text-xs text-gray-400 mt-2">Tối đa 4 ảnh ({deliveryImages.length}/4)</p>
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleDeliveryImageUpload}
+                        disabled={loading || !pickupUploaded}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+
+                  {!pickupUploaded && (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-sm">⏳ Hãy hoàn thành bước pickup trước</p>
+                    </div>
+                  )}
+
+                  {deliveryImages.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {deliveryImages.map((file, idx) => (
+                        <div key={idx} className="relative group">
+                          <img
+                            src={typeof file === 'string' ? file : URL.createObjectURL(file)}
+                            alt={`delivery-${idx}`}
+                            className="w-full h-24 object-cover rounded-lg shadow-sm"
+                          />
+                          {!deliveryUploaded && (
+                            <button
+                              onClick={() => removeDeliveryImage(idx)}
+                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded max-w-[90%] truncate">
+                            {typeof file === 'string' ? '✓' : '●'} {idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                      {deliveryImages.length < 4 && !deliveryUploaded && pickupUploaded && (
+                        <label className="border-2 border-dashed border-green-300 rounded-lg h-24 flex items-center justify-center cursor-pointer hover:bg-green-50 transition-colors">
+                          <div className="text-center">
+                            <Upload className="text-green-400 mx-auto mb-1" size={20} />
+                            <span className="text-xs text-green-600 font-semibold">Thêm</span>
+                          </div>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleDeliveryImageUpload}
+                            disabled={loading || !pickupUploaded}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Delivery Status */}
+                <div className="mt-4">
+                  {deliveryUploaded ? (
+                    <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-center gap-3">
+                      <CheckCircle2 className="text-green-600 flex-shrink-0" size={24} />
+                      <div>
+                        <p className="font-bold text-green-900">Đã hoàn tất vận chuyển</p>
+                        <p className="text-sm text-green-700">Status: DELIVERED</p>
+                      </div>
+                    </div>
+                  ) : !pickupUploaded ? (
+                    <div className="bg-gray-50 border border-gray-300 rounded-lg p-4 flex items-center gap-3 opacity-50">
+                      <AlertCircle className="text-gray-500 flex-shrink-0" size={24} />
+                      <div>
+                        <p className="font-bold text-gray-700">Chờ pickup</p>
+                        <p className="text-sm text-gray-600">Hoàn thành pickup trước</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleConfirmDelivery}
+                        disabled={deliveryImages.length === 0 || loading}
+                        className={`w-full px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all ${
+                          deliveryImages.length > 0 && !loading
+                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                            : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                        }`}
+                      >
+                        {loading ? (
+                          <>
+                            <CheckCircle2 size={20} /> ⏳ Đang xử lý...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={20} /> 
+                            {isReturnShipment 
+                              ? `Xác nhận ${ownerName} đã nhận hàng`
+                              : `Xác nhận ${renterName} đã nhận hàng`}
+                          </>
+                        )}
+                      </button>
+
+                      {/* Button: Renter không nhận hàng (only for DELIVERY) */}
+                      {!isReturnShipment && (
+                        <button
+                          onClick={() => setShowRenterRejectDialog(true)}
+                          disabled={loading}
+                          className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-orange-400 text-orange-600 hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <AlertCircle size={20} /> Renter không nhận hàng
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3">
+                <AlertCircle className="text-red-500 flex-shrink-0" size={20} />
+                <span className="text-red-700 font-medium">{error}</span>
+              </div>
+            )}
+
+            {/* Dialog: Renter Rejection */}
+            <AnimatePresence>
+              {showRenterRejectDialog && (
+                <motion.div
+                  className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.div
+                    className="bg-white rounded-xl shadow-2xl max-w-md w-full"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                  >
+                    <div className="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <AlertCircle size={24} /> Renter không nhận hàng
+                      </h3>
+                      <button
+                        onClick={() => setShowRenterRejectDialog(false)}
+                        className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                      {/* Reason Selection */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          Lý do renter không nhận hàng:
+                        </label>
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                            style={{ borderColor: rejectReason === 'PRODUCT_DAMAGED' ? '#2563eb' : '#d1d5db' }}>
+                            <input
+                              type="radio"
+                              name="reject_reason"
+                              value="PRODUCT_DAMAGED"
+                              checked={rejectReason === 'PRODUCT_DAMAGED'}
+                              onChange={(e) => setRejectReason(e.target.value)}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-gray-700 font-medium">🔨 Sản phẩm có lỗi</span>
+                          </label>
+                          <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                            style={{ borderColor: rejectReason === 'NO_CONTACT' ? '#2563eb' : '#d1d5db' }}>
+                            <input
+                              type="radio"
+                              name="reject_reason"
+                              value="NO_CONTACT"
+                              checked={rejectReason === 'NO_CONTACT'}
+                              onChange={(e) => setRejectReason(e.target.value)}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-gray-700 font-medium">📞 Không liên lạc được với renter</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Notes Input */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Ghi chú chi tiết:
+                        </label>
+                        <textarea
+                          value={rejectNotes}
+                          onChange={(e) => setRejectNotes(e.target.value)}
+                          placeholder="Nhập chi tiết lý do..."
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          rows={4}
+                          disabled={loading}
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-4 border-t">
+                        <button
+                          onClick={() => setShowRenterRejectDialog(false)}
+                          disabled={loading}
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          onClick={handleRenterReject}
+                          disabled={loading || !rejectNotes.trim()}
+                          className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loading ? '⏳ Đang xử lý...' : 'Xác nhận'}
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}

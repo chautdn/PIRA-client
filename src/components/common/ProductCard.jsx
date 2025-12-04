@@ -1,9 +1,40 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Eye } from "lucide-react";
+import { MapPin, Eye, Heart } from "lucide-react";
 import promotionService from "../../services/promotion";
+import { useWishlist } from "../../context/WishlistContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const ProductCard = ({ product }) => {
+  const { wishlistIds, isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const { user } = useAuth();
+  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+
+  const inWishlist = isInWishlist(product._id || product.id);
+
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      // Navigate to login or show login modal
+      window.location.href = "/login";
+      return;
+    }
+
+    setIsAddingToWishlist(true);
+    try {
+      if (inWishlist) {
+        await removeFromWishlist(product._id || product.id);
+      } else {
+        await addToWishlist(product._id || product.id, product);
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+    } finally {
+      setIsAddingToWishlist(false);
+    }
+  };
   // Get card border and shadow classes based on promotion tier
   const getCardClasses = () => {
     if (!product.isPromoted || !product.promotionTier) {
@@ -58,6 +89,23 @@ const ProductCard = ({ product }) => {
           className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
           loading="lazy"
         />
+
+        {/* Wishlist Button */}
+        <button
+          onClick={handleWishlistToggle}
+          disabled={isAddingToWishlist}
+          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 disabled:opacity-50"
+          title={inWishlist ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
+        >
+          <Heart
+            size={20}
+            className={`transition-all duration-200 ${
+              inWishlist
+                ? "fill-red-500 text-red-500"
+                : "text-gray-600 hover:text-red-500"
+            }`}
+          />
+        </button>
 
         {/* View Count Overlay */}
         {product.metrics?.viewCount > 0 && (

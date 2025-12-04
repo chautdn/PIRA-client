@@ -423,6 +423,7 @@ const RentalOrderDetailPage = () => {
     }
   };
 
+
   const handleRenterConfirm = async (subOrderId) => {
     try {
       toast.loading("Đang gửi xác nhận...");
@@ -552,22 +553,35 @@ const RentalOrderDetailPage = () => {
             )}
 
             {isRenter &&
-              currentOrder.subOrders?.[0]?.products?.some(
-                (p) => p.productStatus === "ACTIVE"
-              ) && (
-                <button
-                  onClick={() => setShowExtendRentalModal(true)}
-                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Gia hạn</span>
-                </button>
+              currentOrder.status === "ACTIVE" && (
+                <>
+                  <button
+                    onClick={() => setShowExtendRentalModal(true)}
+                    className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Gia hạn</span>
+                  </button>
+                  <button
+                    onClick={() => setShowEarlyReturnModal(true)}
+                    className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                    <span>Trả hàng sớm</span>
+                  </button>
+                  <button
+                    onClick={() => setShowShipmentModal(true)}
+                    className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 flex items-center space-x-2"
+                  >
+                    <Package className="w-5 h-5" />
+                    <span>Quản lí vận chuyển</span>
+                  </button>
+                </>
               )}
 
             {/* Renter: manage shipment button */}
             {isRenter &&
-              (currentOrder.status === "ACTIVE" ||
-                currentOrder.status === "CONTRACT_SIGNED") && (
+              currentOrder.status === "CONTRACT_SIGNED" && (
                 <button
                   onClick={() => setShowShipmentModal(true)}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
@@ -1015,6 +1029,7 @@ const RentalOrderDetailPage = () => {
                                 </button>
                               </div>
                             )}
+
                           </div>
                         </div>
 
@@ -1842,26 +1857,16 @@ const RentalOrderDetailPage = () => {
         />
       )}
 
-      {/* Manage Shipment Modal */}
-      {showShipmentModal && currentOrder && isRenter && (
+      {/* Renter Shipment Modal */}
+      {showShipmentModal && currentOrder && (
         <RenterShipmentModal
           isOpen={showShipmentModal}
           onClose={() => setShowShipmentModal(false)}
-          masterOrder={currentOrder}
-          onConfirmReceived={() => loadOrderDetail(id)}
+          masterOrderId={currentOrder._id}
         />
       )}
 
-      {/* Owner Manage Shipment Modal */}
-      {showShipmentModal && currentOrder.subOrders && isOwner && (
-        <ManageShipmentModal
-          isOpen={showShipmentModal}
-          onClose={() => setShowShipmentModal(false)}
-          subOrder={currentOrder.subOrders[0]}
-          masterOrder={currentOrder}
-          onSuccess={() => loadOrderDetail(id)}
-        />
-      )}
+
     </div>
   );
 };

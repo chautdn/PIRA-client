@@ -118,8 +118,57 @@ const ShipmentService = {
     } catch (err) {
       throw new Error(err.response?.data?.message || err.message || 'Không thể lấy danh sách shipment');
     }
+  },
+
+  // Cancel shipment pickup (shipper cannot pickup from owner)
+  async cancelShipmentPickup(shipmentId) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/cancel-pickup`);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể hủy vận chuyển');
+    }
+  },
+
+  // Reject delivery - renter doesn't accept the delivered goods
+  async rejectDelivery(shipmentId, data = {}) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/reject-delivery`, data);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể ghi nhận renter không nhận hàng');
+    }
+  },
+
+  // Owner no-show - shipper confirms owner is not available for delivery
+  async ownerNoShow(shipmentId, data = {}) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/owner-no-show`, data);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể ghi nhận chủ không có mặt');
+    }
+  },
+
+  // Renter no-show - shipper cannot contact renter during delivery
+  async renterNoShow(shipmentId, data = {}) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/renter-no-show`, data);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể ghi nhận không liên lạc được renter');
+    }
+  },
+
+  // Return failed - shipper cannot contact renter during return
+  async returnFailed(shipmentId, data = {}) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/return-failed`, data);
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể ghi nhận trả hàng thất bại');
+    }
   }
 };
 
 export default ShipmentService;
-

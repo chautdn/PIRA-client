@@ -9,7 +9,6 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
   const [extensionRequests, setExtensionRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -25,8 +24,25 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
       setLoading(true);
       const response = await api.get('/extensions/owner-requests?status=PENDING');
       
-      const requests = response.data?.metadata?.requests || response.data?.data || [];
-      setExtensionRequests(requests);
+      console.log('📦 API Response:', {
+        fullResponse: response.data,
+        hasData: !!response.data?.data,
+        hasMetadata: !!response.data?.metadata,
+        dataType: typeof response.data?.data,
+        metadataType: typeof response.data?.metadata
+      });
+
+      const requests = response.data?.data || response.data?.metadata?.requests || [];
+      
+      // Ensure it's always an array
+      const requestsArray = Array.isArray(requests) ? requests : (requests ? [requests] : []);
+      
+      console.log('📋 Extracted requests:', {
+        count: requestsArray.length,
+        firstRequest: requestsArray[0]
+      });
+
+      setExtensionRequests(requestsArray);
     } catch (error) {
       console.error('Error fetching extension requests:', error);
       toast.error('Không thể tải danh sách yêu cầu gia hạn');
@@ -35,15 +51,19 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
-  const handleApproveExtension = async (requestId) => {
+  const handleApproveExtension = async (extensionId, productId) => {
     try {
       setSubmitting(true);
-      await api.put(`/extensions/${requestId}/approve`);
+      console.log('📤 Approving extension:', { extensionId, productId });
       
-      toast.success('✅ Đã xác nhận yêu cầu gia hạn');
-      setShowDetailModal(false);
+      const response = await api.put(`/extensions/${extensionId}/approve`, { productId });
+      
+      console.log('✅ Response from approve:', response);
+      toast.success('✅ Đã xác nhận gia hạn sản phẩm này');
+      
+      // Re-fetch the list to remove the approved product
+      await fetchExtensionRequests();
       setSelectedRequest(null);
-      fetchExtensionRequests();
       onSuccess && onSuccess();
     } catch (error) {
       console.error('Error approving extension:', error);
@@ -59,18 +79,33 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
+    if (!selectedRequest) {
+      toast.error('Không có yêu cầu được chọn');
+      return;
+    }
+
     try {
       setSubmitting(true);
-      await api.put(`/extensions/${selectedRequest._id}/reject`, {
+      console.log('📤 Rejecting extension:', { 
+        extensionId: selectedRequest.extensionId, 
+        productId: selectedRequest.productId,
         rejectionReason: rejectReason
       });
       
-      toast.success('✅ Đã từ chối yêu cầu gia hạn');
+      const response = await api.put(`/extensions/${selectedRequest.extensionId}/reject`, {
+        productId: selectedRequest.productId,
+        rejectionReason: rejectReason
+      });
+
+      console.log('✅ Response from reject:', response);
+      toast.success('✅ Đã từ chối gia hạn sản phẩm này');
+      
       setShowRejectModal(false);
       setRejectReason('');
-      setShowDetailModal(false);
+      
+      // Re-fetch the list to remove the rejected product
+      await fetchExtensionRequests();
       setSelectedRequest(null);
-      fetchExtensionRequests();
       onSuccess && onSuccess();
     } catch (error) {
       console.error('Error rejecting extension:', error);
@@ -132,291 +167,146 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
               <p className="text-gray-600">Hiện chưa có yêu cầu gia hạn nào từ người thuê</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {extensionRequests.map((request) => (
-                <div
-                  key={request._id}
-                  className="border-2 border-gray-200 rounded-lg p-4 hover:border-orange-400 hover:shadow-lg transition-all cursor-pointer"
-                  onClick={() => {
-                    setSelectedRequest(request);
-                    setShowDetailModal(true);
-                  }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h4 className="text-lg font-bold text-gray-900">
-                          Đơn #{request.masterOrder?.masterOrderNumber}
-                        </h4>
-                        <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
-                          ⏳ Chờ xác nhận
-                        </span>
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {extensionRequests.map((request) => {
+                const productData = request.product;
+                const productDetail = request.productDetail;
+                const currentEndDate = new Date(productData.currentEndDate);
+                const newEndDate = new Date(productData.newEndDate);
+                const extensionDays = productData.extensionDays;
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-sm">
-                        <div>
-                          <span className="text-gray-600">Người thuê:</span>
-                          <p className="font-semibold">
-                            {request.renter?.profile?.firstName} {request.renter?.profile?.lastName}
-                          </p>
-                        </div>
+                console.log('🎯 Rendering request card:', {
+                  extensionId: request.extensionId,
+                  productId: productData.productId,
+                  productName: productData.productName,
+                  hasDetail: !!productDetail
+                });
 
-                        <div>
-                          <span className="text-gray-600">Yêu cầu vào:</span>
-                          <p className="font-semibold">{formatDate(request.createdAt)}</p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-600">Ngày kết thúc hiện tại:</span>
-                          <p className="font-semibold">
-                            {new Date(request.currentEndDate).toLocaleDateString('vi-VN')}
-                          </p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-600">Ngày kết thúc yêu cầu:</span>
-                          <p className="font-semibold text-green-600">
-                            {new Date(request.newEndDate).toLocaleDateString('vi-VN')}
-                          </p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-600">Số ngày gia hạn:</span>
-                          <p className="font-bold text-orange-600">
-                            {calculateExtendDays(request.currentEndDate, request.newEndDate)} ngày
-                          </p>
-                        </div>
-
-                        <div>
-                          <span className="text-gray-600">Phí gia hạn:</span>
-                          <p className="font-bold text-blue-600">
-                            {formatCurrency(request.extensionFee)}
-                          </p>
-                        </div>
-                      </div>
-
-                      {request.extensionReason && (
-                        <div className="mt-3 p-2 bg-blue-50 rounded text-sm">
-                          <span className="text-blue-700 font-semibold">Lý do gia hạn:</span>
-                          <p className="text-blue-600">{request.extensionReason}</p>
-                        </div>
+                return (
+                  <div
+                    key={`${request.extensionId}-${productData.productId}`}
+                    className="border-2 border-gray-200 rounded-lg p-4 bg-white hover:shadow-xl transition-all"
+                  >
+                    {/* Product Header */}
+                    <div className="mb-3">
+                      {productDetail?.thumbnail && (
+                        <img 
+                          src={productDetail.thumbnail}
+                          alt={productDetail.name || productData.productName}
+                          className="w-full h-40 object-cover rounded-lg mb-3"
+                        />
+                      )}
+                      <h4 className="text-base font-bold text-gray-900 line-clamp-2">
+                        {productDetail?.name || productDetail?.title || productData.productName}
+                      </h4>
+                      
+                      {productDetail?.sku && (
+                        <p className="text-xs text-gray-500 mt-1">SKU: {productDetail.sku}</p>
                       )}
                     </div>
 
-                    <button
-                      className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors whitespace-nowrap"
-                    >
-                      Chi tiết →
-                    </button>
+                    {/* Extension Info */}
+                    <div className="space-y-2 mb-4 text-sm border-t pt-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Hiện tại:</span>
+                        <span className="font-semibold">{currentEndDate.toLocaleDateString('vi-VN')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Mới:</span>
+                        <span className="font-semibold text-green-600">{newEndDate.toLocaleDateString('vi-VN')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Gia hạn:</span>
+                        <span className="font-bold text-orange-600">{extensionDays} ngày</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Phí:</span>
+                        <span className="font-bold text-blue-600">{formatCurrency(productData.extensionFee)}</span>
+                      </div>
+                    </div>
+
+                    {/* Renter Info */}
+                    <div className="text-xs text-gray-600 mb-4 p-2 bg-gray-50 rounded">
+                      <p><strong>Người thuê:</strong> {request.renter?.profile?.firstName} {request.renter?.profile?.lastName}</p>
+                      <p><strong>Đơn:</strong> {request.masterOrder?.masterOrderNumber}</p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleApproveExtension(request.extensionId, productData.productId)}
+                        disabled={submitting}
+                        className="flex-1 px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 disabled:bg-gray-400 transition-colors font-semibold flex items-center justify-center gap-1"
+                      >
+                        <Check className="w-4 h-4" />
+                        Xác nhận
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedRequest({ 
+                            extensionId: request.extensionId, 
+                            productId: productData.productId,
+                            productName: productDetail?.name || productData.productName,
+                            productData: productData,
+                            masterOrder: request.masterOrder,
+                            renter: request.renter
+                          });
+                          setShowRejectModal(true);
+                        }}
+                        disabled={submitting}
+                        className="flex-1 px-3 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 disabled:bg-gray-400 transition-colors font-semibold flex items-center justify-center gap-1"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Từ chối
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* Detail Modal */}
-      {showDetailModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 text-white p-6 z-10">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">📋 Chi tiết Yêu cầu Gia hạn</h2>
-                <button
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    setSelectedRequest(null);
-                  }}
-                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+      {/* Reject Reason Modal */}
+      {showRejectModal && selectedRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
+          <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
+            <div className="bg-red-600 text-white p-4 rounded-t-xl">
+              <h3 className="text-lg font-bold">❌ Từ chối Yêu cầu Gia hạn</h3>
+              <p className="text-sm text-red-100 mt-1">Sản phẩm: {selectedRequest.productName}</p>
             </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-6">
-              {/* Request Info */}
-              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
-                <h3 className="font-bold text-gray-900 mb-3">⏳ Thông tin yêu cầu</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Mã đơn:</span>
-                    <span className="font-semibold">{selectedRequest.masterOrder?.masterOrderNumber}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Yêu cầu vào:</span>
-                    <span className="font-semibold">{formatDate(selectedRequest.createdAt)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Trạng thái:</span>
-                    <span className="font-semibold px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full">
-                      Chờ xác nhận
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Renter Info */}
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                <h3 className="font-bold text-gray-900 mb-3">👤 Thông tin người thuê</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tên:</span>
-                    <span className="font-semibold">
-                      {selectedRequest.renter?.profile?.firstName} {selectedRequest.renter?.profile?.lastName}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Email:</span>
-                    <span className="font-semibold">{selectedRequest.renter?.email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Điện thoại:</span>
-                    <span className="font-semibold">{selectedRequest.renter?.phone || 'Chưa cập nhật'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Extension Details */}
-              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                <h3 className="font-bold text-gray-900 mb-3">📅 Chi tiết gia hạn</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Ngày kết thúc hiện tại:</span>
-                    <span className="font-semibold">
-                      {new Date(selectedRequest.currentEndDate).toLocaleDateString('vi-VN')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Ngày kết thúc mới (yêu cầu):</span>
-                    <span className="font-bold text-green-600">
-                      {new Date(selectedRequest.newEndDate).toLocaleDateString('vi-VN')}
-                    </span>
-                  </div>
-                  <div className="border-t pt-3">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-600">Số ngày gia hạn:</span>
-                      <span className="font-bold text-orange-600 text-lg">
-                        {calculateExtendDays(selectedRequest.currentEndDate, selectedRequest.newEndDate)} ngày
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Phí gia hạn (sẽ trừ ví renter):</span>
-                      <span className="font-bold text-blue-600 text-lg">
-                        {formatCurrency(selectedRequest.extensionFee)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reason */}
-              {selectedRequest.notes && (
-                <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-                  <h3 className="font-bold text-gray-900 mb-2">📝 Lý do gia hạn</h3>
-                  <p className="text-gray-700">{selectedRequest.notes}</p>
-                </div>
-              )}
-
-              {/* Master Order Info */}
-              <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
-                <h3 className="font-bold text-gray-900 mb-3">📦 Thông tin đơn hàng</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Mã đơn chính:</span>
-                    <span className="font-semibold">{selectedRequest.masterOrder?.masterOrderNumber}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tổng tiền đơn hàng:</span>
-                    <span className="font-bold text-green-600">
-                      {formatCurrency(
-                        (selectedRequest.masterOrder?.totalAmount || 0) +
-                        (selectedRequest.masterOrder?.totalDepositAmount || 0)
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Trạng thái đơn:</span>
-                    <span className="font-semibold px-2 py-1 bg-green-200 text-green-800 rounded">
-                      {selectedRequest.masterOrder?.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-3 pt-4">
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700 font-semibold">
+                Nhập lý do từ chối (sẽ gửi cho người thuê):
+              </p>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Nhập lý do từ chối..."
+                className="w-full p-3 border-2 border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
+              />
+              <div className="flex space-x-3">
                 <button
                   onClick={() => {
-                    setShowDetailModal(false);
+                    setShowRejectModal(false);
+                    setRejectReason('');
                     setSelectedRequest(null);
                   }}
-                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors"
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors"
                 >
-                  Quay lại
+                  Hủy
                 </button>
                 <button
-                  onClick={() => setShowRejectModal(true)}
-                  disabled={submitting}
-                  className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 font-semibold transition-colors flex items-center justify-center space-x-2"
+                  onClick={() => handleRejectExtension()}
+                  disabled={!rejectReason.trim() || submitting}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors"
                 >
-                  <XCircle className="w-5 h-5" />
-                  <span>Từ chối</span>
-                </button>
-                <button
-                  onClick={() => handleApproveExtension(selectedRequest._id)}
-                  disabled={submitting}
-                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold transition-colors flex items-center justify-center space-x-2"
-                >
-                  <Check className="w-5 h-5" />
-                  <span>Xác nhận</span>
+                  {submitting ? '⏳...' : 'Từ chối'}
                 </button>
               </div>
             </div>
           </div>
-
-          {/* Reject Reason Modal */}
-          {showRejectModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-              <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
-                <div className="bg-red-600 text-white p-4 rounded-t-xl">
-                  <h3 className="text-lg font-bold">❌ Từ chối Yêu cầu Gia hạn</h3>
-                </div>
-                <div className="p-6 space-y-4">
-                  <p className="text-gray-700 font-semibold">
-                    Nhập lý do từ chối (sẽ gửi cho người thuê):
-                  </p>
-                  <textarea
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Nhập lý do từ chối..."
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
-                  />
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => {
-                        setShowRejectModal(false);
-                        setRejectReason('');
-                      }}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      onClick={handleRejectExtension}
-                      disabled={!rejectReason.trim() || submitting}
-                      className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors"
-                    >
-                      {submitting ? '⏳...' : 'Từ chối'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
