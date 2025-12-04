@@ -3,8 +3,14 @@ import { io } from "socket.io-client";
 import { useAuth } from "./useAuth";
 import toast from "react-hot-toast";
 
-const SERVER_URL =
-  import.meta.env.VITE_API_URL?.replace("/api", "") || "https://api.pira.asia";
+// Get socket server URL from API URL
+const getServerUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL || "https://api.pira.asia/api";
+  // Remove /api suffix if present
+  return apiUrl.replace(/\/api$/, "");
+};
+
+const SERVER_URL = getServerUrl();
 
 const useChatSocket = () => {
   const { user, token } = useAuth();

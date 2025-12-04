@@ -20,7 +20,7 @@ export const useSystemPromotionSocket = (onPromotionUpdate) => {
       // Remove /api from URL for socket connection
       const apiUrl =
         import.meta.env.VITE_API_URL || "https://api.pira.asia/api";
-      const serverUrl = apiUrl.replace("/api", "");
+      const serverUrl = apiUrl.replace(/\/api$/, "");
       const token = localStorage.getItem("token");
 
       console.log("[Socket] 🔌 Connecting to:", serverUrl);
