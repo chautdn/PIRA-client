@@ -89,7 +89,7 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                 {/* Complainant */}
                 <div className="bg-blue-50 p-3 rounded">
                   <p className="text-xs text-blue-600 font-medium mb-2">
-                    {dispute.shipmentType === 'DELIVERY' ? 'NGƯỜI THUÊ (Chủ hàng)' : 'CHỦ HÀNG (Người thuê)'}
+                    NGƯỜI THUÊ
                   </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.complainant.name}</p>
@@ -101,7 +101,7 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                 {/* Respondent */}
                 <div className="bg-orange-50 p-3 rounded">
                   <p className="text-xs text-orange-600 font-medium mb-2">
-                    {dispute.shipmentType === 'DELIVERY' ? 'CHỦ HÀNG (Người thuê)' : 'NGƯỜI THUÊ (Chủ hàng)'}
+                    CHỦ HÀNG
                   </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.respondent.name}</p>
