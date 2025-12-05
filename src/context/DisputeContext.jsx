@@ -22,11 +22,7 @@ export const DisputeProvider = ({ children }) => {
   const loadMyDisputes = useCallback(async (filters = {}) => {
     try {
       setIsLoading(true);
-      console.log('🔍 Loading disputes with filters:', filters);
       const response = await disputeApi.getMyDisputes(filters);
-      console.log('✅ Disputes loaded:', response);
-      console.log('📊 Number of disputes:', response.data?.disputes?.length || 0);
-      console.log('📋 Disputes array:', response.data?.disputes);
       setDisputes(response.data?.disputes || []);
       return response.data?.disputes;
     } catch (error) {
@@ -59,7 +55,6 @@ export const DisputeProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await disputeApi.createDispute(data);
-      toast.success('Tạo dispute thành công');
       return response.data?.dispute;
     } catch (error) {
       console.error('Create dispute error:', error);
@@ -143,10 +138,8 @@ export const DisputeProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await disputeApi.submitOwnerFinalDecision(disputeId, data);
-      console.log('🔍 submitOwnerFinalDecision response:', JSON.stringify(response, null, 2));
       toast.success(response.message || 'Đã đưa ra quyết định cuối cùng');
       await loadDisputeDetail(disputeId);
-      console.log('🔍 After reload - currentDispute:', JSON.stringify(currentDispute?.negotiationRoom?.finalAgreement, null, 2));
       return response.data?.dispute;
     } catch (error) {
       console.error('Submit owner final decision error:', error);
