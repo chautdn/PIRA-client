@@ -22,11 +22,12 @@ import { toast } from "../common/Toast";
 import paymentService from "../../services/payment";
 import rentalOrderService from "../../services/rentalOrder";
 import systemPromotionService from "../../services/systemPromotion";
+import { HiCreditCard } from "react-icons/hi";
+import { PiBank , PiHandDeposit  } from "react-icons/pi";
 
 const RentalOrderForm = () => {
   try {
     const { user } = useAuth();
-    console.log("RentalOrderForm: Auth user:", user);
     const { cart: cartItems, clearCart } = useCart();
     const rentalOrderContext = useRentalOrder();
     const {
@@ -47,22 +48,6 @@ const RentalOrderForm = () => {
     // Check if there are selected items from cart
     const selectedItems = location.state?.selectedItems || null;
     const fromCart = location.state?.fromCart || false;
-
-    // Debug effect - only runs once
-    useEffect(() => {
-      console.log("RentalOrderForm: Component mounted");
-      console.log("RentalOrderForm: User loaded:", user ? "Yes" : "No");
-      console.log(
-        "RentalOrderForm: Cart loaded:",
-        cartItems ? cartItems.length : "No cart"
-      );
-      console.log("RentalOrderForm: Selected items:", selectedItems);
-      console.log("RentalOrderForm: From cart:", fromCart);
-      console.log(
-        "RentalOrderForm: RentalOrder context loaded:",
-        !!rentalOrderContext
-      );
-    }, []);
 
   const [orderData, setOrderData] = useState(() => ({
     rentalPeriod: {
@@ -170,7 +155,7 @@ const RentalOrderForm = () => {
         // toast is imported earlier
         toast.success("Đã cập nhật địa chỉ giao hàng!");
       } catch (e) {
-        console.log("Address updated");
+        // Address updated silently
       }
     };
 
@@ -206,7 +191,7 @@ const RentalOrderForm = () => {
             setActivePromotion(response.metadata.promotions[0]);
           }
         } catch (error) {
-          console.error("Failed to load active promotion:", error);
+          // Failed to load promotion silently
         } finally {
           setLoadingPromotion(false);
         }
@@ -252,7 +237,6 @@ const RentalOrderForm = () => {
       sourceItems.forEach((item) => {
         // Validate item structure
         if (!item?.product?.owner?._id) {
-          console.warn("Item missing owner data:", item);
           return;
         }
 
@@ -281,7 +265,6 @@ const RentalOrderForm = () => {
       });
 
       setGroupedProducts(grouped);
-      console.log("RentalOrderForm: Grouped products:", grouped);
 
       // Set rental dates from items
       if (earliestStart && latestEnd) {
@@ -532,7 +515,6 @@ const RentalOrderForm = () => {
             }
             
             if (!shipping || !shipping.distance || !shipping.fee) {
-              console.error("❌ Invalid shipping data:", shippingResponse);
               throw new Error(
                 shippingResponse?.message || "Không thể tính phí ship từ API - Dữ liệu không hợp lệ"
               );
@@ -2057,13 +2039,13 @@ const DepositPaymentModal = ({
       key: "WALLET",
       title: "Ví điện tử",
       description: "Thanh toán cọc từ số dư ví",
-      icon: "💳",
+      icon: <HiCreditCard className="text-2xl text-blue-600" />,
     },
     {
       key: "PAYOS",
       title: "Chuyển khoản ngân hàng",
       description: "Thanh toán cọc qua PayOS (QR Code)",
-      icon: "🏦",
+      icon: <PiBank  className="text-2xl text-green-600" />,
     },
   ];
 
@@ -2072,7 +2054,10 @@ const DepositPaymentModal = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <h2 className="text-xl font-semibold mb-4">💵 Thanh toán cọc - COD</h2>
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <PiHandDeposit  className="text-orange-600" />
+          Thanh toán cọc - COD
+        </h2>
 
         {/* Amount breakdown */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
@@ -2112,7 +2097,7 @@ const DepositPaymentModal = ({
               onClick={() => setSelectedMethod(method.key)}
             >
               <div className="flex items-start space-x-3">
-                <span className="text-2xl">{method.icon}</span>
+                <div>{method.icon}</div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <input

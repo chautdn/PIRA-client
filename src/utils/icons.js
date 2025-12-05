@@ -75,8 +75,45 @@ import {
   HiInformationCircle,
   HiCreditCard,
 } from "react-icons/hi";
+import { LuBoxes } from "react-icons/lu";
+import { IoChatboxEllipsesOutline } from "react-icons/io5";
+import { FaRegBell } from "react-icons/fa";
+import { TbWorld } from "react-icons/tb";
+import { FaSearchengin } from "react-icons/fa6";
+import { LuPackagePlus } from "react-icons/lu";
+import { LuPackageSearch } from "react-icons/lu";
+import { FaBalanceScale } from "react-icons/fa";
+import { IoBarChart } from "react-icons/io5";
+import { BsCart4 } from "react-icons/bs";
+import {
+  FiUser,
+  FiGift,
+  FiPackage,
+  FiClipboard,
+  FiAlertTriangle,
+  FiDollarSign,
+  FiSettings,
+  FiTruck,
+  FiLogOut,
+} from "react-icons/fi";
 
 const icons = {
+  FaSearchengin,
+  BsCart4,
+  FaBalanceScale,
+  IoBarChart,
+  LuPackagePlus,
+  LuPackageSearch,
+  TbWorld,
+  FiUser,
+  FiGift,
+  FiPackage,
+  FiClipboard,
+  FiAlertTriangle,
+  FiDollarSign,
+  FiSettings,
+  FiTruck,
+  FiLogOut,
   AiOutlinePlusCircle,
   IoMdClose,
   GrNext,
@@ -150,6 +187,9 @@ const icons = {
   FiArrowRight,
   FiArrowLeft,
   HiCreditCard,
+  LuBoxes,
+  IoChatboxEllipsesOutline,
+  FaRegBell,
 };
 
 export default icons;
