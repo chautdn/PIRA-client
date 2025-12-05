@@ -189,6 +189,14 @@ const disputeApi = {
   },
 
   /**
+   * Admin từ chối bằng chứng bên thứ 3
+   */
+  adminRejectThirdPartyEvidence: async (disputeId, data) => {
+    const response = await api.post(`/disputes/${disputeId}/admin/third-party/reject-evidence`, data);
+    return response.data;
+  },
+
+  /**
    * Admin chia sẻ thông tin shipper cho cả hai bên
    */
   shareShipperInfo: async (disputeId) => {

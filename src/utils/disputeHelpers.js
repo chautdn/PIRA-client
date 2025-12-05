@@ -241,8 +241,7 @@ export const getDisputeTypesForShipment = (shipmentType) => {
     ];
   } else if (shipmentType === 'RETURN') {
     return [
-      { value: 'DAMAGED_ON_RETURN', label: 'Sản phẩm hư hỏng khi trả' },
-      { value: 'LATE_RETURN', label: 'Trả hàng trễ' }
+      { value: 'DAMAGED_ON_RETURN', label: 'Sản phẩm hư hỏng khi trả' }
     ];
   }
   return [];

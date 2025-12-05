@@ -27,6 +27,9 @@ const AdminDisputeDetail = () => {
   const [showFinalProcessModal, setShowFinalProcessModal] = useState(false);
   const [showOwnerDisputeFinalModal, setShowOwnerDisputeFinalModal] = useState(false);
   const [showShipperDamageModal, setShowShipperDamageModal] = useState(false);
+  const [showRejectEvidenceModal, setShowRejectEvidenceModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -34,6 +37,19 @@ const AdminDisputeDetail = () => {
       loadDisputeDetail(disputeId);
     }
   }, [disputeId]);
+
+  // Listen for reject evidence modal trigger from AdminOwnerDisputeFinalModal
+  useEffect(() => {
+    const handleOpenRejectModal = () => {
+      setShowRejectEvidenceModal(true);
+    };
+
+    window.addEventListener('openRejectEvidenceModal', handleOpenRejectModal);
+    
+    return () => {
+      window.removeEventListener('openRejectEvidenceModal', handleOpenRejectModal);
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -57,6 +73,8 @@ const AdminDisputeDetail = () => {
   const canReview = dispute.status === 'RESPONDENT_REJECTED';
   const canProcessNegotiationResult = dispute.status === 'NEGOTIATION_AGREED' && dispute.shipmentType === 'DELIVERY';
   const canProcessOwnerDisputeResult = dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED' && dispute.shipmentType === 'RETURN';
+  const canProcessRenterDisputeResult = dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED' && dispute.shipmentType === 'DELIVERY';
+  const canProcessThirdPartyEvidence = dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED'; // For both DELIVERY and RETURN
   const canResolveShipperDamage = dispute.status === 'ADMIN_REVIEW' && dispute.type === 'DAMAGED_BY_SHIPPER';
   const canProcessPayment = dispute.status === 'RESPONDENT_ACCEPTED' && dispute.repairCost > 0;
 
@@ -161,7 +179,7 @@ const AdminDisputeDetail = () => {
               onClick={() => setShowOwnerDisputeFinalModal(true)}
               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium"
             >
-              Đưa ra quyết định cuối cùng (Owner Dispute)
+              Đưa ra quyết định cuối cùng (Owner Dispute - Bằng chứng bên thứ 3)
             </button>
           </div>
         )}
@@ -716,6 +734,77 @@ const AdminDisputeDetail = () => {
           loadDisputeDetail(disputeId);
         }}
       />
+
+      {/* Reject Evidence Modal */}
+      {showRejectEvidenceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              Từ chối bằng chứng bên thứ 3
+            </h2>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Bạn đang từ chối bằng chứng do không hợp lệ hoặc có dấu hiệu giả mạo. 
+              Dispute sẽ quay lại trạng thái <span className="font-semibold">THIRD_PARTY_ESCALATED</span> 
+              {' '}và 2 bên sẽ được yêu cầu upload lại.
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Lý do từ chối <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="VD: Bằng chứng không rõ ràng, hình ảnh bị chỉnh sửa, thông tin không khớp với cuộc gọi xác nhận..."
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowRejectEvidenceModal(false);
+                  setRejectReason('');
+                }}
+                disabled={isRejecting}
+                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={async () => {
+                  if (!rejectReason.trim()) {
+                    toast.error('Vui lòng nhập lý do từ chối');
+                    return;
+                  }
+
+                  setIsRejecting(true);
+                  try {
+                    await disputeApi.adminRejectThirdPartyEvidence(disputeId, {
+                      reason: rejectReason
+                    });
+                    toast.success('Đã từ chối bằng chứng. Dispute quay lại trạng thái THIRD_PARTY_ESCALATED');
+                    setShowRejectEvidenceModal(false);
+                    setRejectReason('');
+                    loadDisputeDetail(disputeId);
+                  } catch (error) {
+                    console.error('Reject evidence error:', error);
+                    toast.error(error.response?.data?.message || 'Không thể từ chối bằng chứng');
+                  } finally {
+                    setIsRejecting(false);
+                  }
+                }}
+                disabled={isRejecting}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium disabled:opacity-50"
+              >
+                {isRejecting ? 'Đang xử lý...' : 'Từ chối'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

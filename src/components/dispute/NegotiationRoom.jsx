@@ -21,8 +21,14 @@ const NegotiationRoom = ({ dispute }) => {
   const isComplainant = user?._id === dispute.complainant._id;
   const isRespondent = user?._id === dispute.respondent._id;
   
-  // Chỉ owner (respondent) mới có thể đưa ra quyết định cuối
-  const canMakeFinalDecision = isRespondent;
+  // Xác định vai trò Owner/Renter dựa trên shipmentType
+  // DELIVERY: complainant = Renter, respondent = Owner
+  // RETURN: complainant = Owner, respondent = Renter
+  const isOwner = dispute.shipmentType === 'DELIVERY' ? isRespondent : isComplainant;
+  const isRenter = dispute.shipmentType === 'DELIVERY' ? isComplainant : isRespondent;
+  
+  // Chỉ owner mới có thể đưa ra quyết định cuối
+  const canMakeFinalDecision = isOwner;
 
   // Calculate time remaining
   const deadline = new Date(negotiation?.deadline);
@@ -42,11 +48,21 @@ const NegotiationRoom = ({ dispute }) => {
         ? dispute.respondent._id  // Nếu user là complainant thì chat với respondent
         : dispute.complainant._id; // Nếu user là respondent thì chat với complainant
       
-      // Lấy product ID từ dispute
-      const productId = dispute.productId;
+      // Lấy product ID từ dispute - có thể là string hoặc object
+      let productId = dispute.productId;
+      if (typeof productId === 'object' && productId._id) {
+        productId = productId._id;
+      }
+      
+      // Nếu không có, lấy từ subOrder.products[productIndex]
+      if (!productId && dispute.subOrder?.products?.[dispute.productIndex]) {
+        const product = dispute.subOrder.products[dispute.productIndex];
+        productId = product.product?._id || product.product;
+      }
       
       if (!otherUserId || !productId) {
-        toast.error('Không tìm thấy thông tin cần thiết');
+        console.error('Missing data:', { otherUserId, productId, dispute });
+        toast.error('Không tìm thấy thông tin cần thiết để mở chat');
         return;
       }
       
@@ -120,9 +136,12 @@ const NegotiationRoom = ({ dispute }) => {
   console.log('🔍 NegotiationRoom - Final agreement:', JSON.stringify(finalAgreement, null, 2));
   console.log('🔍 NegotiationRoom - Owner decision:', finalAgreement?.ownerDecision);
 
-  const otherPartyName = isComplainant 
-    ? dispute.respondent.profile?.fullName || 'Owner'
-    : dispute.complainant.profile?.fullName || 'Renter';
+  // Lấy tên người còn lại (không phải user)
+  const otherParty = isComplainant ? dispute.respondent : dispute.complainant;
+  const otherPartyRole = dispute.shipmentType === 'DELIVERY' 
+    ? (isComplainant ? 'Owner' : 'Renter')
+    : (isComplainant ? 'Renter' : 'Owner');
+  const otherPartyName = otherParty.profile?.fullName || otherPartyRole;
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -169,8 +188,8 @@ const NegotiationRoom = ({ dispute }) => {
               </div>
             </div>
 
-            {/* Renter Response Section */}
-            {isComplainant && finalAgreement.complainantAccepted === null && (
+            {/* Response Section - Người không phải Owner */}
+            {isRenter && finalAgreement.complainantAccepted === null && (
               <div className="pt-3 border-t border-blue-200">
                 <p className="text-sm font-medium text-gray-700 mb-3">
                   Bạn có đồng ý với quyết định này không?
@@ -203,13 +222,13 @@ const NegotiationRoom = ({ dispute }) => {
                 {finalAgreement.complainantAccepted ? (
                   <div className="p-3 bg-green-100 border border-green-300 rounded">
                     <p className="text-sm text-green-800 text-center font-semibold">
-                      ✅ Renter đã đồng ý! Đã gửi cho Admin xử lý cuối cùng.
+                      ✅ {otherPartyRole} đã đồng ý! Đã gửi cho Admin xử lý cuối cùng.
                     </p>
                   </div>
                 ) : (
                   <div className="p-3 bg-red-100 border border-red-300 rounded">
                     <p className="text-sm text-red-800 text-center font-semibold">
-                      ❌ Renter đã từ chối. Chuyển cho bên thứ 3 xử lý.
+                      ❌ {otherPartyRole} đã từ chối. Chuyển cho bên thứ 3 xử lý.
                     </p>
                   </div>
                 )}
