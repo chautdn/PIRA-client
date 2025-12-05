@@ -23,6 +23,13 @@ const Profile = () => {
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycStatus, setKycStatus] = useState(null);
   
+  // Password prompt states for viewing CCCD
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [passwordForCCCD, setPasswordForCCCD] = useState('');
+  const [loadingCCCD, setLoadingCCCD] = useState(false);
+  const [cccdData, setCccdData] = useState(null);
+  const [cccdImages, setCccdImages] = useState(null);
+  
   // Change password states
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -351,24 +358,28 @@ const Profile = () => {
       return;
     }
 
-    if (!file.type.match(/\.(jpeg|jpg|png)$/)) {
-      toast.error("Chỉ hỗ trợ định dạng JPEG, PNG");
-      return;
-    }
 
     try {
       setSaving(true);
       const response = await userService.uploadAvatar(file);
-      setUser((prev) => ({
-        ...prev,
-        profile: {
-          ...prev.profile,
-          avatar: response.data.avatarUrl,
-        },
-      }));
-      toast.success("Cập nhật avatar thành công!");
+      console.log('📸 Avatar upload response:', response.data);
+      
+      // Backend trả: { status: 'success', data: { avatarUrl: '...' } }
+      if (response.data?.status === 'success' && response.data?.data?.avatarUrl) {
+        setUser((prev) => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            avatar: response.data.data.avatarUrl,
+          },
+        }));
+        toast.success("Cập nhật avatar thành công!");
+      } else {
+        toast.error("Không thể upload avatar");
+      }
     } catch (error) {
-      toast.error("Không thể upload avatar");
+      console.error('❌ Avatar upload error:', error);
+      toast.error(error.response?.data?.message || "Không thể upload avatar");
     } finally {
       setSaving(false);
     }
@@ -389,6 +400,107 @@ const Profile = () => {
     // Đóng modal
     setShowKycModal(false);
   };
+
+  // Handle view CCCD info - yêu cầu password
+  const handleViewCCCDInfo = () => {
+    setShowPasswordPrompt(true);
+    setPasswordForCCCD('');
+    setCccdData(null);
+  };
+
+  const handlePasswordSubmitForCCCD = async () => {
+    console.log("user authProvider:", user?.authProvider);
+    // Kiểm tra nếu user đăng nhập bằng OAuth (không có password)
+    if (user?.authProvider && user.authProvider !== 'local') {
+      // Người dùng OAuth không cần password, load trực tiếp
+      try {
+        setLoadingCCCD(true);
+        
+        const [dataResponse, imagesResponse] = await Promise.all([
+          kycService.getUserCCCD(),
+          kycService.getCCCDImages('') // Pass empty string for OAuth users
+        ]);
+        
+        console.log('📥 Data Response (OAuth):', dataResponse);
+        console.log('📥 Images Response (OAuth):', imagesResponse);
+        
+        if (dataResponse?.status === 'success' && dataResponse?.data) {
+          setCccdData(dataResponse.data);
+          
+          if (imagesResponse?.status === 'success' && imagesResponse?.data) {
+            setCccdImages(imagesResponse.data);
+          }
+          
+          toast.success('Xác thực thành công!');
+        }
+      } catch (error) {
+        console.error('❌ Error (OAuth):', error);
+        toast.error('Không thể tải thông tin CCCD');
+      } finally {
+        setLoadingCCCD(false);
+      }
+      return;
+    }
+
+    // User đăng nhập bằng email/password - yêu cầu nhập password
+    if (!passwordForCCCD) {
+      toast.error('Vui lòng nhập mật khẩu');
+      return;
+    }
+
+    try {
+      setLoadingCCCD(true);
+      
+      // Verify password và load data + images song song
+      await userService.verifyPassword(passwordForCCCD);
+      
+      const [dataResponse, imagesResponse] = await Promise.all([
+        kycService.getUserCCCD(),
+        kycService.getCCCDImages(passwordForCCCD)
+      ]);
+      
+      console.log('📥 Data Response:', dataResponse);
+      console.log('📥 Images Response:', imagesResponse);
+      
+      // kycService đã unwrap response.data, nên dataResponse = { status, message, data, metadata }
+      // Backend trả data trực tiếp trong field 'data', không nested
+      if (dataResponse?.status === 'success' && dataResponse?.data) {
+        console.log('💾 Setting CCCD Data:', dataResponse.data);
+        setCccdData(dataResponse.data);
+        
+        if (imagesResponse?.status === 'success' && imagesResponse?.data) {
+          console.log('🖼️ Setting CCCD Images:', imagesResponse.data);
+          setCccdImages(imagesResponse.data);
+        }
+        
+        toast.success('Xác thực thành công!');
+      } else {
+        console.error('❌ Invalid response:', dataResponse);
+        toast.error('Không tìm thấy thông tin CCCD');
+      }
+    } catch (error) {
+      console.error('❌ Error:', error);
+      toast.error(error.message || 'Mật khẩu không đúng');
+      setPasswordForCCCD('');
+    } finally {
+      setLoadingCCCD(false);
+    }
+  };
+
+  const handleClosePasswordPrompt = () => {
+    setShowPasswordPrompt(false);
+    setPasswordForCCCD('');
+    setCccdData(null);
+    setCccdImages(null);
+  };
+
+  // Auto-load CCCD data for OAuth users when modal opens
+  useEffect(() => {
+    if (showPasswordPrompt && user?.authProvider && user.authProvider !== 'local') {
+      console.log('🔓 OAuth user detected, auto-loading CCCD data...');
+      handlePasswordSubmitForCCCD();
+    }
+  }, [showPasswordPrompt]);
 
   // Get KYC status display - check user.cccd.isVerified directly
   const getKycStatusDisplay = () => {
@@ -640,7 +752,7 @@ const Profile = () => {
                             {getKycStatusDisplay().text}
                           </span>
                           <button
-                            onClick={() => setShowKycModal(true)}
+                            onClick={() => user?.cccd?.isVerified ? handleViewCCCDInfo() : setShowKycModal(true)}
                             className={`px-5 py-2.5 text-sm font-semibold rounded-lg shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 ${
                               user?.cccd?.isVerified
                                 ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
@@ -1368,6 +1480,184 @@ const Profile = () => {
         onSuccess={handleKycSuccess}
         title="Xác thực danh tính (KYC)"
       />
+
+      {/* Password Prompt Modal for viewing CCCD */}
+      {showPasswordPrompt && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl"
+          >
+            <h3 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <span className="text-3xl">🔒</span>
+              Xác thực để xem thông tin CCCD
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {user?.authProvider === 'google' 
+                ? 'Bạn đăng nhập bằng Google, hệ thống sẽ xác thực tự động'
+                : user?.authProvider === 'facebook'
+                ? 'Bạn đăng nhập bằng Facebook, hệ thống sẽ xác thực tự động' 
+                : 'Vui lòng nhập mật khẩu của bạn để xem thông tin CCCD đã xác thực'}
+            </p>
+
+            {!cccdData ? (
+              <>
+                {/* Chỉ hiển thị ô nhập password cho local users */}
+                {(!user?.authProvider || user.authProvider === 'local') && (
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mật khẩu
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordForCCCD}
+                      onChange={(e) => setPasswordForCCCD(e.target.value)}
+                      placeholder="Nhập mật khẩu của bạn"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handlePasswordSubmitForCCCD();
+                        }
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                )}
+                
+                {/* OAuth users - auto loading */}
+                {user?.authProvider && user.authProvider !== 'local' && (
+                  <div className="mb-6 text-center">
+                    <div className="inline-flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-6 py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span className="text-blue-800 font-medium">Đang tải thông tin CCCD...</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={handleClosePasswordPrompt}
+                    className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  {(!user?.authProvider || user.authProvider === 'local') && (
+                    <button
+                      onClick={handlePasswordSubmitForCCCD}
+                      disabled={!passwordForCCCD || loadingCCCD}
+                      className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 shadow-lg"
+                    >
+                      {loadingCCCD ? 'Đang xác thực...' : 'Xác nhận'}
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto mb-6">
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-semibold text-green-700">Số CCCD:</label>
+                        <p className="text-green-900 font-bold text-lg">{cccdData.cccdNumber || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-semibold text-green-700">Họ và tên:</label>
+                        <p className="text-green-900 font-bold text-lg">{cccdData.fullName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-semibold text-green-700">Ngày sinh:</label>
+                        <p className="text-green-900">{cccdData.dateOfBirth ? new Date(cccdData.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-semibold text-green-700">Giới tính:</label>
+                        <p className="text-green-900">
+                          {cccdData.gender === 'MALE' ? 'Nam' : cccdData.gender === 'FEMALE' ? 'Nữ' : 'Khác'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <label className="text-sm font-semibold text-green-700">Địa chỉ:</label>
+                      <p className="text-green-900">{cccdData.address || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  {cccdData.verifiedAt && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        <span className="font-semibold">✅ Đã xác thực:</span>{' '}
+                        {new Date(cccdData.verifiedAt).toLocaleString('vi-VN')}
+                      </p>
+                      {cccdData.verificationSource && (
+                        <p className="text-sm text-blue-700 mt-1">
+                          <span className="font-semibold">Nguồn:</span> {cccdData.verificationSource}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Hiển thị ảnh CCCD */}
+                  {cccdImages && (
+                    <div className="space-y-3">
+                      <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <span>🖼️</span> Ảnh CCCD
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {cccdImages.frontImage && (
+                          <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow">
+                            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2">
+                              <p className="text-white font-semibold text-sm">📄 Mặt trước</p>
+                            </div>
+                            <div className="p-2">
+                              <img 
+                                src={cccdImages.frontImage} 
+                                alt="CCCD mặt trước" 
+                                className="w-full h-auto rounded-lg"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%23f3f4f6" width="400" height="250"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {cccdImages.backImage && (
+                          <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow">
+                            <div className="bg-gradient-to-r from-green-500 to-green-600 px-4 py-2">
+                              <p className="text-white font-semibold text-sm">📄 Mặt sau</p>
+                            </div>
+                            <div className="p-2">
+                              <img 
+                                src={cccdImages.backImage} 
+                                alt="CCCD mặt sau" 
+                                className="w-full h-auto rounded-lg"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%23f3f4f6" width="400" height="250"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleClosePasswordPrompt}
+                    className="px-8 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold rounded-lg hover:from-gray-700 hover:to-gray-800 shadow-lg"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
