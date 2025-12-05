@@ -108,11 +108,6 @@ const NegotiationRoom = ({ dispute }) => {
     return null;
   }
 
-  // Debug log
-  console.log('🔍 NegotiationRoom - Full negotiation data:', JSON.stringify(negotiation, null, 2));
-  console.log('🔍 NegotiationRoom - Final agreement:', JSON.stringify(finalAgreement, null, 2));
-  console.log('🔍 NegotiationRoom - Owner decision:', finalAgreement?.ownerDecision);
-
   // Lấy tên người còn lại (không phải user)
   const otherParty = isComplainant ? dispute.respondent : dispute.complainant;
   const otherPartyRole = dispute.shipmentType === 'DELIVERY' 
