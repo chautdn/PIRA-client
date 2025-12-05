@@ -49,7 +49,8 @@ const RentalOrderDetailPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [confirmAction, setConfirmAction] = useState(null); // 'confirm' or 'reject'
   const [rejectReason, setRejectReason] = useState("");
-  const [showPartialDecisionModal, setShowPartialDecisionModal] = useState(false);
+  const [showPartialDecisionModal, setShowPartialDecisionModal] =
+    useState(false);
   const [partialDecisionSubOrder, setPartialDecisionSubOrder] = useState(null);
   const [showEarlyReturnModal, setShowEarlyReturnModal] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
@@ -124,13 +125,13 @@ const RentalOrderDetailPage = () => {
   useEffect(() => {
     if (currentOrder && currentOrder.subOrders) {
       const isRenter = user?._id === currentOrder.renter?._id;
-      
+
       if (isRenter) {
         // Find subOrder waiting for renter decision
         const pendingDecision = currentOrder.subOrders.find(
-          sub => sub.status === 'PENDING_RENTER_DECISION'
+          (sub) => sub.status === "PENDING_RENTER_DECISION"
         );
-        
+
         if (pendingDecision) {
           setPartialDecisionSubOrder(pendingDecision);
           // Chỉ tự động hiển thị modal lần đầu tiên
@@ -148,24 +149,32 @@ const RentalOrderDetailPage = () => {
 
   // Handle renter decision
   const handleRenterDecision = async (decision, result) => {
-    console.log('Renter decision:', decision, result);
+    console.log("Renter decision:", decision, result);
     setShowPartialDecisionModal(false);
     setPartialDecisionSubOrder(null);
-    
-    if (decision === 'CANCELLED') {
-      toast.success(`Đã hủy đơn hàng và hoàn ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
+
+    if (decision === "CANCELLED") {
+      toast.success(
+        `Đã hủy đơn hàng và hoàn ${result.metadata?.refundAmount?.toLocaleString(
+          "vi-VN"
+        )}đ`
+      );
       // Reload order detail
       await loadOrderDetail(id);
-    } else if (decision === 'ACCEPTED') {
-      toast.success(`Đã chấp nhận đơn hàng. Hoàn tiền: ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
+    } else if (decision === "ACCEPTED") {
+      toast.success(
+        `Đã chấp nhận đơn hàng. Hoàn tiền: ${result.metadata?.refundAmount?.toLocaleString(
+          "vi-VN"
+        )}đ`
+      );
       // Reload order detail
       await loadOrderDetail(id);
-      
+
       // Tự động chuyển đến trang ký hợp đồng sau 1.5s
       setTimeout(() => {
-        toast.loading('Đang chuyển đến trang ký hợp đồng...');
+        toast.loading("Đang chuyển đến trang ký hợp đồng...");
         setTimeout(() => {
-          navigate('/rental-orders/contracts');
+          navigate("/rental-orders/contracts");
         }, 800);
       }, 1500);
     }
@@ -423,7 +432,6 @@ const RentalOrderDetailPage = () => {
     }
   };
 
-
   const handleRenterConfirm = async (subOrderId) => {
     try {
       toast.loading("Đang gửi xác nhận...");
@@ -453,7 +461,7 @@ const RentalOrderDetailPage = () => {
 
   // Check if has pending decision subOrder
   const hasPendingDecision = currentOrder?.subOrders?.some(
-    sub => sub.status === 'PENDING_RENTER_DECISION'
+    (sub) => sub.status === "PENDING_RENTER_DECISION"
   );
 
   return (
@@ -470,12 +478,13 @@ const RentalOrderDetailPage = () => {
                     ⚠️ Cần quyết định của bạn!
                   </h3>
                   <p className="text-orange-800 mb-2">
-                    Chủ đã xác nhận một phần sản phẩm trong đơn hàng. Vui lòng chọn hủy toàn bộ hoặc tiếp tục với phần được xác nhận.
+                    Chủ đã xác nhận một phần sản phẩm trong đơn hàng. Vui lòng
+                    chọn hủy toàn bộ hoặc tiếp tục với phần được xác nhận.
                   </p>
                   <button
                     onClick={() => {
                       const pendingSubOrder = currentOrder.subOrders.find(
-                        sub => sub.status === 'PENDING_RENTER_DECISION'
+                        (sub) => sub.status === "PENDING_RENTER_DECISION"
                       );
                       if (pendingSubOrder) {
                         setPartialDecisionSubOrder(pendingSubOrder);
@@ -552,44 +561,42 @@ const RentalOrderDetailPage = () => {
               </button>
             )}
 
-            {isRenter &&
-              currentOrder.status === "ACTIVE" && (
-                <>
-                  <button
-                    onClick={() => setShowExtendRentalModal(true)}
-                    className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span>Gia hạn</span>
-                  </button>
-                  <button
-                    onClick={() => setShowEarlyReturnModal(true)}
-                    className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
-                  >
-                    <RotateCcw className="w-5 h-5" />
-                    <span>Trả hàng sớm</span>
-                  </button>
-                  <button
-                    onClick={() => setShowShipmentModal(true)}
-                    className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 flex items-center space-x-2"
-                  >
-                    <Package className="w-5 h-5" />
-                    <span>Quản lí vận chuyển</span>
-                  </button>
-                </>
-              )}
-
-            {/* Renter: manage shipment button */}
-            {isRenter &&
-              currentOrder.status === "CONTRACT_SIGNED" && (
+            {isRenter && currentOrder.status === "ACTIVE" && (
+              <>
+                <button
+                  onClick={() => setShowExtendRentalModal(true)}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Gia hạn</span>
+                </button>
+                <button
+                  onClick={() => setShowEarlyReturnModal(true)}
+                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>Trả hàng sớm</span>
+                </button>
                 <button
                   onClick={() => setShowShipmentModal(true)}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                  className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 flex items-center space-x-2"
                 >
                   <Package className="w-5 h-5" />
                   <span>Quản lí vận chuyển</span>
                 </button>
-              )}
+              </>
+            )}
+
+            {/* Renter: manage shipment button */}
+            {isRenter && currentOrder.status === "CONTRACT_SIGNED" && (
+              <button
+                onClick={() => setShowShipmentModal(true)}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <Package className="w-5 h-5" />
+                <span>Quản lí vận chuyển</span>
+              </button>
+            )}
 
             {/* Owner: manage shipment button visible after contract signed */}
             {isOwner && currentOrder.status === "CONTRACT_SIGNED" && (
@@ -1029,7 +1036,6 @@ const RentalOrderDetailPage = () => {
                                 </button>
                               </div>
                             )}
-
                           </div>
                         </div>
 
@@ -1129,7 +1135,7 @@ const RentalOrderDetailPage = () => {
                               </span>
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-3">
                               <div>
                                 <p className="text-xs text-gray-500">
                                   Số lượng
@@ -1160,17 +1166,6 @@ const RentalOrderDetailPage = () => {
                                   đ
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Phí ship
-                                </p>
-                                <p className="font-semibold">
-                                  {productItem.totalShippingFee?.toLocaleString(
-                                    "vi-VN"
-                                  ) || 0}
-                                  đ
-                                </p>
-                              </div>
                             </div>
 
                             {productItem.rentalPeriod && (
@@ -1189,35 +1184,120 @@ const RentalOrderDetailPage = () => {
                             )}
 
                             <div className="mt-3 pt-3 border-t border-gray-200">
-                              <div className="flex justify-between items-center mb-3">
-                                <div className="text-sm text-gray-600">
-                                  <div>
-                                    Tổng thuê:{" "}
+                              <div className="space-y-2 text-sm text-gray-600">
+                                <div className="flex justify-between">
+                                  <span>Tổng thuê:</span>
+                                  <span className="font-semibold">
                                     {productItem.totalRental?.toLocaleString(
                                       "vi-VN"
                                     )}
                                     đ
-                                  </div>
-                                  <div>
-                                    Tổng cọc:{" "}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Tổng cọc:</span>
+                                  <span className="font-semibold">
                                     {productItem.totalDeposit?.toLocaleString(
                                       "vi-VN"
                                     )}
                                     đ
-                                  </div>
+                                  </span>
                                 </div>
-                                <div className="text-right">
-                                  <p className="text-xs text-gray-500">
-                                    Tổng tiền
-                                  </p>
-                                  <p className="font-bold text-xl text-orange-600">
-                                    {(
-                                      (productItem.totalRental || 0) +
-                                      (productItem.totalDeposit || 0) +
-                                      (productItem.totalShippingFee || 0)
-                                    ).toLocaleString("vi-VN")}
+
+                                {/* Show shipping fee breakdown for this product */}
+                                {(productItem.shipping?.fee || productItem.totalShippingFee > 0) && (
+                                  <>
+                                    <div className="pt-2 border-t border-gray-300">
+                                      {(() => {
+                                        // Use the actual values stored in the product's shipping fee object
+                                        const productOriginalFee =
+                                          productItem.shipping?.fee?.originalFee ||
+                                          productItem.shipping?.fee?.totalFee ||
+                                          0;
+                                        const promoDiscount =
+                                          productItem.shipping?.fee?.promotionDiscount || 0;
+                                        const voucherDiscount =
+                                          productItem.shipping?.fee?.voucherDiscount || 0;
+                                        const finalFee =
+                                          productItem.totalShippingFee || 0;
+
+                                        return (
+                                          <>
+                                            {productOriginalFee > 0 && (
+                                              <div className="flex justify-between text-gray-500">
+                                                <span>Phí ship gốc:</span>
+                                                <span>
+                                                  {productOriginalFee.toLocaleString(
+                                                    "vi-VN"
+                                                  )}
+                                                  đ
+                                                </span>
+                                              </div>
+                                            )}
+
+                                            {promoDiscount > 0 && (
+                                              <div className="flex justify-between text-green-600">
+                                                <span>Giảm KM hệ thống:</span>
+                                                <span>
+                                                  -
+                                                  {promoDiscount.toLocaleString(
+                                                    "vi-VN"
+                                                  )}
+                                                  đ
+                                                </span>
+                                              </div>
+                                            )}
+
+                                            {voucherDiscount > 0 && (
+                                              <div className="flex justify-between text-green-600">
+                                                <span>
+                                                  Giảm voucher{" "}
+                                                  {
+                                                    subOrder.appliedVoucher
+                                                      ?.discountPercent
+                                                  }
+                                                  %:
+                                                </span>
+                                                <span>
+                                                  -
+                                                  {voucherDiscount.toLocaleString(
+                                                    "vi-VN"
+                                                  )}
+                                                  đ
+                                                </span>
+                                              </div>
+                                            )}
+
+                                            <div className="flex justify-between font-semibold text-blue-600">
+                                              <span>Phí ship thực tế:</span>
+                                              <span>
+                                                {finalFee.toLocaleString(
+                                                  "vi-VN"
+                                                )}
+                                                đ
+                                              </span>
+                                            </div>
+                                          </>
+                                        );
+                                      })()}
+                                    </div>
+                                  </>
+                                )}
+
+                                <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-300">
+                                  <span>Tổng tiền sản phẩm:</span>
+                                  <span className="text-orange-600">
+                                    {(() => {
+                                      // Calculate total including shipping fee
+                                      const productTotal =
+                                        (productItem.totalRental || 0) +
+                                        (productItem.totalDeposit || 0) +
+                                        (productItem.totalShippingFee || 0);
+
+                                      return productTotal.toLocaleString("vi-VN");
+                                    })()}
                                     đ
-                                  </p>
+                                  </span>
                                 </div>
                               </div>
 
@@ -1301,6 +1381,85 @@ const RentalOrderDetailPage = () => {
                     )}
                   </div>
 
+                  {/* Shipping Fee Breakdown by SubOrder */}
+                  <div className="mt-6 pt-6 border-t-2 border-gray-300">
+                    <h4 className="font-semibold text-lg mb-4 flex items-center space-x-2">
+                      <DollarSign className="w-5 h-5 text-green-600" />
+                      <span>Chi tiết phí vận chuyển</span>
+                    </h4>
+                    <div className="space-y-4">
+                      {currentOrder.subOrders?.map((subOrder, idx) => (
+                        <div
+                          key={subOrder._id}
+                          className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                        >
+                          <div className="font-medium text-blue-900 mb-3">
+                            Đơn hàng #{idx + 1} -{" "}
+                            {subOrder.owner?.profile?.fullName || "Không rõ"}
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            {subOrder.shipping?.fee?.totalFee > 0 && (
+                              <div className="flex justify-between text-gray-700">
+                                <span>Phí ship gốc:</span>
+                                <span>
+                                  {subOrder.shipping.fee.totalFee?.toLocaleString(
+                                    "vi-VN"
+                                  )}
+                                  đ
+                                </span>
+                              </div>
+                            )}
+
+                            {subOrder.shipping?.fee?.promotionDiscount > 0 && (
+                              <div className="flex justify-between text-green-600">
+                                <span>Giảm giá khuyến mãi hệ thống:</span>
+                                <span>
+                                  -
+                                  {subOrder.shipping.fee.promotionDiscount?.toLocaleString(
+                                    "vi-VN"
+                                  )}
+                                  đ
+                                </span>
+                              </div>
+                            )}
+
+                            {subOrder.shipping?.fee?.voucherDiscount > 0 && (
+                              <div className="flex justify-between text-green-600">
+                                <span>
+                                  Giảm phí ship (voucher
+                                  {subOrder.appliedVoucher?.discountPercent
+                                    ? ` ${subOrder.appliedVoucher.discountPercent}%`
+                                    : ""}
+                                  {subOrder.appliedVoucher?.voucherCode
+                                    ? ` - ${subOrder.appliedVoucher.voucherCode}`
+                                    : ""}
+                                  ):
+                                </span>
+                                <span>
+                                  -
+                                  {subOrder.shipping.fee.voucherDiscount?.toLocaleString(
+                                    "vi-VN"
+                                  )}
+                                  đ
+                                </span>
+                              </div>
+                            )}
+
+                            <div className="flex justify-between font-semibold text-blue-800 pt-2 border-t border-blue-300">
+                              <span>Phí ship thực tế:</span>
+                              <span>
+                                {(
+                                  subOrder.pricing?.shippingFee || 0
+                                ).toLocaleString("vi-VN")}
+                                đ
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Tổng kết */}
                   <div className="mt-6 pt-6 border-t-2 border-gray-300">
                     <div className="space-y-2">
@@ -1321,23 +1480,39 @@ const RentalOrderDetailPage = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">
-                          Tổng phí vận chuyển:
+                          Tổng phí vận chuyển (sau giảm giá):
                         </span>
                         <span className="font-semibold">
-                          {currentOrder.totalShippingFee?.toLocaleString(
-                            "vi-VN"
-                          )}
+                          {(() => {
+                            // Calculate actual shipping fee from subOrders (with discounts applied)
+                            const actualShippingFee =
+                              currentOrder.subOrders?.reduce(
+                                (sum, sub) =>
+                                  sum + (sub.pricing?.shippingFee || 0),
+                                0
+                              ) || 0;
+                            return actualShippingFee.toLocaleString("vi-VN");
+                          })()}
                           đ
                         </span>
                       </div>
                       <div className="flex justify-between font-bold text-lg pt-3 border-t">
                         <span>Tổng thanh toán:</span>
                         <span className="text-orange-600">
-                          {(
-                            (currentOrder.totalAmount || 0) +
-                            (currentOrder.totalDepositAmount || 0) +
-                            (currentOrder.totalShippingFee || 0)
-                          ).toLocaleString("vi-VN")}
+                          {(() => {
+                            // Calculate total from subOrders to include discounted shipping
+                            const actualShippingFee =
+                              currentOrder.subOrders?.reduce(
+                                (sum, sub) =>
+                                  sum + (sub.pricing?.shippingFee || 0),
+                                0
+                              ) || 0;
+                            return (
+                              (currentOrder.totalAmount || 0) +
+                              (currentOrder.totalDepositAmount || 0) +
+                              actualShippingFee
+                            ).toLocaleString("vi-VN");
+                          })()}
                           đ
                         </span>
                       </div>
@@ -1865,8 +2040,6 @@ const RentalOrderDetailPage = () => {
           masterOrderId={currentOrder._id}
         />
       )}
-
-
     </div>
   );
 };

@@ -194,43 +194,62 @@ const OrderDetailModal = ({
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Owner actions (accept/reject) - show only to the owner when pending */}
-                    {user && subOrder.owner && (subOrder.owner._id === user._id || subOrder.owner === user._id) && subOrder.status === 'PENDING_OWNER_CONFIRMATION' && (
-                      <div className="mt-3 flex items-center space-x-2">
-                        <button
-                          onClick={async () => {
-                            try {
-                              await ownerProductApi.confirmSubOrder(subOrder._id);
-                              toast.success('Đã chấp nhận đơn thuê');
-                              onClose();
-                            } catch (err) {
-                              console.error('Lỗi chấp nhận đơn:', err);
-                              toast.error(err?.response?.data?.message || err?.message || 'Không thể chấp nhận đơn');
-                            }
-                          }}
-                          className="px-4 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
-                        >
-                          ✓ Chấp nhận
-                        </button>
-                        <button
-                          onClick={async () => {
-                            try {
-                              const reason = window.prompt('Nhập lý do từ chối (tùy chọn):');
-                              await ownerProductApi.rejectSubOrder(subOrder._id, { reason });
-                              toast.success('Đã từ chối đơn thuê');
-                              onClose();
-                            } catch (err) {
-                              console.error('Lỗi từ chối đơn:', err);
-                              toast.error(err?.response?.data?.message || err?.message || 'Không thể từ chối đơn');
-                            }
-                          }}
-                          className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
-                        >
-                          ✗ Từ chối
-                        </button>
-                      </div>
-                    )}
+                    {user &&
+                      subOrder.owner &&
+                      (subOrder.owner._id === user._id ||
+                        subOrder.owner === user._id) &&
+                      subOrder.status === "PENDING_OWNER_CONFIRMATION" && (
+                        <div className="mt-3 flex items-center space-x-2">
+                          <button
+                            onClick={async () => {
+                              try {
+                                await ownerProductApi.confirmSubOrder(
+                                  subOrder._id
+                                );
+                                toast.success("Đã chấp nhận đơn thuê");
+                                onClose();
+                              } catch (err) {
+                                console.error("Lỗi chấp nhận đơn:", err);
+                                toast.error(
+                                  err?.response?.data?.message ||
+                                    err?.message ||
+                                    "Không thể chấp nhận đơn"
+                                );
+                              }
+                            }}
+                            className="px-4 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
+                          >
+                            ✓ Chấp nhận
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const reason = window.prompt(
+                                  "Nhập lý do từ chối (tùy chọn):"
+                                );
+                                await ownerProductApi.rejectSubOrder(
+                                  subOrder._id,
+                                  { reason }
+                                );
+                                toast.success("Đã từ chối đơn thuê");
+                                onClose();
+                              } catch (err) {
+                                console.error("Lỗi từ chối đơn:", err);
+                                toast.error(
+                                  err?.response?.data?.message ||
+                                    err?.message ||
+                                    "Không thể từ chối đơn"
+                                );
+                              }
+                            }}
+                            className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
+                          >
+                            ✗ Từ chối
+                          </button>
+                        </div>
+                      )}
 
                     {/* Products */}
                     {subOrder.products && subOrder.products.length > 0 && (
@@ -346,17 +365,78 @@ const OrderDetailModal = ({
                               </span>
                             </div>
                           )}
-                          {subOrder.pricing?.shippingFee > 0 && (
-                            <div className="flex justify-between items-center">
-                              <span className="font-medium">
-                                Phí vận chuyển:
-                              </span>
-                              <span className="font-medium">
-                                {subOrder.pricing?.shippingFee?.toLocaleString(
-                                  "vi-VN"
-                                )}
-                                đ
-                              </span>
+                          {subOrder.pricing?.shippingFee >= 0 && (
+                            <div className="space-y-1">
+                              {/* Original shipping fee */}
+                              {(subOrder.shipping?.fee?.totalFee > 0 ||
+                                subOrder.shipping?.fee?.promotionDiscount > 0 ||
+                                subOrder.shipping?.fee?.voucherDiscount >
+                                  0) && (
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-600">
+                                    Phí ship gốc:
+                                  </span>
+                                  <span className="text-gray-600">
+                                    {(
+                                      subOrder.shipping?.fee?.totalFee || 0
+                                    )?.toLocaleString("vi-VN")}
+                                    đ
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* System promotion discount */}
+                              {subOrder.shipping?.fee?.promotionDiscount >
+                                0 && (
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-green-600">
+                                    Giảm giá khuyến mãi:
+                                  </span>
+                                  <span className="text-green-600">
+                                    -
+                                    {subOrder.shipping.fee.promotionDiscount?.toLocaleString(
+                                      "vi-VN"
+                                    )}
+                                    đ
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Voucher discount */}
+                              {subOrder.shipping?.fee?.voucherDiscount > 0 && (
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-green-600">
+                                    Giảm giá voucher (
+                                    {subOrder.appliedVoucher?.voucherCode}):
+                                  </span>
+                                  <span className="text-green-600">
+                                    -
+                                    {subOrder.shipping.fee.voucherDiscount?.toLocaleString(
+                                      "vi-VN"
+                                    )}
+                                    đ
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Final shipping fee */}
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">
+                                  Phí vận chuyển{" "}
+                                  {subOrder.shipping?.fee?.promotionDiscount >
+                                    0 ||
+                                  subOrder.shipping?.fee?.voucherDiscount > 0
+                                    ? "sau giảm"
+                                    : ""}
+                                  :
+                                </span>
+                                <span className="font-medium">
+                                  {subOrder.pricing?.shippingFee?.toLocaleString(
+                                    "vi-VN"
+                                  )}
+                                  đ
+                                </span>
+                              </div>
                             </div>
                           )}
 
@@ -471,7 +551,9 @@ const OrderDetailModal = ({
             </button>
           )}
           {order.subOrders?.[0] &&
-            order.subOrders[0].products?.some(p => p.productStatus === 'ACTIVE') &&
+            order.subOrders[0].products?.some(
+              (p) => p.productStatus === "ACTIVE"
+            ) &&
             (() => {
               if (earlyReturnRequest) {
                 return (

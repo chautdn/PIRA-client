@@ -64,23 +64,31 @@ const RentalOrderForm = () => {
       );
     }, []);
 
-  const [orderData, setOrderData] = useState(() => ({
-    rentalPeriod: {
-      startDate: '',
-      endDate: ''
-    },
-    deliveryAddress: {
-      streetAddress: '',
-      ward: '',
-      district: '',
-      city: '',
-      contactPhone: (user && (user.phone || (user.profile && user.profile.phone))) ? (user.phone || user.profile.phone) : '',
-      contactName: (user && (user.profile && (user.profile.firstName || user.profile.lastName)))
-        ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
-        : (user && user.profile && user.profile.fullName) || ''
-    },
-    deliveryMethod: 'DELIVERY',
-  }));
+    const [orderData, setOrderData] = useState(() => ({
+      rentalPeriod: {
+        startDate: "",
+        endDate: "",
+      },
+      deliveryAddress: {
+        streetAddress: "",
+        ward: "",
+        district: "",
+        city: "",
+        contactPhone:
+          user && (user.phone || (user.profile && user.profile.phone))
+            ? user.phone || user.profile.phone
+            : "",
+        contactName:
+          user &&
+          user.profile &&
+          (user.profile.firstName || user.profile.lastName)
+            ? `${user.profile.firstName || ""}${
+                user.profile.firstName && user.profile.lastName ? " " : ""
+              }${user.profile.lastName || ""}`.trim()
+            : (user && user.profile && user.profile.fullName) || "",
+      },
+      deliveryMethod: "DELIVERY",
+    }));
 
     const [errors, setErrors] = useState({});
     const [step, setStep] = useState(1);
@@ -98,7 +106,20 @@ const RentalOrderForm = () => {
     const [selectedShippingInfo, setSelectedShippingInfo] = useState(null);
 
     // Address related states
-    const [userAddresses, setUserAddresses] = useState(() => (user && user.addresses) ? user.addresses : (user && user.address ? [{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }] : []));
+    const [userAddresses, setUserAddresses] = useState(() =>
+      user && user.addresses
+        ? user.addresses
+        : user && user.address
+        ? [
+            {
+              ...user.address,
+              isDefault: true,
+              id: "default",
+              phone: user.phone || user.profile?.phone,
+            },
+          ]
+        : []
+    );
     const [loadingAddresses, setLoadingAddresses] = useState(false);
     const [showAddressModal, setShowAddressModal] = useState(false);
 
@@ -108,7 +129,14 @@ const RentalOrderForm = () => {
         if (user.addresses && Array.isArray(user.addresses)) {
           setUserAddresses(user.addresses);
         } else if (user.address) {
-          setUserAddresses([{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }]);
+          setUserAddresses([
+            {
+              ...user.address,
+              isDefault: true,
+              id: "default",
+              phone: user.phone || user.profile?.phone,
+            },
+          ]);
         } else {
           setUserAddresses([]);
         }
@@ -127,21 +155,37 @@ const RentalOrderForm = () => {
 
       if (hasAddressInOrder) return; // don't overwrite if user already interacted with address
 
-      const defaultAddress = userAddresses.find((a) => a.isDefault) || userAddresses[0];
+      const defaultAddress =
+        userAddresses.find((a) => a.isDefault) || userAddresses[0];
       if (!defaultAddress) return;
 
       setOrderData((prev) => ({
         ...prev,
         deliveryAddress: {
           ...prev.deliveryAddress,
-          streetAddress: defaultAddress.streetAddress || defaultAddress.formattedAddress || "",
+          streetAddress:
+            defaultAddress.streetAddress ||
+            defaultAddress.formattedAddress ||
+            "",
           ward: defaultAddress.ward || defaultAddress.subLocality || "",
           district: defaultAddress.district || "",
           city: defaultAddress.city || defaultAddress.locality || "",
-          contactPhone: defaultAddress.phone || defaultAddress.contactPhone || prev.deliveryAddress.contactPhone,
-          contactName: defaultAddress.contactName || prev.deliveryAddress.contactName,
-          latitude: (defaultAddress.coordinates && defaultAddress.coordinates.latitude) || defaultAddress.latitude || prev.deliveryAddress.latitude,
-          longitude: (defaultAddress.coordinates && defaultAddress.coordinates.longitude) || defaultAddress.longitude || prev.deliveryAddress.longitude,
+          contactPhone:
+            defaultAddress.phone ||
+            defaultAddress.contactPhone ||
+            prev.deliveryAddress.contactPhone,
+          contactName:
+            defaultAddress.contactName || prev.deliveryAddress.contactName,
+          latitude:
+            (defaultAddress.coordinates &&
+              defaultAddress.coordinates.latitude) ||
+            defaultAddress.latitude ||
+            prev.deliveryAddress.latitude,
+          longitude:
+            (defaultAddress.coordinates &&
+              defaultAddress.coordinates.longitude) ||
+            defaultAddress.longitude ||
+            prev.deliveryAddress.longitude,
         },
       }));
     }, [userAddresses]);
@@ -152,14 +196,24 @@ const RentalOrderForm = () => {
         ...prev,
         deliveryAddress: {
           ...prev.deliveryAddress,
-          streetAddress: address.streetAddress || address.formattedAddress || "",
+          streetAddress:
+            address.streetAddress || address.formattedAddress || "",
           ward: address.ward || address.subLocality || "",
           district: address.district || "",
           city: address.city || address.locality || "",
-          contactPhone: address.phone || address.contactPhone || prev.deliveryAddress.contactPhone,
+          contactPhone:
+            address.phone ||
+            address.contactPhone ||
+            prev.deliveryAddress.contactPhone,
           contactName: address.contactName || prev.deliveryAddress.contactName,
-          latitude: (address.coordinates && address.coordinates.latitude) || address.latitude || prev.deliveryAddress.latitude,
-          longitude: (address.coordinates && address.coordinates.longitude) || address.longitude || prev.deliveryAddress.longitude,
+          latitude:
+            (address.coordinates && address.coordinates.latitude) ||
+            address.latitude ||
+            prev.deliveryAddress.latitude,
+          longitude:
+            (address.coordinates && address.coordinates.longitude) ||
+            address.longitude ||
+            prev.deliveryAddress.longitude,
         },
       }));
       setShowAddressModal(false);
@@ -174,10 +228,14 @@ const RentalOrderForm = () => {
     // Update contact info when user changes (use top-level phone and profile name parts)
     useEffect(() => {
       if (user) {
-        const phoneFromUser = user.phone || (user.profile && user.profile.phone) || '';
-        const nameFromProfile = (user.profile && (user.profile.firstName || user.profile.lastName))
-          ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
-          : (user.profile && user.profile.fullName) || '';
+        const phoneFromUser =
+          user.phone || (user.profile && user.profile.phone) || "";
+        const nameFromProfile =
+          user.profile && (user.profile.firstName || user.profile.lastName)
+            ? `${user.profile.firstName || ""}${
+                user.profile.firstName && user.profile.lastName ? " " : ""
+              }${user.profile.lastName || ""}`.trim()
+            : (user.profile && user.profile.fullName) || "";
 
         setOrderData((prev) => ({
           ...prev,
@@ -241,10 +299,10 @@ const RentalOrderForm = () => {
       } else {
         return;
       }
-      
+
       // Store sourceItems in state for later use when submitting
       setSourceItems(sourceItems);
-      
+
       const grouped = {};
       let earliestStart = null;
       let latestEnd = null;
@@ -462,7 +520,9 @@ const RentalOrderForm = () => {
             // Kiểm tra tọa độ - KHÔNG fallback, báo lỗi rõ ràng
             if (!ownerLocation.latitude || !ownerLocation.longitude) {
               throw new Error(
-                `Chủ sản phẩm ${group.owner.profile?.firstName || "Unknown"} chưa có tọa độ địa chỉ. Vui lòng liên hệ chủ sản phẩm cập nhật địa chỉ.`
+                `Chủ sản phẩm ${
+                  group.owner.profile?.firstName || "Unknown"
+                } chưa có tọa độ địa chỉ. Vui lòng liên hệ chủ sản phẩm cập nhật địa chỉ.`
               );
             }
 
@@ -487,12 +547,16 @@ const RentalOrderForm = () => {
               ownerAddress: {
                 latitude: ownerLocation.latitude,
                 longitude: ownerLocation.longitude,
-                streetAddress: group.owner.address?.streetAddress || "Địa chỉ không xác định",
+                streetAddress:
+                  group.owner.address?.streetAddress ||
+                  "Địa chỉ không xác định",
               },
               deliveryAddress: {
                 latitude: userLocation.latitude,
                 longitude: userLocation.longitude,
-                streetAddress: orderData.deliveryAddress.streetAddress || "Địa chỉ không xác định",
+                streetAddress:
+                  orderData.deliveryAddress.streetAddress ||
+                  "Địa chỉ không xác định",
               },
               products,
             };
@@ -504,7 +568,10 @@ const RentalOrderForm = () => {
             );
 
             const shippingResponse = await calculateShipping(shippingData);
-            console.log("📦 Shipping API full response:", JSON.stringify(shippingResponse, null, 2));
+            console.log(
+              "📦 Shipping API full response:",
+              JSON.stringify(shippingResponse, null, 2)
+            );
 
             // Xử lý response từ API
             // Response có thể có nhiều format:
@@ -512,24 +579,28 @@ const RentalOrderForm = () => {
             // 2. Wrapped: { data: { shipping: {...} } }
             // 3. Wrapped: { metadata: { shipping: {...} } }
             let shipping;
-            
-            if (shippingResponse?.distance !== undefined && shippingResponse?.fee !== undefined) {
+
+            if (
+              shippingResponse?.distance !== undefined &&
+              shippingResponse?.fee !== undefined
+            ) {
               // Format 1: Response trực tiếp là shipping object
               shipping = shippingResponse;
             } else {
               // Format 2 & 3: Response wrapped
-              shipping = 
-                shippingResponse?.data?.shipping || 
+              shipping =
+                shippingResponse?.data?.shipping ||
                 shippingResponse?.metadata?.shipping ||
                 shippingResponse?.shipping;
             }
-            
+
             console.log("📦 Extracted shipping data:", shipping);
-            
+
             if (!shipping || !shipping.distance || !shipping.fee) {
               console.error("❌ Invalid shipping data:", shippingResponse);
               throw new Error(
-                shippingResponse?.message || "Không thể tính phí ship từ API - Dữ liệu không hợp lệ"
+                shippingResponse?.message ||
+                  "Không thể tính phí ship từ API - Dữ liệu không hợp lệ"
               );
             }
             const batchFee = shipping.fee || 0;
@@ -559,7 +630,9 @@ const RentalOrderForm = () => {
             console.log(
               `✅ Delivery batch ${deliveryDate} - Owner ${
                 group.owner.profile?.firstName
-              }: ${batchFee.toLocaleString("vi-VN")}đ (${shipping.distance.toFixed(2)}km)`
+              }: ${batchFee.toLocaleString(
+                "vi-VN"
+              )}đ (${shipping.distance.toFixed(2)}km)`
             );
           }
 
@@ -569,7 +642,9 @@ const RentalOrderForm = () => {
             deliveryCount,
             deliveryBatches: subOrderDeliveries,
             distance: subOrderDeliveries[0]?.distance || 0,
-            summary: `${deliveryCount} lần giao hàng - ${subOrderDeliveries[0]?.distance?.toFixed(2) || 0}km`,
+            summary: `${deliveryCount} lần giao hàng - ${
+              subOrderDeliveries[0]?.distance?.toFixed(2) || 0
+            }km`,
           };
 
           masterTotalShipping += subOrderTotalShipping;
@@ -674,8 +749,14 @@ const RentalOrderForm = () => {
     const handlePaymentMethodSelect = async (paymentMethod) => {
       console.log("🚀 Processing payment with method:", paymentMethod);
       console.log("💰 Total amount (with discounts):", totals.grandTotal);
-      console.log("🏷️ Active promotion:", activePromotion ? activePromotion.title : "None");
-      console.log("🎫 Selected voucher:", selectedVoucher ? selectedVoucher.code : "None");
+      console.log(
+        "🏷️ Active promotion:",
+        activePromotion ? activePromotion.title : "None"
+      );
+      console.log(
+        "🎫 Selected voucher:",
+        selectedVoucher ? selectedVoucher.code : "None"
+      );
 
       try {
         let paymentResult = null;
@@ -726,6 +807,8 @@ const RentalOrderForm = () => {
           paymentMessage: paymentResult.message,
           // Pass the items being processed (not selectedItems from location.state)
           selectedItems: sourceItems,
+          // Pass voucher code if selected
+          voucherCode: selectedVoucher?.code || null,
           // COD specific fields
           ...(paymentMethod === "COD" && {
             depositAmount: paymentResult.depositAmount,
@@ -1274,72 +1357,118 @@ const RentalOrderForm = () => {
                                           đ
                                         </span>
                                       </div>
-                                      {orderData.deliveryMethod === "DELIVERY" && group.shippingFee > 0 && (() => {
-                                        // Calculate shipping fee for this product
-                                        let productShippingFee = 0;
-                                        const deliveryDate = item.rental?.startDate 
-                                          ? new Date(item.rental.startDate).toLocaleDateString("vi-VN")
-                                          : null;
+                                      {orderData.deliveryMethod ===
+                                        "DELIVERY" &&
+                                        group.shippingFee > 0 &&
+                                        (() => {
+                                          // Calculate shipping fee for this product
+                                          let productShippingFee = 0;
+                                          const deliveryDate = item.rental
+                                            ?.startDate
+                                            ? new Date(
+                                                item.rental.startDate
+                                              ).toLocaleDateString("vi-VN")
+                                            : null;
 
-                                        // Try to find from productFees
-                                        if (group.deliveryInfo?.productFees) {
-                                          const productFee = group.deliveryInfo.productFees.find(
-                                            (fee) => fee.productId === item.product._id
-                                          );
-                                          if (productFee) {
-                                            productShippingFee = productFee.allocatedFee || 0;
+                                          // Try to find from productFees
+                                          if (group.deliveryInfo?.productFees) {
+                                            const productFee =
+                                              group.deliveryInfo.productFees.find(
+                                                (fee) =>
+                                                  fee.productId ===
+                                                  item.product._id
+                                              );
+                                            if (productFee) {
+                                              productShippingFee =
+                                                productFee.allocatedFee || 0;
+                                            }
                                           }
-                                        }
 
-                                        // Fallback to batch calculation by delivery date
-                                        if (productShippingFee === 0 && group.deliveryInfo?.deliveryBatches && deliveryDate) {
-                                          const productBatch = group.deliveryInfo.deliveryBatches.find(
-                                            (batch) => batch.deliveryDate === deliveryDate
-                                          );
-                                          if (productBatch) {
+                                          // Fallback to batch calculation by delivery date
+                                          if (
+                                            productShippingFee === 0 &&
+                                            group.deliveryInfo
+                                              ?.deliveryBatches &&
+                                            deliveryDate
+                                          ) {
+                                            const productBatch =
+                                              group.deliveryInfo.deliveryBatches.find(
+                                                (batch) =>
+                                                  batch.deliveryDate ===
+                                                  deliveryDate
+                                              );
+                                            if (productBatch) {
+                                              productShippingFee = Math.round(
+                                                productBatch.deliveryFee /
+                                                  productBatch.batchSize
+                                              );
+                                            }
+                                          }
+
+                                          // Final fallback - group products by delivery date and calculate per batch
+                                          if (
+                                            productShippingFee === 0 &&
+                                            deliveryDate
+                                          ) {
+                                            // Count products with same delivery date
+                                            const productsOnSameDate =
+                                              group.products.filter((p) => {
+                                                const pDate = p.rental
+                                                  ?.startDate
+                                                  ? new Date(
+                                                      p.rental.startDate
+                                                    ).toLocaleDateString(
+                                                      "vi-VN"
+                                                    )
+                                                  : null;
+                                                return pDate === deliveryDate;
+                                              });
+
+                                            // Get unique delivery dates to calculate number of deliveries
+                                            const uniqueDates = [
+                                              ...new Set(
+                                                group.products
+                                                  .map((p) =>
+                                                    p.rental?.startDate
+                                                      ? new Date(
+                                                          p.rental.startDate
+                                                        ).toLocaleDateString(
+                                                          "vi-VN"
+                                                        )
+                                                      : null
+                                                  )
+                                                  .filter((d) => d !== null)
+                                              ),
+                                            ];
+
+                                            const numDeliveries =
+                                              uniqueDates.length || 1;
+                                            const feePerDelivery = Math.round(
+                                              (group.shippingFee || 0) /
+                                                numDeliveries
+                                            );
+                                            const productsInBatch =
+                                              productsOnSameDate.length || 1;
+
                                             productShippingFee = Math.round(
-                                              productBatch.deliveryFee / productBatch.batchSize
+                                              feePerDelivery / productsInBatch
                                             );
                                           }
-                                        }
 
-                                        // Final fallback - group products by delivery date and calculate per batch
-                                        if (productShippingFee === 0 && deliveryDate) {
-                                          // Count products with same delivery date
-                                          const productsOnSameDate = group.products.filter(p => {
-                                            const pDate = p.rental?.startDate 
-                                              ? new Date(p.rental.startDate).toLocaleDateString("vi-VN")
-                                              : null;
-                                            return pDate === deliveryDate;
-                                          });
-                                          
-                                          // Get unique delivery dates to calculate number of deliveries
-                                          const uniqueDates = [...new Set(
-                                            group.products.map(p => 
-                                              p.rental?.startDate 
-                                                ? new Date(p.rental.startDate).toLocaleDateString("vi-VN")
-                                                : null
-                                            ).filter(d => d !== null)
-                                          )];
-                                          
-                                          const numDeliveries = uniqueDates.length || 1;
-                                          const feePerDelivery = Math.round((group.shippingFee || 0) / numDeliveries);
-                                          const productsInBatch = productsOnSameDate.length || 1;
-                                          
-                                          productShippingFee = Math.round(feePerDelivery / productsInBatch);
-                                        }
-
-                                        return productShippingFee > 0 ? (
-                                          <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                              Phí vận chuyển:
-                                            </span>
-                                            <span className="font-semibold text-blue-600">
-                                              {productShippingFee.toLocaleString("vi-VN")}đ
-                                            </span>
-                                          </div>
-                                        ) : null;
-                                      })()}
+                                          return productShippingFee > 0 ? (
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-sm text-gray-600">
+                                                Phí vận chuyển:
+                                              </span>
+                                              <span className="font-semibold text-blue-600">
+                                                {productShippingFee.toLocaleString(
+                                                  "vi-VN"
+                                                )}
+                                                đ
+                                              </span>
+                                            </div>
+                                          ) : null;
+                                        })()}
                                     </div>
                                   </div>
                                 </div>
@@ -1349,56 +1478,64 @@ const RentalOrderForm = () => {
                         </div>
 
                         {/* Shipping Info Button */}
-                        {orderData.deliveryMethod === "DELIVERY" && group.deliveryInfo && group.shippingFee > 0 && (
-                          <div className="mt-4 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedShippingInfo(group);
-                                setShowShippingModal(true);
-                              }}
-                              className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors"
-                            >
-                              <Lightbulb className="w-4 h-4" />
-                              <span className="text-sm font-medium">Cách tính phí vận chuyển</span>
-                            </button>
-                          </div>
-                        )}
+                        {orderData.deliveryMethod === "DELIVERY" &&
+                          group.deliveryInfo &&
+                          group.shippingFee > 0 && (
+                            <div className="mt-4 flex justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedShippingInfo(group);
+                                  setShowShippingModal(true);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors"
+                              >
+                                <Lightbulb className="w-4 h-4" />
+                                <span className="text-sm font-medium">
+                                  Cách tính phí vận chuyển
+                                </span>
+                              </button>
+                            </div>
+                          )}
                       </div>
                     )
                   )}
                 </div>
               </div>
 
-            {/* Delivery Method */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-6 flex items-center">
-                <Truck className="w-5 h-5 mr-2" />
-                Hình thức nhận hàng
-              </h2>
-              <div className="space-y-3">
-
-  <label className="flex items-center space-x-3 cursor-pointer">
-  <input
-    type="radio"
-    value="DELIVERY"
-    checked={orderData.deliveryMethod === 'DELIVERY'}
-    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
-    className="w-4 h-4 text-blue-500"
-  />
-  <span>Giao tận nơi (Có phí ship)</span>
-</label>
+              {/* Delivery Method */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-6 flex items-center">
+                  <Truck className="w-5 h-5 mr-2" />
+                  Hình thức nhận hàng
+                </h2>
+                <div className="space-y-3">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="DELIVERY"
+                      checked={orderData.deliveryMethod === "DELIVERY"}
+                      onChange={(e) =>
+                        setOrderData((prev) => ({
+                          ...prev,
+                          deliveryMethod: e.target.value,
+                        }))
+                      }
+                      className="w-4 h-4 text-blue-500"
+                    />
+                    <span>Giao tận nơi (Có phí ship)</span>
+                  </label>
+                </div>
               </div>
-            </div>
-            
-            {showAddressModal && (
-              <AddressSelectionModal
-                isOpen={showAddressModal}
-                onClose={() => setShowAddressModal(false)}
-                userAddresses={userAddresses}
-                onSelect={handleAddressFromModal}
-              />
-            )}
+
+              {showAddressModal && (
+                <AddressSelectionModal
+                  isOpen={showAddressModal}
+                  onClose={() => setShowAddressModal(false)}
+                  userAddresses={userAddresses}
+                  onSelect={handleAddressFromModal}
+                />
+              )}
 
               {orderData.deliveryMethod === "OWNER_DELIVERY" && (
                 <div className="bg-white rounded-lg shadow-md p-6">
@@ -1450,10 +1587,7 @@ const RentalOrderForm = () => {
                           {errors.streetAddress}
                         </p>
                       )}
-
-                      
                     </div>
-                   
 
                     {/* Hiển thị thông tin địa chỉ từ map (read-only) */}
                     {orderData.deliveryAddress.latitude &&
@@ -1572,7 +1706,7 @@ const RentalOrderForm = () => {
                   </button>
                 </div>
               )}
-  
+
               {/* Order Action */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-center">
@@ -1855,7 +1989,10 @@ const RentalOrderForm = () => {
                       Tổng phí vận chuyển:
                     </span>
                     <span className="font-bold text-blue-700 text-xl">
-                      {(selectedShippingInfo.shippingFee || 0).toLocaleString("vi-VN")}đ
+                      {(selectedShippingInfo.shippingFee || 0).toLocaleString(
+                        "vi-VN"
+                      )}
+                      đ
                     </span>
                   </div>
                 </div>
@@ -1863,23 +2000,36 @@ const RentalOrderForm = () => {
                 {/* Calculation Formula */}
                 {selectedShippingInfo.deliveryInfo && (
                   <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                    <h4 className="font-medium text-gray-800 mb-3">📝 Công thức tính:</h4>
+                    <h4 className="font-medium text-gray-800 mb-3">
+                      📝 Công thức tính:
+                    </h4>
                     <div className="text-sm text-gray-700 space-y-2">
                       <div className="flex items-start">
                         <span className="mr-2">•</span>
-                        <span>Phí ship = Số lần giao hàng × (15,000đ cơ bản + Khoảng cách × 5,000đ/km)</span>
+                        <span>
+                          Phí ship = Số lần giao hàng × (15,000đ cơ bản + Khoảng
+                          cách × 5,000đ/km)
+                        </span>
                       </div>
                       <div className="flex items-start">
                         <span className="mr-2">•</span>
-                        <span>Sản phẩm cùng ngày giao = 1 lần giao = 1 phí ship</span>
+                        <span>
+                          Sản phẩm cùng ngày giao = 1 lần giao = 1 phí ship
+                        </span>
                       </div>
                       <div className="flex items-start">
                         <span className="mr-2">•</span>
-                        <span>Phí ship được chia đều cho các sản phẩm trong cùng chuyến giao</span>
+                        <span>
+                          Phí ship được chia đều cho các sản phẩm trong cùng
+                          chuyến giao
+                        </span>
                       </div>
                       <div className="flex items-start">
                         <span className="mr-2">•</span>
-                        <span>Tối thiểu: 20,000đ/lần giao | Tối đa: 100,000đ/lần giao</span>
+                        <span>
+                          Tối thiểu: 20,000đ/lần giao | Tối đa: 100,000đ/lần
+                          giao
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1889,28 +2039,39 @@ const RentalOrderForm = () => {
                 {selectedShippingInfo.deliveryInfo && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="bg-white border rounded-lg p-3">
-                      <div className="text-xs text-gray-600 mb-1">Số lần giao</div>
+                      <div className="text-xs text-gray-600 mb-1">
+                        Số lần giao
+                      </div>
                       <div className="text-lg font-semibold text-green-700">
-                        {selectedShippingInfo.deliveryInfo.deliveryCount || 1} lần
+                        {selectedShippingInfo.deliveryInfo.deliveryCount || 1}{" "}
+                        lần
                       </div>
                     </div>
                     {selectedShippingInfo.deliveryInfo.distance && (
                       <div className="bg-white border rounded-lg p-3">
-                        <div className="text-xs text-gray-600 mb-1">Khoảng cách</div>
+                        <div className="text-xs text-gray-600 mb-1">
+                          Khoảng cách
+                        </div>
                         <div className="text-lg font-semibold text-gray-800">
-                          {typeof selectedShippingInfo.deliveryInfo.distance === "number"
-                            ? selectedShippingInfo.deliveryInfo.distance.toFixed(2)
+                          {typeof selectedShippingInfo.deliveryInfo.distance ===
+                          "number"
+                            ? selectedShippingInfo.deliveryInfo.distance.toFixed(
+                                2
+                              )
                             : selectedShippingInfo.deliveryInfo.distance}
                           km
                         </div>
                       </div>
                     )}
                     <div className="bg-white border rounded-lg p-3">
-                      <div className="text-xs text-gray-600 mb-1">Trung bình/lần</div>
+                      <div className="text-xs text-gray-600 mb-1">
+                        Trung bình/lần
+                      </div>
                       <div className="text-lg font-semibold text-gray-800">
                         {Math.round(
                           (selectedShippingInfo.shippingFee || 0) /
-                            (selectedShippingInfo.deliveryInfo?.deliveryCount || 1)
+                            (selectedShippingInfo.deliveryInfo?.deliveryCount ||
+                              1)
                         ).toLocaleString("vi-VN")}
                         đ
                       </div>
@@ -1920,28 +2081,38 @@ const RentalOrderForm = () => {
 
                 {/* Delivery Batches Breakdown */}
                 {selectedShippingInfo.deliveryInfo?.deliveryBatches &&
-                  selectedShippingInfo.deliveryInfo.deliveryBatches.length > 0 && (
+                  selectedShippingInfo.deliveryInfo.deliveryBatches.length >
+                    0 && (
                     <div className="space-y-2">
                       <h4 className="font-medium text-gray-800 flex items-center">
                         <Package className="w-4 h-4 mr-2" />
                         Chi tiết giao hàng theo ngày:
                       </h4>
                       <div className="space-y-2">
-                        {selectedShippingInfo.deliveryInfo.deliveryBatches.map((batch, index) => (
-                          <div key={index} className="bg-white border rounded-lg p-3">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="font-medium text-gray-700">
-                                📅 {new Date(batch.deliveryDate).toLocaleDateString("vi-VN")}
-                              </span>
-                              <span className="font-bold text-blue-600">
-                                {batch.deliveryFee?.toLocaleString("vi-VN")}đ
-                              </span>
+                        {selectedShippingInfo.deliveryInfo.deliveryBatches.map(
+                          (batch, index) => (
+                            <div
+                              key={index}
+                              className="bg-white border rounded-lg p-3"
+                            >
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-medium text-gray-700">
+                                  📅{" "}
+                                  {new Date(
+                                    batch.deliveryDate
+                                  ).toLocaleDateString("vi-VN")}
+                                </span>
+                                <span className="font-bold text-blue-600">
+                                  {batch.deliveryFee?.toLocaleString("vi-VN")}đ
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {batch.batchSize || batch.products?.length || 0}{" "}
+                                sản phẩm, {batch.batchQuantity || 0} món
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-600">
-                              {batch.batchSize || batch.products?.length || 0} sản phẩm, {batch.batchQuantity || 0} món
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        )}
                       </div>
                     </div>
                   )}
@@ -1949,16 +2120,22 @@ const RentalOrderForm = () => {
                 {/* Calculation Example */}
                 {selectedShippingInfo.deliveryInfo?.summary && (
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">✅ Tính toán:</h4>
+                    <h4 className="font-medium text-gray-800 mb-2">
+                      ✅ Tính toán:
+                    </h4>
                     <div className="text-sm text-gray-700">
-                      {selectedShippingInfo.deliveryInfo.deliveryCount} lần giao ×{" "}
+                      {selectedShippingInfo.deliveryInfo.deliveryCount} lần giao
+                      ×{" "}
                       {Math.round(
                         (selectedShippingInfo.shippingFee || 0) /
                           (selectedShippingInfo.deliveryInfo.deliveryCount || 1)
                       ).toLocaleString("vi-VN")}
                       đ ={" "}
                       <span className="font-semibold text-green-700">
-                        {(selectedShippingInfo.shippingFee || 0).toLocaleString("vi-VN")}đ
+                        {(selectedShippingInfo.shippingFee || 0).toLocaleString(
+                          "vi-VN"
+                        )}
+                        đ
                       </span>
                     </div>
                   </div>
