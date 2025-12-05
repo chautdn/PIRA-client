@@ -40,7 +40,7 @@ const MessageItem = ({ message, isCurrentUser, showAvatar }) => {
       }`.trim()
     : "Unknown User";
 
-  const avatarUrl = message.senderId?.profile?.avatar || "/avatar.png";
+  const avatarUrl = message.senderId?.profile?.avatar || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
 
   return (
     <div
@@ -67,7 +67,7 @@ const MessageItem = ({ message, isCurrentUser, showAvatar }) => {
               alt={senderName}
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.target.src = "/avatar.png";
+                e.target.src = "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
               }}
             />
           </div>
