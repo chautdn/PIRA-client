@@ -215,22 +215,39 @@ const AdminFinalProcessModal = ({ isOpen, onClose, dispute }) => {
           </div>
 
           {/* Action buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-between pt-4 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                if (window.confirm('Bạn có chắc muốn từ chối bằng chứng này? Dispute sẽ quay lại trạng thái THIRD_PARTY_ESCALATED')) {
+                  onClose();
+                  // Trigger reject modal in parent
+                  window.dispatchEvent(new CustomEvent('openRejectEvidenceModal'));
+                }
+              }}
               disabled={isLoading}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium disabled:opacity-50"
+              className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium disabled:opacity-50"
             >
-              Hủy
+              Từ chối bằng chứng
             </button>
-            <button
-              type="submit"
-              disabled={isLoading || !formData.decision || !formData.reasoning.trim()}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
-            >
-              {isLoading ? 'Đang xử lý...' : 'Xác nhận quyết định'}
-            </button>
+            
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading || !formData.decision || !formData.reasoning.trim()}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+              >
+                {isLoading ? 'Đang xử lý...' : 'Xác nhận quyết định'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

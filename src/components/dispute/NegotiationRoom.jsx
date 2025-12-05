@@ -5,6 +5,7 @@ import { useDispute } from '../../context/DisputeContext';
 import { toast } from 'react-hot-toast';
 import { formatDate } from '../../utils/disputeHelpers';
 import OwnerFinalDecisionModal from './OwnerFinalDecisionModal';
+import OwnerDisputeFinalDecisionModal from './OwnerDisputeFinalDecisionModal';
 import chatService from '../../services/chat';
 
 const NegotiationRoom = ({ dispute }) => {
@@ -21,8 +22,14 @@ const NegotiationRoom = ({ dispute }) => {
   const isComplainant = user?._id === dispute.complainant._id;
   const isRespondent = user?._id === dispute.respondent._id;
   
-  // Chỉ owner (respondent) mới có thể đưa ra quyết định cuối
-  const canMakeFinalDecision = isRespondent;
+  // Xác định vai trò Owner/Renter dựa trên shipmentType
+  // DELIVERY: complainant = Renter, respondent = Owner
+  // RETURN: complainant = Owner, respondent = Renter
+  const isOwner = dispute.shipmentType === 'DELIVERY' ? isRespondent : isComplainant;
+  const isRenter = dispute.shipmentType === 'DELIVERY' ? isComplainant : isRespondent;
+  
+  // Chỉ owner mới có thể đưa ra quyết định cuối
+  const canMakeFinalDecision = isOwner;
 
   // Calculate time remaining
   const deadline = new Date(negotiation?.deadline);
@@ -37,31 +44,17 @@ const NegotiationRoom = ({ dispute }) => {
     }
 
     try {
-      // Lấy ID của người còn lại (không phải user hiện tại)
-      const otherUserId = isComplainant 
-        ? dispute.respondent._id  // Nếu user là complainant thì chat với respondent
-        : dispute.complainant._id; // Nếu user là respondent thì chat với complainant
+      // Negotiation room đã có sẵn chatRoomId do admin tạo
+      const chatRoomId = negotiation?.chatRoomId?._id || negotiation?.chatRoomId;
       
-      // Lấy product ID từ dispute
-      const productId = dispute.productId;
-      
-      if (!otherUserId || !productId) {
-        toast.error('Không tìm thấy thông tin cần thiết');
+      if (!chatRoomId) {
+        console.error('Chat room not found:', { negotiation, dispute });
+        toast.error('Phòng chat chưa được tạo. Vui lòng liên hệ admin.');
         return;
       }
       
-      // Tạo hoặc lấy conversation với người còn lại và product (giống ProductDetail)
-      const conversationResponse = await chatService.createOrGetConversation(
-        otherUserId,
-        productId
-      );
-      
-      if (conversationResponse?.data?._id) {
-        // Navigate to chat với query param để trigger refetch
-        navigate(`/chat/${conversationResponse.data._id}?refetch=true`);
-      } else {
-        throw new Error('Không thể lấy conversation ID');
-      }
+      // Navigate trực tiếp đến chat room
+      navigate(`/chat/${chatRoomId}?refetch=true`);
     } catch (error) {
       console.error('Error opening chat:', error);
       toast.error('Không thể mở chat. Vui lòng thử lại.');
@@ -115,14 +108,12 @@ const NegotiationRoom = ({ dispute }) => {
     return null;
   }
 
-  // Debug log
-  console.log('🔍 NegotiationRoom - Full negotiation data:', JSON.stringify(negotiation, null, 2));
-  console.log('🔍 NegotiationRoom - Final agreement:', JSON.stringify(finalAgreement, null, 2));
-  console.log('🔍 NegotiationRoom - Owner decision:', finalAgreement?.ownerDecision);
-
-  const otherPartyName = isComplainant 
-    ? dispute.respondent.profile?.fullName || 'Owner'
-    : dispute.complainant.profile?.fullName || 'Renter';
+  // Lấy tên người còn lại (không phải user)
+  const otherParty = isComplainant ? dispute.respondent : dispute.complainant;
+  const otherPartyRole = dispute.shipmentType === 'DELIVERY' 
+    ? (isComplainant ? 'Owner' : 'Renter')
+    : (isComplainant ? 'Renter' : 'Owner');
+  const otherPartyName = otherParty.profile?.fullName || otherPartyRole;
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -169,8 +160,12 @@ const NegotiationRoom = ({ dispute }) => {
               </div>
             </div>
 
-            {/* Renter Response Section */}
-            {isComplainant && finalAgreement.complainantAccepted === null && (
+            {/* Response Section - Renter phản hồi */}
+            {isRenter && (
+              dispute.shipmentType === 'DELIVERY' 
+                ? finalAgreement.complainantAccepted === null 
+                : finalAgreement.respondentAccepted === null
+            ) && (
               <div className="pt-3 border-t border-blue-200">
                 <p className="text-sm font-medium text-gray-700 mb-3">
                   Bạn có đồng ý với quyết định này không?
@@ -197,10 +192,16 @@ const NegotiationRoom = ({ dispute }) => {
               </div>
             )}
 
-            {/* Response Status */}
-            {finalAgreement.complainantAccepted !== null && (
+            {/* Response Status - Chỉ hiển thị khi Renter đã phản hồi */}
+            {(dispute.shipmentType === 'DELIVERY' 
+              ? finalAgreement.complainantAccepted !== null 
+              : finalAgreement.respondentAccepted !== null
+            ) && (
               <div className="pt-3 border-t border-blue-200">
-                {finalAgreement.complainantAccepted ? (
+                {(dispute.shipmentType === 'DELIVERY' 
+                  ? finalAgreement.complainantAccepted 
+                  : finalAgreement.respondentAccepted
+                ) ? (
                   <div className="p-3 bg-green-100 border border-green-300 rounded">
                     <p className="text-sm text-green-800 text-center font-semibold">
                       ✅ Renter đã đồng ý! Đã gửi cho Admin xử lý cuối cùng.
@@ -307,12 +308,20 @@ const NegotiationRoom = ({ dispute }) => {
         )}
       </div>
 
-      {/* Owner Final Decision Modal */}
-      <OwnerFinalDecisionModal
-        isOpen={showDecisionModal}
-        onClose={() => setShowDecisionModal(false)}
-        dispute={dispute}
-      />
+      {/* Owner Final Decision Modal - chọn modal phù hợp */}
+      {dispute.shipmentType === 'RETURN' ? (
+        <OwnerDisputeFinalDecisionModal
+          isOpen={showDecisionModal}
+          onClose={() => setShowDecisionModal(false)}
+          dispute={dispute}
+        />
+      ) : (
+        <OwnerFinalDecisionModal
+          isOpen={showDecisionModal}
+          onClose={() => setShowDecisionModal(false)}
+          dispute={dispute}
+        />
+      )}
     </div>
   );
 };

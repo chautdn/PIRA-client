@@ -2,8 +2,12 @@ import { useState } from 'react';
 import { useDispute } from '../../context/DisputeContext';
 import { toast } from 'react-hot-toast';
 
-const OwnerFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
-  const { submitOwnerFinalDecision } = useDispute();
+/**
+ * Modal cho Owner đưa ra quyết định cuối cùng khi Owner tạo dispute RETURN
+ * Khác với OwnerFinalDecisionModal (dành cho Renter tạo dispute DELIVERY)
+ */
+const OwnerDisputeFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
+  const { submitOwnerDisputeFinalDecision } = useDispute();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [decision, setDecision] = useState('');
 
@@ -19,14 +23,12 @@ const OwnerFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
 
     try {
       setIsSubmitting(true);
-      console.log('🔄 Submitting owner decision:', decision.trim());
-      const result = await submitOwnerFinalDecision(dispute._id, { decision: decision.trim() });
-      console.log('✅ Owner decision submitted successfully:', result);
+      await submitOwnerDisputeFinalDecision(dispute._id, { decision: decision.trim() });
       toast.success('Đã đưa ra quyết định cuối cùng, chờ Renter phản hồi');
       setDecision('');
       onClose();
     } catch (error) {
-      console.error('❌ Submit owner decision error:', error);
+      console.error('❌ Submit owner dispute decision error:', error);
       toast.error(error.message || 'Không thể gửi quyết định');
     } finally {
       setIsSubmitting(false);
@@ -63,11 +65,7 @@ const OwnerFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
               <strong>Dispute:</strong> {dispute.disputeId}
             </p>
             <p className="text-sm text-blue-900 mt-1">
-              <strong>Renter:</strong> {
-                dispute.shipmentType === 'RETURN' 
-                  ? dispute.respondent.profile?.fullName 
-                  : dispute.complainant.profile?.fullName
-              }
+              <strong>Renter:</strong> {dispute.respondent.profile?.fullName}
             </p>
             <p className="text-sm text-blue-900 mt-1">
               <strong>Vấn đề:</strong> {dispute.type}
@@ -84,34 +82,39 @@ const OwnerFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
                 value={decision}
                 onChange={(e) => setDecision(e.target.value)}
                 rows={6}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Ví dụ: Sau khi thảo luận, chúng tôi quyết định hoàn tiền 500,000đ cho renter do sản phẩm có vấn đề nhỏ..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Nhập quyết định cuối cùng của bạn sau khi đàm phán với Renter..."
                 required
               />
-            </div>
-
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <strong>⚠️ Lưu ý:</strong> Sau khi bạn đưa ra quyết định, Renter sẽ xem và quyết định đồng ý hoặc từ chối. 
-                Nếu Renter đồng ý, quyết định sẽ được gửi đến Admin để xử lý cuối cùng.
+              <p className="text-xs text-gray-500 mt-1">
+                Quyết định này sẽ được gửi cho Renter để phản hồi
               </p>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            {/* Warning */}
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>⚠️ Lưu ý:</strong> Sau khi bạn đưa ra quyết định, Renter sẽ xem và quyết định đồng ý hoặc từ chối. 
+                Nếu Renter từ chối, quyết định sẽ chuyển cho bên thứ 3 xử lý cuối cùng.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end space-x-3 pt-4 border-t">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                 disabled={isSubmitting}
+                className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium disabled:opacity-50"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !decision.trim()}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50"
               >
-                {isSubmitting ? 'Đang gửi...' : '📝 Đưa ra quyết định'}
+                {isSubmitting ? 'Đang gửi...' : 'Đưa ra quyết định'}
               </button>
             </div>
           </form>
@@ -121,4 +124,4 @@ const OwnerFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
   );
 };
 
-export default OwnerFinalDecisionModal;
+export default OwnerDisputeFinalDecisionModal;
