@@ -71,8 +71,8 @@ const AdminDisputeDetail = () => {
 
   const dispute = currentDispute;
   const canReview = dispute.status === 'RESPONDENT_REJECTED';
-  const canProcessNegotiationResult = dispute.status === 'NEGOTIATION_AGREED' && dispute.shipmentType === 'DELIVERY';
-  const canProcessOwnerDisputeResult = dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED' && dispute.shipmentType === 'RETURN';
+  const canProcessNegotiationResult = dispute.status === 'NEGOTIATION_AGREED' && dispute.shipmentType === 'DELIVERY'; // Chỉ cho Renter Dispute
+  const canProcessOwnerDisputeResult = (dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED' || dispute.status === 'NEGOTIATION_AGREED') && dispute.shipmentType === 'RETURN'; // Owner Dispute - đàm phán hoặc bên thứ 3
   const canProcessRenterDisputeResult = dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED' && dispute.shipmentType === 'DELIVERY';
   const canProcessThirdPartyEvidence = dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED'; // For both DELIVERY and RETURN
   const canResolveShipperDamage = dispute.status === 'ADMIN_REVIEW' && dispute.type === 'DAMAGED_BY_SHIPPER';
@@ -168,7 +168,7 @@ const AdminDisputeDetail = () => {
               onClick={() => setShowFinalProcessModal(true)}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
             >
-              Xử lý kết quả đàm phán (Renter Dispute)
+              Xử lý kết quả đàm phán ({dispute.shipmentType === 'DELIVERY' ? 'Renter Dispute' : 'Owner Dispute'})
             </button>
           </div>
         )}
@@ -179,7 +179,7 @@ const AdminDisputeDetail = () => {
               onClick={() => setShowOwnerDisputeFinalModal(true)}
               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium"
             >
-              Đưa ra quyết định cuối cùng (Owner Dispute - Bằng chứng bên thứ 3)
+              Đưa ra quyết định cuối cùng (Owner Dispute)
             </button>
           </div>
         )}

@@ -157,6 +157,23 @@ export const DisputeProvider = ({ children }) => {
     }
   }, [loadDisputeDetail, currentDispute]);
 
+  // Owner đưa ra quyết định cuối cùng khi Owner tạo dispute RETURN
+  const submitOwnerDisputeFinalDecision = useCallback(async (disputeId, data) => {
+    try {
+      setIsLoading(true);
+      const response = await disputeApi.submitOwnerDisputeFinalDecision(disputeId, data);
+      toast.success(response.message || 'Đã đưa ra quyết định cuối cùng');
+      await loadDisputeDetail(disputeId);
+      return response.data?.dispute;
+    } catch (error) {
+      console.error('Submit owner dispute final decision error:', error);
+      toast.error(error.response?.data?.message || 'Không thể gửi quyết định cuối cùng');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadDisputeDetail]);
+
   // Renter phản hồi quyết định của owner
   const respondToOwnerDecision = useCallback(async (disputeId, accepted) => {
     try {
@@ -355,6 +372,7 @@ export const DisputeProvider = ({ children }) => {
     proposeAgreement,
     respondToAgreement,
     submitOwnerFinalDecision,
+    submitOwnerDisputeFinalDecision,
     respondToOwnerDecision,
     processFinalAgreement,
     shareShipperInfo,

@@ -73,10 +73,18 @@ const disputeApi = {
   },
 
   /**
-   * Owner đưa ra quyết định cuối cùng
+   * Owner đưa ra quyết định cuối cùng (Renter tạo dispute DELIVERY)
    */
   submitOwnerFinalDecision: async (disputeId, data) => {
     const response = await api.post(`/disputes/${disputeId}/negotiation/owner-decision`, data);
+    return response.data;
+  },
+
+  /**
+   * Owner đưa ra quyết định cuối cùng (Owner tạo dispute RETURN)
+   */
+  submitOwnerDisputeFinalDecision: async (disputeId, data) => {
+    const response = await api.post(`/disputes/${disputeId}/negotiation/owner-dispute-decision`, data);
     return response.data;
   },
 
