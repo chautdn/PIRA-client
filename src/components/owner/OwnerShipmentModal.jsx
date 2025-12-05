@@ -10,8 +10,7 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
-    if (isOpen && masterOrder?._id && subOrder?._id) {
-      console.log('Modal opened, loading shipments...');
+    if (isOpen && masterOrder?._id) {
       loadShipments();
     }
   }, [isOpen, masterOrder?._id, subOrder?._id]);
@@ -19,7 +18,6 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
   const loadShipments = async () => {
     setLoading(true);
     try {
-      console.log('📦 Loading shipments for subOrder:', subOrder?._id);
       console.log('📦 SubOrder shipments:', subOrder?.shipments);
       console.log('📦 MasterOrder shipments:', masterOrder?.shipments);
       
@@ -32,47 +30,31 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
         shipmentList = masterOrder.shipments;
       }
       
-      console.log('📦 All shipments from order object:', shipmentList);
+      console.log('📦 All shipments from order:', shipmentList);
       
       // Nếu không có từ order, thử từ API
-      if (shipmentList.length === 0 && masterOrder?._id) {
-        try {
-          const response = await ShipmentService.getShipmentsByMasterOrder(masterOrder._id);
-          console.log('📦 Shipments from API - full response:', response);
-          
-          // API trả về { status: 'success', data: [...] }
-          if (response?.data && Array.isArray(response.data)) {
-            shipmentList = response.data;
-          } else if (Array.isArray(response)) {
-            shipmentList = response;
-          }
-        } catch (apiErr) {
-          console.warn('API call failed:', apiErr.message);
+      if (shipmentList.length === 0) {
+        const response = await ShipmentService.getShipmentsByMasterOrder?.(masterOrder._id);
+        console.log('📦 Shipments from API:', response);
+        
+        if (Array.isArray(response)) {
+          shipmentList = response;
+        } else if (response?.data && Array.isArray(response.data)) {
+          shipmentList = response.data;
+        } else if (response?.metadata && Array.isArray(response.metadata)) {
+          shipmentList = response.metadata;
         }
       }
       
-      console.log('📦 All shipments combined:', shipmentList);
+      console.log('📦 All shipments:', shipmentList);
       
-      // Lọc RETURN shipments (hàng được trả về từ người thuê) cho subOrder này
-      const returnShipments = shipmentList.filter(s => {
-        const isReturnType = s.type === 'RETURN';
-        const isForThisSubOrder = !s.subOrder || s.subOrder === subOrder?._id || s.subOrder?._id === subOrder?._id;
-        console.log(`📦 Checking shipment ${s._id}:`, {
-          shipmentNumber: s.shipmentNumber,
-          type: s.type, 
-          isReturn: isReturnType, 
-          forThisSubOrder: isForThisSubOrder,
-          status: s.status,
-          shipper: s.shipper?.name || s.shipper
-        });
-        return isReturnType && isForThisSubOrder;
-      });
-      
-      console.log('📦 Filtered return shipments for this owner:', returnShipments);
-      console.log('📦 Total shipments to display:', returnShipments.length);
+      // Lọc RETURN shipments (hàng được trả về từ người thuê)
+      const returnShipments = shipmentList.filter(s => s.type === 'RETURN');
+      console.log('📦 Filtered return shipments:', returnShipments);
       setShipments(returnShipments);
     } catch (err) {
       console.error('Error loading shipments:', err);
+      // Không hiển thị error toast nếu API fail, vì shipment có thể chưa được tạo
       setShipments([]);
     } finally {
       setLoading(false);
@@ -210,43 +192,6 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
                       <span className="ml-2 font-medium text-green-600">
                         {new Date(returnShipment.actualDeliveryDate).toLocaleDateString('vi-VN')}
                       </span>
-                    </div>
-                  )}
-
-                  {returnShipment?.fromAddress?.streetAddress && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-gray-600 font-medium mb-1">📍 Địa chỉ lấy hàng (từ renter):</p>
-                      <p className="text-sm text-gray-700">
-                        {returnShipment.fromAddress.streetAddress}
-                        {returnShipment.fromAddress.ward && `, ${returnShipment.fromAddress.ward}`}
-                        {returnShipment.fromAddress.district && `, ${returnShipment.fromAddress.district}`}
-                        {returnShipment.fromAddress.city && `, ${returnShipment.fromAddress.city}`}
-                      </p>
-                    </div>
-                  )}
-
-                  {returnShipment?.toAddress?.streetAddress && (
-                    <div className="mt-3">
-                      <p className="text-gray-600 font-medium mb-1">📍 Địa chỉ giao hàng (cho owner):</p>
-                      <p className="text-sm text-gray-700">
-                        {returnShipment.toAddress.streetAddress}
-                        {returnShipment.toAddress.ward && `, ${returnShipment.toAddress.ward}`}
-                        {returnShipment.toAddress.district && `, ${returnShipment.toAddress.district}`}
-                        {returnShipment.toAddress.city && `, ${returnShipment.toAddress.city}`}
-                      </p>
-                    </div>
-                  )}
-
-                  {returnShipment?.contactInfo?.name && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-gray-600 font-medium mb-1">👤 Thông tin liên hệ:</p>
-                      <p className="text-sm text-gray-700">{returnShipment.contactInfo.name}</p>
-                      {returnShipment.contactInfo.phone && (
-                        <p className="text-sm text-gray-700">{returnShipment.contactInfo.phone}</p>
-                      )}
-                      {returnShipment.contactInfo.notes && (
-                        <p className="text-sm text-gray-600 italic mt-1">"{returnShipment.contactInfo.notes}"</p>
-                      )}
                     </div>
                   )}
                 </div>
