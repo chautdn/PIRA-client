@@ -66,7 +66,6 @@ export default function ShipmentsPage() {
         const resp = await ShipmentService.listMyShipments();
         const data = resp.data || resp;
         const shipmentsData = Array.isArray(data) ? data : (data.data || data);
-        console.log('✅ Loaded shipments:', shipmentsData.length, shipmentsData);
         setShipments(shipmentsData);
 
         // Load proofs for all shipments
@@ -76,7 +75,6 @@ export default function ShipmentsPage() {
             const proofData = await ShipmentService.getProof(shipment._id);
             proofsMap[shipment._id] = proofData.data || proofData;
           } catch (err) {
-            console.log(`Could not load proof for shipment ${shipment._id}`);
           }
         }
         setProofs(proofsMap);
@@ -94,7 +92,6 @@ export default function ShipmentsPage() {
     if (!socket || !connected) return;
 
     const handleShipmentCreated = (data) => {
-      console.log('📦 New shipment received via socket:', data.shipment);
       
       // Show toast notification immediately
       const typeLabel = data.shipment.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Trả hàng';
@@ -107,7 +104,6 @@ export default function ShipmentsPage() {
           const resp = await ShipmentService.listMyShipments();
           const data = resp.data || resp;
           const shipmentsData = Array.isArray(data) ? data : (data.data || data);
-          console.log('✅ Reloaded shipments after socket event:', shipmentsData.length);
           setShipments(shipmentsData);
         } catch (err) {
           console.error('Failed to reload shipments after socket event:', err.message);
@@ -141,29 +137,24 @@ export default function ShipmentsPage() {
       // Use scheduledAt from shipment - đây là ngày dự kiến thực tế
       if (s.scheduledAt) {
         dateStr = formatDateVN(s.scheduledAt);
-        console.log(`  ✅ [${s.shipmentId}] Got scheduledAt: ${s.scheduledAt} → ${dateStr}`);
       }
       // Fallback to rental period
       else {
         let rentalPeriod = null;
         if (s.subOrder?.rentalPeriod) {
           rentalPeriod = s.subOrder.rentalPeriod;
-          console.log(`  ✅ [${s.shipmentId}] Got rentalPeriod from subOrder`);
         }
         else if (s.subOrder?.masterOrder?.rentalPeriod) {
           rentalPeriod = s.subOrder.masterOrder.rentalPeriod;
-          console.log(`  ✅ [${s.shipmentId}] Got rentalPeriod from masterOrder`);
         }
         
         // For DELIVERY: use startDate
         if (shipmentType === 'DELIVERY' && rentalPeriod?.startDate) {
           dateStr = formatDateVN(rentalPeriod.startDate);
-          console.log(`  ✅ [${s.shipmentId}] DELIVERY: Got startDate: ${rentalPeriod.startDate} → ${dateStr}`);
         }
         // For RETURN: use endDate
         else if (shipmentType === 'RETURN' && rentalPeriod?.endDate) {
           dateStr = formatDateVN(rentalPeriod.endDate);
-          console.log(`  ✅ [${s.shipmentId}] RETURN: Got endDate: ${rentalPeriod.endDate} → ${dateStr}`);
         }
       }
       
@@ -275,19 +266,13 @@ export default function ShipmentsPage() {
         formData.append('images', file);
       });
 
-      console.log(`📤 Uploading ${selectedFilesForUpload.length} file(s) for shipment ${uploadModalShipment._id}...`);
       await ShipmentService.uploadProof(uploadModalShipment._id, formData);
-      console.log(`✅ Proof uploaded successfully`);
 
       // Only after successful upload, mark shipment as pickup/delivered
       if (uploadAction === 'pickup') {
-        console.log(`📤 Marking shipment as picked up...`);
         await ShipmentService.pickupShipment(uploadModalShipment._id);
-        console.log(`✅ Shipment marked as picked up`);
       } else if (uploadAction === 'deliver') {
-        console.log(`📤 Marking shipment as delivered...`);
         await ShipmentService.deliverShipment(uploadModalShipment._id);
-        console.log(`✅ Shipment marked as delivered`);
       }
 
       const resp = await ShipmentService.listMyShipments();
@@ -317,7 +302,6 @@ export default function ShipmentsPage() {
         [shipmentId]: proofData.data || proofData
       }));
     } catch (err) {
-      console.log('Failed to load proof:', err.message);
       // Not critical, just won't show images
     }
   };
