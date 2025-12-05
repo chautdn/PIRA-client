@@ -71,6 +71,8 @@ export const CartProvider = ({ children }) => {
   const updateCartStats = (currentCart) => {
     const count = currentCart.reduce((total, item) => total + item.quantity, 0);
     const total = currentCart.reduce((sum, item) => {
+      // Skip items with missing product data
+      if (!item?.product) return sum;
       const price = item.product.pricing?.dailyRate || 0;
       const days = item.rental?.duration || 1;
       return sum + price * days * item.quantity;
