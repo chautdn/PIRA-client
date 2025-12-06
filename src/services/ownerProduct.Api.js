@@ -228,7 +228,9 @@ export const ownerProductApi = {
   // GET /api/owner-products/rental-requests/:subOrderId - Get single rental request detail
   getSubOrderDetail: async (subOrderId) => {
     try {
-      const response = await api.get(`/owner-products/rental-requests/${subOrderId}`);
+      const response = await api.get(
+        `/owner-products/rental-requests/${subOrderId}`
+      );
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -278,6 +280,32 @@ export const ownerProductApi = {
       const response = await api.put(
         `/owner-products/${productId}/pricing`,
         pricingData
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // GET /api/owner-products/:productId/quantity-validation - Validate quantity change
+  validateQuantityChange: async (productId, newQuantity) => {
+    try {
+      const response = await api.get(
+        `/owner-products/${productId}/quantity-validation`,
+        { params: { newQuantity } }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // GET /api/owner-products/:productId/quantity-timeline - Get quantity timeline
+  getQuantityTimeline: async (productId, daysAhead = 90) => {
+    try {
+      const response = await api.get(
+        `/owner-products/${productId}/quantity-timeline`,
+        { params: { daysAhead } }
       );
       return response.data;
     } catch (error) {

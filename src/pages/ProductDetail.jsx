@@ -2380,8 +2380,8 @@ export default function ProductDetail() {
             <div>
               <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                 🔥 Sản phẩm HOT của{' '}
-                <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  {product.owner?.profile?.fullName || product.owner?.email?.split('@')[0]}
+                <span className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  {product.owner?.profile?.fullName || 'người chủ này'}
                 </span>
               </h2>
               <p className="text-sm text-gray-600 mt-1">Các sản phẩm được đánh giá cao nhất</p>
