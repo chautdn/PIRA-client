@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useRentalOrder } from "../../context/RentalOrderContext";
@@ -22,11 +22,12 @@ import { toast } from "../common/Toast";
 import paymentService from "../../services/payment";
 import rentalOrderService from "../../services/rentalOrder";
 import systemPromotionService from "../../services/systemPromotion";
+import { HiCreditCard } from "react-icons/hi";
+import { PiBank , PiHandDeposit  } from "react-icons/pi";
 
 const RentalOrderForm = () => {
   try {
     const { user } = useAuth();
-    console.log("RentalOrderForm: Auth user:", user);
     const { cart: cartItems, clearCart } = useCart();
     const rentalOrderContext = useRentalOrder();
     const {
@@ -47,22 +48,6 @@ const RentalOrderForm = () => {
     // Check if there are selected items from cart
     const selectedItems = location.state?.selectedItems || null;
     const fromCart = location.state?.fromCart || false;
-
-    // Debug effect - only runs once
-    useEffect(() => {
-      console.log("RentalOrderForm: Component mounted");
-      console.log("RentalOrderForm: User loaded:", user ? "Yes" : "No");
-      console.log(
-        "RentalOrderForm: Cart loaded:",
-        cartItems ? cartItems.length : "No cart"
-      );
-      console.log("RentalOrderForm: Selected items:", selectedItems);
-      console.log("RentalOrderForm: From cart:", fromCart);
-      console.log(
-        "RentalOrderForm: RentalOrder context loaded:",
-        !!rentalOrderContext
-      );
-    }, []);
 
   const [orderData, setOrderData] = useState(() => ({
     rentalPeriod: {
@@ -96,6 +81,9 @@ const RentalOrderForm = () => {
     const [selectedVoucher, setSelectedVoucher] = useState(null);
     const [showShippingModal, setShowShippingModal] = useState(false);
     const [selectedShippingInfo, setSelectedShippingInfo] = useState(null);
+    
+    // Use ref to store calculated shipping data (persist across renders)
+    const calculatedShippingRef = useRef(null);
 
     // Address related states
     const [userAddresses, setUserAddresses] = useState(() => (user && user.addresses) ? user.addresses : (user && user.address ? [{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }] : []));
@@ -167,7 +155,7 @@ const RentalOrderForm = () => {
         // toast is imported earlier
         toast.success("Đã cập nhật địa chỉ giao hàng!");
       } catch (e) {
-        console.log("Address updated");
+        // Address updated silently
       }
     };
 
@@ -203,7 +191,7 @@ const RentalOrderForm = () => {
             setActivePromotion(response.metadata.promotions[0]);
           }
         } catch (error) {
-          console.error("Failed to load active promotion:", error);
+          // Failed to load promotion silently
         } finally {
           setLoadingPromotion(false);
         }
@@ -218,7 +206,6 @@ const RentalOrderForm = () => {
 
       // Priority: direct rental > selected items > all cart items
       if (directRentalData) {
-        console.log("🎯 Using direct rental data:", directRentalData);
         // Convert direct rental to cart-like structure
         sourceItems = [
           {
@@ -233,10 +220,8 @@ const RentalOrderForm = () => {
         Array.isArray(selectedItems) &&
         selectedItems.length > 0
       ) {
-        console.log("🎯 Using selected items from cart:", selectedItems);
         sourceItems = selectedItems;
       } else if (cartItems && Array.isArray(cartItems)) {
-        console.log("🎯 Using all cart items:", cartItems);
         sourceItems = cartItems;
       } else {
         return;
@@ -252,7 +237,6 @@ const RentalOrderForm = () => {
       sourceItems.forEach((item) => {
         // Validate item structure
         if (!item?.product?.owner?._id) {
-          console.warn("Item missing owner data:", item);
           return;
         }
 
@@ -281,7 +265,6 @@ const RentalOrderForm = () => {
       });
 
       setGroupedProducts(grouped);
-      console.log("RentalOrderForm: Grouped products:", grouped);
 
       // Set rental dates from items
       if (earliestStart && latestEnd) {
@@ -408,7 +391,17 @@ const RentalOrderForm = () => {
 
       try {
         let masterTotalShipping = 0;
-        const updatedGroups = { ...groupedProducts };
+        // Create a mutable copy of groupedProducts
+        const updatedGroups = {};
+        Object.keys(groupedProducts).forEach(ownerId => {
+          updatedGroups[ownerId] = {
+            ...groupedProducts[ownerId],
+            products: groupedProducts[ownerId].products.map(p => ({
+              ...p,
+              product: { ...p.product }
+            }))
+          };
+        });
 
         // Calculate shipping for each SubOrder (Owner) separately
         for (const [ownerId, group] of Object.entries(updatedGroups)) {
@@ -434,8 +427,6 @@ const RentalOrderForm = () => {
               productIndex: index,
             });
           });
-
-          console.log(`📦 Owner ${ownerId} delivery batches:`, deliveryBatches);
 
           let subOrderTotalShipping = 0;
           const subOrderDeliveries = [];
@@ -504,7 +495,6 @@ const RentalOrderForm = () => {
             );
 
             const shippingResponse = await calculateShipping(shippingData);
-            console.log("📦 Shipping API full response:", JSON.stringify(shippingResponse, null, 2));
 
             // Xử lý response từ API
             // Response có thể có nhiều format:
@@ -524,16 +514,15 @@ const RentalOrderForm = () => {
                 shippingResponse?.shipping;
             }
             
-            console.log("📦 Extracted shipping data:", shipping);
-            
             if (!shipping || !shipping.distance || !shipping.fee) {
-              console.error("❌ Invalid shipping data:", shippingResponse);
               throw new Error(
                 shippingResponse?.message || "Không thể tính phí ship từ API - Dữ liệu không hợp lệ"
               );
             }
             const batchFee = shipping.fee || 0;
 
+            const allocatedFeePerProduct = Math.round(batchFee / batchProducts.length);
+            
             const batchInfo = {
               deliveryDate,
               batchSize: batchProducts.length,
@@ -546,12 +535,29 @@ const RentalOrderForm = () => {
               distanceMeters: shipping.distanceMeters,
               estimatedTime: shipping.estimatedTime,
               shippingDetails: shipping.shippingDetails,
-              products: batchProducts.map((p, idx) => ({
+              products: batchProducts.map((p) => ({
                 productId: p.product._id,
                 quantity: p.quantity || 1,
-                allocatedFee: Math.round(batchFee / batchProducts.length),
+                allocatedFee: allocatedFeePerProduct,
               })),
             };
+
+            // Update each product with its shipping fee in the updatedGroups
+            batchProducts.forEach((batchProduct) => {
+              const productIndex = group.products.findIndex(
+                (prod) => prod.product._id === batchProduct.product._id
+              );
+              if (productIndex !== -1) {
+                // Create new product object to ensure immutability
+                updatedGroups[ownerId].products[productIndex] = {
+                  ...updatedGroups[ownerId].products[productIndex],
+                  product: {
+                    ...updatedGroups[ownerId].products[productIndex].product,
+                    totalShippingFee: allocatedFeePerProduct
+                  }
+                };
+              }
+            });
 
             subOrderTotalShipping += batchFee;
             subOrderDeliveries.push(batchInfo);
@@ -584,24 +590,14 @@ const RentalOrderForm = () => {
         // Update state with calculated shipping fees
         setGroupedProducts(updatedGroups);
         setTotalShipping(masterTotalShipping);
-
-        console.log("🎯 Final SubOrder-based shipping calculation:", {
-          masterTotalShipping:
-            masterTotalShipping.toLocaleString("vi-VN") + "đ",
-          totalSubOrders: Object.keys(updatedGroups).length,
-          subOrderBreakdown: Object.keys(updatedGroups).map((ownerId) => ({
-            ownerId,
-            ownerName:
-              updatedGroups[ownerId].owner?.profile?.firstName || "Unknown",
-            subOrderShipping:
-              updatedGroups[ownerId].shippingFee.toLocaleString("vi-VN") + "đ",
-            deliveryCount: updatedGroups[ownerId].deliveryInfo.deliveryCount,
-            deliveryDates: updatedGroups[
-              ownerId
-            ].deliveryInfo.deliveryBatches.map((b) => b.deliveryDate),
-          })),
-        });
-
+        
+        // Store in ref to persist across renders
+        calculatedShippingRef.current = {
+          groupedProducts: updatedGroups,
+          totalShipping: masterTotalShipping,
+          timestamp: Date.now()
+        };
+        
         toast.success(
           `Đã tính phí ship: ${masterTotalShipping.toLocaleString(
             "vi-VN"
@@ -666,17 +662,27 @@ const RentalOrderForm = () => {
     const handleSubmit = async () => {
       if (!validateForm()) return;
 
+      // Validate that shipping has been calculated for DELIVERY orders
+      if (orderData.deliveryMethod === "DELIVERY") {
+        // Use ref as source of truth if available
+        const shippingSource = calculatedShippingRef.current?.groupedProducts || groupedProducts;
+        
+        const hasShippingCalculated = Object.values(shippingSource).some(
+          group => group.shippingFee > 0
+        );
+        
+        if (!hasShippingCalculated) {
+          toast.error("Vui lòng nhấn 'Tính phí vận chuyển' trước khi tạo đơn hàng");
+          return;
+        }
+      }
+
       // Show payment method selector
       setShowPaymentSelector(true);
     };
 
     // Handle payment method selection and process different payment types
     const handlePaymentMethodSelect = async (paymentMethod) => {
-      console.log("🚀 Processing payment with method:", paymentMethod);
-      console.log("💰 Total amount (with discounts):", totals.grandTotal);
-      console.log("🏷️ Active promotion:", activePromotion ? activePromotion.title : "None");
-      console.log("🎫 Selected voucher:", selectedVoucher ? selectedVoucher.code : "None");
-
       try {
         let paymentResult = null;
 
@@ -718,6 +724,10 @@ const RentalOrderForm = () => {
         }
 
         // Create order with payment info
+        // Use ref for shipping data if available (more reliable than state)
+        const shippingSource = calculatedShippingRef.current?.groupedProducts || groupedProducts;
+        const shippingTotal = calculatedShippingRef.current?.totalShipping || totalShipping;
+        
         const orderWithPayment = {
           ...orderData,
           paymentMethod: paymentMethod,
@@ -726,6 +736,38 @@ const RentalOrderForm = () => {
           paymentMessage: paymentResult.message,
           // Pass the items being processed (not selectedItems from location.state)
           selectedItems: sourceItems,
+          // Pass shipping data calculated from frontend with promotion applied
+          shippingData: {
+            totalShipping: shippingTotal,
+            finalShipping: calculateFinalShipping(),
+            promotionDiscount: activePromotion ? (() => {
+              const discount = activePromotion.systemPromotion.discountType === "PERCENTAGE"
+                ? (shippingTotal * activePromotion.systemPromotion.shippingDiscountValue) / 100
+                : Math.min(activePromotion.systemPromotion.shippingDiscountValue, shippingTotal);
+              return discount;
+            })() : 0,
+            voucherDiscount: selectedVoucher ? Math.round((shippingTotal * selectedVoucher.discountPercent) / 100) : 0,
+            activePromotion: activePromotion ? {
+              _id: activePromotion._id,
+              code: activePromotion.code,
+              title: activePromotion.title,
+              systemPromotion: activePromotion.systemPromotion
+            } : null,
+            groupedShipping: Object.fromEntries(
+              Object.entries(shippingSource).map(([ownerId, group]) => [
+                ownerId,
+                {
+                  shippingFee: group.shippingFee || 0,
+                  deliveryInfo: group.deliveryInfo || null,
+                  products: (group.products || []).map(item => ({
+                    productId: item.product._id,
+                    totalShippingFee: item.product.totalShippingFee || 0,
+                    deliveryDate: item.rental?.startDate
+                  }))
+                }
+              ])
+            )
+          },
           // COD specific fields
           ...(paymentMethod === "COD" && {
             depositAmount: paymentResult.depositAmount,
@@ -847,16 +889,8 @@ const RentalOrderForm = () => {
     // Process COD with mandatory deposit payment
     const processCODWithDeposit = async (totals) => {
       try {
-        console.log("💵 Processing COD with mandatory deposit");
-        console.log("📊 Current totals:", totals);
-
         // Calculate total deposit from all items via backend API
         const totalDeposit = await calculateTotalDeposit();
-        console.log("💰 Total deposit calculated:", {
-          amount: totalDeposit,
-          formatted: totalDeposit.toLocaleString("vi-VN") + "đ",
-          isValid: totalDeposit > 0,
-        });
 
         if (!totalDeposit || totalDeposit <= 0) {
           console.error("❌ Invalid deposit amount:", totalDeposit);
@@ -924,11 +958,8 @@ const RentalOrderForm = () => {
     // Calculate total deposit from backend API (accurate calculation)
     const calculateTotalDeposit = async () => {
       try {
-        console.log("💰 Fetching deposit calculation from backend...");
-
         // Use rentalOrderService instead of direct fetch
         const result = await rentalOrderService.calculateDeposit();
-        console.log("💰 Deposit calculation result:", result);
 
         if (
           result.success &&
@@ -975,28 +1006,11 @@ const RentalOrderForm = () => {
             item.depositRate ||
             0;
 
-          console.log("💳 Item deposit:", {
-            productName: item.product?.title || item.product?.name,
-            quantity: item.quantity,
-            depositPerUnit: deposit,
-            itemTotal: deposit * item.quantity,
-          });
-
           return total + deposit * item.quantity;
         }, 0);
 
-        console.log("💰 Fallback deposit total:", fallbackDeposit);
-
         // If still 0, provide a meaningful error
         if (fallbackDeposit <= 0) {
-          console.error("❌ No deposit found in fallback calculation");
-          console.log("🔍 Debug info:", {
-            finalItems,
-            fromCart,
-            selectedItems,
-            directRentalData,
-            cartItems,
-          });
           // Return a small positive number to avoid blocking the flow
           return 50000; // 50,000 VND as minimum deposit
         }
@@ -2025,13 +2039,13 @@ const DepositPaymentModal = ({
       key: "WALLET",
       title: "Ví điện tử",
       description: "Thanh toán cọc từ số dư ví",
-      icon: "💳",
+      icon: <HiCreditCard className="text-2xl text-blue-600" />,
     },
     {
       key: "PAYOS",
       title: "Chuyển khoản ngân hàng",
       description: "Thanh toán cọc qua PayOS (QR Code)",
-      icon: "🏦",
+      icon: <PiBank  className="text-2xl text-green-600" />,
     },
   ];
 
@@ -2040,7 +2054,10 @@ const DepositPaymentModal = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <h2 className="text-xl font-semibold mb-4">💵 Thanh toán cọc - COD</h2>
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <PiHandDeposit  className="text-orange-600" />
+          Thanh toán cọc - COD
+        </h2>
 
         {/* Amount breakdown */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
@@ -2080,7 +2097,7 @@ const DepositPaymentModal = ({
               onClick={() => setSelectedMethod(method.key)}
             >
               <div className="flex items-start space-x-3">
-                <span className="text-2xl">{method.icon}</span>
+                <div>{method.icon}</div>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <input

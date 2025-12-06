@@ -3,6 +3,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { ROUTES } from "../../utils/constants";
 import voucherService from "../../services/voucher";
+import icons from "../../utils/icons";
+
+const {
+  FiUser,
+  FiGift,
+  FiPackage,
+  FiClipboard,
+  FiAlertTriangle,
+  FiDollarSign,
+  FiSettings,
+  FiTruck,
+  FiLogOut,
+} = icons;
 
 const UserDropdown = () => {
   const { user, logout, loading } = useAuth();
@@ -117,9 +130,9 @@ const UserDropdown = () => {
       {isOpen && (
         <div className="absolute right-0 top-full mt-3 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           {/* User Info */}
-          <div className="px-4 py-4 border-b border-gray-100">
+          <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-200">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -147,65 +160,65 @@ const UserDropdown = () => {
           <div className="py-2">
             <Link
               to="/profile"
-              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3 text-lg">👤</span>
-              Profile
+              <FiUser className="mr-3 text-lg text-blue-500" />
+              Hồ sơ cá nhân
             </Link>
 
             <Link
               to="/vouchers"
-              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-indigo-50 transition-colors group"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors group"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3 text-lg">🎁</span>
-              <span>Redeem Vouchers</span>
+              <FiGift className="mr-3 text-lg text-purple-500" />
+              <span>Đổi Voucher</span>
             </Link>
 
             <Link
               to="/my-products"
-              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3 text-lg">📦</span>
-              My Products
+              <FiPackage className="mr-3 text-lg text-green-500" />
+              Sản phẩm của tôi
             </Link>
 
             <Link
               to="/bookings"
-              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3 text-lg">📋</span>
-              My Bookings
+              <FiClipboard className="mr-3 text-lg text-orange-500" />
+              Đơn thuê của tôi
             </Link>
 
             <Link
               to={ROUTES.MY_REPORTS}
-              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3 text-lg">🚨</span>
-              My Reports
+              <FiAlertTriangle className="mr-3 text-lg text-red-500" />
+              Báo cáo của tôi
             </Link>
 
             <Link
               to="/withdrawals"
-              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3 text-lg">💰</span>
-              Withdrawals
+              <FiDollarSign className="mr-3 text-lg text-emerald-500" />
+              Rút tiền
             </Link>
 
             <Link
               to="/settings"
-              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
               onClick={() => setIsOpen(false)}
             >
-              <span className="mr-3 text-lg">⚙️</span>
-              Settings
+              <FiSettings className="mr-3 text-lg text-gray-500" />
+              Cài đặt
             </Link>
 
               {(() => {
@@ -215,10 +228,10 @@ const UserDropdown = () => {
                 return isShipper ? (
                   <Link
                     to="/shipments"
-                    className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-800 transition-colors"
                     onClick={() => setIsOpen(false)}
                   >
-                    <span className="mr-3 text-lg">🚚</span>
+                    <FiTruck className="mr-3 text-lg text-blue-600" />
                     Quản lí vận chuyển
                   </Link>
                 ) : null;
@@ -230,10 +243,10 @@ const UserDropdown = () => {
             <button
               onClick={handleLogout}
               disabled={logoutLoading}
-              className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+              className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
             >
-              <span className="mr-3 text-lg">🚪</span>
-              {logoutLoading ? "Logging out..." : "Logout"}
+              <FiLogOut className="mr-3 text-lg text-red-500" />
+              {logoutLoading ? "Đang đăng xuất..." : "Đăng xuất"}
             </button>
           </div>
         </div>

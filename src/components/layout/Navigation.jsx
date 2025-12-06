@@ -10,6 +10,9 @@ import NotificationBell from "../common/NotificationBell";
 import useChatSocket from "../../hooks/useChatSocket";
 import useChat from "../../hooks/useChat";
 import { ROUTES } from "../../utils/constants";
+import icons from "../../utils/icons";
+
+const { TbWorld, IoBarChart, BsCart4, FaRegBell, IoIosHeart, LuBoxes, LuPackageSearch, FaSearchengin, IoChatboxEllipsesOutline,LuPackagePlus, FaBalanceScale } = icons;
 
 // Owner Menu Dropdown Component
 const OwnerMenuDropdown = ({ user }) => {
@@ -33,32 +36,32 @@ const OwnerMenuDropdown = ({ user }) => {
 
   const menuItems = [
     {
-      icon: "📦",
+      icon: <LuBoxes />,
       label: "Sản Phẩm Của Tôi",
       description: "Quản lý sản phẩm cho thuê",
       route: ROUTES.OWNER_PRODUCTS,
     },
     {
-      icon: "➕",
+      icon: <LuPackagePlus />,
       label: "Đăng Sản Phẩm Mới",
       description: "Tạo sản phẩm cho thuê",
       route: ROUTES.OWNER_CREATE_PRODUCT,
       requiresVerification: true,
     },
     {
-      icon: "📋",
+      icon: <LuPackageSearch />,
       label: "Yêu Cầu Thuê",
       description: "Quản lý yêu cầu thuê sản phẩm",
       route: "/owner/rental-requests",
     },
     {
-      icon: "⚖️",
+      icon: <FaBalanceScale />,
       label: "Tranh Chấp",
       description: "Quản lý và giải quyết tranh chấp",
       route: "/disputes",
     },
     {
-      icon: "",
+      icon: <IoBarChart />,
       label: "Thống Kê",
       description: "Xem doanh thu và báo cáo",
       route: ROUTES.OWNER_STATISTICS,
@@ -96,8 +99,8 @@ const OwnerMenuDropdown = ({ user }) => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
       >
-        <span className="text-base">🏠</span>
-        <span>Cho Thuê</span>
+        <LuBoxes className="text-xl" />
+        <span>Quản Lý Chủ Thuê</span>
         <svg
           className={`w-4 h-4 transition-transform ${
             isOpen ? "rotate-180" : ""
@@ -271,7 +274,7 @@ const Navigation = () => {
     <>
       <nav className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-24">
+          <div className="flex items-center h-16 justify-between">
             {/* Left: Brand + Menu */}
             <div className="flex items-center gap-6 flex-shrink-0">
               {/* Brand */}
@@ -317,28 +320,33 @@ const Navigation = () => {
 
             {/* Center: Search bar */}
             <div className="hidden lg:flex flex-1 max-w-xl mx-6">
-              <form onSubmit={handleSearch} className="w-full">
-                <button
-                  type="submit"
-                  className="flex items-center justify-center w-full border-2 border-gray-200 hover:border-primary-400 focus:border-primary-500 rounded-xl px-5 py-3 bg-gray-50 hover:bg-white transition-all shadow-sm group cursor-pointer"
-                  onClick={handleSearch}
-                >
-                  <span className="text-xl text-gray-400 group-hover:text-primary-600 transition-colors">
-                    🔎
-                  </span>
+              <form onSubmit={handleSearch} className="w-full relative">
+                <div className="flex items-center w-full border-2 border-gray-200 hover:border-primary-400 focus-within:border-primary-500 rounded-xl px-4 py-2.5 bg-gray-50 hover:bg-white transition-all shadow-sm">
+                  <button
+                    type="submit"
+                    className="text-gray-400 hover:text-primary-600 transition-colors flex-shrink-0"
+                    aria-label="Search"
+                  >
+                    <FaSearchengin className="text-xl" />
+                  </button>
                   <input
-                    className="w-full outline-none bg-transparent text-gray-700 placeholder:text-gray-400 font-medium text-base ml-4 cursor-pointer"
-                    placeholder="Tìm kiếm thiết bị du lịch..."
+                    type="text"
+                    className="w-full outline-none bg-transparent text-gray-700 placeholder:text-gray-400 font-medium text-base ml-3 mr-2"
                     value={searchInput}
+                    placeholder="Tìm kiếm..."
                     onChange={(e) => setSearchInput(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter") {
-                        handleSearch(e);
-                      }
-                    }}
                   />
-                </button>
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchInput("")}
+                      className="text-gray-400 hover:text-gray-600 text-lg flex-shrink-0"
+                      aria-label="Clear search"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
 
@@ -346,7 +354,7 @@ const Navigation = () => {
             <div className="flex items-center gap-3 flex-shrink-0">
               {/* Language */}
               <button className="hidden md:flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg transition-all whitespace-nowrap">
-                <span className="text-base">🌐</span>
+                <TbWorld className="text-xl" />
                 <span>VI</span>
               </button>
 
@@ -358,7 +366,7 @@ const Navigation = () => {
                   onClick={toggleCart}
                   className="relative p-2.5 text-gray-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all"
                 >
-                  <span className="text-xl">🛒</span>
+                  <BsCart4 className="text-2xl" />
                   {cartCount > 0 && (
                     <span className="absolute top-0.5 right-0.5 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
                       {cartCount > 9 ? "9+" : cartCount}
@@ -372,7 +380,7 @@ const Navigation = () => {
                   onClick={() => setShowWishlist(true)}
                   className="p-2.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                 >
-                  <span className="text-xl">❤️</span>
+                  <IoIosHeart className="text-2xl" />
                 </button>
 
                 {/* Chat */}
@@ -381,7 +389,7 @@ const Navigation = () => {
                   onClick={handleChatClick}
                   className="relative p-2.5 text-gray-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all"
                 >
-                  <span className="text-xl">💬</span>
+                  <IoChatboxEllipsesOutline className="text-2xl" />
                   {user && unreadCount > 0 && (
                     <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
                       {unreadCount > 9 ? "9+" : unreadCount}

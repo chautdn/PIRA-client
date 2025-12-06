@@ -33,6 +33,8 @@
       return cart
         .filter(item => selectedItems.has(item._id))
         .reduce((total, item) => {
+          // Skip items with missing product
+          if (!item?.product) return total;
           const price = item.product.pricing?.dailyRate || 0;
           const days = item.rental?.duration || 1;
           return total + price * days * item.quantity;
@@ -183,6 +185,9 @@
     const ownerMap = new Map();
     
     cart.forEach(item => {
+      // Skip items with missing product
+      if (!item?.product) return;
+      
       const ownerId = item.product?.owner?._id || 'unknown';
       const ownerName = item.product?.owner?.profile?.firstName || 'Chưa xác định';
       
@@ -573,6 +578,10 @@
                   <div className="p-6 space-y-4">
                     {group.items.map((item, index) => {
                       const { product, rental, quantity } = item;
+                      
+                      // Skip if product is missing
+                      if (!product) return null;
+                      
                       const dailyRate = product.pricing?.dailyRate || 0;
                       const days = rental?.duration || 1;
                       const itemTotal = dailyRate * days * quantity;
