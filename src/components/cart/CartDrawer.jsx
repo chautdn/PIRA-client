@@ -89,6 +89,9 @@ const CartDrawer = () => {
                   {/* Group items by owner */}
                   {Object.entries(
                     cart.reduce((groups, item) => {
+                      // Skip items with missing product data
+                      if (!item?.product) return groups;
+                      
                       const ownerId = item.product.owner?._id || 'unknown';
                       const ownerName = item.product.owner?.profile?.firstName || 'Chủ không rõ';
                       
