@@ -176,7 +176,19 @@ const OrderRow = ({
   const renderStatusActions = () => {
     const actions = [];
 
+    // ✅ MODIFIED: Kiểm tra nếu có SubOrder READY_FOR_CONTRACT (không cần chờ tất cả MasterOrder status)
+    const hasReadyForContractSubOrder = order.subOrders?.some(
+      (sub) => sub.status === 'READY_FOR_CONTRACT'
+    );
 
+    // Confirmation details button - show when pending confirmation or when ready for contract
+    if (
+      order.status === "PENDING_CONFIRMATION" ||
+      order.status === "CONFIRMED" ||
+      order.status === "PARTIALLY_CANCELLED" ||
+      order.status === "CONTRACT_SIGNED" ||
+      hasReadyForContractSubOrder
+    ) {
       actions.push(
         <ActionButton
           key="confirmation"
@@ -188,14 +200,24 @@ const OrderRow = ({
            chi tiết xác nhận
         </ActionButton>
       );
-    
+    }
 
-    // Contract Signing
-    if (order.status === "READY_FOR_CONTRACT") {
+    // Contract Signing - show when any suborder is ready for contract
+    if (hasReadyForContractSubOrder) {
       actions.push(
         <ActionButton
           key="contract"
-          onClick={() => navigate("/rental-orders/contracts")}
+          onClick={() => {
+            // Tìm SubOrder READY_FOR_CONTRACT đầu tiên để lấy contractId
+            const readySubOrder = order?.subOrders?.find(
+              (sub) => sub.status === 'READY_FOR_CONTRACT'
+            );
+            if (readySubOrder?.contract) {
+              navigate(`/rental-orders/contracts?contractId=${readySubOrder.contract}`);
+            } else {
+              navigate("/rental-orders/contracts");
+            }
+          }}
           variant="success"
           icon={PenTool}
           title="Ký hợp đồng"

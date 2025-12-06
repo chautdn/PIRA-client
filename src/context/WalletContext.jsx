@@ -17,7 +17,14 @@ const walletReducer = (state, action) => {
     case "SET_LOADING":
       return { ...state, loading: action.payload };
     case "SET_BALANCE":
-      return { ...state, balance: action.payload, error: null };
+      return { 
+        ...state, 
+        balance: action.payload.display || action.payload,
+        available: action.payload.available || 0,
+        frozen: action.payload.frozen || 0,
+        display: action.payload.display || action.payload,
+        error: null 
+      };
     case "SET_TRANSACTIONS":
       return { ...state, transactions: action.payload };
     case "ADD_TRANSACTION":
@@ -43,6 +50,9 @@ const walletReducer = (state, action) => {
 
 const initialState = {
   balance: 0,
+  available: 0,  // Tiền có thể dùng
+  frozen: 0,     // Tiền bị khóa
+  display: 0,    // Tiền hiển thị (tổng)
   transactions: [],
   loading: false,
   error: null,
@@ -60,21 +70,25 @@ export const WalletProvider = ({ children }) => {
     dispatch({ type: "SET_LOADING", payload: true });
     try {
       const response = await api.get("/payment/wallet/balance");
-      console.log("Wallet API Response:", response.data);
+      console.log("=== Wallet API Response ===", response.data);
 
-      // Try different possible response structures
-      const balance =
-        response.data?.metadata?.balance?.available || // New structure
-        response.data?.metadata?.balance || // Simple number
-        response.data?.data?.balance?.available || // Alternative structure
-        response.data?.data?.balance ||
-        0;
+      // API returns data in metadata field
+      const balanceData = response.data?.metadata || {};
+      console.log("Balance data:", balanceData);
 
-      console.log("Extracted balance:", balance);
+      const available = Number(balanceData.available) || 0;
+      const frozen = Number(balanceData.frozen) || 0;
+      const display = Number(balanceData.balance) || (available + frozen);
+
+      console.log("Final: available=", available, "frozen=", frozen, "display=", display);
 
       dispatch({
         type: "SET_BALANCE",
-        payload: balance,
+        payload: {
+          available,
+          frozen,
+          display
+        },
       });
     } catch (error) {
       const errorMessage =

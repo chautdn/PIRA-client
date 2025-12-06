@@ -110,6 +110,12 @@ const RentalOrderDetailPage = () => {
 
     return false;
   };
+
+  // ✅ NEW: Kiểm tra nếu có ít nhất 1 SubOrder READY_FOR_CONTRACT (không cần chờ tất cả)
+  const hasReadyForContractSubOrder = currentOrder?.subOrders?.some(
+    (sub) => sub.status === 'READY_FOR_CONTRACT'
+  );
+  
   const action = searchParams.get("action"); // Check for "extend" action
 
   // Load order detail first
@@ -526,9 +532,12 @@ const RentalOrderDetailPage = () => {
               {getStatusText(currentOrder.status)}
             </span>
 
+            {/* ✅ MODIFIED: Hiển thị "Chi tiết xác nhận" khi có SubOrder OWNER_CONFIRMED (không cần tất cả) */}
             {(currentOrder.status === "CONFIRMED" ||
               currentOrder.status === "PARTIALLY_CANCELLED" ||
-              currentOrder.status === "CONTRACT_SIGNED") && (
+              currentOrder.status === "CONTRACT_SIGNED" ||
+              currentOrder.status === "READY_FOR_CONTRACT" ||
+              hasReadyForContractSubOrder) && (
               <button
                 onClick={() =>
                   navigate(
@@ -542,9 +551,20 @@ const RentalOrderDetailPage = () => {
               </button>
             )}
 
-            {currentOrder.status === "READY_FOR_CONTRACT" && isRenter && (
+            {/* ✅ MODIFIED: Kiểm tra nếu có SubOrder READY_FOR_CONTRACT (thay vì chỉ MasterOrder status) */}
+            {hasReadyForContractSubOrder && isRenter && (
               <button
-                onClick={() => navigate("/rental-orders/contracts")}
+                onClick={() => {
+                  // Tìm SubOrder READY_FOR_CONTRACT đầu tiên để lấy contractId
+                  const readySubOrder = currentOrder?.subOrders?.find(
+                    (sub) => sub.status === 'READY_FOR_CONTRACT'
+                  );
+                  if (readySubOrder?.contract) {
+                    navigate(`/rental-orders/contracts?contractId=${readySubOrder.contract}`);
+                  } else {
+                    navigate("/rental-orders/contracts");
+                  }
+                }}
                 className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
               >
                 <FileText className="w-5 h-5" />

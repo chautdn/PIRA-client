@@ -40,7 +40,7 @@ const MessageItem = ({ message, isCurrentUser, showAvatar }) => {
       }`.trim()
     : "Unknown User";
 
-  const avatarUrl = message.senderId?.profile?.avatar || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
+  const avatarUrl = message.senderId?.profile?.avatar || "https://cdn4.vectorstock.com/i/1000x1000/96/43/avatar-photo-default-user-icon-picture-face-vector-48139643.jpg";
 
   return (
     <div
@@ -67,7 +67,7 @@ const MessageItem = ({ message, isCurrentUser, showAvatar }) => {
               alt={senderName}
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.target.src = "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
+                e.target.src = "https://cdn4.vectorstock.com/i/1000x1000/96/43/avatar-photo-default-user-icon-picture-face-vector-48139643.jpg";
               }}
             />
           </div>
