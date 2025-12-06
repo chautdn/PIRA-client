@@ -10,7 +10,11 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
 
   if (!isOpen) return null;
 
-  // Lấy thông tin từ bên thứ 3
+  // Kiểm tra nguồn: đàm phán hoặc bên thứ 3
+  const isFromNegotiation = dispute.status === 'NEGOTIATION_AGREED';
+  const ownerDecision = dispute.negotiationRoom?.finalAgreement?.ownerDecision || '';
+  
+  // Lấy thông tin từ bên thứ 3 (nếu có)
   const thirdPartyDecision = dispute.thirdPartyResolution?.evidence?.officialDecision || '';
   const thirdPartyDocs = dispute.thirdPartyResolution?.evidence?.documents || [];
 
@@ -60,7 +64,7 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
       <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h3 className="text-xl font-semibold text-gray-900">
-            Quyết định cuối cùng từ kết quả bên thứ 3
+            {isFromNegotiation ? 'Xử lý kết quả đàm phán' : 'Quyết định cuối cùng từ kết quả bên thứ 3'}
           </h3>
           <button
             onClick={onClose}
@@ -73,29 +77,44 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Kết quả từ bên thứ 3 */}
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <h4 className="font-semibold text-purple-900 mb-3">📋 Kết quả từ bên thứ 3:</h4>
-            <p className="text-sm text-purple-800 whitespace-pre-wrap mb-3">
-              {thirdPartyDecision || 'Không có thông tin'}
-            </p>
-            {thirdPartyDocs.length > 0 && (
-              <div className="mt-3">
-                <p className="text-xs text-purple-700 mb-2">📎 Có {thirdPartyDocs.length} ảnh bằng chứng</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {thirdPartyDocs.map((doc, idx) => (
-                    <a key={idx} href={doc} target="_blank" rel="noopener noreferrer">
-                      <img 
-                        src={doc} 
-                        alt={`Evidence ${idx + 1}`} 
-                        className="w-full h-24 object-cover rounded border-2 border-purple-200 hover:border-purple-400 cursor-pointer"
-                      />
-                    </a>
-                  ))}
+          {/* Quyết định của Owner (nếu từ đàm phán) */}
+          {isFromNegotiation && ownerDecision && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 mb-3">💬 Quyết định của chủ hàng:</h4>
+              <p className="text-sm text-blue-800 whitespace-pre-wrap">
+                {ownerDecision}
+              </p>
+              <p className="text-xs text-blue-600 mt-2">
+                ✅ Cả hai bên đã đồng ý với quyết định này
+              </p>
+            </div>
+          )}
+
+          {/* Kết quả từ bên thứ 3 (nếu có) */}
+          {!isFromNegotiation && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h4 className="font-semibold text-purple-900 mb-3">📋 Kết quả từ bên thứ 3:</h4>
+              <p className="text-sm text-purple-800 whitespace-pre-wrap mb-3">
+                {thirdPartyDecision || 'Không có thông tin'}
+              </p>
+              {thirdPartyDocs.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-purple-700 mb-2">📎 Có {thirdPartyDocs.length} ảnh bằng chứng</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {thirdPartyDocs.map((doc, idx) => (
+                      <a key={idx} href={doc} target="_blank" rel="noopener noreferrer">
+                        <img 
+                          src={doc} 
+                          alt={`Evidence ${idx + 1}`} 
+                          className="w-full h-24 object-cover rounded border-2 border-purple-200 hover:border-purple-400 cursor-pointer"
+                        />
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Quyết định cuối cùng */}
           <div>
@@ -159,7 +178,10 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
                 <div className="ml-3">
                   <p className="font-medium text-gray-900">Bên bị khiếu nại đúng (Renter)</p>
                   <p className="text-sm text-gray-600 mt-1">
-                    Owner không có lý do chính đáng → Renter được hoàn 100% tiền cọc + tiền thuê
+                    Owner không có lý do chính đáng → Renter được hoàn 100% tiền cọc
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    (Tiền thuê không hoàn vì renter đã sử dụng sản phẩm)
                   </p>
                 </div>
               </label>
@@ -176,10 +198,16 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
               onChange={(e) => setReasoning(e.target.value)}
               rows={4}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Dựa trên kết quả từ bên thứ 3, admin đưa ra quyết định..."
+              placeholder={isFromNegotiation 
+                ? "Dựa trên thỏa thuận đàm phán của hai bên, admin đưa ra quyết định..." 
+                : "Dựa trên kết quả từ bên thứ 3, admin đưa ra quyết định..."
+              }
             />
             <p className="text-xs text-gray-500 mt-1">
-              Hãy giải thích rõ ràng quyết định dựa trên bằng chứng từ bên thứ 3
+              {isFromNegotiation 
+                ? 'Hãy giải thích rõ ràng quyết định dựa trên thỏa thuận của hai bên'
+                : 'Hãy giải thích rõ ràng quyết định dựa trên bằng chứng từ bên thứ 3'
+              }
             </p>
           </div>
 
@@ -194,28 +222,47 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
               <div className="ml-3">
                 <p className="text-sm text-yellow-800">
                   <strong>Lưu ý:</strong> Quyết định này là quyết định cuối cùng và không thể thay đổi. 
-                  Hãy chắc chắn bạn đã xem xét kỹ lưỡng tất cả bằng chứng từ bên thứ 3.
+                  {isFromNegotiation 
+                    ? ' Hãy chắc chắn bạn đã xem xét kỹ lưỡng thỏa thuận của hai bên.'
+                    : ' Hãy chắc chắn bạn đã xem xét kỹ lưỡng tất cả bằng chứng từ bên thứ 3.'
+                  }
                 </p>
               </div>
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-between pt-4 border-t border-gray-200">
             <button
-              onClick={onClose}
+              onClick={() => {
+                if (window.confirm('Bạn có chắc muốn từ chối bằng chứng này? Dispute sẽ quay lại trạng thái THIRD_PARTY_ESCALATED')) {
+                  onClose();
+                  // Trigger reject modal in parent
+                  window.dispatchEvent(new CustomEvent('openRejectEvidenceModal'));
+                }
+              }}
               disabled={isSubmitting}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium disabled:opacity-50"
+              className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium disabled:opacity-50"
             >
-              Hủy
+              Từ chối bằng chứng
             </button>
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !selectedDecision || !reasoning.trim()}
-              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50"
-            >
-              {isSubmitting ? 'Đang xử lý...' : 'Đưa ra quyết định cuối cùng'}
-            </button>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting || !selectedDecision || !reasoning.trim()}
+                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50"
+              >
+                {isSubmitting ? 'Đang xử lý...' : 'Đưa ra quyết định cuối cùng'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

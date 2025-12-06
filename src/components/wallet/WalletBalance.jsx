@@ -6,7 +6,7 @@ import TopUpModal from "./TopUpModal";
 import TransactionHistory from "./TransactionHistory";
 
 const WalletBalance = () => {
-  const { balance, loading, fetchBalance } = useWallet();
+  const { balance, available, frozen, loading, fetchBalance } = useWallet();
   const [showTopUp, setShowTopUp] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -46,7 +46,7 @@ const WalletBalance = () => {
                   <div className="w-16 h-3 bg-gray-200 rounded animate-pulse" />
                 ) : (
                   <span className="text-sm font-bold text-gray-900">
-                    {balance.toLocaleString()}
+                    {(balance || 0).toLocaleString()}
                   </span>
                 )}
                 <span className="text-xs text-gray-600 font-medium">đ</span>
@@ -68,11 +68,11 @@ const WalletBalance = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
+                className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
               >
                 {/* Balance Details */}
                 <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-xs text-gray-600 font-medium mb-1">
                         Current Balance
@@ -81,7 +81,7 @@ const WalletBalance = () => {
                         <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
                       ) : (
                         <p className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                          {balance.toLocaleString()} VND
+                          {(balance || 0).toLocaleString()} VND
                         </p>
                       )}
                     </div>
@@ -100,6 +100,52 @@ const WalletBalance = () => {
                         }`}
                       />
                     </button>
+                  </div>
+
+                  {/* Balance Breakdown */}
+                  <div className="space-y-3">
+                    {/* Available Balance */}
+                    <div className="bg-white rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span className="text-xs text-gray-600 font-medium">
+                            Available Balance
+                          </span>
+                        </div>
+                        {loading ? (
+                          <div className="w-24 h-4 bg-gray-200 rounded animate-pulse" />
+                        ) : (
+                          <span className="text-sm font-bold text-green-600">
+                            {(available || 0).toLocaleString()} VND
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Frozen Balance */}
+                    {frozen > 0 && (
+                      <div className="bg-white rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                            <span className="text-xs text-gray-600 font-medium">
+                              Frozen Balance
+                            </span>
+                          </div>
+                          {loading ? (
+                            <div className="w-24 h-4 bg-gray-200 rounded animate-pulse" />
+                          ) : (
+                            <span className="text-sm font-bold text-orange-600">
+                              {(frozen || 0).toLocaleString()} VND
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 ml-4">
+                          💡 Frozen for 24h after transaction. Will be available soon.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

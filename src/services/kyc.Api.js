@@ -37,10 +37,10 @@ export const kycService = {
     }
   },
 
-  // Lấy ảnh CCCD
-  getCCCDImages: async () => {
+  // Lấy ảnh CCCD - yêu cầu password
+  getCCCDImages: async (password) => {
     try {
-      const response = await api.get("/kyc/cccd-images");
+      const response = await api.post("/kyc/cccd-images", { password });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

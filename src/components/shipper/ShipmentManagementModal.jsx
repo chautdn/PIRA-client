@@ -26,7 +26,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       setPickupImages(data.data?.imagesBeforeDelivery || []);
       setDeliveryImages(data.data?.imagesAfterDelivery || []);
     } catch (err) {
-      console.log('Could not load proof:', err.message);
       setProofData(null);
       setPickupImages([]);
       setDeliveryImages([]);
