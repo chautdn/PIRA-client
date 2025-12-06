@@ -237,14 +237,11 @@ export const getDisputeTypesForShipment = (shipmentType) => {
       { value: 'PRODUCT_NOT_AS_DESCRIBED', label: 'Sản phẩm không đúng mô tả' },
       { value: 'MISSING_ITEMS', label: 'Thiếu phụ kiện/số lượng' },
       { value: 'DAMAGED_BY_SHIPPER', label: 'Shipper làm hỏng hàng' },
-      { value: 'DELIVERY_FAILED_RENTER', label: 'Người nhận không nhận hàng' },
       { value: 'PRODUCT_DEFECT', label: 'Sản phẩm lỗi khi đang sử dụng' }
     ];
   } else if (shipmentType === 'RETURN') {
     return [
-      { value: 'DAMAGED_ON_RETURN', label: 'Sản phẩm hư hỏng khi trả' },
-      { value: 'LATE_RETURN', label: 'Trả hàng trễ' },
-      { value: 'RETURN_FAILED_OWNER', label: 'Owner không nhận hàng' }
+      { value: 'DAMAGED_ON_RETURN', label: 'Sản phẩm hư hỏng khi trả' }
     ];
   }
   return [];

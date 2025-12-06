@@ -3,13 +3,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { useDispute } from '../../context/DisputeContext';
 import RespondDisputeModal from './RespondDisputeModal';
 import UserRespondAdminDecisionModal from './UserRespondAdminDecisionModal';
-import ProposeAgreementModal from './ProposeAgreementModal';
 import AgreementResponseModal from './AgreementResponseModal';
 import ThirdPartyEvidenceModal from './ThirdPartyEvidenceModal';
 import {
   canRespond,
   canRespondToAdminDecision,
-  canProposeAgreement,
   canRespondToAgreement,
   canUploadThirdPartyEvidence
 } from '../../utils/disputeHelpers';
@@ -19,14 +17,12 @@ const DisputeActions = ({ dispute }) => {
   const { 
     respondToDispute, 
     respondToAdminDecision, 
-    proposeAgreement, 
     respondToAgreement,
     uploadThirdPartyEvidence 
   } = useDispute();
 
   const [showRespondModal, setShowRespondModal] = useState(false);
   const [showAdminResponseModal, setShowAdminResponseModal] = useState(false);
-  const [showProposeModal, setShowProposeModal] = useState(false);
   const [showAgreementResponseModal, setShowAgreementResponseModal] = useState(false);
   const [showEvidenceModal, setShowEvidenceModal] = useState(false);
 
@@ -35,7 +31,6 @@ const DisputeActions = ({ dispute }) => {
   
   const userCanRespond = !isShipperFault && canRespond(dispute, user?._id);
   const userCanRespondToAdmin = canRespondToAdminDecision(dispute, user?._id);
-  const userCanPropose = !isShipperFault && canProposeAgreement(dispute, user?._id);
   const userCanRespondToProposal = !isShipperFault && canRespondToAgreement(dispute, user?._id);
   const userCanUploadEvidence = canUploadThirdPartyEvidence(dispute, user?._id);
 
@@ -47,11 +42,6 @@ const DisputeActions = ({ dispute }) => {
   const handleAdminResponse = async (data) => {
     await respondToAdminDecision(dispute._id, data);
     setShowAdminResponseModal(false);
-  };
-
-  const handleProposeAgreement = async (data) => {
-    await proposeAgreement(dispute._id, data);
-    setShowProposeModal(false);
   };
 
   const handleRespondToAgreement = async (data) => {
@@ -104,15 +94,6 @@ const DisputeActions = ({ dispute }) => {
           </button>
         )}
 
-        {userCanPropose && (
-          <button
-            onClick={() => setShowProposeModal(true)}
-            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
-          >
-            Đề xuất thỏa thuận
-          </button>
-        )}
-
         {userCanRespondToProposal && (
           <button
             onClick={() => setShowAgreementResponseModal(true)}
@@ -131,7 +112,7 @@ const DisputeActions = ({ dispute }) => {
           </button>
         )}
 
-        {!userCanRespond && !userCanRespondToAdmin && !userCanPropose && !userCanRespondToProposal && !userCanUploadEvidence && (
+        {!userCanRespond && !userCanRespondToAdmin && !userCanRespondToProposal && !userCanUploadEvidence && (
           <div className="text-center py-4 text-gray-500 text-sm">
             Không có hành động khả dụng
           </div>
@@ -151,13 +132,6 @@ const DisputeActions = ({ dispute }) => {
         onClose={() => setShowAdminResponseModal(false)}
         onSubmit={handleAdminResponse}
         dispute={dispute}
-      />
-
-      {/* Propose Agreement Modal */}
-      <ProposeAgreementModal
-        isOpen={showProposeModal}
-        onClose={() => setShowProposeModal(false)}
-        onSubmit={handleProposeAgreement}
       />
 
       {/* Agreement Response Modal */}

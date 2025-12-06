@@ -55,44 +55,54 @@ const ContractSigningInline = ({
     }
   }, [otpExpiry, otpSent, otpVerified]);
 
-  const startDrawing = (e) => {
-    if (!otpVerified) {
-      toast.error('Vui lòng xác minh OTP trước khi ký');
-      return;
-    }
-    
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    setIsDrawing(true);
-  };
+  const getCanvasPos = (e) => {
+  const canvas = canvasRef.current;
+  const rect = canvas.getBoundingClientRect();
 
-  const draw = (e) => {
-    if (!isDrawing || !otpVerified) return;
-    
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-  };
+  // Tính scale vì canvas width/height có thể khác CSS width/height
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
 
-  const stopDrawing = () => {
-    setIsDrawing(false);
-    const canvas = canvasRef.current;
-    setSignatureData(canvas.toDataURL());
-  };
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+
+  return { x, y };
+};
+
+const startDrawing = (e) => {
+  if (!otpVerified) {
+    toast.error('Vui lòng xác minh OTP trước khi ký');
+    return;
+  }
+
+  setIsDrawing(true);
+  const ctx = canvasRef.current.getContext("2d");
+  const { x, y } = getCanvasPos(e);
+
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+};
+
+const draw = (e) => {
+  if (!isDrawing || !otpVerified) return;
+
+  const ctx = canvasRef.current.getContext("2d");
+  const { x, y } = getCanvasPos(e);
+
+  ctx.lineTo(x, y);
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.stroke();
+};
+
+const stopDrawing = () => {
+  if (!isDrawing) return;
+  setIsDrawing(false);
+
+  const canvas = canvasRef.current;
+  setSignatureData(canvas.toDataURL());
+};
 
   const clearSignature = () => {
     const canvas = canvasRef.current;

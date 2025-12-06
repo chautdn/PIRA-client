@@ -73,10 +73,18 @@ const disputeApi = {
   },
 
   /**
-   * Owner đưa ra quyết định cuối cùng
+   * Owner đưa ra quyết định cuối cùng (Renter tạo dispute DELIVERY)
    */
   submitOwnerFinalDecision: async (disputeId, data) => {
     const response = await api.post(`/disputes/${disputeId}/negotiation/owner-decision`, data);
+    return response.data;
+  },
+
+  /**
+   * Owner đưa ra quyết định cuối cùng (Owner tạo dispute RETURN)
+   */
+  submitOwnerDisputeFinalDecision: async (disputeId, data) => {
+    const response = await api.post(`/disputes/${disputeId}/negotiation/owner-dispute-decision`, data);
     return response.data;
   },
 
@@ -185,6 +193,14 @@ const disputeApi = {
    */
   makeFinalDecision: async (disputeId, data) => {
     const response = await api.post(`/disputes/${disputeId}/admin/third-party/final-decision`, data);
+    return response.data;
+  },
+
+  /**
+   * Admin từ chối bằng chứng bên thứ 3
+   */
+  adminRejectThirdPartyEvidence: async (disputeId, data) => {
+    const response = await api.post(`/disputes/${disputeId}/admin/third-party/reject-evidence`, data);
     return response.data;
   },
 

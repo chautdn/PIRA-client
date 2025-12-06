@@ -9,6 +9,7 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
     type: '',
     title: '',
     description: '',
+    repairCost: 0, // Chi phí sửa chữa cho DAMAGED_ON_RETURN
     images: [],
     videos: []
   });
@@ -85,7 +86,7 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
       
       setIsUploading(false);
 
-      await onSubmit({
+      const submitData = {
         rentalOrderId: rentalOrder._id,
         ...formData,
         evidence: {
@@ -93,13 +94,21 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
           videos: videoResults.map(v => v.url),
           additionalInfo: formData.description
         }
-      });
+      };
+
+      // Thêm repairCost nếu là DAMAGED_ON_RETURN
+      if (formData.type === 'DAMAGED_ON_RETURN' && formData.repairCost > 0) {
+        submitData.repairCost = parseFloat(formData.repairCost);
+      }
+
+      await onSubmit(submitData);
       onClose();
       setFormData({
         shipmentType: 'DELIVERY',
         type: '',
         title: '',
         description: '',
+        repairCost: 0,
         images: [],
         videos: []
       });
@@ -233,6 +242,28 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
                 required
               />
             </div>
+
+            {/* Chi phí sửa chữa - chỉ hiện khi DAMAGED_ON_RETURN */}
+            {formData.type === 'DAMAGED_ON_RETURN' && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Chi phí sửa chữa/bồi thường (VNĐ) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={formData.repairCost}
+                  onChange={(e) => setFormData(prev => ({ ...prev, repairCost: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="Nhập chi phí ước tính..."
+                  required
+                />
+                <p className="text-xs text-orange-700 mt-2">
+                  💡 Nhập chi phí sửa chữa hoặc bồi thường mà bạn yêu cầu từ renter
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

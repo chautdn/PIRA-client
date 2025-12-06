@@ -1,50 +1,105 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import disputeApi from '../../services/dispute.Api';
 
 const AdminThirdPartyFinalDecisionModal = ({ isOpen, onClose, dispute, onSuccess }) => {
   const [formData, setFormData] = useState({
+    decision: '', // 'COMPLAINANT_RIGHT' or 'RESPONDENT_RIGHT'
     resolutionText: '',
     refundAmount: 0,
-    penaltyAmount: 0,
-    compensationAmount: 0,
-    paidBy: '',
-    paidTo: ''
+    penaltyAmount: 0
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [calculatedAmounts, setCalculatedAmounts] = useState({
+    depositRefund: 0,
+    rentalRefund: 0,
+    ownerCompensation: 0,
+    totalRefundToRenter: 0,
+    shippingFeeNote: ''
+  });
+
+  // Calculate amounts based on decision (giống quyết định sơ bộ)
+  useEffect(() => {
+    if (!dispute || !formData.decision) {
+      setCalculatedAmounts({
+        depositRefund: 0,
+        rentalRefund: 0,
+        ownerCompensation: 0,
+        totalRefundToRenter: 0,
+        shippingFeeNote: ''
+      });
+      return;
+    }
+
+    const product = dispute.subOrder?.products?.[dispute.productIndex];
+    if (!product) return;
+
+    const deposit = product.totalDeposit || 0;
+    const rental = product.totalRental || 0;
+    const shippingFee = product.totalShippingFee || 0;
+    
+    // Calculate rental days
+    const startDate = new Date(product.rentalPeriod?.startDate);
+    const endDate = new Date(product.rentalPeriod?.endDate);
+    const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) || 1;
+    const dailyRental = rental / totalDays;
+
+    if (formData.decision === 'COMPLAINANT_RIGHT') {
+      // Renter đúng -> Hoàn 100% deposit + 100% rental
+      setCalculatedAmounts({
+        depositRefund: deposit,
+        rentalRefund: rental,
+        ownerCompensation: 0,
+        totalRefundToRenter: deposit + rental,
+        shippingFeeNote: `Phí ship ${shippingFee.toLocaleString('vi-VN')}đ sẽ không được hoàn lại`
+      });
+      setFormData(prev => ({ 
+        ...prev, 
+        refundAmount: deposit + rental,
+        penaltyAmount: 0
+      }));
+    } else if (formData.decision === 'RESPONDENT_RIGHT') {
+      // Renter sai -> Hoàn 100% deposit + phạt 1 ngày thuê
+      const penaltyAmount = dailyRental;
+      const refundToRenter = deposit + rental - penaltyAmount;
+      
+      setCalculatedAmounts({
+        depositRefund: deposit,
+        rentalRefund: rental - penaltyAmount,
+        ownerCompensation: penaltyAmount,
+        totalRefundToRenter: refundToRenter,
+        shippingFeeNote: `Phí ship ${shippingFee.toLocaleString('vi-VN')}đ sẽ không được hoàn lại`
+      });
+      setFormData(prev => ({ 
+        ...prev, 
+        refundAmount: refundToRenter,
+        penaltyAmount: penaltyAmount
+      }));
+    }
+  }, [formData.decision, dispute]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate
-    if (!formData.resolutionText.trim()) {
-      toast.error('Vui lòng nhập quyết định cuối cùng');
+    if (!formData.decision) {
+      toast.error('Vui lòng chọn quyết định');
       return;
     }
 
-    // Validate financial impact
-    const totalAmount = formData.refundAmount + formData.penaltyAmount + formData.compensationAmount;
-    if (totalAmount > 0) {
-      if (!formData.paidBy || !formData.paidTo) {
-        toast.error('Vui lòng chọn người trả và người nhận tiền');
-        return;
-      }
-      if (formData.paidBy === formData.paidTo) {
-        toast.error('Người trả và người nhận không thể giống nhau');
-        return;
-      }
+    if (!formData.resolutionText.trim()) {
+      toast.error('Vui lòng nhập giải thích quyết định');
+      return;
     }
 
     setIsLoading(true);
     try {
       const payload = {
         resolutionText: formData.resolutionText,
+        decision: formData.decision,
         financialImpact: {
           refundAmount: Number(formData.refundAmount) || 0,
-          penaltyAmount: Number(formData.penaltyAmount) || 0,
-          compensationAmount: Number(formData.compensationAmount) || 0,
-          paidBy: formData.paidBy || undefined,
-          paidTo: formData.paidTo || undefined
+          penaltyAmount: Number(formData.penaltyAmount) || 0
         }
       };
 
@@ -106,14 +161,93 @@ const AdminThirdPartyFinalDecisionModal = ({ isOpen, onClose, dispute, onSuccess
           )}
 
           <div className="space-y-6">
-            {/* Quyết định cuối cùng */}
+            {/* Chọn quyết định */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Quyết định cuối cùng <span className="text-red-500">*</span>
+              </label>
+              <div className="space-y-3">
+                {/* Renter đúng */}
+                <label className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  formData.decision === 'COMPLAINANT_RIGHT' 
+                    ? 'bg-green-50 border-green-500' 
+                    : 'border-gray-300 hover:bg-green-50 hover:border-green-300'
+                }`}>
+                  <input
+                    type="radio"
+                    checked={formData.decision === 'COMPLAINANT_RIGHT'}
+                    onChange={() => setFormData(prev => ({ ...prev, decision: 'COMPLAINANT_RIGHT' }))}
+                    className="mt-1 mr-3"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-semibold text-gray-900">Người khiếu nại đúng (Renter)</span>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Owner có lỗi → Renter được hoàn 100% tiền cọc + tiền thuê
+                    </p>
+                    {formData.decision === 'COMPLAINANT_RIGHT' && calculatedAmounts.totalRefundToRenter > 0 && (
+                      <div className="bg-white border border-green-200 rounded p-3 mt-3 text-xs space-y-1">
+                        <div className="font-medium text-green-900 mb-2">💰 Chi tiết tài chính:</div>
+                        <div className="text-green-800">✓ Hoàn tiền cọc: {calculatedAmounts.depositRefund.toLocaleString('vi-VN')}đ</div>
+                        <div className="text-green-800">✓ Hoàn tiền thuê: {calculatedAmounts.rentalRefund.toLocaleString('vi-VN')}đ</div>
+                        <div className="font-semibold text-green-900 pt-1 border-t border-green-200 mt-2">
+                          Tổng hoàn cho Renter: {calculatedAmounts.totalRefundToRenter.toLocaleString('vi-VN')}đ
+                        </div>
+                        {calculatedAmounts.shippingFeeNote && (
+                          <div className="text-gray-600 mt-2">⚠️ {calculatedAmounts.shippingFeeNote}</div>
+                        )}
+                        <div className="text-green-800 mt-2">✓ Renter: +5đ credit (nếu {'<'}100) + 5đ loyalty</div>
+                        <div className="text-red-800">✗ Owner: -30đ credit + 5đ loyalty + Cảnh cáo</div>
+                      </div>
+                    )}
+                  </div>
+                </label>
+                
+                {/* Owner đúng */}
+                <label className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  formData.decision === 'RESPONDENT_RIGHT' 
+                    ? 'bg-red-50 border-red-500' 
+                    : 'border-gray-300 hover:bg-red-50 hover:border-red-300'
+                }`}>
+                  <input
+                    type="radio"
+                    checked={formData.decision === 'RESPONDENT_RIGHT'}
+                    onChange={() => setFormData(prev => ({ ...prev, decision: 'RESPONDENT_RIGHT' }))}
+                    className="mt-1 mr-3"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-semibold text-gray-900">Bên bị khiếu nại đúng (Owner)</span>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Renter có lỗi → Hoàn tiền cọc + tiền thuê - phạt 1 ngày thuê
+                    </p>
+                    {formData.decision === 'RESPONDENT_RIGHT' && calculatedAmounts.totalRefundToRenter > 0 && (
+                      <div className="bg-white border border-red-200 rounded p-3 mt-3 text-xs space-y-1">
+                        <div className="font-medium text-red-900 mb-2">💰 Chi tiết tài chính:</div>
+                        <div className="text-green-800">✓ Hoàn tiền cọc: {calculatedAmounts.depositRefund.toLocaleString('vi-VN')}đ</div>
+                        <div className="text-green-800">✓ Hoàn tiền thuê: {calculatedAmounts.rentalRefund.toLocaleString('vi-VN')}đ</div>
+                        <div className="text-red-800">✗ Phạt Renter (1 ngày): -{calculatedAmounts.ownerCompensation.toLocaleString('vi-VN')}đ</div>
+                        <div className="font-semibold text-blue-900 pt-1 border-t border-red-200 mt-2">
+                          Tổng hoàn cho Renter: {calculatedAmounts.totalRefundToRenter.toLocaleString('vi-VN')}đ
+                        </div>
+                        {calculatedAmounts.shippingFeeNote && (
+                          <div className="text-gray-600 mt-2">⚠️ {calculatedAmounts.shippingFeeNote}</div>
+                        )}
+                        <div className="text-green-800 mt-2">✓ Owner nhận bù: +{calculatedAmounts.ownerCompensation.toLocaleString('vi-VN')}đ</div>
+                        <div className="text-red-800">✗ Renter: -30đ credit + 5đ loyalty + Cảnh cáo</div>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Giải thích quyết định */}
             <div>
               <label htmlFor="resolutionText" className="block text-sm font-medium text-gray-700 mb-2">
-                Quyết định cuối cùng của Admin <span className="text-red-500">*</span>
+                Giải thích quyết định <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="resolutionText"
-                rows={6}
+                rows={5}
                 value={formData.resolutionText}
                 onChange={(e) => setFormData({...formData, resolutionText: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
@@ -121,122 +255,8 @@ const AdminThirdPartyFinalDecisionModal = ({ isOpen, onClose, dispute, onSuccess
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Hãy giải thích rõ ràng quyết định dựa trên kết quả từ bên thứ 3
+                Hãy giải thích rõ ràng quyết định dựa trên bằng chứng từ bên thứ 3
               </p>
-            </div>
-
-            {/* Tác động tài chính */}
-            <div className="border-t pt-4">
-              <h4 className="font-semibold text-gray-900 mb-4">Tác động tài chính (nếu có)</h4>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label htmlFor="refundAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                    Số tiền hoàn lại (VNĐ)
-                  </label>
-                  <input
-                    type="number"
-                    id="refundAmount"
-                    min="0"
-                    step="1000"
-                    value={formData.refundAmount}
-                    onChange={(e) => setFormData({...formData, refundAmount: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="penaltyAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                    Số tiền phạt (VNĐ)
-                  </label>
-                  <input
-                    type="number"
-                    id="penaltyAmount"
-                    min="0"
-                    step="1000"
-                    value={formData.penaltyAmount}
-                    onChange={(e) => setFormData({...formData, penaltyAmount: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="compensationAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                    Số tiền bồi thường (VNĐ)
-                  </label>
-                  <input
-                    type="number"
-                    id="compensationAmount"
-                    min="0"
-                    step="1000"
-                    value={formData.compensationAmount}
-                    onChange={(e) => setFormData({...formData, compensationAmount: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              {/* Người trả và người nhận */}
-              {(formData.refundAmount > 0 || formData.penaltyAmount > 0 || formData.compensationAmount > 0) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                  <div>
-                    <label htmlFor="paidBy" className="block text-sm font-medium text-gray-700 mb-2">
-                      Người trả tiền <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="paidBy"
-                      value={formData.paidBy}
-                      onChange={(e) => setFormData({...formData, paidBy: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      required
-                    >
-                      <option value="">-- Chọn người trả --</option>
-                      <option value={dispute.complainant._id}>
-                        {dispute.complainant.profile?.fullName} (Người khiếu nại)
-                      </option>
-                      <option value={dispute.respondent._id}>
-                        {dispute.respondent.profile?.fullName} (Bên bị khiếu nại)
-                      </option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="paidTo" className="block text-sm font-medium text-gray-700 mb-2">
-                      Người nhận tiền <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="paidTo"
-                      value={formData.paidTo}
-                      onChange={(e) => setFormData({...formData, paidTo: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      required
-                    >
-                      <option value="">-- Chọn người nhận --</option>
-                      <option value={dispute.complainant._id}>
-                        {dispute.complainant.profile?.fullName} (Người khiếu nại)
-                      </option>
-                      <option value={dispute.respondent._id}>
-                        {dispute.respondent.profile?.fullName} (Bên bị khiếu nại)
-                      </option>
-                    </select>
-                  </div>
-
-                  {/* Tổng tiền */}
-                  <div className="md:col-span-2 bg-white p-3 rounded border border-gray-300">
-                    <p className="text-sm font-medium text-gray-700">Tổng cộng:</p>
-                    <p className="text-2xl font-bold text-purple-600 mt-1">
-                      {(
-                        Number(formData.refundAmount || 0) + 
-                        Number(formData.penaltyAmount || 0) + 
-                        Number(formData.compensationAmount || 0)
-                      ).toLocaleString('vi-VN')} VNĐ
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Cảnh báo */}
@@ -258,32 +278,49 @@ const AdminThirdPartyFinalDecisionModal = ({ isOpen, onClose, dispute, onSuccess
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-6 mt-6 border-t border-gray-200">
+          <div className="flex justify-between pt-6 mt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                if (window.confirm('Bạn có chắc muốn từ chối bằng chứng này? Dispute sẽ quay lại trạng thái THIRD_PARTY_ESCALATED và yêu cầu upload lại bằng chứng.')) {
+                  onClose();
+                  // Trigger reject modal in parent
+                  window.dispatchEvent(new CustomEvent('openRejectEvidenceModal'));
+                }
+              }}
               disabled={isLoading}
-              className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium disabled:opacity-50"
+              className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium disabled:opacity-50"
             >
-              Hủy
+              Từ chối bằng chứng
             </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 flex items-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Đang xử lý...
-                </>
-              ) : (
-                'Đưa ra quyết định cuối cùng'
-              )}
-            </button>
+            
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="px-6 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  'Đưa ra quyết định cuối cùng'
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
