@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ownerProductApi } from "../../services/ownerProduct.Api";
-import { FiArrowLeft, FiSave, FiImage, FiX } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiSave,
+  FiImage,
+  FiX,
+  FiCheckCircle,
+} from "react-icons/fi";
 import ConfirmModal from "../../components/owner/ConfirmModal";
 
 export default function OwnerProductEdit() {
@@ -18,6 +24,7 @@ export default function OwnerProductEdit() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    quantity: "",
   });
 
   const [pricingData, setPricingData] = useState({
@@ -30,17 +37,29 @@ export default function OwnerProductEdit() {
 
   const [newImages, setNewImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]); // Track images to delete
+  const [quantityValidation, setQuantityValidation] = useState(null);
+  const [imageValidationError, setImageValidationError] = useState(null);
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: null,
     imageId: null,
     message: null,
+    quantityConflict: null,
   });
 
   useEffect(() => {
     loadProduct();
     checkPricingEditPermission();
   }, [productId]);
+
+  // Cleanup image previews on unmount or when navigating away
+  useEffect(() => {
+    return () => {
+      // Revoke all object URLs to prevent memory leaks
+      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
+    };
+  }, [imagePreviews]);
 
   const loadProduct = async () => {
     try {
@@ -52,6 +71,7 @@ export default function OwnerProductEdit() {
         setFormData({
           title: res.data.title || "",
           description: res.data.description || "",
+          quantity: res.data.availability?.quantity || "",
         });
         setPricingData({
           dailyRate: res.data.pricing?.dailyRate || "",
@@ -83,12 +103,34 @@ export default function OwnerProductEdit() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    // If quantity changed, validate it
+    if (name === "quantity" && value && product?.availability?.quantity) {
+      const newQuantity = parseInt(value);
+      if (
+        !isNaN(newQuantity) &&
+        newQuantity !== product.availability.quantity
+      ) {
+        try {
+          const validation = await ownerProductApi.validateQuantityChange(
+            productId,
+            newQuantity
+          );
+          setQuantityValidation(validation.data);
+        } catch (err) {
+          console.error("Error validating quantity:", err);
+          setQuantityValidation(null);
+        }
+      } else {
+        setQuantityValidation(null);
+      }
+    }
   };
 
   const handlePricingChange = (e) => {
@@ -101,12 +143,23 @@ export default function OwnerProductEdit() {
 
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
+    setImageValidationError(null);
 
-    if (files.length + (product?.images?.length || 0) + newImages.length > 10) {
+    // Calculate total after adding new images (excluding images marked for deletion)
+    const currentExistingImages = product?.images?.length || 0;
+    const imagesToDeleteCount = imagesToDelete.length;
+    const remainingExistingImages = currentExistingImages - imagesToDeleteCount;
+    const currentNewImages = newImages.length;
+    const totalAfterAdd =
+      remainingExistingImages + currentNewImages + files.length;
+
+    if (totalAfterAdd > 10) {
       setModalState({
         isOpen: true,
         type: "error",
-        message: "Tối đa 10 hình ảnh. Vui lòng xóa một số hình ảnh hiện tại trước khi thêm mới.",
+        message: `Tối đa 10 hình ảnh. Sau khi tính toán: ${remainingExistingImages} hình cũ (đã trừ ${imagesToDeleteCount} hình đánh dấu xóa) + ${currentNewImages} hình mới. Bạn chỉ có thể thêm tối đa ${
+          10 - remainingExistingImages - currentNewImages
+        } hình nữa.`,
       });
       return;
     }
@@ -125,6 +178,22 @@ export default function OwnerProductEdit() {
   };
 
   const removeExistingImage = (imageId) => {
+    // Check if removing this image would bring total below 3
+    const currentExistingImages = product?.images?.length || 0;
+    const alreadyMarkedForDeletion = imagesToDelete.length;
+    const currentNewImages = newImages.length;
+    const totalAfterRemove =
+      currentExistingImages - alreadyMarkedForDeletion - 1 + currentNewImages;
+
+    if (totalAfterRemove < 3) {
+      setModalState({
+        isOpen: true,
+        type: "error",
+        message: `Không thể xóa hình này. Sản phẩm cần ít nhất 3 hình ảnh. Sau khi xóa sẽ còn ${totalAfterRemove} hình. Vui lòng thêm hình mới trước khi xóa hình này.`,
+      });
+      return;
+    }
+
     setModalState({
       isOpen: true,
       type: "deleteImage",
@@ -132,22 +201,10 @@ export default function OwnerProductEdit() {
     });
   };
 
-  const confirmDeleteImage = async () => {
-    try {
-      await ownerProductApi.deleteImage(productId, modalState.imageId);
-      setProduct((prev) => ({
-        ...prev,
-        images: prev.images.filter((img) => img._id !== modalState.imageId),
-      }));
-      setModalState({ isOpen: false, type: null, imageId: null });
-    } catch (err) {
-      console.error("Error deleting image:", err);
-      setModalState({
-        isOpen: true,
-        type: "error",
-        message: err.message || "Không thể xóa hình ảnh",
-      });
-    }
+  const confirmDeleteImage = () => {
+    // Stage the image for deletion (don't delete from backend yet)
+    setImagesToDelete((prev) => [...prev, modalState.imageId]);
+    setModalState({ isOpen: false, type: null, imageId: null });
   };
 
   const handleSubmit = async (e) => {
@@ -156,12 +213,73 @@ export default function OwnerProductEdit() {
     try {
       setSaving(true);
       setError(null);
+      setImageValidationError(null);
 
+      // Calculate final image count (existing - to delete + new to upload)
+      const existingCount = product?.images?.length || 0;
+      const deleteCount = imagesToDelete.length;
+      const newCount = newImages.length;
+      const finalImageCount = existingCount - deleteCount + newCount;
+
+      // Validate minimum images requirement (3 images)
+      if (finalImageCount < 3) {
+        setImageValidationError(
+          `Sản phẩm cần ít nhất 3 hình ảnh. Hiện có ${existingCount} hình cũ - ${deleteCount} hình sẽ xóa + ${newCount} hình mới (tổng: ${finalImageCount}). Vui lòng thêm ${
+            3 - finalImageCount
+          } hình ảnh nữa.`
+        );
+        setSaving(false);
+        return;
+      }
+
+      // Validate quantity change if changed
+      if (
+        formData.quantity &&
+        parseInt(formData.quantity) !== product?.availability?.quantity
+      ) {
+        const newQuantity = parseInt(formData.quantity);
+        const validation = await ownerProductApi.validateQuantityChange(
+          productId,
+          newQuantity
+        );
+
+        if (!validation.data.canChange) {
+          setModalState({
+            isOpen: true,
+            type: "quantityConflict",
+            quantityConflict: validation.data,
+          });
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Step 1: Delete images marked for deletion
+      for (const imageId of imagesToDelete) {
+        try {
+          await ownerProductApi.deleteImage(productId, imageId);
+        } catch (err) {
+          console.error("Error deleting image:", err);
+          setError(`Không thể xóa hình ảnh: ${err.message}`);
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Step 2: Update product with new data
       const updateData = new FormData();
       updateData.append("title", formData.title);
       updateData.append("description", formData.description);
 
-      // Add new images if any
+      // Add quantity if changed
+      if (
+        formData.quantity &&
+        parseInt(formData.quantity) !== product?.availability?.quantity
+      ) {
+        updateData.append("availability[quantity]", formData.quantity);
+      }
+
+      // Add new images if any (these will be validated by backend AI)
       newImages.forEach((image) => {
         updateData.append("images", image);
       });
@@ -172,6 +290,15 @@ export default function OwnerProductEdit() {
       );
 
       if (res.success) {
+        // Clear all staged changes after successful upload
+        setNewImages([]);
+        imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
+        setImagePreviews([]);
+        setImagesToDelete([]);
+
+        // Reload product data to reflect changes
+        await loadProduct();
+
         setModalState({
           isOpen: true,
           type: "success",
@@ -180,7 +307,31 @@ export default function OwnerProductEdit() {
       }
     } catch (err) {
       console.error("Error updating product:", err);
-      setError(err.message || "Không thể cập nhật sản phẩm");
+
+      // Handle image validation errors from backend AI
+      if (
+        err.errorType === "IMAGE_VALIDATION_ERROR" ||
+        err.errorType === "NSFW_VIOLATION" ||
+        err.errorType === "CATEGORY_MISMATCH"
+      ) {
+        setImageValidationError(
+          err.details?.reason || err.message || "Hình ảnh không hợp lệ"
+        );
+        setModalState({
+          isOpen: true,
+          type: "imageValidationError",
+          message: err.details?.reason || err.message,
+          details: err.details,
+        });
+      } else if (err.errorType === "QUANTITY_CONFLICT") {
+        setModalState({
+          isOpen: true,
+          type: "quantityConflict",
+          quantityConflict: err.validationDetails,
+        });
+      } else {
+        setError(err.message || "Không thể cập nhật sản phẩm");
+      }
     } finally {
       setSaving(false);
     }
@@ -253,7 +404,9 @@ export default function OwnerProductEdit() {
             <FiArrowLeft />
             Quay lại
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Chỉnh Sửa Sản Phẩm</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Chỉnh Sửa Sản Phẩm
+          </h1>
           <p className="text-gray-600 mt-2">
             Cập nhật tên, mô tả và hình ảnh sản phẩm
           </p>
@@ -280,11 +433,20 @@ export default function OwnerProductEdit() {
                 Chỉnh sửa sản phẩm
               </h3>
               <p className="mt-1 text-sm text-blue-700">
-                Bạn có thể cập nhật tên, mô tả và hình ảnh sản phẩm bất kỳ lúc nào. 
+                Bạn có thể cập nhật tên, mô tả và hình ảnh sản phẩm bất kỳ lúc
+                nào.
                 {canEditPricing ? (
-                  <strong className="text-green-700"> Giá cả có thể được chỉnh sửa vì sản phẩm không có yêu cầu thuê đang chờ hoặc đang được thuê.</strong>
+                  <strong className="text-green-700">
+                    {" "}
+                    Giá cả có thể được chỉnh sửa vì sản phẩm không có yêu cầu
+                    thuê đang chờ hoặc đang được thuê.
+                  </strong>
                 ) : (
-                  <strong className="text-orange-700"> Giá cả không thể thay đổi vì sản phẩm có yêu cầu thuê đang chờ xử lý hoặc đang được thuê.</strong>
+                  <strong className="text-orange-700">
+                    {" "}
+                    Giá cả không thể thay đổi vì sản phẩm có yêu cầu thuê đang
+                    chờ xử lý hoặc đang được thuê.
+                  </strong>
                 )}
               </p>
             </div>
@@ -344,34 +506,129 @@ export default function OwnerProductEdit() {
             </p>
           </div>
 
+          {/* Product Quantity */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Số lượng sản phẩm <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="quantity"
+              value={formData.quantity}
+              onChange={handleInputChange}
+              required
+              min="0"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="Nhập số lượng sản phẩm"
+            />
+            {quantityValidation && !quantityValidation.canChange && (
+              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 font-medium">
+                  ⚠️ {quantityValidation.message}
+                </p>
+                <p className="text-xs text-red-600 mt-1">
+                  Có {quantityValidation.conflicts?.length} ngày bị ảnh hưởng
+                  với tổng {quantityValidation.totalAffectedOrders} đơn hàng
+                </p>
+              </div>
+            )}
+            {quantityValidation &&
+              quantityValidation.canChange &&
+              formData.quantity !== product?.availability?.quantity && (
+                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-700">
+                    ✓ Có thể thay đổi số lượng an toàn
+                  </p>
+                </div>
+              )}
+          </div>
+
           {/* Existing Images */}
           {product?.images && product.images.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Hình ảnh Hiện tại ({product.images.length})
+                Hình ảnh Hiện tại (
+                {
+                  product.images.filter(
+                    (img) => !imagesToDelete.includes(img._id)
+                  ).length
+                }
+                )
+                {imagesToDelete.length > 0 && (
+                  <span className="ml-2 text-orange-600 text-xs">
+                    ({imagesToDelete.length} hình sẽ bị xóa khi lưu)
+                  </span>
+                )}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {product.images.map((image) => (
-                  <div key={image._id} className="relative group">
-                    <img
-                      src={typeof image === "string" ? image : image.url}
-                      alt={image.alt || "Hình ảnh sản phẩm"}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeExistingImage(image._id)}
-                      className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                {product.images.map((image) => {
+                  const isMarkedForDeletion = imagesToDelete.includes(
+                    image._id
+                  );
+                  return (
+                    <div
+                      key={image._id}
+                      className={`relative group ${
+                        isMarkedForDeletion ? "opacity-50" : ""
+                      }`}
                     >
-                      <FiX size={16} />
-                    </button>
-                    {image.isMain && (
-                      <div className="absolute bottom-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
-                        Chính
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      <img
+                        src={typeof image === "string" ? image : image.url}
+                        alt={image.alt || "Hình ảnh sản phẩm"}
+                        className={`w-full h-32 object-cover rounded-lg ${
+                          isMarkedForDeletion ? "grayscale" : ""
+                        }`}
+                      />
+                      {isMarkedForDeletion ? (
+                        <>
+                          <div className="absolute inset-0 bg-red-500 bg-opacity-30 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-sm bg-red-600 px-2 py-1 rounded">
+                              Sẽ xóa
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setImagesToDelete((prev) =>
+                                prev.filter((id) => id !== image._id)
+                              )
+                            }
+                            className="absolute top-2 right-2 bg-blue-600 text-white p-1.5 rounded-full hover:bg-blue-700"
+                            title="Hủy xóa hình ảnh"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                              />
+                            </svg>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(image._id)}
+                          className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                          title="Xóa hình ảnh"
+                        >
+                          <FiX size={16} />
+                        </button>
+                      )}
+                      {image.isMain && !isMarkedForDeletion && (
+                        <div className="absolute bottom-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                          Chính
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -379,8 +636,69 @@ export default function OwnerProductEdit() {
           {/* New Images */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Thêm Hình ảnh Mới (Không bắt buộc)
+              Thêm Hình ảnh Mới
+              {(() => {
+                const remaining =
+                  (product?.images?.length || 0) -
+                  imagesToDelete.length +
+                  newImages.length;
+                return remaining < 3 ? (
+                  <span className="ml-2 text-red-600 text-xs font-semibold">
+                    (Cần ít nhất 3 hình - Hiện có: {remaining}/3)
+                  </span>
+                ) : (
+                  <span className="ml-2 text-green-600 text-xs font-semibold">
+                    (Tổng: {remaining} hình ảnh)
+                  </span>
+                );
+              })()}
             </label>
+
+            {imageValidationError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 font-medium">
+                  ⚠️ {imageValidationError}
+                </p>
+              </div>
+            )}
+
+            {/* Info box about image requirements */}
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex gap-2">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-blue-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-blue-800 mb-1">
+                    Yêu cầu hình ảnh
+                  </h4>
+                  <ul className="text-xs text-blue-700 space-y-1">
+                    <li>
+                      • Tối thiểu: <strong>3 hình ảnh</strong>
+                    </li>
+                    <li>
+                      • Tối đa: <strong>10 hình ảnh</strong>
+                    </li>
+                    <li>
+                      • Hình ảnh sẽ được kiểm tra bởi AI (nội dung phù hợp &
+                      đúng danh mục)
+                    </li>
+                    <li>• Bạn có thể xóa hình cũ nếu tổng số hình vẫn ≥ 3</li>
+                    <li>• Hình mới chỉ được lưu khi bấm "Lưu Thay đổi"</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
 
             {imagePreviews.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
@@ -461,7 +779,8 @@ export default function OwnerProductEdit() {
                 </span>
               </div>
               <p className="text-sm text-green-700 mb-4">
-                Sản phẩm không có yêu cầu thuê đang chờ xử lý hoặc đang được thuê. Bạn có thể cập nhật giá.
+                Sản phẩm không có yêu cầu thuê đang chờ xử lý hoặc đang được
+                thuê. Bạn có thể cập nhật giá.
               </p>
 
               <form onSubmit={handlePricingSubmit} className="space-y-4">
@@ -529,7 +848,8 @@ export default function OwnerProductEdit() {
                 )}
               </div>
               <p className="text-xs text-orange-600 mb-3 bg-orange-50 p-2 rounded">
-                ⚠️ Không thể chỉnh sửa giá vì sản phẩm có yêu cầu thuê đang chờ xử lý hoặc đang được thuê
+                ⚠️ Không thể chỉnh sửa giá vì sản phẩm có yêu cầu thuê đang chờ
+                xử lý hoặc đang được thuê
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
@@ -580,8 +900,22 @@ export default function OwnerProductEdit() {
           <div className="flex gap-4 pt-4">
             <button
               type="submit"
-              disabled={saving}
+              disabled={
+                saving ||
+                (product?.images?.length || 0) -
+                  imagesToDelete.length +
+                  newImages.length <
+                  3
+              }
               className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+              title={
+                (product?.images?.length || 0) -
+                  imagesToDelete.length +
+                  newImages.length <
+                3
+                  ? "Cần ít nhất 3 hình ảnh"
+                  : ""
+              }
             >
               {saving ? (
                 <>
@@ -595,57 +929,285 @@ export default function OwnerProductEdit() {
                 </>
               )}
             </button>
-            <Link
-              to="/owner/products"
+            <button
+              type="button"
+              onClick={() => {
+                // Cleanup image previews before navigating
+                imagePreviews.forEach((preview) =>
+                  URL.revokeObjectURL(preview)
+                );
+                // Reset all staged changes
+                setNewImages([]);
+                setImagePreviews([]);
+                setImagesToDelete([]);
+                navigate("/owner/products");
+              }}
               className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-center"
             >
               Hủy
-            </Link>
+            </button>
           </div>
         </form>
       </div>
 
       {/* Confirmation Modal */}
-      <ConfirmModal
-        isOpen={modalState.isOpen}
-        onClose={() => {
-          setModalState({ isOpen: false, type: null, imageId: null, message: null });
-          if (modalState.type === "success") {
-            navigate("/owner/products");
+      {modalState.type === "quantityConflict" ? (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() =>
+              setModalState({
+                isOpen: false,
+                type: null,
+                quantityConflict: null,
+              })
+            }
+          ></div>
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
+              <button
+                onClick={() =>
+                  setModalState({
+                    isOpen: false,
+                    type: null,
+                    quantityConflict: null,
+                  })
+                }
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <FiX className="w-6 h-6" />
+              </button>
+
+              <h2 className="text-2xl font-bold text-red-700 mb-4">
+                ⚠️ Không thể giảm số lượng
+              </h2>
+
+              <p className="text-gray-700 mb-6">
+                Bạn không thể giảm số lượng từ{" "}
+                {modalState.quantityConflict?.currentQuantity} xuống{" "}
+                {modalState.quantityConflict?.requestedQuantity}
+                vì có đơn hàng đã xác nhận sẽ bị ảnh hưởng.
+              </p>
+
+              {modalState.quantityConflict?.conflicts &&
+                modalState.quantityConflict.conflicts.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-lg mb-3">
+                      Các ngày bị ảnh hưởng (
+                      {modalState.quantityConflict.conflicts.length} ngày)
+                    </h3>
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {modalState.quantityConflict.conflicts
+                        .slice(0, 5)
+                        .map((conflict, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-red-50 border border-red-200 rounded-lg p-3"
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-medium text-red-800">
+                                {conflict.date}
+                              </span>
+                              <span className="text-sm text-red-600">
+                                Cần: {conflict.requiredQuantity} | Thiếu:{" "}
+                                {conflict.deficit}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              {conflict.ordersOnDate?.length} đơn hàng vào ngày
+                              này
+                            </div>
+                          </div>
+                        ))}
+                      {modalState.quantityConflict.conflicts.length > 5 && (
+                        <p className="text-sm text-gray-500 text-center">
+                          ... và{" "}
+                          {modalState.quantityConflict.conflicts.length - 5}{" "}
+                          ngày khác
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+              {modalState.quantityConflict?.recommendation?.options && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-lg mb-3">
+                    Bạn có thể làm gì?
+                  </h3>
+                  <div className="space-y-3">
+                    {modalState.quantityConflict.recommendation.options.map(
+                      (option, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                        >
+                          <h4 className="font-medium text-blue-900 mb-1">
+                            {option.title}
+                          </h4>
+                          <p className="text-sm text-blue-700 mb-2">
+                            {option.description}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            <strong>Hành động:</strong> {option.action}
+                          </p>
+                          {option.warning && (
+                            <p className="text-xs text-orange-600 mt-2">
+                              ⚠️ {option.warning}
+                            </p>
+                          )}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    setModalState({
+                      isOpen: false,
+                      type: null,
+                      quantityConflict: null,
+                      imageId: null,
+                      message: null,
+                    });
+                  }}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Đã hiểu
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : modalState.type === "imageValidationError" ? (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() =>
+              setModalState({
+                isOpen: false,
+                type: null,
+                imageId: null,
+                message: null,
+                details: null,
+              })
+            }
+          ></div>
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+              <button
+                onClick={() =>
+                  setModalState({
+                    isOpen: false,
+                    type: null,
+                    imageId: null,
+                    message: null,
+                    details: null,
+                  })
+                }
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              >
+                <FiX className="w-6 h-6" />
+              </button>
+
+              <div className="flex justify-center mb-4">
+                <FiCheckCircle className="w-12 h-12 text-red-600" />
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                Hình ảnh không hợp lệ
+              </h3>
+
+              <p className="text-gray-600 text-center mb-4">
+                {modalState.message}
+              </p>
+
+              {modalState.details?.suggestion && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-blue-700">
+                    💡 {modalState.details.suggestion}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    setModalState({
+                      isOpen: false,
+                      type: null,
+                      imageId: null,
+                      message: null,
+                      details: null,
+                    });
+                  }}
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Đã hiểu
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <ConfirmModal
+          isOpen={modalState.isOpen}
+          onClose={() => {
+            setModalState({
+              isOpen: false,
+              type: null,
+              imageId: null,
+              message: null,
+              quantityConflict: null,
+              details: null,
+            });
+            if (modalState.type === "success") {
+              navigate("/owner/products");
+            }
+          }}
+          onConfirm={() => {
+            if (modalState.type === "deleteImage") {
+              confirmDeleteImage();
+            } else if (modalState.type === "success") {
+              navigate("/owner/products");
+            } else {
+              setModalState({
+                isOpen: false,
+                type: null,
+                imageId: null,
+                message: null,
+                quantityConflict: null,
+                details: null,
+              });
+            }
+          }}
+          type={modalState.type}
+          title={
+            modalState.type === "deleteImage"
+              ? "Xóa Hình ảnh"
+              : modalState.type === "success"
+              ? "Thành công"
+              : modalState.type === "error"
+              ? "Lỗi"
+              : ""
           }
-        }}
-        onConfirm={() => {
-          if (modalState.type === "deleteImage") {
-            confirmDeleteImage();
-          } else if (modalState.type === "success") {
-            navigate("/owner/products");
+          message={
+            modalState.message ||
+            (modalState.type === "deleteImage"
+              ? "Bạn có chắc chắn muốn xóa hình ảnh này không?"
+              : "")
           }
-        }}
-        type={modalState.type}
-        title={
-          modalState.type === "deleteImage"
-            ? "Xóa Hình ảnh"
-            : modalState.type === "success"
-            ? "Thành công"
-            : modalState.type === "error"
-            ? "Lỗi"
-            : ""
-        }
-        message={
-          modalState.message ||
-          (modalState.type === "deleteImage"
-            ? "Bạn có chắc chắn muốn xóa hình ảnh này không?"
-            : "")
-        }
-        confirmText={
-          modalState.type === "deleteImage"
-            ? "Xóa"
-            : "Đóng"
-        }
-        cancelText={
-          modalState.type === "success" || modalState.type === "error" ? null : "Hủy"
-        }
-      />
+          confirmText={modalState.type === "deleteImage" ? "Xóa" : "Đóng"}
+          cancelText={
+            modalState.type === "success" || modalState.type === "error"
+              ? null
+              : "Hủy"
+          }
+        />
+      )}
     </div>
   );
 }

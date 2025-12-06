@@ -6,6 +6,7 @@ import {
   FiTrash2,
   FiX,
   FiAlertCircle,
+  FiCheckCircle,
 } from "react-icons/fi";
 
 export default function ConfirmModal({
@@ -31,6 +32,8 @@ export default function ConfirmModal({
         return <FiEye className="w-12 h-12 text-green-600" />;
       case "error":
         return <FiAlertCircle className="w-12 h-12 text-red-600" />;
+      case "success":
+        return <FiCheckCircle className="w-12 h-12 text-green-600" />;
       default:
         return <FiAlertTriangle className="w-12 h-12 text-yellow-600" />;
     }
@@ -45,6 +48,8 @@ export default function ConfirmModal({
       case "hide":
         return "bg-orange-600 hover:bg-orange-700 text-white";
       case "unhide":
+        return "bg-green-600 hover:bg-green-700 text-white";
+      case "success":
         return "bg-green-600 hover:bg-green-700 text-white";
       default:
         return "bg-blue-600 hover:bg-blue-700 text-white";
