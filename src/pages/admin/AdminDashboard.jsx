@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/admin';
+import icons from "../../utils/icons";
+import RevenueChart from '../../components/admin/charts/RevenueChart';
+import RevenuePieChart from '../../components/admin/charts/RevenuePieChart';
+import ProfitChart from '../../components/admin/charts/ProfitChart';
+import ComparisonChart from '../../components/admin/charts/ComparisonChart';
+import ExportButtons from '../../components/admin/charts/ExportButtons';
+import UserRoleChart from '../../components/admin/charts/UserRoleChart';
+import ProductStatusChart from '../../components/admin/charts/ProductStatusChart';
+import MonthlyUserChart from '../../components/admin/charts/MonthlyUserChart';
+import MonthlyRevenueChart from '../../components/admin/charts/MonthlyRevenueChart';
+import { format, subDays, subMonths, subWeeks, startOfQuarter, subQuarters } from 'date-fns';
+
+const { FiUser, FiPackage, BsCart4, BiCategory, BiLoaderAlt, BiCheckCircle, FiDollarSign, FiAlertTriangle, FiSettings, FiTruck, BiErrorCircle, FiEdit3, IoBarChart, LuBoxes, FiCalendar, FiFilter } = icons;
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -18,13 +31,25 @@ const AdminDashboard = () => {
       monthlyRevenue: []
     }
   });
+  const [revenueStats, setRevenueStats] = useState(null);
+  const [profitStats, setProfitStats] = useState(null);
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
+    loadStatistics();
   }, []);
+
+  useEffect(() => {
+    if (selectedPeriod || dateRange.startDate || dateRange.endDate) {
+      loadStatistics();
+    }
+  }, [selectedPeriod, dateRange]);
 
   const loadDashboardData = async () => {
     try {
@@ -94,6 +119,39 @@ const AdminDashboard = () => {
     }
   };
 
+  const loadStatistics = async () => {
+    try {
+      setStatsLoading(true);
+      
+      const params = {
+        period: selectedPeriod,
+        ...(dateRange.startDate && { startDate: dateRange.startDate }),
+        ...(dateRange.endDate && { endDate: dateRange.endDate })
+      };
+
+      const [revenue, profit] = await Promise.all([
+        adminService.getRevenueStatistics(params),
+        adminService.getProfitStatistics(params)
+      ]);
+
+      setRevenueStats(revenue);
+      setProfitStats(profit);
+    } catch (err) {
+      console.error('Statistics error:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  const handlePeriodChange = (period) => {
+    setSelectedPeriod(period);
+    setDateRange({ startDate: '', endDate: '' });
+  };
+
+  const handleDateRangeChange = (field, value) => {
+    setDateRange(prev => ({ ...prev, [field]: value }));
+  };
+
   const StatCard = ({ title, value, change, icon, color = 'blue' }) => {
     const colorClasses = {
       blue: 'bg-blue-500',
@@ -128,13 +186,13 @@ const AdminDashboard = () => {
   };
 
   const ActivityItem = ({ activity }) => {
-    const getIcon = (type) => {
+    const getIconComponent = (type) => {
       switch (type) {
-        case 'user': return '👤';
-        case 'product': return '📦';
-        case 'order': return '🛒';
-        case 'report': return '⚠️';
-        default: return '📝';
+        case 'user': return <FiUser />;
+        case 'product': return <FiPackage />;
+        case 'order': return <BsCart4 />;
+        case 'report': return <FiAlertTriangle />;
+        default: return <FiEdit3 />;
       }
     };
 
@@ -151,7 +209,7 @@ const AdminDashboard = () => {
     return (
       <div className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg">
         <div className={`w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center`}>
-          <span className="text-sm">{getIcon(activity.type)}</span>
+          <span className="text-sm">{getIconComponent(activity.type)}</span>
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900">{activity.action}</p>
@@ -173,7 +231,7 @@ const AdminDashboard = () => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center">
-          <span className="text-red-500 mr-2">⚠️</span>
+          <span className="text-red-500 mr-2"><FiAlertTriangle /></span>
           <span className="text-red-800">{error}</span>
         </div>
       </div>
@@ -188,13 +246,6 @@ const AdminDashboard = () => {
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600">Tổng quan hệ thống PIRA</p>
         </div>
-        <button 
-          onClick={loadDashboardData}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <span>🔄</span>
-          Làm mới
-        </button>
       </div>
 
       {/* Stats Grid */}
@@ -203,28 +254,28 @@ const AdminDashboard = () => {
           title="Tổng Users"
           value={stats.overview.totalUsers}
           change={12}
-          icon="👥"
+          icon={<FiUser />}
           color="blue"
         />
         <StatCard
           title="Tổng Sản phẩm"
           value={stats.overview.totalProducts}
           change={8}
-          icon="📦"
+          icon={<FiPackage />}
           color="green"
         />
         <StatCard
           title="Tổng Đơn hàng"
           value={stats.overview.totalOrders}
           change={-3}
-          icon="🛒"
+          icon={<BsCart4 />}
           color="purple"
         />
         <StatCard
           title="Danh mục"
           value={stats.overview.totalCategories}
           change={5}
-          icon="�"
+          icon={<BiCategory />}
           color="yellow"
         />
       </div>
@@ -234,222 +285,191 @@ const AdminDashboard = () => {
         <StatCard
           title="Sản phẩm chờ duyệt"
           value={stats.overview.pendingProducts}
-          icon="⏳"
+          icon={<BiLoaderAlt />}
           color="yellow"
         />
         <StatCard
           title="Users hoạt động"
           value={stats.overview.activeUsers}
-          icon="🟢"
+          icon={<BiCheckCircle />}
           color="green"
         />
         <StatCard
           title="Tổng doanh thu"
           value={stats.charts.monthlyRevenue?.reduce((total, item) => total + (item.revenue || 0), 0) || 0}
-          icon="�"
+          icon={<FiDollarSign />}
           color="indigo"
         />
       </div>
 
-      {/* Charts Section - Full Width */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Users by Role Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Users theo vai trò</h3>
-          <div className="space-y-4">
-            {stats.charts.usersByRole.length > 0 ? (
-              stats.charts.usersByRole.map((item, index) => {
-                const maxCount = Math.max(...stats.charts.usersByRole.map(i => i.count));
-                const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500'];
-                const bgColors = ['bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-orange-100'];
-                
-                return (
-                  <div key={index}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700 capitalize">
-                        {item._id === 'RENTER' ? '🙋 Người thuê' : 
-                         item._id === 'OWNER' ? '👨‍💼 Chủ sở hữu' : 
-                         item._id === 'ADMIN' ? '👑 Admin' : 
-                         item._id === 'SHIPPER' ? '🚚 Shipper' : 
-                         item._id || 'Không xác định'}
-                      </span>
-                      <span className="text-sm font-bold text-gray-900">{item.count}</span>
-                    </div>
-                    <div className={`w-full ${bgColors[index % bgColors.length]} rounded-full h-8 overflow-hidden`}>
-                      <div 
-                        className={`${colors[index % colors.length]} h-full rounded-full flex items-center justify-end pr-3 transition-all duration-500 ease-out`}
-                        style={{ width: `${percentage}%` }}
-                      >
-                        <span className="text-xs text-white font-semibold">
-                          {percentage.toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>Chưa có dữ liệu</p>
-              </div>
-            )}
+      {/* Statistics Filter Section */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <IoBarChart className="text-blue-600" />
+            Thống kê chi tiết
+          </h2>
+          {revenueStats && <ExportButtons data={revenueStats} filename="revenue-statistics" title="Thống kê doanh thu" />}
+        </div>
+
+        {/* Period Filter */}
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <FiFilter className="text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">Lọc theo:</span>
+          </div>
+          
+          <div className="flex gap-2">
+            {[
+              { value: 'day', label: 'Ngày' },
+              { value: 'week', label: 'Tuần' },
+              { value: 'month', label: 'Tháng' },
+              { value: 'quarter', label: 'Quý' },
+              { value: 'year', label: 'Năm' }
+            ].map(period => (
+              <button
+                key={period.value}
+                onClick={() => handlePeriodChange(period.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedPeriod === period.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3 ml-auto">
+            <FiCalendar className="text-gray-600" />
+            <input
+              type="date"
+              value={dateRange.startDate}
+              onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-gray-500">-</span>
+            <input
+              type="date"
+              value={dateRange.endDate}
+              onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
         </div>
 
-        {/* Products by Status Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Sản phẩm theo trạng thái</h3>
-          <div className="space-y-4">
-            {stats.charts.productsByStatus.length > 0 ? (
-              stats.charts.productsByStatus.map((item, index) => {
-                const maxCount = Math.max(...stats.charts.productsByStatus.map(i => i.count));
-                const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                const statusConfig = {
-                  'ACTIVE': { color: 'bg-green-500', bgColor: 'bg-green-100', icon: '🟢', label: 'Đang hoạt động' },
-                  'PENDING': { color: 'bg-yellow-500', bgColor: 'bg-yellow-100', icon: '⏳', label: 'Chờ duyệt' },
-                  'INACTIVE': { color: 'bg-gray-500', bgColor: 'bg-gray-100', icon: '⚫', label: 'Không hoạt động' },
-                  'SUSPENDED': { color: 'bg-red-500', bgColor: 'bg-red-100', icon: '🔴', label: 'Đã đình chỉ' },
-                  'RENTED': { color: 'bg-blue-500', bgColor: 'bg-blue-100', icon: '🔵', label: 'Đang cho thuê' },
-                  'DRAFT': { color: 'bg-purple-500', bgColor: 'bg-purple-100', icon: '📝', label: 'Bản nháp' }
-                };
-                const config = statusConfig[item._id] || { color: 'bg-gray-500', bgColor: 'bg-gray-100', icon: '📦', label: item._id };
-                
-                return (
-                  <div key={index}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <span>{config.icon}</span>
-                        {config.label}
-                      </span>
-                      <span className="text-sm font-bold text-gray-900">{item.count}</span>
-                    </div>
-                    <div className={`w-full ${config.bgColor} rounded-full h-8 overflow-hidden`}>
-                      <div 
-                        className={`${config.color} h-full rounded-full flex items-center justify-end pr-3 transition-all duration-500 ease-out`}
-                        style={{ width: `${percentage}%` }}
-                      >
-                        <span className="text-xs text-white font-semibold">
-                          {percentage.toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>Chưa có dữ liệu</p>
-              </div>
-            )}
+        {/* Loading State */}
+        {statsLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
-        </div>
+        )}
+
+        {/* Statistics Charts */}
+        {!statsLoading && revenueStats && profitStats && (
+          <div className="space-y-6">
+            {/* Revenue Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                <p className="text-sm text-blue-800 font-medium mb-1">Tổng doanh thu</p>
+                <p className="text-2xl font-bold text-blue-900">
+                  {revenueStats.summary.total.toLocaleString('vi-VN')} ₫
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                <p className="text-sm text-green-800 font-medium mb-1">Từ đơn hàng</p>
+                <p className="text-2xl font-bold text-green-900">
+                  {revenueStats.summary.orderRevenue.toLocaleString('vi-VN')} ₫
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                <p className="text-sm text-purple-800 font-medium mb-1">Phí vận chuyển</p>
+                <p className="text-2xl font-bold text-purple-900">
+                  {revenueStats.summary.shippingRevenue.toLocaleString('vi-VN')} ₫
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
+                <p className="text-sm text-orange-800 font-medium mb-1">Phí quảng cáo</p>
+                <p className="text-2xl font-bold text-orange-900">
+                  {revenueStats.summary.promotionRevenue.toLocaleString('vi-VN')} ₫
+                </p>
+              </div>
+            </div>
+
+            {/* Charts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RevenueChart data={revenueStats.timeSeries} period={selectedPeriod} />
+              <RevenuePieChart data={revenueStats.breakdown.bySource} />
+            </div>
+
+            {/* Profit Section */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Phân tích lợi nhuận</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div>
+                  <p className="text-sm text-gray-600">Tổng doanh thu</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {profitStats.summary.totalRevenue.toLocaleString('vi-VN')} ₫
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Chi phí</p>
+                  <p className="text-xl font-bold text-red-600">
+                    {profitStats.summary.totalCosts.toLocaleString('vi-VN')} ₫
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Lợi nhuận</p>
+                  <p className="text-xl font-bold text-green-600">
+                    {profitStats.summary.profit.toLocaleString('vi-VN')} ₫
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Biên lợi nhuận</p>
+                  <p className="text-xl font-bold text-blue-600">
+                    {profitStats.summary.profitMargin}%
+                  </p>
+                </div>
+              </div>
+              <ProfitChart data={profitStats.timeSeries} />
+            </div>
+
+            {/* Comparison Chart */}
+            <ComparisonChart 
+              data={revenueStats.timeSeries} 
+              title="Biểu đồ so sánh doanh thu & đơn hàng"
+            />
+          </div>
+        )}
       </div>
 
-      {/* Monthly Charts - Full Width */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Monthly Users Chart */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border border-blue-100">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <span className="text-2xl">👥</span>
-                Người dùng mới theo tháng
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">Tổng: {stats.charts.monthlyUsers.reduce((sum, item) => sum + item.count, 0)} users</p>
-            </div>
-          </div>
-          {stats.charts.monthlyUsers.length > 0 ? (
-            <div className="bg-white rounded-lg p-4 shadow-inner">
-              <div className="flex items-end justify-between gap-3 h-64">
-                {stats.charts.monthlyUsers.map((item, index) => {
-                  const maxCount = Math.max(...stats.charts.monthlyUsers.map(i => i.count));
-                  const height = maxCount > 0 ? (item.count / maxCount) * 100 : 5;
-                  const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-                  
-                  return (
-                    <div key={index} className="flex-1 flex flex-col items-center group">
-                      <div className="w-full flex items-end justify-center h-52 mb-3 relative">
-                        {/* Value label on top of bar */}
-                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
-                            {item.count} users
-                          </div>
-                        </div>
-                        
-                        {/* Bar */}
-                        <div 
-                          className="w-full max-w-[40px] bg-gradient-to-t from-blue-500 via-blue-400 to-blue-300 rounded-t-xl hover:from-blue-600 hover:via-blue-500 hover:to-blue-400 transition-all duration-300 cursor-pointer shadow-lg group-hover:shadow-2xl group-hover:scale-105 relative overflow-hidden"
-                          style={{ 
-                            height: `${height}%`,
-                            minHeight: '20px'
-                          }}
-                        >
-                          {/* Shine effect */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                          
-                          {/* Count on bar for larger values */}
-                          {height > 30 && (
-                            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-white font-bold text-xs">
-                              {item.count}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Month label */}
-                      <div className="text-xs text-gray-700 font-semibold group-hover:text-blue-600 transition-colors text-center">
-                        T{item._id.month}
-                      </div>
-                      <div className="text-[10px] text-gray-500 mt-0.5">
-                        {item._id.year}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-20 text-gray-500 bg-white rounded-lg">
-              <div className="text-4xl mb-3">📊</div>
-              <p className="font-medium">Chưa có dữ liệu</p>
-            </div>
+      {/* User & Product Analytics Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <IoBarChart className="text-indigo-600" />
+            Phân tích người dùng & sản phẩm
+          </h2>
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {stats.charts.usersByRole.length > 0 && (
+            <UserRoleChart data={stats.charts.usersByRole} />
+          )}
+          {stats.charts.productsByStatus.length > 0 && (
+            <ProductStatusChart data={stats.charts.productsByStatus} />
           )}
         </div>
 
-        {/* Monthly Revenue Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Doanh thu theo tháng</h3>
-          {stats.charts.monthlyRevenue.length > 0 ? (
-            <div className="flex items-end justify-between gap-2 h-64">
-              {stats.charts.monthlyRevenue.map((item, index) => {
-                const maxRevenue = Math.max(...stats.charts.monthlyRevenue.map(i => i.revenue));
-                const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
-                const monthNames = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-                
-                return (
-                  <div key={index} className="flex-1 flex flex-col items-center">
-                    <div className="w-full flex items-end justify-center h-48 mb-2">
-                      <div 
-                        className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t-lg hover:from-green-600 hover:to-green-500 transition-all duration-300 cursor-pointer relative group"
-                        style={{ height: `${height}%` }}
-                      >
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                          {item.revenue?.toLocaleString()} đ
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-600 font-medium">
-                      {monthNames[item._id.month - 1]}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-20 text-gray-500">
-              <p>Chưa có dữ liệu</p>
-            </div>
+        {/* Monthly Trends */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {stats.charts.monthlyUsers.length > 0 && (
+            <MonthlyUserChart data={stats.charts.monthlyUsers} />
+          )}
+          {stats.charts.monthlyRevenue.length > 0 && (
+            <MonthlyRevenueChart data={stats.charts.monthlyRevenue} />
           )}
         </div>
       </div>
@@ -461,28 +481,28 @@ const AdminDashboard = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác nhanh</h3>
           <div className="space-y-3">
             <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-              <span className="text-blue-600">👥</span>
+              <span className="text-blue-600"><FiUser /></span>
               <div>
                 <p className="font-medium">Quản lý Users</p>
                 <p className="text-sm text-gray-500">{stats.overview.totalUsers} users trong hệ thống</p>
               </div>
             </button>
             <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-              <span className="text-green-600">📦</span>
+              <span className="text-green-600"><FiPackage /></span>
               <div>
                 <p className="font-medium">Duyệt sản phẩm</p>
                 <p className="text-sm text-gray-500">{stats.overview.pendingProducts} sản phẩm đang chờ</p>
               </div>
             </button>
             <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-              <span className="text-purple-600">🛒</span>
+              <span className="text-purple-600"><BsCart4 /></span>
               <div>
                 <p className="font-medium">Quản lý đơn hàng</p>
                 <p className="text-sm text-gray-500">{stats.overview.totalOrders} đơn hàng</p>
               </div>
             </button>
             <button className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
-              <span className="text-red-600">📊</span>
+              <span className="text-red-600"><IoBarChart /></span>
               <div>
                 <p className="font-medium">Xem báo cáo</p>
                 <p className="text-sm text-gray-500">Thống kê và phân tích</p>

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminService } from '../../services/admin';
+import icons from "../../utils/icons";
+
+const { FiCreditCard, IoBarChart, BiCheckCircle, FiX, FiSearch, FiEye, FiAlertTriangle } = icons;
 
 const TransactionManagement = () => {
   const [transactions, setTransactions] = useState([]);
@@ -175,13 +178,9 @@ const TransactionManagement = () => {
       {/* Notification */}
       {notification.show && (
         <div className="fixed top-4 right-4 z-50">
-          <div className={`p-4 rounded-lg shadow-lg ${
-            notification.type === 'success' 
-              ? 'bg-green-500 text-white' 
-              : 'bg-red-500 text-white'
-          }`}>
+          <div className={`p-4 rounded-lg shadow-lg ${notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
             <div className="flex items-center gap-2">
-              <span>{notification.type === 'success' ? '✅' : '❌'}</span>
+              {notification.type === 'success' ? <BiCheckCircle /> : <FiX />}
               <span>{notification.message}</span>
             </div>
           </div>
@@ -193,7 +192,7 @@ const TransactionManagement = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <span className="text-3xl">💳</span>
+              <FiCreditCard className="text-3xl" />
               Quản lý Giao dịch
             </h1>
             <p className="text-gray-600 mt-1">Theo dõi và quản lý tất cả giao dịch trong hệ thống</p>
@@ -203,7 +202,7 @@ const TransactionManagement = () => {
               onClick={exportTransactions}
               className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
             >
-              <span>📊</span>
+              <IoBarChart />
               Xuất Excel
             </button>
           </div>
@@ -355,7 +354,7 @@ const TransactionManagement = () => {
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 m-4">
             <div className="flex items-center">
-              <span className="text-red-500 mr-2">⚠️</span>
+              <FiAlertTriangle className="text-red-500 mr-2" />
               <span className="text-red-800">{error}</span>
             </div>
           </div>
@@ -448,7 +447,7 @@ const TransactionManagement = () => {
                           to={`/admin/transactions/${transaction._id}`}
                           className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
                         >
-                          <span>👁️</span>
+                          <FiEye />
                           Chi tiết
                         </Link>
                       </td>

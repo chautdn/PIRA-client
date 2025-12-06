@@ -10,6 +10,7 @@ import {
   MdOutlineHouseSiding,
   MdLocationCity,
   MdOutlinePercent,
+  MdOutlineRefresh,
 } from "react-icons/md";
 import { FaRegMoneyBillAlt, FaSearchLocation } from "react-icons/fa";
 import { FaChartArea, FaDeleteLeft } from "react-icons/fa6";
@@ -42,6 +43,10 @@ import {
   FiShield,
   FiArrowRight,
   FiArrowLeft,
+  FiMail,
+  FiClock,
+  FiPlus,
+  FiZap
 } from "react-icons/fi";
 import { GiTakeMyMoney } from "react-icons/gi";
 import {
@@ -64,6 +69,7 @@ import {
   BiImage,
   BiMapPin,
   BiLoaderAlt,
+  BiClipboard,
 } from "react-icons/bi";
 import {
   HiSparkles,
@@ -77,7 +83,7 @@ import {
 } from "react-icons/hi";
 import { LuBoxes } from "react-icons/lu";
 import { IoChatboxEllipsesOutline } from "react-icons/io5";
-import { FaRegBell } from "react-icons/fa";
+import { FaRegBell, FaHourglassHalf, FaQuestion } from "react-icons/fa";
 import { TbWorld } from "react-icons/tb";
 import { FaSearchengin } from "react-icons/fa6";
 import { LuPackagePlus } from "react-icons/lu";
@@ -95,17 +101,46 @@ import {
   FiSettings,
   FiTruck,
   FiLogOut,
+  FiBell,
+  FiCalendar,
+  FiEye,
+  FiLock,
+  FiUnlock,
+  FiX,
+  FiPause,
+  FiCreditCard,
+  FiRefreshCcw,
+  FiFile,
+  FiHome,
+  FiCamera,
+  FiZoomIn,
+  FiPhone,
+  FiFilter,
+  FiDatabase, FiGlobe,FiSun, FiMoon, FiMonitor
 } from "react-icons/fi";
 
 const icons = {
+  FiDatabase, FiGlobe,FiSun, FiMoon, FiMonitor,
+  FiBell,
+  FiFilter,
+  FiCalendar,
+  FiEye,
+  FiLock,
+  FiUnlock,
+  FiX,
+  FiPause,
+  BiClipboard,
   FaSearchengin,
+  FaHourglassHalf,
   BsCart4,
   FaBalanceScale,
   IoBarChart,
   LuPackagePlus,
+  FaQuestion,
   LuPackageSearch,
   TbWorld,
   FiUser,
+  FiFile,
   FiGift,
   FiPackage,
   FiClipboard,
@@ -124,6 +159,7 @@ const icons = {
   BsBuildings,
   FaSearchLocation,
   MdOutlineStarPurple500,
+  MdOutlineRefresh,
   IoIosHeart,
   BsBookmarkStarFill,
   MdKeyboardArrowUp,
@@ -138,6 +174,7 @@ const icons = {
   RiCrop2Line,
   MdOutlineHouseSiding,
   FiSearch,
+  FiCreditCard,
   MdPhone,
   MdMessage,
   // New icons for create form
@@ -190,6 +227,15 @@ const icons = {
   LuBoxes,
   IoChatboxEllipsesOutline,
   FaRegBell,
+  FiRefreshCcw,
+  FiHome,
+  FiCamera,
+  FiZoomIn,
+  FiPhone,
+  FiMail,
+  FiClock,
+  FiPlus,
+  FiZap
 };
 
 export default icons;
