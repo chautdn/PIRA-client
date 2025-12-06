@@ -1,7 +1,7 @@
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || "https://api.pira.asia/api",
+  BASE_URL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
   TIMEOUT: 10000,
-  CLIENT_URL: import.meta.env.VITE_CLIENT_URL || "https://pira.asia",
+  CLIENT_URL: import.meta.env.VITE_CLIENT_URL || "http://localhost:3000",
   CLIENT_ID_GG:
     import.meta.env.VITE_GOOGLE_CLIENT_ID ||
     "536051892913-10fe1n8rm27jai1u1sfkjh9k24vaaksm.apps.googleusercontent.com",
