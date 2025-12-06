@@ -160,7 +160,7 @@ const ChatSidebar = () => {
                   otherParticipant.profile?.lastName || ""
                 }`.trim() || "Unknown User";
               const avatarUrl =
-                otherParticipant.profile?.avatar || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
+                otherParticipant.profile?.avatar || "https://cdn4.vectorstock.com/i/1000x1000/96/43/avatar-photo-default-user-icon-picture-face-vector-48139643.jpg";
 
               return (
                 <div
@@ -179,7 +179,7 @@ const ChatSidebar = () => {
                           alt={displayName}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.target.src = "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg";
+                            e.target.src = "https://cdn4.vectorstock.com/i/1000x1000/96/43/avatar-photo-default-user-icon-picture-face-vector-48139643.jpg";
                           }}
                         />
                       </div>
