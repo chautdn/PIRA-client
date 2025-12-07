@@ -8,6 +8,50 @@ import { motion } from "framer-motion";
 import KycModal from "../common/KycModal";
 import BankAccountSection from "../wallet/BankAccountSection";
 import MapSelector from "../common/MapSelector";
+import icons from "../../utils/icons";
+
+const {
+  FiUser,
+  FiMapPin,
+  BiCreditCard,
+  FiLock,
+  BsBuildings,
+  FiMail,
+  FiPhone,
+  MdOutlineStarPurple500,
+  FiCamera,
+  FiCheck,
+  FiX,
+  FiKey,
+  FiRefreshCcw,
+  FiShield,
+  FiInfo,
+  FiUnlock,
+  FiImage,
+  FiFile,
+  FiCalendar,
+  FiDollarSign,
+  FiAward,
+  FiEye,
+  FiEdit3,
+  FiSave,
+  FiTrash2,
+  FaBell,
+  FaClipboardList,
+  FaTicketAlt,
+  FaMale,
+  FaFemale,
+  FaUserFriends,
+  FaStar,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaClock,
+  FaLock,
+  FaMapMarkerAlt,
+  FaLightbulb,
+  FaRedo,
+  FaExclamationTriangle,
+} = icons;
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
@@ -99,8 +143,8 @@ const Profile = () => {
 
     // Show notification if coming from product creation
     if (location.state?.fromProductCreate) {
-      toast("📍 Cập nhật địa chỉ để tiếp tục tạo sản phẩm", {
-        icon: "💡",
+      toast("Cập nhật địa chỉ để tiếp tục tạo sản phẩm", {
+        icon: <FaMapMarkerAlt className="text-blue-500" />,
         duration: 4000,
         style: {
           background: "#3B82F6",
@@ -233,7 +277,10 @@ const Profile = () => {
 
       // Check if came from product creation page
       if (location.state?.fromProductCreate) {
-        toast.success("🔄 Quay lại trang tạo sản phẩm...", { duration: 2000 });
+        toast.success("Quay lại trang tạo sản phẩm...", { 
+          icon: <FaRedo className="text-green-500" />,
+          duration: 2000 
+        });
         setTimeout(() => {
           navigate("/owner/products/create", {
             state: { fromProfile: true },
@@ -513,7 +560,7 @@ const Profile = () => {
         text: "Đã xác thực",
         color: "text-green-600",
         bgColor: "bg-green-100",
-        icon: "✅",
+        icon: <FaCheckCircle className="text-green-500" />,
       };
     }
 
@@ -522,7 +569,7 @@ const Profile = () => {
         text: "Chờ xác thực",
         color: "text-yellow-600",
         bgColor: "bg-yellow-100",
-        icon: "⏳",
+        icon: <FaClock className="text-yellow-500" />,
       };
     }
 
@@ -530,16 +577,16 @@ const Profile = () => {
       text: "Chưa xác thực",
       color: "text-red-500",
       bgColor: "bg-red-100",
-      icon: "❌",
+      icon: <FaTimesCircle className="text-red-500" />,
     };
   };
 
   // Sidebar menu items
   const menuItems = [
-    { id: "notifications", icon: "🔔", label: "Thông Báo" },
+    { id: "notifications", icon: <FaBell className="text-xl" />, label: "Thông Báo" },
     {
       id: "profile",
-      icon: "👤",
+      icon: <FiUser className="text-xl" />,
       label: "Tài Khoản Của Tôi",
       submenu: [
         { id: "profile", label: "Hồ Sơ" },
@@ -549,8 +596,8 @@ const Profile = () => {
         { id: "banking", label: "Tài Khoản Ngân Hàng" },
       ],
     },
-    { id: "orders", icon: "📋", label: "Đơn Thuê" },
-    { id: "vouchers", icon: "🎫", label: "Kho Voucher" },
+    { id: "orders", icon: <FaClipboardList className="text-xl" />, label: "Đơn Thuê" },
+    { id: "vouchers", icon: <FaTicketAlt className="text-xl" />, label: "Kho Voucher" },
   ];
 
   if (loading) {
@@ -607,7 +654,7 @@ const Profile = () => {
                       : user?.email?.split("@")[0] || "User"}
                   </p>
                   <p className="text-blue-100 text-sm flex items-center mt-1">
-                    <span className="mr-1">✏️</span>
+                    <FiEdit3 className="mr-1" />
                     Sửa Hồ Sơ
                   </p>
                 </div>
@@ -662,11 +709,11 @@ const Profile = () => {
                   <div>
                     <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                       <span className="text-4xl">
-                        {activeSection === "profile" && "👤"}
-                        {activeSection === "address" && "📍"}
-                        {activeSection === "verification" && "🆔"}
-                        {activeSection === "password" && "🔐"}
-                        {activeSection === "banking" && "🏦"}
+                        {activeSection === "profile" && <FiUser />}
+                        {activeSection === "address" && <FiMapPin />}
+                        {activeSection === "verification" && <BiCreditCard />}
+                        {activeSection === "password" && <FiLock />}
+                        {activeSection === "banking" && <BsBuildings />}
                       </span>
                       {activeSection === "profile" && "Hồ Sơ Của Tôi"}
                       {activeSection === "address" && "Địa Chỉ"}
@@ -694,7 +741,7 @@ const Profile = () => {
                       <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
                         <div className="flex items-center">
                           <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mr-5 shadow-lg">
-                            <span className="text-3xl">📧</span>
+                            <FiMail className="text-3xl text-white" />
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 text-lg">
@@ -714,8 +761,8 @@ const Profile = () => {
                             }`}
                           >
                             {user?.verification?.emailVerified
-                              ? "✅ Đã xác thực"
-                              : "❌ Chưa xác thực"}
+                              ? <><FaCheckCircle className="inline mr-1" />Đã xác thực</>
+                              : <><FaTimesCircle className="inline mr-1" />Chưa xác thực</>}
                           </span>
                           {!user?.verification?.emailVerified && (
                             <button className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
@@ -729,7 +776,7 @@ const Profile = () => {
                       <div className="flex items-center justify-between p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-2 border-purple-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
                         <div className="flex items-center">
                           <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mr-5 shadow-lg">
-                            <span className="text-3xl">🆔</span>
+                            <BiCreditCard className="text-3xl text-white" />
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 text-lg">
@@ -744,12 +791,10 @@ const Profile = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <span
-                            className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
-                              getKycStatusDisplay().bgColor
-                            } ${getKycStatusDisplay().color}`}
+                            className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${getKycStatusDisplay().bgColor} ${getKycStatusDisplay().color}`}
                           >
-                            {getKycStatusDisplay().icon}{" "}
-                            {getKycStatusDisplay().text}
+                            {getKycStatusDisplay().icon}
+                            <span className="ml-1">{getKycStatusDisplay().text}</span>
                           </span>
                           <button
                             onClick={() => user?.cccd?.isVerified ? handleViewCCCDInfo() : setShowKycModal(true)}
@@ -760,8 +805,8 @@ const Profile = () => {
                             }`}
                           >
                             {user?.cccd?.isVerified
-                              ? "👁️ Xem thông tin"
-                              : "🔐 Xác thực ngay"}
+                              ? <><FiEye className="inline mr-1" />Xem thông tin</>
+                              : <><FaLock className="inline mr-1" />Xác thực ngay</>}
                           </button>
                         </div>
                       </div>
@@ -769,7 +814,7 @@ const Profile = () => {
                       {/* Security Level */}
                       <div className="mt-8 p-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 rounded-2xl border-2 border-indigo-200 shadow-xl">
                         <h3 className="font-bold text-gray-900 mb-6 flex items-center text-xl">
-                          <span className="text-3xl mr-3">🛡️</span>
+                          <FiShield className="text-3xl mr-3" />
                           Mức độ bảo mật tài khoản
                         </h3>
 
@@ -802,7 +847,7 @@ const Profile = () => {
                           2 && (
                           <div className="mt-6 p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl shadow-lg">
                             <p className="text-base text-white font-semibold flex items-center">
-                              <span className="text-2xl mr-3">🎉</span>
+                              <FiAward className="text-2xl mr-3" />
                               Chúc mừng! Tài khoản của bạn đã được xác minh hoàn
                               toàn.
                             </p>
@@ -821,7 +866,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">👤</span>
+                            <FiUser className="text-xl" />
                             Họ:
                           </label>
                           <div className="flex-1">
@@ -842,7 +887,7 @@ const Profile = () => {
                                 />
                                 {errors.firstName && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                    <span>⚠️</span>
+                                    <FaExclamationTriangle className="text-red-500" />
                                     <span>{errors.firstName}</span>
                                   </div>
                                 )}
@@ -856,7 +901,8 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  <FiEdit3 className="inline mr-1" />
+                                  Thay Đổi
                                 </button>
                               </div>
                             )}
@@ -868,7 +914,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">🏷️</span>
+                            <FiUser className="text-xl" />
                             Tên:
                           </label>
                           <div className="flex-1">
@@ -889,7 +935,7 @@ const Profile = () => {
                                 />
                                 {errors.lastName && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                    <span>⚠️</span>
+                                    <FaExclamationTriangle className="text-red-500" />
                                     <span>{errors.lastName}</span>
                                   </div>
                                 )}
@@ -903,7 +949,8 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  <FiEdit3 className="inline mr-1" />
+                                  Thay Đổi
                                 </button>
                               </div>
                             )}
@@ -915,7 +962,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">📧</span>
+                            <FiMail className="text-xl" />
                             Email:
                           </label>
                           <div className="flex-1">
@@ -926,7 +973,8 @@ const Profile = () => {
                                   : "N/A"}
                               </span>
                               <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 shadow-md transform hover:-translate-y-0.5 transition-all duration-200">
-                                ✏️ Thay Đổi
+                                <FiEdit3 className="inline mr-1" />
+                                Thay Đổi
                               </button>
                             </div>
                           </div>
@@ -937,7 +985,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">📱</span>
+                            <FiPhone className="text-xl" />
                             Số điện thoại:
                           </label>
                           <div className="flex-1">
@@ -954,7 +1002,7 @@ const Profile = () => {
                                 />
                                 {errors.phone && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                    <span>⚠️</span>
+                                    <FaExclamationTriangle className="text-red-500" />
                                     <span>{errors.phone}</span>
                                   </div>
                                 )}
@@ -970,7 +1018,8 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  <FiEdit3 className="inline mr-1" />
+                                  Thay Đổi
                                 </button>
                               </div>
                             )}
@@ -982,7 +1031,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-5 rounded-xl border-2 border-orange-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">♀️♂️</span>
+                            <FiUser className="text-xl" />
                             Giới tính:
                           </label>
                           <div className="flex-1">
@@ -1003,7 +1052,7 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-blue-600"
                                   />
-                                  <span className="font-medium">👨 Nam</span>
+                                  <span className="font-medium"><FaMale className="inline mr-1" />Nam</span>
                                 </label>
                                 <label className="flex items-center px-4 py-3 bg-white border-2 border-pink-200 rounded-lg cursor-pointer hover:bg-pink-50 transition-colors duration-200 has-[:checked]:bg-pink-100 has-[:checked]:border-pink-500">
                                   <input
@@ -1020,7 +1069,7 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-pink-600"
                                   />
-                                  <span className="font-medium">👩 Nữ</span>
+                                  <span className="font-medium"><FaFemale className="inline mr-1" />Nữ</span>
                                 </label>
                                 <label className="flex items-center px-4 py-3 bg-white border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors duration-200 has-[:checked]:bg-purple-100 has-[:checked]:border-purple-500">
                                   <input
@@ -1037,25 +1086,26 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-purple-600"
                                   />
-                                  <span className="font-medium">🧑 Khác</span>
+                                  <span className="font-medium"><FaUserFriends className="inline mr-1" />Khác</span>
                                 </label>
                               </div>
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
                                   {user?.profile?.gender === "MALE"
-                                    ? "👨 Nam"
+                                    ? <><FaMale className="inline mr-1" />Nam</>
                                     : user?.profile?.gender === "FEMALE"
-                                    ? "👩 Nữ"
+                                    ? <><FaFemale className="inline mr-1" />Nữ</>
                                     : user?.profile?.gender === "OTHER"
-                                    ? "🧑 Khác"
+                                    ? <><FaUserFriends className="inline mr-1" />Khác</>
                                     : "Chưa cập nhật"}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  <FiEdit3 className="inline mr-1" />
+                                  Thay Đổi
                                 </button>
                               </div>
                             )}
@@ -1067,7 +1117,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-rose-50 to-red-50 p-5 rounded-xl border-2 border-rose-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">🎂</span>
+                            <FiCalendar className="text-xl" />
                             Ngày sinh:
                           </label>
                           <div className="flex-1">
@@ -1087,7 +1137,7 @@ const Profile = () => {
                                 />
                                 {errors.dateOfBirth && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                    <span>⚠️</span>
+                                    <FaExclamationTriangle className="text-red-500" />
                                     <span>{errors.dateOfBirth}</span>
                                   </div>
                                 )}
@@ -1105,7 +1155,8 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  <FiEdit3 className="inline mr-1" />
+                                  Thay Đổi
                                 </button>
                               </div>
                             )}
@@ -1117,7 +1168,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-xl border-2 border-yellow-200 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">⭐</span>
+                            <MdOutlineStarPurple500 className="text-xl" />
                             Điểm tín dụng:
                           </label>
                           <div className="flex-1">
@@ -1129,16 +1180,10 @@ const Profile = () => {
                                 <div className="flex items-center gap-1">
                                   {/* Credit Score Stars */}
                                   {[...Array(5)].map((_, i) => (
-                                    <span 
+                                    <FaStar 
                                       key={i}
-                                      className={`text-lg ${
-                                        i < Math.floor((user?.creditScore || 100) / 20) 
-                                          ? 'text-yellow-400' 
-                                          : 'text-gray-300'
-                                      }`}
-                                    >
-                                      ⭐
-                                    </span>
+                                      className={`text-lg ${i < Math.floor((user?.creditScore || 100) / 20) ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    />
                                   ))}
                                 </div>
                                 <span 
@@ -1180,7 +1225,8 @@ const Profile = () => {
                               ></div>
                             </div>
                             <p className="text-xs text-gray-500 mt-2">
-                              💡 Điểm tín dụng được tính dựa trên lịch sử thuê và trả đồ của bạn
+                              <FiInfo className="inline mr-1" />
+                              Điểm tín dụng được tính dựa trên lịch sử thuê và trả đồ của bạn
                             </p>
                           </div>
                         </div>
@@ -1196,13 +1242,15 @@ const Profile = () => {
                               disabled={saving}
                               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
                             >
-                              {saving ? "⏳ Đang lưu..." : "💾 Lưu thay đổi"}
+                              <FiSave className="inline mr-2" />
+                              Lưu thay đổi
                             </button>
                             <button
                               onClick={handleCancel}
                               className="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 shadow-md transition-all duration-200"
                             >
-                              ❌ Hủy
+                              <FiX className="inline mr-2" />
+                              Hủy
                             </button>
                           </div>
                         </div>
@@ -1210,7 +1258,6 @@ const Profile = () => {
                     </div>
 
                     {/* Avatar Section */}
-                    <div className="w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
                     <div className="w-64 flex flex-col items-center py-8">
                       <div className="relative group">
                         <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 p-1 mb-6 overflow-hidden shadow-2xl transform group-hover:scale-105 transition-transform duration-300">
@@ -1227,7 +1274,7 @@ const Profile = () => {
                           </div>
                         </div>
                         <div className="absolute bottom-4 right-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-transform duration-200">
-                          <span className="text-white text-lg">📷</span>
+                          <FiCamera className="text-white text-lg" />
                         </div>
                       </div>
 
@@ -1238,12 +1285,19 @@ const Profile = () => {
                           onChange={handleAvatarUpload}
                           className="hidden"
                         />
-                        📸 Chọn Ảnh Mới
+                        <FiCamera className="inline mr-2" />
+                        Chọn Ảnh Mới
                       </label>
 
                       <div className="text-xs text-gray-500 mt-4 text-center bg-gray-50 p-3 rounded-lg">
-                        <p className="font-medium">💾 Dung lượng: Tối đa 1 MB</p>
-                        <p className="mt-1">🖼️ Định dạng: JPEG, PNG</p>
+                        <p className="font-medium">
+                          <FiFile className="inline mr-1" />
+                          Dung lượng: Tối đa 1 MB
+                        </p>
+                        <p className="mt-1">
+                          <FiImage className="inline mr-1" />
+                          Định dạng: JPEG, PNG
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1269,7 +1323,8 @@ const Profile = () => {
                         {formData.address.coordinates?.latitude &&
                           formData.address.coordinates?.longitude && (
                             <div className="text-sm text-green-600 bg-green-50 p-2 rounded mb-2">
-                              ✅ Đã có tọa độ:{" "}
+                              <FaCheckCircle className="inline mr-1 text-green-500" />
+                              Đã có tọa độ:{" "}
                               {formData.address.coordinates.latitude.toFixed(6)},{" "}
                               {formData.address.coordinates.longitude.toFixed(6)}
                             </div>
@@ -1314,7 +1369,7 @@ const Profile = () => {
 
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
                         <div className="flex items-start gap-3">
-                          <span className="text-2xl">ℹ️</span>
+                          <FiInfo className="text-2xl text-blue-600" />
                           <div>
                             <p className="text-sm font-medium text-blue-900">Lưu ý:</p>
                             <p className="text-sm text-blue-700 mt-1">
@@ -1331,7 +1386,8 @@ const Profile = () => {
                           disabled={saving}
                           className="px-6 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50"
                         >
-                          {saving ? "Đang lưu..." : "Lưu Địa Chỉ"}
+                          <FiSave className="inline mr-2" />
+                          Lưu Địa Chỉ
                         </button>
                       </div>
                     </div>
@@ -1344,7 +1400,7 @@ const Profile = () => {
                       {/* Current Password */}
                       <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border-2 border-red-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                          <span className="text-2xl">🔑</span>
+                          <FiKey className="text-2xl" />
                           Mật khẩu hiện tại
                         </label>
                         <div className="relative">
@@ -1360,11 +1416,11 @@ const Profile = () => {
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.currentPassword ? 'border-red-300' : 'border-red-200'} rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder=" Nhập mật khẩu hiện tại..."
                           />
-                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔐</span>
+                          <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-red-500" />
                         </div>
                         {passwordErrors.currentPassword && (
                           <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                            <span>⚠️</span>
+                            <FaExclamationTriangle className="text-red-500" />
                             <span>{passwordErrors.currentPassword}</span>
                           </div>
                         )}
@@ -1373,7 +1429,7 @@ const Profile = () => {
                       {/* New Password */}
                       <div className="bg-gradient-to-r from-primary-50 to-green-50 p-6 rounded-xl border-2 border-primary-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                          <span className="text-2xl">🆕</span>
+                          <FiRefreshCcw className="text-2xl" />
                           Mật khẩu mới
                         </label>
                         <div className="relative">
@@ -1389,11 +1445,11 @@ const Profile = () => {
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.newPassword ? 'border-red-300' : 'border-primary-200'} rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder=" Nhập mật khẩu mới..."
                           />
-                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔑</span>
+                          <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-primary-500" />
                         </div>
                         {passwordErrors.newPassword && (
                           <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                            <span>⚠️</span>
+                            <FaExclamationTriangle className="text-red-500" />
                             <span>{passwordErrors.newPassword}</span>
                           </div>
                         )}
@@ -1402,7 +1458,7 @@ const Profile = () => {
                       {/* Confirm Password */}
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                          <span className="text-2xl">✅</span>
+                          <FiCheck className="text-2xl" />
                           Xác nhận mật khẩu mới
                         </label>
                         <div className="relative">
@@ -1418,11 +1474,11 @@ const Profile = () => {
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-green-200'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder=" Nhập lại mật khẩu mới..."
                           />
-                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔓</span>
+                          <FiUnlock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-green-500" />
                         </div>
                         {passwordErrors.confirmPassword && (
                           <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                            <span>⚠️</span>
+                            <FaExclamationTriangle className="text-red-500" />
                             <span>{passwordErrors.confirmPassword}</span>
                           </div>
                         )}
@@ -1431,20 +1487,20 @@ const Profile = () => {
                       {/* Security Tips */}
                       <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-xl border-2 border-yellow-200">
                         <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
-                          <span className="text-xl">💡</span>
+                          <FiShield className="text-xl" />
                           Mẹo bảo mật
                         </h4>
                         <ul className="space-y-2 text-sm text-gray-700">
                           <li className="flex items-center gap-2">
-                            <span>✅</span>
+                            <FiCheck className="text-green-500" />
                             <span>Sử dụng ít nhất 6 ký tự</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <span>✅</span>
+                            <FiCheck className="text-green-500" />
                             <span>Kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <span>✅</span>
+                            <FiCheck className="text-green-500" />
                             <span>Không sử dụng thông tin cá nhân dễ đoán</span>
                           </li>
                         </ul>
@@ -1457,7 +1513,8 @@ const Profile = () => {
                           disabled={changingPassword}
                           className="px-10 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none"
                         >
-                          {changingPassword ? '⏳ Đang cập nhật...' : '🔒 Cập Nhật Mật Khẩu'}
+                          <FiLock className="inline mr-2" />
+                          Cập Nhật Mật Khẩu
                         </button>
                       </div>
                     </div>
@@ -1490,7 +1547,7 @@ const Profile = () => {
             className="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl"
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <span className="text-3xl">🔒</span>
+              <FiUnlock className="text-3xl" />
               Xác thực để xem thông tin CCCD
             </h3>
             <p className="text-gray-600 mb-6">
@@ -1540,6 +1597,7 @@ const Profile = () => {
                     onClick={handleClosePasswordPrompt}
                     className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
                   >
+                    <FiX className="inline mr-2" />
                     Hủy
                   </button>
                   {(!user?.authProvider || user.authProvider === 'local') && (
@@ -1548,7 +1606,8 @@ const Profile = () => {
                       disabled={!passwordForCCCD || loadingCCCD}
                       className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 shadow-lg"
                     >
-                      {loadingCCCD ? 'Đang xác thực...' : 'Xác nhận'}
+                      <FiCheck className="inline mr-2" />
+                      Xác nhận
                     </button>
                   )}
                 </div>
@@ -1586,11 +1645,13 @@ const Profile = () => {
                   {cccdData.verifiedAt && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
-                        <span className="font-semibold">✅ Đã xác thực:</span>{' '}
+                        <FiCheck className="inline mr-1" />
+                        <span className="font-semibold">Đã xác thực:</span>{' '}
                         {new Date(cccdData.verifiedAt).toLocaleString('vi-VN')}
                       </p>
                       {cccdData.verificationSource && (
                         <p className="text-sm text-blue-700 mt-1">
+                          <FiInfo className="inline mr-1" />
                           <span className="font-semibold">Nguồn:</span> {cccdData.verificationSource}
                         </p>
                       )}
@@ -1601,13 +1662,17 @@ const Profile = () => {
                   {cccdImages && (
                     <div className="space-y-3">
                       <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <span>🖼️</span> Ảnh CCCD
+                        <FiImage className="text-xl" />
+                        Ảnh CCCD
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {cccdImages.frontImage && (
                           <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow">
                             <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2">
-                              <p className="text-white font-semibold text-sm">📄 Mặt trước</p>
+                              <p className="text-white font-semibold text-sm">
+                                <FiFile className="inline mr-1" />
+                                Mặt trước
+                              </p>
                             </div>
                             <div className="p-2">
                               <img 
@@ -1625,7 +1690,10 @@ const Profile = () => {
                         {cccdImages.backImage && (
                           <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow">
                             <div className="bg-gradient-to-r from-green-500 to-green-600 px-4 py-2">
-                              <p className="text-white font-semibold text-sm">📄 Mặt sau</p>
+                              <p className="text-white font-semibold text-sm">
+                                <FiFile className="inline mr-1" />
+                                Mặt sau
+                              </p>
                             </div>
                             <div className="p-2">
                               <img 
@@ -1634,7 +1702,7 @@ const Profile = () => {
                                 className="w-full h-auto rounded-lg"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%23f3f4f6" width="400" height="250"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
                                 }}
                               />
                             </div>
@@ -1650,6 +1718,7 @@ const Profile = () => {
                     onClick={handleClosePasswordPrompt}
                     className="px-8 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold rounded-lg hover:from-gray-700 hover:to-gray-800 shadow-lg"
                   >
+                    <FiX className="inline mr-2" />
                     Đóng
                   </button>
                 </div>
