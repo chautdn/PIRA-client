@@ -1097,6 +1097,27 @@ export const {
   getAnalytics,
   getRevenueStats,
   bulkUpdateUsers,
+  // Shipment Management APIs
+  async getShipmentStats() {
+    try {
+      const response = await api.get("/admin/shipment-stats");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching shipment stats:", error);
+      return null;
+    }
+  }
+
+  async getAllShippers() {
+    try {
+      const response = await api.get("/admin/shippers");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching shippers:", error);
+      return null;
+    }
+  }
+
   bulkUpdateProducts,
   sendNotification,
   broadcastNotification,

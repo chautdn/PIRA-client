@@ -90,6 +90,9 @@ import DisputeDetail from "./components/dispute/DisputeDetail";
 import AdminDisputeManagement from "./pages/admin/AdminDisputeManagement";
 import AdminDisputeDetail from "./pages/admin/AdminDisputeDetail";
 
+// Shipment management page
+import AdminShipmentManagement from "./pages/admin/AdminShipmentManagement";
+
 // Component to handle scroll to top on route change
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -476,6 +479,7 @@ export default function App() {
                     />
                     <Route path="disputes" element={<AdminDisputeManagement />} />
                     <Route path="disputes/:disputeId" element={<AdminDisputeDetail />} />
+                    <Route path="shipments" element={<AdminShipmentManagement />} />
                     <Route path="bank-accounts" element={<BankManagement />} />
                     <Route
                       path="bank-accounts/:userId"

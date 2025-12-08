@@ -270,8 +270,8 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     return null;
   }
 
-  const ownerName = shipment?.subOrder?.masterOrder?.owner?.profile?.fullName ||
-                    shipment?.subOrder?.masterOrder?.owner?.profile?.firstName ||
+  const ownerName = shipment?.subOrder?.owner?.profile?.fullName ||
+                    shipment?.subOrder?.owner?.profile?.firstName ||
                     'Chủ hàng';
   
   const renterName = shipment?.subOrder?.masterOrder?.renter?.profile?.fullName ||
@@ -279,7 +279,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                      'Người thuê';
 
   const renterPhone = shipment?.subOrder?.masterOrder?.renter?.phone || 'N/A';
-  const ownerPhone = shipment?.subOrder?.masterOrder?.owner?.phone || 'N/A';
+  const ownerPhone = shipment?.subOrder?.owner?.phone || 'N/A';
   
   // Determine if this is a return shipment
   const isReturnShipment = shipment?.type === 'RETURN';
@@ -331,8 +331,8 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
               </div>
             )}
 
-            {/* Top Section - Order & Renter Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Top Section - Order & Renter & Owner Info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Order Info */}
               <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
                 <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -367,6 +367,33 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
               </div>
 
+              {/* Owner Info */}
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <span className="text-lg">👤</span> Thông tin chủ sở hữu
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-600 block text-xs mb-1">Tên chủ sở hữu</span>
+                    <span className="font-semibold text-gray-900">{ownerName}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 block text-xs mb-1">Số điện thoại</span>
+                    <a href={`tel:${ownerPhone}`} className="font-semibold text-blue-600 hover:underline">
+                      {ownerPhone}
+                    </a>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 block text-xs mb-1">Địa chỉ giao/nhận</span>
+                    <div className="font-semibold text-gray-900 text-xs leading-relaxed">
+                      {shipment.fromAddress?.streetAddress && <div>{shipment.fromAddress.streetAddress}</div>}
+                      {shipment.fromAddress?.ward && <div>{shipment.fromAddress.ward}</div>}
+                      {shipment.fromAddress?.district && <div>{shipment.fromAddress.district}</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Renter Info */}
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-orange-200">
                 <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -374,7 +401,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </h3>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-gray-600 block text-xs mb-1">Tên địa chỉ điện thoại</span>
+                    <span className="text-gray-600 block text-xs mb-1">Tên người thuê</span>
                     <span className="font-semibold text-gray-900">{renterName}</span>
                   </div>
                   <div>
