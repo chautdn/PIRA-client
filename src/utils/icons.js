@@ -223,6 +223,7 @@ const icons = {
   HiOutlinePhotograph,
   HiPhotograph,
   FiZoomIn,
+  BiMap,
 
   // Ratings & Awards
   FiStar,
