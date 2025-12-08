@@ -15,7 +15,7 @@ export default defineConfig({
     open: true,
     proxy: {
       "/api": {
-        target: "https://api.pira.asia",
+        target: "http://localhost:5000",
         changeOrigin: true,
         secure: false,
       },

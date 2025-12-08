@@ -23,7 +23,8 @@ import paymentService from "../../services/payment";
 import rentalOrderService from "../../services/rentalOrder";
 import systemPromotionService from "../../services/systemPromotion";
 import { HiCreditCard } from "react-icons/hi";
-import { PiBank , PiHandDeposit  } from "react-icons/pi";
+import { PiBank, PiHandDeposit } from "react-icons/pi";
+import icons from "../../utils/icons";
 
 const RentalOrderForm = () => {
   try {
@@ -49,23 +50,23 @@ const RentalOrderForm = () => {
     const selectedItems = location.state?.selectedItems || null;
     const fromCart = location.state?.fromCart || false;
 
-  const [orderData, setOrderData] = useState(() => ({
-    rentalPeriod: {
-      startDate: '',
-      endDate: ''
-    },
-    deliveryAddress: {
-      streetAddress: '',
-      ward: '',
-      district: '',
-      city: '',
-      contactPhone: (user && (user.phone || (user.profile && user.profile.phone))) ? (user.phone || user.profile.phone) : '',
-      contactName: (user && (user.profile && (user.profile.firstName || user.profile.lastName)))
-        ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
-        : (user && user.profile && user.profile.fullName) || ''
-    },
-    deliveryMethod: 'DELIVERY',
-  }));
+    const [orderData, setOrderData] = useState(() => ({
+      rentalPeriod: {
+        startDate: "",
+        endDate: "",
+      },
+      deliveryAddress: {
+        streetAddress: "",
+        ward: "",
+        district: "",
+        city: "",
+        contactPhone: (user && (user.phone || (user.profile && user.profile.phone))) ? (user.phone || user.profile.phone) : "",
+        contactName: (user && (user.profile && (user.profile.firstName || user.profile.lastName)))
+          ? `${user.profile.firstName || ""}${user.profile.firstName && user.profile.lastName ? " " : ""}${user.profile.lastName || ""}`.trim()
+          : (user && user.profile && user.profile.fullName) || "",
+      },
+      deliveryMethod: "DELIVERY",
+    }));
 
     const [errors, setErrors] = useState({});
     const [step, setStep] = useState(1);
@@ -81,12 +82,12 @@ const RentalOrderForm = () => {
     const [selectedVoucher, setSelectedVoucher] = useState(null);
     const [showShippingModal, setShowShippingModal] = useState(false);
     const [selectedShippingInfo, setSelectedShippingInfo] = useState(null);
-    
+
     // Use ref to store calculated shipping data (persist across renders)
     const calculatedShippingRef = useRef(null);
 
     // Address related states
-    const [userAddresses, setUserAddresses] = useState(() => (user && user.addresses) ? user.addresses : (user && user.address ? [{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }] : []));
+    const [userAddresses, setUserAddresses] = useState(() => (user && user.addresses) ? user.addresses : (user && user.address ? [{ ...user.address, isDefault: true, id: "default", phone: user.phone || user.profile?.phone }] : []));
     const [loadingAddresses, setLoadingAddresses] = useState(false);
     const [showAddressModal, setShowAddressModal] = useState(false);
 
@@ -96,7 +97,7 @@ const RentalOrderForm = () => {
         if (user.addresses && Array.isArray(user.addresses)) {
           setUserAddresses(user.addresses);
         } else if (user.address) {
-          setUserAddresses([{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }]);
+          setUserAddresses([{ ...user.address, isDefault: true, id: "default", phone: user.phone || user.profile?.phone }]);
         } else {
           setUserAddresses([]);
         }
@@ -162,10 +163,10 @@ const RentalOrderForm = () => {
     // Update contact info when user changes (use top-level phone and profile name parts)
     useEffect(() => {
       if (user) {
-        const phoneFromUser = user.phone || (user.profile && user.profile.phone) || '';
+        const phoneFromUser = user.phone || (user.profile && user.profile.phone) || "";
         const nameFromProfile = (user.profile && (user.profile.firstName || user.profile.lastName))
-          ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
-          : (user.profile && user.profile.fullName) || '';
+          ? `${user.profile.firstName || ""}${user.profile.firstName && user.profile.lastName ? " " : ""}${user.profile.lastName || ""}`.trim()
+          : (user.profile && user.profile.fullName) || "";
 
         setOrderData((prev) => ({
           ...prev,
@@ -226,10 +227,10 @@ const RentalOrderForm = () => {
       } else {
         return;
       }
-      
+
       // Store sourceItems in state for later use when submitting
       setSourceItems(sourceItems);
-      
+
       const grouped = {};
       let earliestStart = null;
       let latestEnd = null;
@@ -502,18 +503,18 @@ const RentalOrderForm = () => {
             // 2. Wrapped: { data: { shipping: {...} } }
             // 3. Wrapped: { metadata: { shipping: {...} } }
             let shipping;
-            
+
             if (shippingResponse?.distance !== undefined && shippingResponse?.fee !== undefined) {
               // Format 1: Response trực tiếp là shipping object
               shipping = shippingResponse;
             } else {
               // Format 2 & 3: Response wrapped
-              shipping = 
-                shippingResponse?.data?.shipping || 
+              shipping =
+                shippingResponse?.data?.shipping ||
                 shippingResponse?.metadata?.shipping ||
                 shippingResponse?.shipping;
             }
-            
+
             if (!shipping || !shipping.distance || !shipping.fee) {
               throw new Error(
                 shippingResponse?.message || "Không thể tính phí ship từ API - Dữ liệu không hợp lệ"
@@ -522,7 +523,7 @@ const RentalOrderForm = () => {
             const batchFee = shipping.fee || 0;
 
             const allocatedFeePerProduct = Math.round(batchFee / batchProducts.length);
-            
+
             const batchInfo = {
               deliveryDate,
               batchSize: batchProducts.length,
@@ -590,14 +591,14 @@ const RentalOrderForm = () => {
         // Update state with calculated shipping fees
         setGroupedProducts(updatedGroups);
         setTotalShipping(masterTotalShipping);
-        
+
         // Store in ref to persist across renders
         calculatedShippingRef.current = {
           groupedProducts: updatedGroups,
           totalShipping: masterTotalShipping,
           timestamp: Date.now()
         };
-        
+
         toast.success(
           `Đã tính phí ship: ${masterTotalShipping.toLocaleString(
             "vi-VN"
@@ -666,11 +667,11 @@ const RentalOrderForm = () => {
       if (orderData.deliveryMethod === "DELIVERY") {
         // Use ref as source of truth if available
         const shippingSource = calculatedShippingRef.current?.groupedProducts || groupedProducts;
-        
+
         const hasShippingCalculated = Object.values(shippingSource).some(
           group => group.shippingFee > 0
         );
-        
+
         if (!hasShippingCalculated) {
           toast.error("Vui lòng nhấn 'Tính phí vận chuyển' trước khi tạo đơn hàng");
           return;
@@ -727,7 +728,7 @@ const RentalOrderForm = () => {
         // Use ref for shipping data if available (more reliable than state)
         const shippingSource = calculatedShippingRef.current?.groupedProducts || groupedProducts;
         const shippingTotal = calculatedShippingRef.current?.totalShipping || totalShipping;
-        
+
         const orderWithPayment = {
           ...orderData,
           paymentMethod: paymentMethod,
@@ -766,7 +767,7 @@ const RentalOrderForm = () => {
                   }))
                 }
               ])
-            )
+            ),
           },
           // COD specific fields
           ...(paymentMethod === "COD" && {
@@ -844,17 +845,14 @@ const RentalOrderForm = () => {
         clearCart();
 
         // Show success notification
-        let successMessage = `Đơn thuê #${
-          paidOrder.masterOrderNumber || paidOrder._id
-        } đã được tạo thành công!`;
+        let successMessage = `Đơn thuê #${paidOrder.masterOrderNumber || paidOrder._id} đã được tạo thành công!`;
         let paymentMessage = "";
 
         if (paymentMethod === "WALLET") {
           paymentMessage = "✅ Đã thanh toán từ ví thành công!";
           successMessage += " Đã thanh toán từ ví.";
         } else if (paymentMethod === "COD") {
-          paymentMessage =
-            "📦 Đơn hàng đã được tạo! Bạn sẽ thanh toán khi nhận hàng.";
+          paymentMessage = "📦 Đơn hàng đã được tạo! Bạn sẽ thanh toán khi nhận hàng.";
           successMessage += " Bạn sẽ thanh toán khi nhận hàng.";
         } else {
           paymentMessage = "✅ Đã thanh toán qua PayOS thành công!";
@@ -862,13 +860,22 @@ const RentalOrderForm = () => {
         }
 
         // Show success toast notification
-        toast.success(`🎉 ${successMessage}\n\n${paymentMessage}`, {
-          duration: 6000,
-          style: {
-            maxWidth: "500px",
-            padding: "16px",
-          },
-        });
+        toast.success(
+          <div className="flex items-start gap-2">
+            <icons.FiGift className="text-green-500 mt-1" />
+            <div>
+              <strong>{successMessage}</strong><br />
+              {paymentMessage}
+            </div>
+          </div>,
+          {
+            duration: 6000,
+            style: {
+              maxWidth: "500px",
+              padding: "16px",
+            },
+          }
+        );
 
         // Navigate to user's rental orders page
         navigate("/rental-orders", {
@@ -1122,8 +1129,9 @@ const RentalOrderForm = () => {
               {directRentalData ? "Thuê Ngay" : "Tạo Đơn Thuê"}
             </h1>
             {directRentalData && (
-              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                ⚡ Thuê trực tiếp
+              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1">
+                <icons.FaBolt className="inline" />
+                Thuê trực tiếp
               </span>
             )}
           </div>
@@ -1146,8 +1154,9 @@ const RentalOrderForm = () => {
                         key={ownerId}
                         className="border border-gray-200 rounded-lg p-4"
                       >
-                        <h3 className="text-lg font-medium mb-4 text-blue-700">
-                          📦 Đơn hàng #{groupIndex + 1} - Chủ cho thuê:{" "}
+                        <h3 className="text-lg font-medium mb-4 text-blue-700 flex items-center gap-2">
+                          <icons.FaBox className="inline" />
+                          Đơn hàng #{groupIndex + 1} - Chủ cho thuê:{" "}
                           {group.owner.profile?.firstName || "Không rõ"}
                         </h3>
 
@@ -1225,8 +1234,9 @@ const RentalOrderForm = () => {
                                       </div>
                                       <div>
                                         <div className="bg-blue-50 p-3 rounded-md">
-                                          <p className="text-sm font-medium text-blue-800 mb-1">
-                                            ⏰ Thời gian thuê:
+                                          <p className="text-sm font-medium text-blue-800 mb-1 flex items-center gap-1">
+                                            <icons.FaClock className="inline" />
+                                            Thời gian thuê:
                                           </p>
                                           {itemStartDate && itemEndDate ? (
                                             <>
@@ -1291,7 +1301,7 @@ const RentalOrderForm = () => {
                                       {orderData.deliveryMethod === "DELIVERY" && group.shippingFee > 0 && (() => {
                                         // Calculate shipping fee for this product
                                         let productShippingFee = 0;
-                                        const deliveryDate = item.rental?.startDate 
+                                        const deliveryDate = item.rental?.startDate
                                           ? new Date(item.rental.startDate).toLocaleDateString("vi-VN")
                                           : null;
 
@@ -1321,25 +1331,25 @@ const RentalOrderForm = () => {
                                         if (productShippingFee === 0 && deliveryDate) {
                                           // Count products with same delivery date
                                           const productsOnSameDate = group.products.filter(p => {
-                                            const pDate = p.rental?.startDate 
+                                            const pDate = p.rental?.startDate
                                               ? new Date(p.rental.startDate).toLocaleDateString("vi-VN")
                                               : null;
                                             return pDate === deliveryDate;
                                           });
-                                          
+
                                           // Get unique delivery dates to calculate number of deliveries
                                           const uniqueDates = [...new Set(
-                                            group.products.map(p => 
-                                              p.rental?.startDate 
+                                            group.products.map(p =>
+                                              p.rental?.startDate
                                                 ? new Date(p.rental.startDate).toLocaleDateString("vi-VN")
                                                 : null
                                             ).filter(d => d !== null)
                                           )];
-                                          
+
                                           const numDeliveries = uniqueDates.length || 1;
                                           const feePerDelivery = Math.round((group.shippingFee || 0) / numDeliveries);
                                           const productsInBatch = productsOnSameDate.length || 1;
-                                          
+
                                           productShippingFee = Math.round(feePerDelivery / productsInBatch);
                                         }
 
@@ -1392,19 +1402,18 @@ const RentalOrderForm = () => {
               </h2>
               <div className="space-y-3">
 
-  <label className="flex items-center space-x-3 cursor-pointer">
-  <input
-    type="radio"
-    value="DELIVERY"
-    checked={orderData.deliveryMethod === 'DELIVERY'}
-    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
-    className="w-4 h-4 text-blue-500"
-  />
-  <span>Giao tận nơi (Có phí ship)</span>
+<label className="flex items-center space-x-3 cursor-pointer">
+<input
+  type="radio"
+  value="DELIVERY"
+  checked={orderData.deliveryMethod === 'DELIVERY'}
+  onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
+/>
+<span>Giao tận nơi (Có phí ship)</span>
 </label>
               </div>
             </div>
-            
+
             {showAddressModal && (
               <AddressSelectionModal
                 isOpen={showAddressModal}
@@ -1465,16 +1474,17 @@ const RentalOrderForm = () => {
                         </p>
                       )}
 
-                      
+
                     </div>
-                   
+
 
                     {/* Hiển thị thông tin địa chỉ từ map (read-only) */}
                     {orderData.deliveryAddress.latitude &&
                       orderData.deliveryAddress.longitude && (
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                          <h4 className="text-sm font-medium text-blue-800 mb-2">
-                            📍 Địa chỉ từ bản đồ:
+                          <h4 className="text-sm font-medium text-blue-800 mb-2 flex items-center gap-1">
+                            <icons.FaMapMarkerAlt className="inline" />
+                            Địa chỉ từ bản đồ:
                           </h4>
                           <div className="space-y-1 text-sm text-blue-700">
                             {orderData.deliveryAddress.streetAddress && (
@@ -1517,9 +1527,10 @@ const RentalOrderForm = () => {
                                 },
                               }))
                             }
-                            className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                            className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
                           >
-                            🔄 Chọn lại địa chỉ
+                            <icons.FaRedo className="inline" />
+                            Chọn lại địa chỉ
                           </button>
                         </div>
                       )}
@@ -1586,7 +1597,7 @@ const RentalOrderForm = () => {
                   </button>
                 </div>
               )}
-  
+
               {/* Order Action */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-center">
@@ -1826,8 +1837,9 @@ const RentalOrderForm = () => {
                 </div>
 
                 <div className="mt-4 p-3 bg-yellow-50 rounded-md">
-                  <p className="text-sm text-yellow-800">
-                    💡 <strong>Lưu ý:</strong> Tiền cọc sẽ được hoàn lại sau khi
+                  <p className="text-sm text-yellow-800 flex items-start gap-1">
+                    <icons.FaLightbulb className="inline mt-0.5 flex-shrink-0" />
+                    <strong>Lưu ý:</strong> Tiền cọc sẽ được hoàn lại sau khi
                     bạn trả sản phẩm trong tình trạng tốt.
                   </p>
                 </div>
@@ -1850,8 +1862,9 @@ const RentalOrderForm = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  💡 Cách tính phí vận chuyển
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <icons.FaLightbulb className="inline" />
+                  Cách tính phí vận chuyển
                 </h3>
                 <button
                   onClick={() => setShowShippingModal(false)}
@@ -1877,7 +1890,10 @@ const RentalOrderForm = () => {
                 {/* Calculation Formula */}
                 {selectedShippingInfo.deliveryInfo && (
                   <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                    <h4 className="font-medium text-gray-800 mb-3">📝 Công thức tính:</h4>
+                    <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
+                      <icons.FaClipboardList className="inline" />
+                      Công thức tính:
+                    </h4>
                     <div className="text-sm text-gray-700 space-y-2">
                       <div className="flex items-start">
                         <span className="mr-2">•</span>
@@ -1936,7 +1952,7 @@ const RentalOrderForm = () => {
                 {selectedShippingInfo.deliveryInfo?.deliveryBatches &&
                   selectedShippingInfo.deliveryInfo.deliveryBatches.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="font-medium text-gray-800 flex items-center">
+                      <h4 className="font-medium text-gray-800 flex items-center gap-2">
                         <Package className="w-4 h-4 mr-2" />
                         Chi tiết giao hàng theo ngày:
                       </h4>
@@ -1944,8 +1960,9 @@ const RentalOrderForm = () => {
                         {selectedShippingInfo.deliveryInfo.deliveryBatches.map((batch, index) => (
                           <div key={index} className="bg-white border rounded-lg p-3">
                             <div className="flex justify-between items-center mb-2">
-                              <span className="font-medium text-gray-700">
-                                📅 {new Date(batch.deliveryDate).toLocaleDateString("vi-VN")}
+                              <span className="font-medium text-gray-700 flex items-center gap-2">
+                                <icons.BiCalendar className="inline" />
+                                {new Date(batch.deliveryDate).toLocaleDateString("vi-VN")}
                               </span>
                               <span className="font-bold text-blue-600">
                                 {batch.deliveryFee?.toLocaleString("vi-VN")}đ
@@ -1963,7 +1980,10 @@ const RentalOrderForm = () => {
                 {/* Calculation Example */}
                 {selectedShippingInfo.deliveryInfo?.summary && (
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">✅ Tính toán:</h4>
+                    <h4 className="font-medium text-gray-800 mb-2 flex items-center gap-2">
+                      <icons.FaCheckCircle className="inline" />
+                      Tính toán:
+                    </h4>
                     <div className="text-sm text-gray-700">
                       {selectedShippingInfo.deliveryInfo.deliveryCount} lần giao ×{" "}
                       {Math.round(
@@ -2045,7 +2065,7 @@ const DepositPaymentModal = ({
       key: "PAYOS",
       title: "Chuyển khoản ngân hàng",
       description: "Thanh toán cọc qua PayOS (QR Code)",
-      icon: <PiBank  className="text-2xl text-green-600" />,
+      icon: <PiBank className="text-2xl text-green-600" />,
     },
   ];
 
@@ -2055,7 +2075,7 @@ const DepositPaymentModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <PiHandDeposit  className="text-orange-600" />
+          <PiHandDeposit className="text-orange-600" />
           Thanh toán cọc - COD
         </h2>
 
@@ -2076,7 +2096,7 @@ const DepositPaymentModal = ({
             </div>
             <div className="flex justify-between text-gray-600 border-t pt-2">
               <span>Còn lại khi nhận hàng:</span>
-              <span>{remainingAmount.toLocaleString("vi-VN")}đ</span>
+                           <span>{remainingAmount.toLocaleString("vi-VN")}đ</span>
             </div>
           </div>
         </div>

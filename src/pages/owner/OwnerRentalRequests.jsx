@@ -7,6 +7,7 @@ import { formatCurrency } from '../../utils/constants';
 import { Package, Calendar, User, CreditCard, ChevronRight, Filter } from 'lucide-react';
 import ManageExtensionRequestsModal from '../../components/owner/ManageExtensionRequestsModal';
 import OwnerShipmentModal from '../../components/owner/OwnerShipmentModal';
+import useOrderSocket from '../../hooks/useOrderSocket';
 
 const OwnerRentalRequests = () => {
   const { user } = useAuth();
@@ -18,6 +19,28 @@ const OwnerRentalRequests = () => {
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Initialize WebSocket with callbacks to reload orders
+  const { isConnected } = useOrderSocket({
+    onOrderCreated: () => {
+      fetchSubOrders();
+    },
+    onOrderStatusChanged: () => {
+      fetchSubOrders();
+    },
+    onContractSigned: () => {
+      fetchSubOrders();
+    },
+    onContractCompleted: () => {
+      fetchSubOrders();
+    },
+    onEarlyReturnRequest: () => {
+      fetchSubOrders();
+    },
+    onExtensionRequest: () => {
+      fetchSubOrders();
+    },
+  });
 
   const filterOptions = [
     { value: 'all', label: 'Tất cả' },

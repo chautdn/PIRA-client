@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { useAuth } from '../../hooks/useAuth';
+import icons from "../../utils/icons";
+
+const { FiAlertTriangle, FaHourglassHalf , FaQuestion, BiCheckCircle, BiClipboard , FiSearch, FiTrash2, FiUser, FiPackage, FiShield, FiBell, FiSettings, FiEye, FiX } = icons;
 
 const ReportManagement = () => {
   const navigate = useNavigate();
@@ -183,22 +186,22 @@ const ReportManagement = () => {
       'SPAM': { 
         color: 'bg-red-100 text-red-800 border-red-200', 
         text: 'Spam',
-        icon: '🚫'
+        icon: <FiAlertTriangle className="text-sm" />
       },
       'INAPPROPRIATE': { 
         color: 'bg-orange-100 text-orange-800 border-orange-200', 
         text: 'Không phù hợp',
-        icon: '⚠️'
+        icon: <FiAlertTriangle className="text-sm" />
       },
       'HARASSMENT': { 
         color: 'bg-purple-100 text-purple-800 border-purple-200', 
         text: 'Quấy rối',
-        icon: '🚨'
+        icon: <FiAlertTriangle className="text-sm" />
       },
       'OTHER': { 
         color: 'bg-gray-100 text-gray-800 border-gray-200', 
         text: 'Khác',
-        icon: '❓'
+        icon: <FaQuestion  className="text-sm" />
       }
     };
 
@@ -206,7 +209,7 @@ const ReportManagement = () => {
     
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full border ${config.color}`}>
-        <span>{config.icon}</span>
+        {config.icon}
         <span>{config.text}</span>
       </span>
     );
@@ -217,22 +220,22 @@ const ReportManagement = () => {
       'PENDING': { 
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
         text: 'Chờ xử lý',
-        icon: '⏳'
+        icon: <FaHourglassHalf  className="text-sm" />
       },
       'REVIEWED': { 
         color: 'bg-blue-100 text-blue-800 border-blue-200', 
         text: 'Đã xem',
-        icon: '👀'
+        icon: <FiEye className="text-sm" />
       },
       'RESOLVED': { 
         color: 'bg-green-100 text-green-800 border-green-200', 
         text: 'Đã giải quyết',
-        icon: '✅'
+        icon: <BiCheckCircle className="text-sm" />
       },
       'DISMISSED': { 
         color: 'bg-gray-100 text-gray-800 border-gray-200', 
         text: 'Đã hủy',
-        icon: '❌'
+        icon: <FiX className="text-sm" />
       }
     };
 
@@ -240,7 +243,7 @@ const ReportManagement = () => {
     
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full border ${config.color}`}>
-        <span>{config.icon}</span>
+        {config.icon}
         <span>{config.text}</span>
       </span>
     );
@@ -277,13 +280,12 @@ const ReportManagement = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
-              <span className="text-5xl">🚨</span>
+              <FiAlertTriangle className="text-5xl" />
               Quản lý Báo cáo
             </h1>
             <p className="text-orange-100 text-lg">Quản lý và xử lý các báo cáo vi phạm trong hệ thống</p>
           </div>
           <button className="px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
-            <span>📥</span>
             Export CSV
           </button>
         </div>
@@ -298,7 +300,7 @@ const ReportManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(pagination?.total || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-red-100 p-4 rounded-full">
-              <span className="text-3xl">🚨</span>
+              <FiAlertTriangle className="text-3xl" />
             </div>
           </div>
         </div>
@@ -310,7 +312,7 @@ const ReportManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{reports.filter(r => r.status === 'PENDING').length}</p>
             </div>
             <div className="bg-yellow-100 p-4 rounded-full">
-              <span className="text-3xl">⏳</span>
+              <FaHourglassHalf  className="text-3xl" />
             </div>
           </div>
         </div>
@@ -322,7 +324,7 @@ const ReportManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{reports.filter(r => r.status === 'RESOLVED').length}</p>
             </div>
             <div className="bg-green-100 p-4 rounded-full">
-              <span className="text-3xl">✅</span>
+              <BiCheckCircle className="text-3xl" />
             </div>
           </div>
         </div>
@@ -334,7 +336,7 @@ const ReportManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{pagination?.currentPage || 1}<span className="text-lg text-gray-500">/{pagination?.totalPages || 1}</span></p>
             </div>
             <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">📄</span>
+              <FaQuestion  className="text-3xl" />
             </div>
           </div>
         </div>
@@ -344,7 +346,7 @@ const ReportManagement = () => {
       <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span className="text-2xl">🔍</span>
+            <FiSearch className="text-2xl" />
             Bộ lọc & Tìm kiếm
           </h2>
           <button
@@ -358,7 +360,7 @@ const ReportManagement = () => {
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
-            <span>🗑️</span>
+            <FiTrash2 />
             Xóa bộ lọc
           </button>
         </div>
@@ -367,7 +369,7 @@ const ReportManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>🔍</span>
+                <FiSearch />
                 Tìm kiếm
               </span>
             </label>
@@ -391,7 +393,7 @@ const ReportManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>🚨</span>
+                <FiAlertTriangle />
                 Loại báo cáo
               </span>
             </label>
@@ -401,10 +403,10 @@ const ReportManagement = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả loại</option>
-              <option value="SPAM">🚫 Spam</option>
-              <option value="INAPPROPRIATE">⚠️ Không phù hợp</option>
-              <option value="HARASSMENT">🚨 Quấy rối</option>
-              <option value="OTHER">❓ Khác</option>
+              <option value="SPAM">Spam</option>
+              <option value="INAPPROPRIATE">Không phù hợp</option>
+              <option value="HARASSMENT">Quấy rối</option>
+              <option value="OTHER">Khác</option>
             </select>
           </div>
 
@@ -412,7 +414,7 @@ const ReportManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>📋</span>
+                <BiClipboard />
                 Trạng thái
               </span>
             </label>
@@ -422,10 +424,10 @@ const ReportManagement = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="PENDING">⏳ Chờ xử lý</option>
-              <option value="REVIEWED">👀 Đã xem</option>
-              <option value="RESOLVED">✅ Đã giải quyết</option>
-              <option value="DISMISSED">❌ Đã hủy</option>
+              <option value="PENDING">Chờ xử lý</option>
+              <option value="REVIEWED">Đã xem</option>
+              <option value="RESOLVED">Đã giải quyết</option>
+              <option value="DISMISSED">Đã hủy</option>
             </select>
           </div>
         </div>
@@ -437,7 +439,7 @@ const ReportManagement = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-orange-500 text-white p-2 rounded-lg">
-                <span className="text-xl">📋</span>
+                <BiClipboard className="text-xl" />
               </div>
               <div>
                 <span className="text-lg text-orange-900 font-bold">
@@ -451,13 +453,13 @@ const ReportManagement = () => {
                 onClick={() => handleBulkAction('resolve')}
                 className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-emerald-600 flex items-center gap-2 font-semibold transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                <span className="text-lg">✅</span> Giải quyết tất cả
+                <BiCheckCircle className="text-lg" /> Giải quyết tất cả
               </button>
               <button
                 onClick={() => handleBulkAction('dismiss')}
                 className="px-4 py-2 bg-gradient-to-r from-gray-500 to-slate-500 text-white text-sm rounded-lg hover:from-gray-600 hover:to-slate-600 flex items-center gap-2 font-semibold transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                <span className="text-lg">❌</span> Bác bỏ tất cả
+                <FiX className="text-lg" /> Bác bỏ tất cả
               </button>
             </div>
           </div>
@@ -486,7 +488,7 @@ const ReportManagement = () => {
         <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-red-50">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-              <span className="text-2xl">🚨</span>
+              <FiAlertTriangle className="text-2xl" />
               Danh sách báo cáo
               <span className="ml-2 px-3 py-1 bg-red-500 text-white text-sm font-semibold rounded-full">
                 {reports.length}
@@ -511,22 +513,22 @@ const ReportManagement = () => {
                   />
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🚨 Báo cáo
+                  <FiAlertTriangle className="inline mr-1" /> Báo cáo
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  👤 Người báo cáo
+                  <FiUser className="inline mr-1" /> Người báo cáo
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📦 Sản phẩm bị báo cáo
+                  <FiPackage className="inline mr-1" /> Sản phẩm bị báo cáo
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🎭 Loại báo cáo
+                  <FiShield className="inline mr-1" /> Loại báo cáo
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🔔 Trạng thái
+                  <FiBell className="inline mr-1" /> Trạng thái
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  ⚙️ Thao tác
+                  <FiSettings className="inline mr-1" /> Thao tác
                 </th>
               </tr>
             </thead>
@@ -626,7 +628,7 @@ const ReportManagement = () => {
                           onClick={() => navigate(`/admin/reports/${report._id}`)}
                           className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                         >
-                          <span>👁️</span> Xem chi tiết
+                          <FiEye className="text-sm" /> Xem chi tiết
                         </button>
                         {report.status === 'PENDING' && (
                           <select
@@ -635,9 +637,9 @@ const ReportManagement = () => {
                             defaultValue=""
                           >
                             <option value="" disabled>Cập nhật</option>
-                            <option value="REVIEWED">👀 Đã xem</option>
-                            <option value="RESOLVED">✅ Giải quyết</option>
-                            <option value="DISMISSED">❌ Hủy bỏ</option>
+                            <option value="REVIEWED">Đã xem</option>
+                            <option value="RESOLVED">Giải quyết</option>
+                            <option value="DISMISSED">Hủy bỏ</option>
                           </select>
                         )}
                       </div>

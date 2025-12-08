@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 
 // Get socket server URL from API URL
 const getServerUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL || "https://api.pira.asia/api";
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
   // Remove /api suffix if present
   return apiUrl.replace(/\/api$/, "");
 };
