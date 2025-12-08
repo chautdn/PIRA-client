@@ -5,6 +5,7 @@ import { FileText, Signature, Check, AlertCircle, Download, User, Clock, Shield,
 import rentalOrderService from '../../services/rentalOrder';
 import otpService from '../../services/otp';
 import { toast } from '../common/Toast';
+import useOrderSocket from '../../hooks/useOrderSocket';
 
 const ContractSigning = () => {
   const { contractId: paramContractId } = useParams();
@@ -39,6 +40,32 @@ const ContractSigning = () => {
   const [otpExpiry, setOtpExpiry] = useState(null);
   const [remainingTime, setRemainingTime] = useState(0);
   const [sentCount, setSentCount] = useState(0);
+
+  // Initialize WebSocket for real-time contract updates
+  const { emitContractSigned, emitContractCompleted } = useOrderSocket({
+    onContractSigned: (data) => {
+      console.log('📝 Contract signed by other party, reloading...');
+      if (contractId) {
+        const loadContract = async () => {
+          try {
+            const response = await rentalOrderService.getContractDetail(contractId);
+            const actualData = response.data?.metadata || response.metadata || response.data || response;
+            if (actualData.contract) {
+              setContract(actualData.contract);
+              setCanSign(actualData.canSign);
+              setSignMessage(actualData.signMessage || '');
+              const role = actualData.userRole?.toLowerCase();
+              const alreadySigned = role && actualData.contract.signatures[role]?.signed;
+              setHasAlreadySigned(alreadySigned);
+            }
+          } catch (error) {
+            console.error('Error reloading contract:', error);
+          }
+        };
+        loadContract();
+      }
+    },
+  });
 
   console.log('🔍 ContractSigning - contractId:', contractId);
 

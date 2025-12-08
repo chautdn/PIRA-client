@@ -91,6 +91,11 @@ const RENTAL_ORDER_ACTIONS = {
   CANCEL_ORDER_SUCCESS: 'CANCEL_ORDER_SUCCESS',
   CANCEL_ORDER_ERROR: 'CANCEL_ORDER_ERROR',
   
+  // Realtime Updates
+  UPDATE_ORDER_REALTIME: 'UPDATE_ORDER_REALTIME',
+  ADD_NEW_ORDER_REALTIME: 'ADD_NEW_ORDER_REALTIME',
+  UPDATE_ORDER_STATUS_REALTIME: 'UPDATE_ORDER_STATUS_REALTIME',
+  
   // Clear Error
   CLEAR_ERROR: 'CLEAR_ERROR'
 };
@@ -194,6 +199,65 @@ const rentalOrderReducer = (state, action) => {
       };
     case RENTAL_ORDER_ACTIONS.CALCULATE_SHIPPING_ERROR:
       return { ...state, isCalculatingShipping: false, error: action.payload };
+
+    case RENTAL_ORDER_ACTIONS.UPDATE_ORDER_REALTIME:
+      // Update a specific order in myOrders or ownerOrders
+      const { orderId, updates, orderType: updateOrderType } = action.payload;
+      const ordersKey = updateOrderType === 'my' ? 'myOrders' : 'ownerOrders';
+      return {
+        ...state,
+        [ordersKey]: state[ordersKey].map(order => 
+          order._id === orderId ? { ...order, ...updates } : order
+        ),
+        currentOrder: state.currentOrder?._id === orderId 
+          ? { ...state.currentOrder, ...updates }
+          : state.currentOrder
+      };
+
+    case RENTAL_ORDER_ACTIONS.ADD_NEW_ORDER_REALTIME:
+      // Add new order to the beginning of the list
+      const { order: newOrder, orderType: addOrderType } = action.payload;
+      const addOrdersKey = addOrderType === 'my' ? 'myOrders' : 'ownerOrders';
+      return {
+        ...state,
+        [addOrdersKey]: [newOrder, ...state[addOrdersKey]]
+      };
+
+    case RENTAL_ORDER_ACTIONS.UPDATE_ORDER_STATUS_REALTIME:
+      // Update order status and related fields
+      const { orderId: statusOrderId, status, subOrderUpdates } = action.payload;
+      return {
+        ...state,
+        myOrders: state.myOrders.map(order => {
+          if (order._id === statusOrderId) {
+            const updatedOrder = { ...order, status };
+            if (subOrderUpdates && order.subOrders) {
+              updatedOrder.subOrders = order.subOrders.map(sub => {
+                const update = subOrderUpdates.find(u => u.subOrderId === sub._id);
+                return update ? { ...sub, ...update.updates } : sub;
+              });
+            }
+            return updatedOrder;
+          }
+          return order;
+        }),
+        ownerOrders: state.ownerOrders.map(order => {
+          if (order._id === statusOrderId) {
+            const updatedOrder = { ...order, status };
+            if (subOrderUpdates && order.subOrders) {
+              updatedOrder.subOrders = order.subOrders.map(sub => {
+                const update = subOrderUpdates.find(u => u.subOrderId === sub._id);
+                return update ? { ...sub, ...update.updates } : sub;
+              });
+            }
+            return updatedOrder;
+          }
+          return order;
+        }),
+        currentOrder: state.currentOrder?._id === statusOrderId
+          ? { ...state.currentOrder, status }
+          : state.currentOrder
+      };
 
     case RENTAL_ORDER_ACTIONS.CLEAR_ERROR:
       return { ...state, error: null };
@@ -495,6 +559,28 @@ export const RentalOrderProvider = ({ children }) => {
     }
   };
 
+  // Realtime update functions
+  const updateOrderRealtime = (orderId, updates, orderType = 'my') => {
+    dispatch({
+      type: RENTAL_ORDER_ACTIONS.UPDATE_ORDER_REALTIME,
+      payload: { orderId, updates, orderType }
+    });
+  };
+
+  const addNewOrderRealtime = (order, orderType = 'owner') => {
+    dispatch({
+      type: RENTAL_ORDER_ACTIONS.ADD_NEW_ORDER_REALTIME,
+      payload: { order, orderType }
+    });
+  };
+
+  const updateOrderStatusRealtime = (orderId, status, subOrderUpdates = null) => {
+    dispatch({
+      type: RENTAL_ORDER_ACTIONS.UPDATE_ORDER_STATUS_REALTIME,
+      payload: { orderId, status, subOrderUpdates }
+    });
+  };
+
   const clearError = () => {
     dispatch({ type: RENTAL_ORDER_ACTIONS.CLEAR_ERROR });
   };
@@ -524,7 +610,12 @@ export const RentalOrderProvider = ({ children }) => {
     loadContracts,
     calculateShipping,
     calculateProductShipping,
-    clearError
+    clearError,
+    
+    // Realtime actions
+    updateOrderRealtime,
+    addNewOrderRealtime,
+    updateOrderStatusRealtime
   };
 
     return (

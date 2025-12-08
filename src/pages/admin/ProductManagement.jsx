@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminService } from '../../services/admin';
+import icons from "../../utils/icons";
+
+const { FiPackage, BiCheckCircle, BiLoaderAlt, FiClipboard, FiSearch, FiTrash2, BiClipboard, BsBuildings, BiRefresh, FiUser, FiDollarSign, FiBell, FiCalendar, FiSettings, FiAlertTriangle, FiEye, BiInfoCircle, FiStar, FiX, FiLock } = icons;
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
@@ -237,33 +240,33 @@ const ProductManagement = () => {
     const statusConfig = {
       DRAFT: { 
         color: 'bg-gray-100 text-gray-700 border-gray-200', 
-        text: '📝 Bản nháp',
-        icon: '📝'
+        text: ' Bản nháp',
+        icon: <FiClipboard className="text-sm" />
       },
       PENDING: { 
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
-        text: '⏳ Chờ duyệt',
-        icon: '⏳'
+        text: ' Chờ duyệt',
+        icon: <BiLoaderAlt className="text-sm" />
       },
       ACTIVE: { 
         color: 'bg-green-100 text-green-800 border-green-200', 
         text: ' Đang hoạt động',
-        icon: '✅'
+        icon: <BiCheckCircle className="text-sm" />
       },
       RENTED: { 
         color: 'bg-blue-100 text-blue-800 border-blue-200', 
         text: ' Đã cho thuê',
-        icon: '🏠'
+        icon: <FiPackage className="text-sm" />
       },
       INACTIVE: { 
         color: 'bg-orange-100 text-orange-800 border-orange-200', 
         text: 'Tạm ngừng',
-        icon: '⏸️'
+        icon: <FiX className="text-sm" />
       },
       SUSPENDED: { 
         color: 'bg-red-100 text-red-800 border-red-200', 
         text: ' Bị khóa',
-        icon: '🚫'
+        icon: <FiLock className="text-sm" />
       }
     };
 
@@ -271,7 +274,7 @@ const ProductManagement = () => {
     
     return (
       <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full border ${config.color}`}>
-        <span>{config.icon}</span>
+        {config.icon}
         <span>{config.text}</span>
       </span>
     );
@@ -295,7 +298,7 @@ const ProductManagement = () => {
     if (!category && !subCategory) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded-md border border-gray-200">
-          ❓ Chưa phân loại
+          <BiInfoCircle className="text-sm" /> Chưa phân loại
         </span>
       );
     }
@@ -304,8 +307,8 @@ const ProductManagement = () => {
 
     if (category) {
       const categoryLevel = category.level || 0;
-      const categoryIcon = categoryLevel === 0 ? '📁' : categoryLevel === 1 ? '📂' : '📄';
-      const priorityIcon = (category.priority || 1) > 5 ? ' ⭐' : '';
+      const categoryIcon = categoryLevel === 0 ? <BsBuildings className="text-sm" /> : categoryLevel === 1 ? <BsBuildings className="text-sm" /> : <FiClipboard className="text-sm" />;
+      const priorityIcon = (category.priority || 1) > 5 ? <FiStar className="text-yellow-600 text-sm" /> : null;
       
       elements.push(
         <span 
@@ -323,7 +326,7 @@ const ProductManagement = () => {
           key={subCategory._id}
           className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md border border-purple-200"
         >
-          📄 {subCategory.name}
+          <FiClipboard className="text-sm" /> {subCategory.name}
         </span>
       );
     }
@@ -346,13 +349,12 @@ const ProductManagement = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
-              <span className="text-5xl">📦</span>
+              <FiPackage className="text-5xl" />
               Quản lý Sản phẩm
             </h1>
             <p className="text-blue-100 text-lg">Quản lý và theo dõi toàn bộ sản phẩm cho thuê trong hệ thống</p>
           </div>
           <button className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
-            <span>📥</span>
             Export CSV
           </button>
         </div>
@@ -367,7 +369,7 @@ const ProductManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{pagination.totalProducts.toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-blue-100 p-4 rounded-full">
-              <span className="text-3xl">📦</span>
+              <FiPackage className="text-3xl" />
             </div>
           </div>
         </div>
@@ -379,7 +381,7 @@ const ProductManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{products.filter(p => p.status === 'ACTIVE').length}</p>
             </div>
             <div className="bg-green-100 p-4 rounded-full">
-              <span className="text-3xl">✅</span>
+              <BiCheckCircle className="text-3xl" />
             </div>
           </div>
         </div>
@@ -391,7 +393,7 @@ const ProductManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{products.filter(p => p.status === 'PENDING').length}</p>
             </div>
             <div className="bg-yellow-100 p-4 rounded-full">
-              <span className="text-3xl">⏳</span>
+              <BiLoaderAlt className="text-3xl" />
             </div>
           </div>
         </div>
@@ -403,7 +405,7 @@ const ProductManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{pagination.currentPage}<span className="text-lg text-gray-500">/{pagination.totalPages}</span></p>
             </div>
             <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">📄</span>
+              <FiClipboard className="text-3xl" />
             </div>
           </div>
         </div>
@@ -413,7 +415,7 @@ const ProductManagement = () => {
       <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span className="text-2xl">🔍</span>
+            <FiSearch className="text-2xl" />
             Bộ lọc & Tìm kiếm
           </h2>
           <button
@@ -435,7 +437,7 @@ const ProductManagement = () => {
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
-            <span>🗑️</span>
+            <FiTrash2 />
             Xóa bộ lọc
           </button>
         </div>
@@ -445,7 +447,7 @@ const ProductManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>🔍</span>
+                <FiSearch />
                 Tìm kiếm
               </span>
             </label>
@@ -469,7 +471,7 @@ const ProductManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>📋</span>
+                <BiClipboard />
                 Trạng thái
               </span>
             </label>
@@ -492,7 +494,7 @@ const ProductManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>📂</span>
+                <BsBuildings />
                 Danh mục
               </span>
             </label>
@@ -514,7 +516,7 @@ const ProductManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>🔄</span>
+                <BiRefresh />
                 Sắp xếp
               </span>
             </label>
@@ -543,7 +545,7 @@ const ProductManagement = () => {
         <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-              <span className="text-2xl">📦</span>
+              <FiPackage className="text-2xl" />
               Danh sách sản phẩm
               <span className="ml-2 px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-full">
                 {products.length}
@@ -559,22 +561,22 @@ const ProductManagement = () => {
             <thead className="bg-gradient-to-r from-gray-100 to-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📦 Sản phẩm
+                  <FiPackage className="inline mr-1" /> Sản phẩm
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  👤 Chủ sở hữu
+                  <FiUser className="inline mr-1" /> Chủ sở hữu
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  💰 Giá thuê
+                  <FiDollarSign className="inline mr-1" /> Giá thuê
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🔔 Trạng thái
+                  <FiBell className="inline mr-1" /> Trạng thái
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📅 Ngày đăng
+                  <FiCalendar className="inline mr-1" /> Ngày đăng
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  ⚙️ Thao tác
+                  <FiSettings className="inline mr-1" /> Thao tác
                 </th>
               </tr>
             </thead>
@@ -602,7 +604,7 @@ const ProductManagement = () => {
                           </div>
                         ) : (
                           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center border-2 border-gray-200">
-                            <span className="text-gray-500 text-lg">📦</span>
+                            <FiPackage className="text-gray-500 text-lg" />
                           </div>
                         )}
                       </div>
@@ -611,23 +613,7 @@ const ProductManagement = () => {
                           {product.title || product.name || 'Tên sản phẩm'}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          {product.category && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200">
-                              {product.category.level === 0 ? '�' : product.category.level === 1 ? '�📂' : '📄'} 
-                              {product.category.name}
-                              {product.category.priority > 5 && <span className="text-yellow-600">⭐</span>}
-                            </span>
-                          )}
-                          {product.subCategory && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md border border-purple-200">
-                              � {product.subCategory.name}
-                            </span>
-                          )}
-                          {!product.category && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded-md border border-gray-200">
-                              ❓ Chưa phân loại
-                            </span>
-                          )}
+                          {getCategoryDisplay(product.category, product.subCategory)}
                         </div>
                       </div>
                     </div>
@@ -641,21 +627,21 @@ const ProductManagement = () => {
                   <td className="px-6 py-4">
                     <div className="space-y-1">
                       <div className="text-sm font-bold text-green-700">
-                        💰 {formatPrice(product.pricing?.dailyRate || product.dailyRate || 0)}/ngày
+                        <FiDollarSign className="inline mr-1" /> {formatPrice(product.pricing?.dailyRate || product.dailyRate || 0)}/ngày
                       </div>
                       {product.pricing?.weeklyRate && (
                         <div className="text-xs text-blue-600">
-                          📅 {formatPrice(product.pricing.weeklyRate)}/tuần
+                          <FiCalendar className="inline mr-1" /> {formatPrice(product.pricing.weeklyRate)}/tuần
                         </div>
                       )}
                       {product.pricing?.monthlyRate && (
                         <div className="text-xs text-purple-600">
-                          📆 {formatPrice(product.pricing.monthlyRate)}/tháng
+                          <FiCalendar className="inline mr-1" /> {formatPrice(product.pricing.monthlyRate)}/tháng
                         </div>
                       )}
                       {(product.pricing?.deposit?.amount || product.deposit) && (
                         <div className="text-xs text-orange-600">
-                          🔒 Cọc: {formatPrice(product.pricing?.deposit?.amount || product.deposit)}
+                          <FiLock className="inline mr-1" /> Cọc: {formatPrice(product.pricing?.deposit?.amount || product.deposit)}
                         </div>
                       )}
                     </div>
@@ -665,12 +651,12 @@ const ProductManagement = () => {
                       {getStatusBadge(product.status || 'INACTIVE')}
                       {product.availability?.isAvailable === false && (
                         <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
-                          ❌ Không khả dụng
+                          <FiX className="text-sm" /> Không khả dụng
                         </div>
                       )}
                       {product.featuredTier && (
                         <div className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-md border border-yellow-200">
-                          ⭐ Featured T{product.featuredTier}
+                          <FiStar className="text-sm" /> Featured T{product.featuredTier}
                         </div>
                       )}
                     </div>
@@ -683,7 +669,7 @@ const ProductManagement = () => {
                       to={`/admin/products/${product._id}`}
                       className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 inline-flex"
                     >
-                      <span>👁️</span> Chi tiết
+                      <FiEye className="text-sm" /> Chi tiết
                     </Link>
                   </td>
                 </tr>
@@ -798,7 +784,7 @@ const ProductManagement = () => {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
-            <span className="text-red-500 mr-2">⚠️</span>
+            <FiAlertTriangle className="text-red-500 mr-2" />
             <span className="text-red-800">{error}</span>
           </div>
         </div>

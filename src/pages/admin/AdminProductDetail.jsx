@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { reviewService } from '../../services/review';
+import icons from "../../utils/icons";
+
+const { FiAlertTriangle, FiCamera, FiZoomIn, FiDollarSign, FiMapPin, FiUser, FiPhone, FiCalendar, FiEye, FiHome, FiStar, BiCheckCircle, FiX } = icons;
 
 const AdminProductDetail = () => {
   const { productId } = useParams();
@@ -203,7 +206,7 @@ const AdminProductDetail = () => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center">
-          <span className="text-red-500 mr-2">⚠️</span>
+          <FiAlertTriangle className="text-red-500 mr-2" />
           <span className="text-red-800">{error || 'Không tìm thấy sản phẩm'}</span>
         </div>
       </div>
@@ -253,9 +256,7 @@ const AdminProductDetail = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <FiCamera className="w-6 h-6 text-white" />
             </div>
             Hình ảnh sản phẩm
           </h3>
@@ -281,11 +282,7 @@ const AdminProductDetail = () => {
                   {product.images.map((image, index) => (
                     <div 
                       key={index} 
-                      className={`aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer border-3 transition-all duration-200 hover:scale-105 ${
-                        selectedImageIndex === index 
-                          ? 'border-gradient-to-r from-purple-500 to-pink-500 ring-4 ring-purple-200 shadow-lg' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer border-3 transition-all duration-200 hover:scale-105 ${selectedImageIndex === index ? 'border-gradient-to-r from-purple-500 to-pink-500 ring-4 ring-purple-200 shadow-lg' : 'border-gray-200 hover:border-gray-300'}`}
                       onClick={() => setSelectedImageIndex(index)}
                     >
                       <img
@@ -304,10 +301,10 @@ const AdminProductDetail = () => {
               {/* Image Info */}
               <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
                 <span className="text-gray-700 font-semibold">
-                  📷 Hình {selectedImageIndex + 1} / {product.images.length}
+                  <FiCamera className="inline mr-1" /> Hình {selectedImageIndex + 1} / {product.images.length}
                 </span>
                 <span className="text-gray-600">
-                  🔍 Nhấp vào hình để xem chi tiết
+                  <FiZoomIn className="inline mr-1" /> Nhấp vào hình để xem chi tiết
                 </span>
               </div>
             </div>
@@ -315,9 +312,7 @@ const AdminProductDetail = () => {
             <div className="w-full h-[500px] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center">
               <div className="text-center text-gray-500">
                 <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center mb-4 mx-auto">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <FiCamera className="w-12 h-12 text-gray-400" />
                 </div>
                 <p className="text-xl font-semibold">Không có hình ảnh</p>
                 <p className="text-gray-400 mt-2">Sản phẩm này chưa có hình ảnh nào</p>
@@ -440,7 +435,7 @@ const AdminProductDetail = () => {
                       </span>
                     </div>
                   </div>
-                 
+                  
                 </>
               )}
               <div>
@@ -465,7 +460,10 @@ const AdminProductDetail = () => {
 
           {/* Pricing */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 Giá cho thuê</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <FiDollarSign className="text-green-600" />
+              Giá cho thuê
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Giá theo ngày</label>
@@ -500,7 +498,10 @@ const AdminProductDetail = () => {
 
           {/* Location */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">📍 Địa điểm</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <FiMapPin className="text-red-600" />
+              Địa điểm
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Địa chỉ</label>
@@ -539,17 +540,13 @@ const AdminProductDetail = () => {
             <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                  <FiUser className="w-6 h-6 text-white" />
                 </div>
                 Chủ sở hữu
               </h3>
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+                  <FiUser className="w-8 h-8 text-white" />
                 </div>
                 <div>
                   <p className="font-bold text-lg text-gray-900">{product.owner?.fullName || product.owner?.username}</p>
@@ -558,11 +555,15 @@ const AdminProductDetail = () => {
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-600 font-medium">📞 Điện thoại:</span>
+                  <span className="text-gray-600 font-medium">
+                    <FiPhone className="inline mr-1" /> Điện thoại:
+                  </span>
                   <span className="font-semibold text-gray-900">{product.owner?.phone || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center py-3">
-                  <span className="text-gray-600 font-medium">📅 Ngày tham gia:</span>
+                  <span className="text-gray-600 font-medium">
+                    <FiCalendar className="inline mr-1" /> Ngày tham gia:
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {new Date(product.owner?.createdAt).toLocaleDateString('vi-VN')}
                   </span>
@@ -582,15 +583,21 @@ const AdminProductDetail = () => {
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 bg-white/50 rounded-xl px-4">
-                  <span className="text-gray-700 font-medium">👁️ Lượt xem:</span>
+                  <span className="text-gray-700 font-medium">
+                    <FiEye className="inline mr-1" /> Lượt xem:
+                  </span>
                   <span className="font-black text-2xl text-indigo-600">{product.metrics?.viewCount || 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 bg-white/50 rounded-xl px-4">
-                  <span className="text-gray-700 font-medium">🏠 Lượt thuê:</span>
+                  <span className="text-gray-700 font-medium">
+                    <FiHome className="inline mr-1" /> Lượt thuê:
+                  </span>
                   <span className="font-black text-2xl text-purple-600">{product.metrics?.rentalCount || 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 bg-white/50 rounded-xl px-4">
-                  <span className="text-gray-700 font-medium">⭐ Đánh giá:</span>
+                  <span className="text-gray-700 font-medium">
+                    <FiStar className="inline mr-1" /> Đánh giá:
+                  </span>
                   <div className="text-right">
                     <span className="font-black text-2xl text-yellow-600">
                       {product.metrics?.averageRating || 0}/5
@@ -607,18 +614,13 @@ const AdminProductDetail = () => {
             <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
+                  <FiCamera className="w-6 h-6 text-white" />
                 </div>
                 Tổng quan hình ảnh
               </h3>
               <div className="text-center mb-4">
                 <span className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-100 to-rose-100 rounded-xl">
-                  <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <FiCamera className="w-5 h-5 text-pink-600" />
                   <span className="font-bold text-pink-700">
                     Tổng cộng: {product.images?.length || 0} hình ảnh
                   </span>
@@ -662,9 +664,7 @@ const AdminProductDetail = () => {
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
+                <FiStar className="w-4 h-4 text-white" />
               </div>
               Đánh giá
             </h3>
@@ -792,7 +792,7 @@ const AdminProductDetail = () => {
           }`}>
             <div className="flex items-center gap-2">
               <span className="text-xl">
-                {notification.type === 'success' ? '✅' : '❌'}
+                {notification.type === 'success' ? <BiCheckCircle /> : <FiX />}
               </span>
               <span className="font-medium">{notification.message}</span>
             </div>
@@ -806,7 +806,7 @@ const AdminProductDetail = () => {
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
-                <span className="text-3xl">⚠️</span>
+                <FiAlertTriangle className="text-3xl text-orange-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">
                 Xác nhận thay đổi trạng thái
@@ -843,7 +843,7 @@ const AdminProductDetail = () => {
                 onClick={cancelStatusChange}
                 className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-0.5"
               >
-                ❌ Hủy
+                <FiX className="inline mr-2" /> Hủy
               </button>
               <button
                 onClick={confirmStatusChange}
@@ -855,7 +855,7 @@ const AdminProductDetail = () => {
                   'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
                 }`}
               >
-                {actionLoading ? '⏳ Đang xử lý...' : '✅ Xác nhận'}
+                {actionLoading ? '⏳ Đang xử lý...' : <><BiCheckCircle className="inline mr-2" /> Xác nhận</>}
               </button>
             </div>
           </div>
