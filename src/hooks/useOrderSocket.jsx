@@ -14,6 +14,12 @@ const useOrderSocket = (callbacks = {}) => {
   const { updateOrderRealtime, addNewOrderRealtime, updateOrderStatusRealtime } = useRentalOrder();
   const socketRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
+  const callbacksRef = useRef(callbacks);
+
+  // Update callbacks ref when they change
+  useEffect(() => {
+    callbacksRef.current = callbacks;
+  }, [callbacks]);
 
   // Get server URL from environment or default (remove /api suffix for socket)
   const getServerUrl = () => {
@@ -26,6 +32,9 @@ const useOrderSocket = (callbacks = {}) => {
   // Default callbacks with realtime state updates
   const defaultCallbacks = {
     onOrderCreated: useCallback((data) => {
+      // Merge with custom callback
+      const customCallback = callbacksRef.current?.onOrderCreated;
+      
       // Update state: Add new order to owner's list
       if (data.masterOrderId && addNewOrderRealtime) {
         addNewOrderRealtime({
@@ -49,9 +58,14 @@ const useOrderSocket = (callbacks = {}) => {
         </div>,
         { duration: 8000 }
       );
+      
+      // Call custom callback if provided
+      if (customCallback) customCallback(data);
     }, [addNewOrderRealtime]),
 
     onOrderStatusChanged: useCallback((data) => {
+      const customCallback = callbacksRef.current?.onOrderStatusChanged;
+      
       // Update state: Update order status
       if (data.orderId && data.status && updateOrderStatusRealtime) {
         updateOrderStatusRealtime(data.orderId, data.status, data.subOrderUpdates);
@@ -79,9 +93,13 @@ const useOrderSocket = (callbacks = {}) => {
         </div>,
         { duration: 5000 }
       );
+      
+      if (customCallback) customCallback(data);
     }, [updateOrderStatusRealtime]),
 
     onContractSigned: useCallback((data) => {
+      const customCallback = callbacksRef.current?.onContractSigned;
+      
       // Update state: Update contract status in order
       if (data.subOrderId) {
         updateOrderRealtime(data.subOrderId, {
@@ -99,9 +117,13 @@ const useOrderSocket = (callbacks = {}) => {
         </div>,
         { duration: 6000 }
       );
+      
+      if (customCallback) customCallback(data);
     }, [updateOrderRealtime]),
 
     onContractCompleted: useCallback((data) => {
+      const customCallback = callbacksRef.current?.onContractCompleted;
+      
       // Update state: Both parties signed, update to CONTRACT_SIGNED
       if (data.subOrderId) {
         updateOrderStatusRealtime(data.subOrderId, 'CONTRACT_SIGNED');
@@ -117,9 +139,13 @@ const useOrderSocket = (callbacks = {}) => {
         </div>,
         { duration: 6000 }
       );
+      
+      if (customCallback) customCallback(data);
     }, [updateOrderStatusRealtime]),
 
     onPaymentReceived: useCallback((data) => {
+      const customCallback = callbacksRef.current?.onPaymentReceived;
+      
       // Update state: Update payment status
       if (data.orderId) {
         updateOrderRealtime(data.orderId, {
@@ -138,9 +164,13 @@ const useOrderSocket = (callbacks = {}) => {
         </div>,
         { duration: 5000 }
       );
+      
+      if (customCallback) customCallback(data);
     }, [updateOrderRealtime]),
 
     onShipmentUpdate: useCallback((data) => {
+      const customCallback = callbacksRef.current?.onShipmentUpdate;
+      
       // Update state: Update shipment status
       if (data.orderId) {
         updateOrderRealtime(data.orderId, {
@@ -167,9 +197,13 @@ const useOrderSocket = (callbacks = {}) => {
         </div>,
         { duration: 5000 }
       );
+      
+      if (customCallback) customCallback(data);
     }, [updateOrderRealtime]),
 
     onEarlyReturnRequest: useCallback((data) => {
+      const customCallback = callbacksRef.current?.onEarlyReturnRequest;
+      
       // Update state: Mark order has early return request
       if (data.orderId) {
         updateOrderRealtime(data.orderId, {
@@ -187,9 +221,13 @@ const useOrderSocket = (callbacks = {}) => {
         </div>,
         { duration: 6000 }
       );
+      
+      if (customCallback) customCallback(data);
     }, [updateOrderRealtime]),
 
     onExtensionRequest: useCallback((data) => {
+      const customCallback = callbacksRef.current?.onExtensionRequest;
+      
       // Update state: Mark order has extension request
       if (data.orderId) {
         updateOrderRealtime(data.orderId, {
@@ -207,11 +245,10 @@ const useOrderSocket = (callbacks = {}) => {
         </div>,
         { duration: 6000 }
       );
+      
+      if (customCallback) customCallback(data);
     }, [updateOrderRealtime]),
   };
-
-  // Merge custom callbacks with defaults
-  const finalCallbacks = { ...defaultCallbacks, ...callbacks };
 
   // Initialize socket connection
   const initSocket = useCallback(() => {
@@ -240,18 +277,18 @@ const useOrderSocket = (callbacks = {}) => {
     socket.on('connect_error', (error) => {});
 
     // Register event listeners
-    socket.on('order:new', finalCallbacks.onOrderCreated);
-    socket.on('order:statusChanged', finalCallbacks.onOrderStatusChanged);
-    socket.on('contract:signatureReceived', finalCallbacks.onContractSigned);
-    socket.on('contract:fullyExecuted', finalCallbacks.onContractCompleted);
-    socket.on('payment:notification', finalCallbacks.onPaymentReceived);
-    socket.on('shipment:statusChanged', finalCallbacks.onShipmentUpdate);
-    socket.on('earlyReturn:newRequest', finalCallbacks.onEarlyReturnRequest);
-    socket.on('extension:newRequest', finalCallbacks.onExtensionRequest);
+    socket.on('order:new', defaultCallbacks.onOrderCreated);
+    socket.on('order:statusChanged', defaultCallbacks.onOrderStatusChanged);
+    socket.on('contract:signatureReceived', defaultCallbacks.onContractSigned);
+    socket.on('contract:fullyExecuted', defaultCallbacks.onContractCompleted);
+    socket.on('payment:notification', defaultCallbacks.onPaymentReceived);
+    socket.on('shipment:statusChanged', defaultCallbacks.onShipmentUpdate);
+    socket.on('earlyReturn:newRequest', defaultCallbacks.onEarlyReturnRequest);
+    socket.on('extension:newRequest', defaultCallbacks.onExtensionRequest);
 
     socketRef.current = socket;
     return socket;
-  }, [user?._id, SOCKET_URL, finalCallbacks]);
+  }, [user?._id, SOCKET_URL, defaultCallbacks]);
 
   // Connect on mount
   useEffect(() => {
