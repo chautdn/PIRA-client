@@ -16,7 +16,7 @@ const useOrderSocket = (callbacks = {}) => {
   const reconnectTimeoutRef = useRef(null);
 
   // Get server URL from environment or default
-  const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+  const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://api.pira.asia/api';
 
   // Default callbacks with realtime state updates
   const defaultCallbacks = {
