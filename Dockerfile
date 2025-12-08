@@ -1,5 +1,5 @@
 # Stage 1: Build React application
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build application (uses .env for build-time variables)
+# Set Node.js memory limit to 2GB and build application
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 RUN npm run build
 
 # Stage 2: Serve with nginx
