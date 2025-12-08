@@ -8,6 +8,7 @@ import ContractSigningInline from '../../components/owner/ContractSigningInline'
 import CreateDisputeModal from '../../components/dispute/CreateDisputeModal';
 import { useDispute } from '../../context/DisputeContext';
 import { ArrowLeft, Package, Calendar, MapPin, User, CreditCard, FileText, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import useOrderSocket from '../../hooks/useOrderSocket';
 
 const OwnerRentalRequestDetail = () => {
   const { subOrderId } = useParams();
@@ -26,6 +27,16 @@ const OwnerRentalRequestDetail = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   
   const { createDispute } = useDispute();
+
+  // Initialize WebSocket - context handles updates, only reload if needed for full data
+  const { isConnected } = useOrderSocket({
+    onContractSigned: (data) => {
+      fetchSubOrderDetail();
+    },
+    onContractCompleted: (data) => {
+      fetchSubOrderDetail();
+    },
+  });
 
   useEffect(() => {
     fetchSubOrderDetail();
