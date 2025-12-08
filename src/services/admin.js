@@ -646,6 +646,50 @@ class AdminService {
     }
   }
 
+  // Shipment Management APIs
+  async getShipmentStats() {
+    try {
+      const response = await api.get("/admin/shipment-stats");
+      console.log('getShipmentStats raw response:', response);
+      
+      // Handle responseUtils format: { status: 'success', data: {...} }
+      if (response.data?.status === 'success' && response.data?.data) {
+        return response.data.data;
+      }
+      // Handle direct data
+      if (response.data?.totalShippers) {
+        return response.data;
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching shipment stats:", error);
+      return null;
+    }
+  }
+
+  async getAllShippers(params = {}) {
+    try {
+      const query = new URLSearchParams(params).toString();
+      const response = await api.get(`/admin/shippers?${query}`);
+      console.log('getAllShippers raw response:', response);
+      
+      // Handle responseUtils format: { status: 'success', data: {...} }
+      if (response.data?.status === 'success' && response.data?.data) {
+        const result = response.data.data;
+        // result should have { data: [...], pagination: {...} }
+        return result;
+      }
+      // Handle direct data
+      if (response.data?.data) {
+        return response.data;
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching shippers:", error);
+      return null;
+    }
+  }
+
   async bulkUpdateProducts(productIds, updateData) {
     try {
       const response = await api.patch("/admin/products/bulk-update", {
@@ -1097,27 +1141,8 @@ export const {
   getAnalytics,
   getRevenueStats,
   bulkUpdateUsers,
-  // Shipment Management APIs
-  async getShipmentStats() {
-    try {
-      const response = await api.get("/admin/shipment-stats");
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching shipment stats:", error);
-      return null;
-    }
-  }
-
-  async getAllShippers() {
-    try {
-      const response = await api.get("/admin/shippers");
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching shippers:", error);
-      return null;
-    }
-  }
-
+  getShipmentStats,
+  getAllShippers,
   bulkUpdateProducts,
   sendNotification,
   broadcastNotification,
