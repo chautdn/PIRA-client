@@ -33,6 +33,10 @@ const AdminDashboard = () => {
   });
   const [revenueStats, setRevenueStats] = useState(null);
   const [profitStats, setProfitStats] = useState(null);
+  const [ownerStats, setOwnerStats] = useState(null);
+  const [depositStats, setDepositStats] = useState(null);
+  const [topProducts, setTopProducts] = useState(null);
+  const [statusBreakdown, setStatusBreakdown] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [recentActivities, setRecentActivities] = useState([]);
@@ -129,13 +133,21 @@ const AdminDashboard = () => {
         ...(dateRange.endDate && { endDate: dateRange.endDate })
       };
 
-      const [revenue, profit] = await Promise.all([
+      const [revenue, profit, owners, deposit, products, status] = await Promise.all([
         adminService.getRevenueStatistics(params),
-        adminService.getProfitStatistics(params)
+        adminService.getProfitStatistics(params),
+        adminService.getRevenueByOwner({ ...params, limit: 10 }),
+        adminService.getDepositStatistics(params),
+        adminService.getTopRentalProducts({ ...params, limit: 10 }),
+        adminService.getSubOrderStatusBreakdown(params)
       ]);
 
       setRevenueStats(revenue);
       setProfitStats(profit);
+      setOwnerStats(owners);
+      setDepositStats(deposit);
+      setTopProducts(products);
+      setStatusBreakdown(status);
     } catch (err) {
       console.error('Statistics error:', err);
     } finally {
@@ -165,15 +177,27 @@ const AdminDashboard = () => {
     // Safe value handling
     const safeValue = typeof value === 'number' ? value : 0;
 
+    // Get period text
+    const getPeriodText = () => {
+      switch (selectedPeriod) {
+        case 'day': return 'ngày trước';
+        case 'week': return 'tuần trước';
+        case 'month': return 'tháng trước';
+        case 'quarter': return 'quý trước';
+        case 'year': return 'năm trước';
+        default: return 'kỳ trước';
+      }
+    };
+
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">{title}</p>
             <p className="text-2xl font-bold text-gray-900">{safeValue.toLocaleString()}</p>
-            {change && (
+            {change !== undefined && change !== null && (
               <p className={`text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {change >= 0 ? '+' : ''}{change}% từ tháng trước
+                {change >= 0 ? '+' : ''}{change}% so với {getPeriodText()}
               </p>
             )}
           </div>
@@ -274,7 +298,6 @@ const AdminDashboard = () => {
         <StatCard
           title="Danh mục"
           value={stats.overview.totalCategories}
-          change={5}
           icon={<BiCategory />}
           color="yellow"
         />
@@ -295,10 +318,18 @@ const AdminDashboard = () => {
           color="green"
         />
         <StatCard
-          title="Tổng doanh thu"
-          value={stats.charts.monthlyRevenue?.reduce((total, item) => total + (item.revenue || 0), 0) || 0}
+          title="Doanh thu"
+          value={revenueStats?.summary?.total || 0}
+          change={revenueStats?.summary?.growthRate}
           icon={<FiDollarSign />}
           color="indigo"
+        />
+        <StatCard
+          title="Lợi nhuận"
+          value={profitStats?.summary?.profit || 0}
+          change={profitStats?.summary?.growthRate}
+          icon={<FiDollarSign />}
+          color="purple"
         />
       </div>
 
@@ -526,6 +557,163 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* New Statistics Sections */}
+      {!statsLoading && (ownerStats || depositStats || topProducts || statusBreakdown) && (
+        <>
+          {/* Top Owners */}
+          {ownerStats && ownerStats.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FiUser className="text-purple-600" />
+                Top Chủ Cho Thuê
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh thu</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phí ship</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số đơn</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TB/Đơn</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {ownerStats.map((owner, index) => (
+                      <tr key={owner.ownerId} className={index < 3 ? 'bg-yellow-50' : ''}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {index < 3 && <span className="mr-2 text-yellow-500">🏆</span>}
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{owner.ownerName}</div>
+                              <div className="text-sm text-gray-500">{owner.ownerEmail}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {owner.totalRevenue.toLocaleString('vi-VN')} ₫
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {owner.totalShipping.toLocaleString('vi-VN')} ₫
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {owner.orderCount}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {owner.averageOrderValue.toLocaleString('vi-VN')} ₫
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Deposit Statistics */}
+          {depositStats && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FiDollarSign className="text-green-600" />
+                Thống Kê Tiền Cọc
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-1">Tổng tiền cọc</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {depositStats.totalDeposit?.toLocaleString('vi-VN') || 0} ₫
+                  </p>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-1">Đã hoàn trả</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {depositStats.totalRefunded?.toLocaleString('vi-VN') || 0} ₫
+                  </p>
+                </div>
+                <div className="bg-yellow-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-1">Đang giữ</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {depositStats.totalHeld?.toLocaleString('vi-VN') || 0} ₫
+                  </p>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 mb-1">Số đơn</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {depositStats.orderCount || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Top Products */}
+          {topProducts && topProducts.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <FiPackage className="text-indigo-600" />
+                Sản Phẩm Được Thuê Nhiều Nhất
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượt thuê</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh thu</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số đơn</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {topProducts.map((product, index) => (
+                      <tr key={product.productId} className={index < 3 ? 'bg-indigo-50' : ''}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {index < 3 && <span className="mr-2 text-indigo-500">⭐</span>}
+                            <div className="text-sm font-medium text-gray-900">{product.productName}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            {product.totalQuantity} lượt
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {product.totalRevenue.toLocaleString('vi-VN')} ₫
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {product.orderCount}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Status Breakdown */}
+          {statusBreakdown && statusBreakdown.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <IoBarChart className="text-orange-600" />
+                Trạng Thái SubOrder
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {statusBreakdown.map((status) => (
+                  <div key={status._id} className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-xs text-gray-600 mb-1 uppercase">{status._id}</p>
+                    <p className="text-xl font-bold text-gray-900">{status.count}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {status.totalRevenue.toLocaleString('vi-VN')} ₫
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* System Status */}
       <div className="bg-white rounded-lg shadow p-6">

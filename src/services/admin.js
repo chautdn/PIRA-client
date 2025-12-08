@@ -74,6 +74,54 @@ class AdminService {
       throw error;
     }
   }
+
+  // SubOrder Statistics APIs
+  async getRevenueByOwner(params) {
+    try {
+      const response = await api.get("/admin/statistics/revenue-by-owner", {
+        params,
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching revenue by owner:", error);
+      throw error;
+    }
+  }
+
+  async getDepositStatistics(params) {
+    try {
+      const response = await api.get("/admin/statistics/deposit", { params });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching deposit statistics:", error);
+      throw error;
+    }
+  }
+
+  async getTopRentalProducts(params) {
+    try {
+      const response = await api.get("/admin/statistics/top-products", {
+        params,
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching top rental products:", error);
+      throw error;
+    }
+  }
+
+  async getSubOrderStatusBreakdown(params) {
+    try {
+      const response = await api.get("/admin/statistics/suborder-status", {
+        params,
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching suborder status breakdown:", error);
+      throw error;
+    }
+  }
+
   // User Management APIs
   async getUsers(params = {}) {
     try {
