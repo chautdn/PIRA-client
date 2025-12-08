@@ -15,8 +15,13 @@ const useOrderSocket = (callbacks = {}) => {
   const socketRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
 
-  // Get server URL from environment or default
-  const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://api.pira.asia/api';
+  // Get server URL from environment or default (remove /api suffix for socket)
+  const getServerUrl = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://api.pira.asia/api';
+    // Remove /api suffix if present
+    return apiUrl.replace(/\/api$/, '');
+  };
+  const SOCKET_URL = getServerUrl();
 
   // Default callbacks with realtime state updates
   const defaultCallbacks = {

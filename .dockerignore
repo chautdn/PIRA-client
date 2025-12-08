@@ -1,9 +1,4 @@
-node_modules
-npm-debug.log
-.env.local
-.git
-.gitignore
-README.md
-dist
-.vscode
-.DS_Store
+node_modules;
+npm - debug.log.env.local.git.gitignore;
+README.md;
+dist.vscode.DS_Store;
