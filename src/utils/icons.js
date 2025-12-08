@@ -196,6 +196,7 @@ const icons = {
   BiMapPin,
   MdOutlineAddLocationAlt,
   FaMapMarkerAlt,
+  BiMap,
 
   // Home & Property
   HiOutlineHome,
