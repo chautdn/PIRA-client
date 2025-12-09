@@ -72,7 +72,8 @@ const RentalOrderForm = () => {
     const [step, setStep] = useState(1);
     const [groupedProducts, setGroupedProducts] = useState({});
     const [sourceItems, setSourceItems] = useState([]); // Store the items being processed
-    const [totalShipping, setTotalShipping] = useState(0);
+    const [totalShipping, setTotalShipping] = useState(0); // Final shipping (after discounts applied to products)
+    const [originalTotalShipping, setOriginalTotalShipping] = useState(0); // Original shipping (before discounts)
     const [showPaymentSelector, setShowPaymentSelector] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
     const [showDepositModal, setShowDepositModal] = useState(false);
@@ -290,32 +291,11 @@ const RentalOrderForm = () => {
     };
 
     // Helper function to calculate final shipping after discounts
+    // NOTE: Discounts are already applied when allocating fees to products in handleCalculateShipping
+    // This function just returns the sum of all product shipping fees
     const calculateFinalShipping = () => {
-      let finalShipping = totalShipping;
-
-      // Apply promotion discount first
-      if (activePromotion) {
-        const discount =
-          activePromotion.systemPromotion.discountType === "PERCENTAGE"
-            ? (totalShipping *
-                activePromotion.systemPromotion.shippingDiscountValue) /
-              100
-            : Math.min(
-                activePromotion.systemPromotion.shippingDiscountValue,
-                totalShipping
-              );
-        finalShipping -= discount;
-      }
-
-      // Apply voucher discount on remaining amount
-      if (selectedVoucher) {
-        const voucherDiscount = Math.round(
-          (finalShipping * selectedVoucher.discountPercent) / 100
-        );
-        finalShipping -= voucherDiscount;
-      }
-
-      return Math.max(0, finalShipping);
+      // totalShipping already includes discounts applied at product level
+      return totalShipping;
     };
 
     // Calculate total amounts using dates from cart items
@@ -391,7 +371,8 @@ const RentalOrderForm = () => {
       }
 
       try {
-        let masterTotalShipping = 0;
+        let masterTotalShipping = 0; // Final shipping (after discounts)
+        let masterOriginalShipping = 0; // Original shipping (before discounts)
         // Create a mutable copy of groupedProducts
         const updatedGroups = {};
         Object.keys(groupedProducts).forEach(ownerId => {
@@ -429,40 +410,42 @@ const RentalOrderForm = () => {
             });
           });
 
-          let subOrderTotalShipping = 0;
-          const subOrderDeliveries = [];
+          let subOrderTotalShipping = 0; // Final shipping (after discount)
+          let subOrderOriginalShipping = 0; // Original shipping (before discount)
+          const subOrderDeliveryBatches = []; // ✅ NEW: Store batches for backend
           let deliveryCount = 0;
+
+          // ✅ NEW: Get owner location once (same for all batches)
+          const ownerLocation = {
+            latitude: group.owner.address?.coordinates?.latitude || null,
+            longitude: group.owner.address?.coordinates?.longitude || null,
+          };
+          console.log("Owner Location:", ownerLocation);
+
+          const userLocation = {
+            latitude: orderData.deliveryAddress.latitude || null,
+            longitude: orderData.deliveryAddress.longitude || null,
+          };
+          console.log("User Location:", userLocation);
+
+          // Kiểm tra tọa độ - KHÔNG fallback, báo lỗi rõ ràng
+          if (!ownerLocation.latitude || !ownerLocation.longitude) {
+            throw new Error(
+              `Chủ sản phẩm ${group.owner.profile?.firstName || "Unknown"} chưa có tọa độ địa chỉ. Vui lòng liên hệ chủ sản phẩm cập nhật địa chỉ.`
+            );
+          }
+
+          if (!userLocation.latitude || !userLocation.longitude) {
+            throw new Error(
+              "Địa chỉ giao hàng chưa có tọa độ. Vui lòng chọn địa chỉ trên bản đồ."
+            );
+          }
 
           // Calculate shipping for each delivery batch (same owner, same date = 1 delivery trip)
           for (const [deliveryDate, batchProducts] of Object.entries(
             deliveryBatches
           )) {
             deliveryCount++;
-
-            const ownerLocation = {
-              latitude: group.owner.address?.coordinates?.latitude || null,
-              longitude: group.owner.address?.coordinates?.longitude || null,
-            };
-            console.log("Owner Location:", ownerLocation);
-
-            const userLocation = {
-              latitude: orderData.deliveryAddress.latitude || null,
-              longitude: orderData.deliveryAddress.longitude || null,
-            };
-            console.log("User Location:", userLocation);
-
-            // Kiểm tra tọa độ - KHÔNG fallback, báo lỗi rõ ràng
-            if (!ownerLocation.latitude || !ownerLocation.longitude) {
-              throw new Error(
-                `Chủ sản phẩm ${group.owner.profile?.firstName || "Unknown"} chưa có tọa độ địa chỉ. Vui lòng liên hệ chủ sản phẩm cập nhật địa chỉ.`
-              );
-            }
-
-            if (!userLocation.latitude || !userLocation.longitude) {
-              throw new Error(
-                "Địa chỉ giao hàng chưa có tọa độ. Vui lòng chọn địa chỉ trên bản đồ."
-              );
-            }
 
             // Use backend API to calculate exact shipping for this batch
             const products = batchProducts.map((item) => ({
@@ -498,17 +481,10 @@ const RentalOrderForm = () => {
             const shippingResponse = await calculateShipping(shippingData);
 
             // Xử lý response từ API
-            // Response có thể có nhiều format:
-            // 1. Trực tiếp: { distance: 20.5, fee: 120000, success: true, ... }
-            // 2. Wrapped: { data: { shipping: {...} } }
-            // 3. Wrapped: { metadata: { shipping: {...} } }
             let shipping;
-
             if (shippingResponse?.distance !== undefined && shippingResponse?.fee !== undefined) {
-              // Format 1: Response trực tiếp là shipping object
               shipping = shippingResponse;
             } else {
-              // Format 2 & 3: Response wrapped
               shipping =
                 shippingResponse?.data?.shipping ||
                 shippingResponse?.metadata?.shipping ||
@@ -520,77 +496,78 @@ const RentalOrderForm = () => {
                 shippingResponse?.message || "Không thể tính phí ship từ API - Dữ liệu không hợp lệ"
               );
             }
-            const batchFee = shipping.fee || 0;
+            
+            // Get original batch fee (before any discounts)
+            const originalBatchFee = shipping.fee || 0;
+            let batchFinalFee = originalBatchFee;
+            let batchDiscountAmount = 0;
 
-            const allocatedFeePerProduct = Math.round(batchFee / batchProducts.length);
+            // Apply promotion discount to this batch's fee
+            if (activePromotion) {
+              const discount =
+                activePromotion.systemPromotion.discountType === "PERCENTAGE"
+                  ? (batchFinalFee * activePromotion.systemPromotion.shippingDiscountValue) / 100
+                  : Math.min(activePromotion.systemPromotion.shippingDiscountValue, batchFinalFee);
+              batchDiscountAmount += discount;
+              batchFinalFee = Math.round(batchFinalFee - discount);
+            }
 
-            const batchInfo = {
+            // Apply voucher discount to this batch's fee
+            if (selectedVoucher) {
+              const voucherDiscount = Math.round(
+                (batchFinalFee * selectedVoucher.discountPercent) / 100
+              );
+              batchDiscountAmount += voucherDiscount;
+              batchFinalFee = Math.max(0, batchFinalFee - voucherDiscount);
+            }
+
+            // ✅ NEW: Create batch object for backend
+            const batchData = {
               deliveryDate,
-              batchSize: batchProducts.length,
-              batchQuantity: batchProducts.reduce(
-                (sum, p) => sum + (p.quantity || 1),
-                0
-              ),
-              deliveryFee: batchFee,
+              productIds: batchProducts.map(p => p.product._id), // Array of product IDs
               distance: shipping.distance,
-              distanceMeters: shipping.distanceMeters,
-              estimatedTime: shipping.estimatedTime,
-              shippingDetails: shipping.shippingDetails,
-              products: batchProducts.map((p) => ({
-                productId: p.product._id,
-                quantity: p.quantity || 1,
-                allocatedFee: allocatedFeePerProduct,
-              })),
+              shippingFee: {
+                originalFee: originalBatchFee,
+                discountAmount: Math.round(batchDiscountAmount),
+                finalFee: batchFinalFee
+              }
             };
 
-            // Update each product with its shipping fee in the updatedGroups
-            batchProducts.forEach((batchProduct) => {
-              const productIndex = group.products.findIndex(
-                (prod) => prod.product._id === batchProduct.product._id
-              );
-              if (productIndex !== -1) {
-                // Create new product object to ensure immutability
-                updatedGroups[ownerId].products[productIndex] = {
-                  ...updatedGroups[ownerId].products[productIndex],
-                  product: {
-                    ...updatedGroups[ownerId].products[productIndex].product,
-                    totalShippingFee: allocatedFeePerProduct
-                  }
-                };
-              }
-            });
-
-            subOrderTotalShipping += batchFee;
-            subOrderDeliveries.push(batchInfo);
+            subOrderDeliveryBatches.push(batchData);
+            subOrderTotalShipping += batchFinalFee;
+            subOrderOriginalShipping += originalBatchFee;
 
             console.log(
               `✅ Delivery batch ${deliveryDate} - Owner ${
                 group.owner.profile?.firstName
-              }: ${batchFee.toLocaleString("vi-VN")}đ (${shipping.distance.toFixed(2)}km)`
+              }: ${batchFinalFee.toLocaleString("vi-VN")}đ (original: ${originalBatchFee.toLocaleString("vi-VN")}đ) - ${shipping.distance.toFixed(2)}km - ${batchProducts.length} products`
             );
           }
 
           // Update SubOrder shipping info
-          updatedGroups[ownerId].shippingFee = subOrderTotalShipping;
+          updatedGroups[ownerId].shippingFee = subOrderTotalShipping; // Final fee
+          updatedGroups[ownerId].originalShippingFee = subOrderOriginalShipping; // Original fee
+          updatedGroups[ownerId].deliveryBatches = subOrderDeliveryBatches; // ✅ NEW: Array of batch objects
           updatedGroups[ownerId].deliveryInfo = {
             deliveryCount,
-            deliveryBatches: subOrderDeliveries,
-            distance: subOrderDeliveries[0]?.distance || 0,
-            summary: `${deliveryCount} lần giao hàng - ${subOrderDeliveries[0]?.distance?.toFixed(2) || 0}km`,
+            totalDistance: subOrderDeliveryBatches[0]?.distance || 0,
+            summary: `${deliveryCount} lần giao hàng - ${subOrderDeliveryBatches[0]?.distance?.toFixed(2) || 0}km`,
           };
 
           masterTotalShipping += subOrderTotalShipping;
+          masterOriginalShipping += subOrderOriginalShipping;
 
           console.log(
             `📦 SubOrder ${ownerId} total: ${subOrderTotalShipping.toLocaleString(
               "vi-VN"
-            )}đ (${deliveryCount} deliveries)`
+            )}đ (original: ${subOrderOriginalShipping.toLocaleString("vi-VN")}đ) - ${deliveryCount} deliveries`
           );
         }
 
         // Update state with calculated shipping fees
         setGroupedProducts(updatedGroups);
-        setTotalShipping(masterTotalShipping);
+        setTotalShipping(masterTotalShipping); // Final shipping (after discounts)
+        setOriginalTotalShipping(masterOriginalShipping); // Original shipping (before discounts)
 
         // Store in ref to persist across renders
         calculatedShippingRef.current = {
@@ -754,17 +731,15 @@ const RentalOrderForm = () => {
               title: activePromotion.title,
               systemPromotion: activePromotion.systemPromotion
             } : null,
+            // ✅ NEW: Send delivery batches instead of per-product shipping
             groupedShipping: Object.fromEntries(
               Object.entries(shippingSource).map(([ownerId, group]) => [
                 ownerId,
                 {
-                  shippingFee: group.shippingFee || 0,
+                  shippingFee: group.originalShippingFee || group.shippingFee || 0,
                   deliveryInfo: group.deliveryInfo || null,
-                  products: (group.products || []).map(item => ({
-                    productId: item.product._id,
-                    totalShippingFee: item.product.totalShippingFee || 0,
-                    deliveryDate: item.rental?.startDate
-                  }))
+                  // ✅ NEW: Send deliveryBatches array
+                  deliveryBatches: group.deliveryBatches || []
                 }
               ])
             ),
@@ -1353,16 +1328,7 @@ const RentalOrderForm = () => {
                                           productShippingFee = Math.round(feePerDelivery / productsInBatch);
                                         }
 
-                                        return productShippingFee > 0 ? (
-                                          <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                              Phí vận chuyển:
-                                            </span>
-                                            <span className="font-semibold text-blue-600">
-                                              {productShippingFee.toLocaleString("vi-VN")}đ
-                                            </span>
-                                          </div>
-                                        ) : null;
+                                        
                                       })()}
                                     </div>
                                   </div>
@@ -1681,149 +1647,36 @@ const RentalOrderForm = () => {
                     <span>Phí vận chuyển:</span>
                     <span
                       className={
-                        activePromotion || selectedVoucher
+                        (activePromotion || selectedVoucher) && originalTotalShipping > totalShipping
                           ? "line-through text-gray-400"
                           : ""
                       }
                     >
-                      {totals.totalShipping.toLocaleString("vi-VN")}đ
+                      {originalTotalShipping > 0 ? originalTotalShipping.toLocaleString("vi-VN") : totals.totalShipping.toLocaleString("vi-VN")}đ
                     </span>
                   </div>
-                  {activePromotion && (
+                  {(activePromotion || selectedVoucher) && originalTotalShipping > totalShipping && (
                     <>
                       <div className="flex justify-between text-green-600">
                         <span>Giảm phí ship (khuyến mãi):</span>
                         <span>
                           -
-                          {(() => {
-                            const discount =
-                              activePromotion.systemPromotion.discountType ===
-                              "PERCENTAGE"
-                                ? (totals.totalShipping *
-                                    activePromotion.systemPromotion
-                                      .shippingDiscountValue) /
-                                  100
-                                : Math.min(
-                                    activePromotion.systemPromotion
-                                      .shippingDiscountValue,
-                                    totals.totalShipping
-                                  );
-                            return discount.toLocaleString("vi-VN");
-                          })()}
-                          đ
+                          {(originalTotalShipping - totalShipping).toLocaleString("vi-VN")}đ
                         </span>
                       </div>
+                      <div className="flex justify-between font-medium text-green-600">
+                        <span>Phí ship sau giảm:</span>
+                        <span>{totalShipping.toLocaleString("vi-VN")}đ</span>
+                      </div>
                     </>
-                  )}
-                  {selectedVoucher && (
-                    <div className="flex justify-between text-green-600">
-                      <span>
-                        Giảm phí ship (voucher {selectedVoucher.discountPercent}
-                        %):
-                      </span>
-                      <span>
-                        -
-                        {(() => {
-                          const baseShipping = activePromotion
-                            ? totals.totalShipping -
-                              (activePromotion.systemPromotion.discountType ===
-                              "PERCENTAGE"
-                                ? (totals.totalShipping *
-                                    activePromotion.systemPromotion
-                                      .shippingDiscountValue) /
-                                  100
-                                : Math.min(
-                                    activePromotion.systemPromotion
-                                      .shippingDiscountValue,
-                                    totals.totalShipping
-                                  ))
-                            : totals.totalShipping;
-                          const voucherDiscount = Math.round(
-                            (baseShipping * selectedVoucher.discountPercent) /
-                              100
-                          );
-                          return voucherDiscount.toLocaleString("vi-VN");
-                        })()}
-                        đ
-                      </span>
-                    </div>
-                  )}
-                  {(activePromotion || selectedVoucher) && (
-                    <div className="flex justify-between font-medium">
-                      <span>Phí ship sau giảm:</span>
-                      <span className="text-green-600">
-                        {(() => {
-                          let finalShipping = totals.totalShipping;
-
-                          // Apply promotion discount first
-                          if (activePromotion) {
-                            const discount =
-                              activePromotion.systemPromotion.discountType ===
-                              "PERCENTAGE"
-                                ? (totals.totalShipping *
-                                    activePromotion.systemPromotion
-                                      .shippingDiscountValue) /
-                                  100
-                                : Math.min(
-                                    activePromotion.systemPromotion
-                                      .shippingDiscountValue,
-                                    totals.totalShipping
-                                  );
-                            finalShipping -= discount;
-                          }
-
-                          // Apply voucher discount on remaining amount
-                          if (selectedVoucher) {
-                            const voucherDiscount = Math.round(
-                              (finalShipping *
-                                selectedVoucher.discountPercent) /
-                                100
-                            );
-                            finalShipping -= voucherDiscount;
-                          }
-
-                          return Math.max(0, finalShipping).toLocaleString(
-                            "vi-VN"
-                          );
-                        })()}
-                        đ
-                      </span>
-                    </div>
                   )}
                   <hr className="my-3" />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Tổng cộng:</span>
                     <span className="text-blue-600">
                       {(() => {
-                        let finalShipping = totals.totalShipping;
-
-                        // Apply promotion discount
-                        if (activePromotion) {
-                          const discount =
-                            activePromotion.systemPromotion.discountType ===
-                            "PERCENTAGE"
-                              ? (totals.totalShipping *
-                                  activePromotion.systemPromotion
-                                    .shippingDiscountValue) /
-                                100
-                              : Math.min(
-                                  activePromotion.systemPromotion
-                                    .shippingDiscountValue,
-                                  totals.totalShipping
-                                );
-                          finalShipping -= discount;
-                        }
-
-                        // Apply voucher discount
-                        if (selectedVoucher) {
-                          const voucherDiscount = Math.round(
-                            (finalShipping * selectedVoucher.discountPercent) /
-                              100
-                          );
-                          finalShipping -= voucherDiscount;
-                        }
-
-                        finalShipping = Math.max(0, finalShipping);
+                        // Use totalShipping state directly (already discounted)
+                        const finalShipping = totalShipping;
                         const grandTotal =
                           totals.totalRental +
                           totals.totalDeposit +

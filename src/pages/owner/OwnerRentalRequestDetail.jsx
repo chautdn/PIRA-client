@@ -122,20 +122,51 @@ const OwnerRentalRequestDetail = () => {
     }
   };
 
-  const handleBulkConfirm = async () => {
+  const handleBulkAction = async (action) => {
     try {
-      const confirmedProductIds = Array.from(selectedItems).map(itemIndex => {
-        const product = subOrder.products[itemIndex];
-        return product._id;
-      });
+      if (selectedItems.size === 0) {
+        toast.error('⚠️ Vui lòng chọn ít nhất 1 sản phẩm!');
+        return;
+      }
+
+      let confirmedProductIds = [];
+      
+      if (action === 'confirm') {
+        // Xác nhận những sản phẩm đã chọn
+        confirmedProductIds = Array.from(selectedItems).map(itemIndex => {
+          const product = subOrder.products[itemIndex];
+          return product._id;
+        });
+      } else {
+        // Từ chối những sản phẩm đã chọn → xác nhận những sản phẩm KHÔNG chọn
+        (subOrder.products || []).forEach((product, index) => {
+          if (product.productStatus === 'PENDING' && !selectedItems.has(index)) {
+            confirmedProductIds.push(product._id);
+          }
+        });
+        
+        if (confirmedProductIds.length === 0) {
+          toast.error('⚠️ Bạn đã chọn TỪ CHỐI tất cả sản phẩm. Không có sản phẩm nào được xác nhận!');
+          return;
+        }
+      }
+      
+      const confirmedCount = confirmedProductIds.length;
+      const rejectedCount = pendingItems.length - confirmedCount;
       
       await rentalOrderService.partialConfirmSubOrder(subOrder._id, confirmedProductIds);
       setSelectedItems(new Set());
-      toast.success(`✅ Đã xác nhận ${confirmedProductIds.length} sản phẩm và tạo hợp đồng!`);
+      
+      if (action === 'confirm') {
+        toast.success(`✅ Đã xác nhận ${confirmedCount} sản phẩm${rejectedCount > 0 ? ` và từ chối ${rejectedCount} sản phẩm` : ''}!`);
+      } else {
+        toast.success(`✅ Đã từ chối ${rejectedCount} sản phẩm và xác nhận ${confirmedCount} sản phẩm còn lại!`);
+      }
+      
       await fetchSubOrderDetail();
     } catch (error) {
-      console.error('Lỗi xác nhận hàng loạt:', error);
-      toast.error(error.message || 'Không thể xác nhận sản phẩm');
+      console.error('Lỗi xử lý hàng loạt:', error);
+      toast.error(error.message || 'Không thể xử lý sản phẩm');
     }
   };
 
@@ -349,7 +380,7 @@ const OwnerRentalRequestDetail = () => {
                         className="h-4 w-4 text-white focus:ring-white border-white rounded bg-white/20"
                       />
                       <span className="text-sm text-white font-medium">
-                        Chọn tất cả ({pendingItems.length} chờ xác nhận)
+                        Chọn tất cả ({pendingItems.length})
                       </span>
                     </label>
                   )}
@@ -449,23 +480,36 @@ const OwnerRentalRequestDetail = () => {
 
               {/* Bulk Action Bar */}
               {selectedItems.size > 0 && (
-                <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
+                <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="text-sm font-bold text-green-800 mb-1">
-                        ✓ Đã chọn <span className="text-xl">{selectedItems.size}</span> sản phẩm
+                      <div className="text-sm font-bold text-blue-900 mb-2">
+                        📦 Đã chọn <span className="text-xl">{selectedItems.size}</span> sản phẩm
                       </div>
-                      <div className="text-xs text-amber-700 bg-amber-50 px-3 py-1 rounded inline-block">
-                        ⚠️ Sản phẩm KHÔNG chọn sẽ TỰ ĐỘNG bị từ chối và hoàn tiền
+                      <div className="text-xs text-gray-600">
+                        Chọn hành động bên phải để xử lý các sản phẩm đã chọn
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-3">
                       <button
-                        onClick={handleBulkConfirm}
+                        onClick={() => handleBulkAction('confirm')}
                         className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
                       >
-                        <span className="text-lg">✓</span>
-                        Xác nhận & Ký HĐ
+                        <CheckCircle size={18} />
+                        <div className="text-left">
+                          <div className="text-sm">Xác nhận đã chọn</div>
+                          <div className="text-xs opacity-90">({selectedItems.size} sản phẩm)</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleBulkAction('reject')}
+                        className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                      >
+                        <XCircle size={18} />
+                        <div className="text-left">
+                          <div className="text-sm">Từ chối đã chọn</div>
+                          <div className="text-xs opacity-90">({selectedItems.size} sản phẩm)</div>
+                        </div>
                       </button>
                       <button
                         onClick={() => setSelectedItems(new Set())}
@@ -530,6 +574,7 @@ const OwnerRentalRequestDetail = () => {
               </div>
             )}
           </div>
+
 
           {/* Right Column - Order Info */}
           <div className="space-y-6">
@@ -596,18 +641,13 @@ const OwnerRentalRequestDetail = () => {
                   <span className="text-gray-600">Tổng tiền cọc</span>
                   <span className="font-semibold text-amber-600">{formatCurrency(subOrder.pricing?.subtotalDeposit)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Phí vận chuyển</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(subOrder.pricing?.shippingFee)}</span>
-                </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between">
                     <span className="font-bold text-gray-900">Tổng cộng</span>
                     <span className="font-bold text-blue-600 text-lg">
                       {formatCurrency(
                         (subOrder.pricing?.subtotalRental || 0) + 
-                        (subOrder.pricing?.subtotalDeposit || 0) + 
-                        (subOrder.pricing?.shippingFee || 0)
+                        (subOrder.pricing?.subtotalDeposit || 0) 
                       )}
                     </span>
                   </div>

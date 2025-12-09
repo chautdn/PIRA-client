@@ -18,19 +18,132 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
   const confirmedProducts = subOrder.products?.filter(p => p.productStatus === 'CONFIRMED') || [];
   const rejectedProducts = subOrder.products?.filter(p => p.productStatus === 'REJECTED') || [];
 
+  // ✅ NEW: Recalculate batches from products (don't trust deliveryBatches in DB)
+  const recalculateBatchesFromProducts = () => {
+    if (!subOrder.products || subOrder.products.length === 0) {
+      return [];
+    }
+
+    // Group products by delivery date
+    const batchMap = new Map();
+    
+    subOrder.products.forEach(productItem => {
+      const deliveryDate = productItem.rentalPeriod?.startDate
+        ? new Date(productItem.rentalPeriod.startDate).toISOString().split('T')[0]
+        : null;
+      
+      if (!deliveryDate) return;
+
+      if (!batchMap.has(deliveryDate)) {
+        batchMap.set(deliveryDate, {
+          deliveryDate,
+          products: [],
+          confirmedProducts: [],
+          rejectedProducts: []
+        });
+      }
+
+      const batch = batchMap.get(deliveryDate);
+      batch.products.push(productItem._id);
+
+      if (productItem.productStatus === 'CONFIRMED') {
+        batch.confirmedProducts.push(productItem._id);
+      } else if (productItem.productStatus === 'REJECTED') {
+        batch.rejectedProducts.push(productItem._id);
+      }
+    });
+
+    return Array.from(batchMap.values());
+  };
+
+  // ✅ Calculate shipping from recalculated batches
+  const calculateShippingFromRecalculatedBatches = (productIds) => {
+    const recalculatedBatches = recalculateBatchesFromProducts();
+    
+    if (recalculatedBatches.length === 0) {
+      return 0;
+    }
+
+    // If we have deliveryBatches with fees, use them
+    // Otherwise, split total shipping evenly across batches
+    const totalShippingFee = (subOrder.deliveryBatches || []).reduce(
+      (sum, batch) => sum + (batch.shippingFee?.finalFee || 0),
+      0
+    );
+
+    if (subOrder.deliveryBatches && subOrder.deliveryBatches.length > 0) {
+      // Use actual batch fees
+      return recalculatedBatches.reduce((total, recalcBatch) => {
+        // Check if this batch contains any of the specified products
+        const hasProduct = recalcBatch.products.some(batchProductId => 
+          productIds.some(pid => pid.toString() === batchProductId.toString())
+        );
+
+        if (hasProduct) {
+          // Find matching batch in deliveryBatches by date
+          const matchingBatch = subOrder.deliveryBatches.find(
+            db => db.deliveryDate === recalcBatch.deliveryDate
+          );
+          
+          if (matchingBatch) {
+            return total + (matchingBatch.shippingFee?.finalFee || 0);
+          } else {
+            // Fallback: divide evenly
+            return total + Math.round(totalShippingFee / recalculatedBatches.length);
+          }
+        }
+        return total;
+      }, 0);
+    } else {
+      // No batch fees, divide evenly
+      const feePerBatch = Math.round(totalShippingFee / recalculatedBatches.length);
+      return recalculatedBatches.reduce((total, batch) => {
+        const hasProduct = batch.products.some(batchProductId => 
+          productIds.some(pid => pid.toString() === batchProductId.toString())
+        );
+        return hasProduct ? total + feePerBatch : total;
+      }, 0);
+    }
+  };
+
   // Tính toán số tiền
   const calculateTotals = (products) => {
-    return products.reduce((acc, p) => ({
-      deposit: acc.deposit + (p.totalDeposit || 0),
-      rental: acc.rental + (p.totalRental || 0),
-      shipping: acc.shipping + (p.totalShippingFee || 0),
-      total: acc.total + (p.totalDeposit || 0) + (p.totalRental || 0) + (p.totalShippingFee || 0)
-    }), { deposit: 0, rental: 0, shipping: 0, total: 0 });
+    const productIds = products.map(p => p._id);
+    
+    // Calculate rental and deposit from products
+    const deposit = products.reduce((sum, p) => sum + (p.totalDeposit || 0), 0);
+    const rental = products.reduce((sum, p) => sum + (p.totalRental || 0), 0);
+    
+    // ✅ Calculate shipping from recalculated batches
+    const shipping = calculateShippingFromRecalculatedBatches(productIds);
+    
+    return {
+      deposit,
+      rental,
+      shipping,
+      total: deposit + rental + shipping
+    };
   };
 
   const confirmedTotals = calculateTotals(confirmedProducts);
   const rejectedTotals = calculateTotals(rejectedProducts);
-  const allTotals = calculateTotals(subOrder.products || []);
+  
+  // For "Cancel All" option - calculate total shipping from all batches
+  const allProducts = subOrder.products || [];
+  const allTotals = {
+    deposit: allProducts.reduce((sum, p) => sum + (p.totalDeposit || 0), 0),
+    rental: allProducts.reduce((sum, p) => sum + (p.totalRental || 0), 0),
+    shipping: (subOrder.deliveryBatches || []).reduce((sum, batch) => sum + (batch.shippingFee.finalFee || 0), 0),
+    total: 0
+  };
+  allTotals.total = allTotals.deposit + allTotals.rental + allTotals.shipping;
+  
+  console.log('📊 Shipping Calculation:', {
+    confirmedShipping: confirmedTotals.shipping,
+    rejectedShipping: rejectedTotals.shipping,
+    totalShipping: allTotals.shipping,
+    batches: subOrder.deliveryBatches
+  });
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -65,7 +178,7 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
 
   const handleAcceptPartial = async () => {
     // Xác nhận trước khi tiếp tục
-    if (!window.confirm('Bạn xác nhận TIẾP TỤC với các sản phẩm đã được chủ xác nhận? Bạn sẽ được chuyển đến trang ký hợp đồng.')) {
+    if (!window.confirm('Bạn xác nhận TIẾP TỤC với các sản phẩm đã được chủ xác nhận?')) {
       return;
     }
 
@@ -73,7 +186,7 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
     try {
       const result = await rentalOrderService.renterAcceptPartialOrder(subOrder._id);
       onDecisionMade('ACCEPTED', result);
-      // Modal will close and page will redirect to contract
+      // Close modal - parent will redirect to confirmation-summary
       onClose();
     } catch (error) {
       console.error('Error accepting partial order:', error);

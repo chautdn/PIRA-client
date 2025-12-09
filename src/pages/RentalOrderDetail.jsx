@@ -167,13 +167,8 @@ const RentalOrderDetailPage = () => {
       // Reload order detail
       await loadOrderDetail(id);
       
-      // Tự động chuyển đến trang ký hợp đồng sau 1.5s
-      setTimeout(() => {
-        toast.loading('Đang chuyển đến trang ký hợp đồng...');
-        setTimeout(() => {
-          navigate('/rental-orders/contracts');
-        }, 800);
-      }, 1500);
+      // Navigate to confirmation summary page
+      navigate(`/rental-orders/${id}/confirmation-summary`);
     }
   };
 
@@ -1180,17 +1175,6 @@ const RentalOrderDetailPage = () => {
                                   đ
                                 </p>
                               </div>
-                              <div>
-                                <p className="text-xs text-gray-500">
-                                  Phí ship
-                                </p>
-                                <p className="font-semibold">
-                                  {productItem.totalShippingFee?.toLocaleString(
-                                    "vi-VN"
-                                  ) || 0}
-                                  đ
-                                </p>
-                              </div>
                             </div>
 
                             {productItem.rentalPeriod && (
@@ -1233,8 +1217,7 @@ const RentalOrderDetailPage = () => {
                                   <p className="font-bold text-xl text-orange-600">
                                     {(
                                       (productItem.totalRental || 0) +
-                                      (productItem.totalDeposit || 0) +
-                                      (productItem.totalShippingFee || 0)
+                                      (productItem.totalDeposit || 0)
                                     ).toLocaleString("vi-VN")}
                                     đ
                                   </p>

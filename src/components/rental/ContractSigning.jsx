@@ -217,8 +217,12 @@ const ContractSigning = () => {
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
     
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Calculate scale factor for accurate positioning
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
     
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -231,8 +235,12 @@ const ContractSigning = () => {
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext('2d');
     
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Calculate scale factor for accurate positioning
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
     
     ctx.lineTo(x, y);
     ctx.stroke();
