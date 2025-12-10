@@ -1,18 +1,20 @@
 import React, { useState, useRef } from 'react';
-import { FiCamera, FiUpload, FiX, FiLoader } from 'react-icons/fi';
+import { FiCamera, FiUpload, FiX, FiLoader, FiTag, FiPackage } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
 /**
  * Visual Search Component - Tìm kiếm bằng hình ảnh
  * Sử dụng Clarifai AI để phân tích ảnh và tìm sản phẩm tương tự
  */
-const VisualSearch = ({ onSearch }) => {
+const VisualSearch = ({ onSearch, onResults }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
-  const [labels, setLabels] = useState([]);
+  const [searchResults, setSearchResults] = useState(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -25,7 +27,7 @@ const VisualSearch = ({ onSearch }) => {
 
   const analyzeImage = async (file) => {
     setIsAnalyzing(true);
-    setLabels([]);
+    setSearchResults(null);
 
     try {
       const preview = await fileToBase64(file);
@@ -34,29 +36,43 @@ const VisualSearch = ({ onSearch }) => {
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await api.post('/ai/analyze-image', formData, {
+      const response = await api.post('/ai/visual-search', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      if (response.data.success && response.data.labels) {
-        const detectedLabels = response.data.labels;
-        setLabels(detectedLabels);
+      if (response.data.success && response.data.data) {
+        const { products, matchedCategories, searchInfo } = response.data.data;
+        
+        setSearchResults({
+          products,
+          categories: matchedCategories,
+          info: searchInfo
+        });
 
-        if (detectedLabels.length > 0) {
-          const topLabel = detectedLabels[0];
-          const searchTerm = translateLabel(topLabel.name);
-          
-          setTimeout(() => {
-            onSearch(searchTerm);
-            handleClose();
-          }, 1500);
+        // Callback với kết quả
+        if (onResults) {
+          onResults(products);
         }
+
+        // Hoặc navigate tới trang kết quả với state
+        // setTimeout(() => {
+        //   navigate('/search-results', { 
+        //     state: { 
+        //       products, 
+        //       isVisualSearch: true,
+        //       searchInfo 
+        //     } 
+        //   });
+        //   handleClose();
+        // }, 2000);
       }
     } catch (error) {
       console.error('Error analyzing image:', error);
-      setLabels([{ name: 'Lỗi', confidence: 0, vietnamese: 'Không thể phân tích ảnh' }]);
+      setSearchResults({ 
+        error: error.response?.data?.message || 'Không thể phân tích ảnh. Vui lòng thử lại.' 
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -129,7 +145,19 @@ const VisualSearch = ({ onSearch }) => {
   const handleClose = () => {
     setIsOpen(false);
     setPreviewImage(null);
-    setLabels([]);
+    setSearchResults(null);
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price);
+  };
+
+  const handleProductClick = (productId) => {
+    navigate(`/product/${productId}`);
+    handleClose();
   };
 
   return (
@@ -155,7 +183,7 @@ const VisualSearch = ({ onSearch }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-6 max-w-md w-full"
+              className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -191,53 +219,148 @@ const VisualSearch = ({ onSearch }) => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Preview Image */}
                   <div className="relative">
                     <img
                       src={previewImage}
                       alt="Preview"
-                      className="w-full h-64 object-contain rounded-lg bg-gray-50"
+                      className="w-full h-48 object-contain rounded-lg bg-gray-50"
                     />
                     {isAnalyzing && (
                       <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
                         <div className="text-center text-white">
                           <FiLoader className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                          <p>Đang phân tích...</p>
+                          <p className="font-medium">Đang phân tích ảnh...</p>
+                          <p className="text-sm mt-1">Tìm kiếm sản phẩm phù hợp</p>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {labels.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-700">Kết quả phát hiện:</p>
-                      <div className="space-y-1">
-                        {labels.slice(0, 5).map((label, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg"
-                          >
-                            <span className="text-sm text-gray-700">
-                              {label.vietnamese || translateLabel(label.name)}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {(label.confidence * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                  {/* Error Message */}
+                  {searchResults?.error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-red-700 text-sm">{searchResults.error}</p>
                     </div>
                   )}
 
-                  <button
-                    onClick={() => {
-                      setPreviewImage(null);
-                      setLabels([]);
-                      fileInputRef.current?.click();
-                    }}
-                    className="w-full py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                  >
-                    Chọn ảnh khác
-                  </button>
+                  {/* Search Results */}
+                  {searchResults && !searchResults.error && (
+                    <div className="space-y-4">
+                      {/* Search Info */}
+                      {searchResults.info && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FiTag className="w-4 h-4 text-purple-600" />
+                            <p className="text-sm font-medium text-purple-900">
+                              Phát hiện: {searchResults.info.totalFound} sản phẩm
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {searchResults.info.topConcepts?.slice(0, 5).map((concept, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-white rounded-full text-xs text-purple-700 border border-purple-200"
+                              >
+                                {concept.name} ({concept.confidence})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Matched Categories */}
+                      {searchResults.categories?.length > 0 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FiPackage className="w-4 h-4 text-blue-600" />
+                            <p className="text-sm font-medium text-blue-900">Danh mục phù hợp:</p>
+                          </div>
+                          <div className="space-y-1">
+                            {searchResults.categories.slice(0, 3).map((cat, index) => (
+                              <div key={index} className="flex items-center justify-between text-sm">
+                                <span className="text-blue-800">{cat.name}</span>
+                                <span className="text-blue-600 font-medium">
+                                  {cat.matchedConcepts?.slice(0, 2).join(', ')}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Products Grid */}
+                      {searchResults.products?.length > 0 ? (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                            Sản phẩm tìm thấy ({searchResults.products.length})
+                          </h4>
+                          <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
+                            {searchResults.products.map((product) => (
+                              <div
+                                key={product._id}
+                                onClick={() => handleProductClick(product._id)}
+                                className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                              >
+                                <div className="aspect-square bg-gray-100 relative">
+                                  {product.images?.[0] ? (
+                                    <img
+                                      src={product.images[0].url}
+                                      alt={product.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <FiCamera className="w-8 h-8 text-gray-400" />
+                                    </div>
+                                  )}
+                                  {/* Score Badge */}
+                                  <div className="absolute top-2 right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                    {(product.visualSearchScore * 100).toFixed(0)}%
+                                  </div>
+                                </div>
+                                <div className="p-3">
+                                  <h5 className="text-sm font-medium text-gray-800 line-clamp-2 mb-1">
+                                    {product.title}
+                                  </h5>
+                                  <p className="text-xs text-gray-500 mb-2">
+                                    {product.category?.name}
+                                  </p>
+                                  <p className="text-purple-600 font-bold text-sm">
+                                    {formatPrice(product.pricing?.dailyRate)}/ngày
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        !isAnalyzing && (
+                          <div className="text-center py-8">
+                            <FiPackage className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                            <p className="text-gray-600">Không tìm thấy sản phẩm phù hợp</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Thử với hình ảnh khác hoặc điều chỉnh góc chụp
+                            </p>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+
+                  {/* Upload Another Button */}
+                  {!isAnalyzing && (
+                    <button
+                      onClick={() => {
+                        setPreviewImage(null);
+                        setSearchResults(null);
+                        fileInputRef.current?.click();
+                      }}
+                      className="w-full py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                    >
+                      Chọn ảnh khác
+                    </button>
+                  )}
                 </div>
               )}
             </motion.div>
