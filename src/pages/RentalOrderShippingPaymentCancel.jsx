@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { XCircle, Home, RotateCcw } from "lucide-react";
+import { useI18n } from "../hooks/useI18n";
 
 /**
  * Payment Cancelled Page for Additional Shipping Fee
@@ -9,6 +10,7 @@ import { XCircle, Home, RotateCcw } from "lucide-react";
 const RentalOrderShippingPaymentCancel = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const requestId = searchParams.get("requestId");
 
@@ -22,11 +24,10 @@ const RentalOrderShippingPaymentCancel = () => {
         <div className="text-center mb-6">
           <XCircle className="w-16 h-16 text-orange-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Thanh toán đã bị hủy
+            {t('rentalOrderShippingPaymentCancel.title')}
           </h2>
           <p className="text-gray-600">
-            Bạn đã hủy thanh toán phí ship thêm. Yêu cầu trả hàng sớm của bạn
-            vẫn đang chờ thanh toán.
+            {t('rentalOrderShippingPaymentCancel.subtitle')}
           </p>
         </div>
 
@@ -37,7 +38,7 @@ const RentalOrderShippingPaymentCancel = () => {
             className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
           >
             <RotateCcw className="w-5 h-5" />
-            <span>Thử lại thanh toán</span>
+            <span>{t('rentalOrderShippingPaymentCancel.retryPayment')}</span>
           </button>
 
           <button
@@ -45,16 +46,14 @@ const RentalOrderShippingPaymentCancel = () => {
             className="w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2"
           >
             <Home className="w-5 h-5" />
-            <span>Về danh sách đơn hàng</span>
+            <span>{t('rentalOrderShippingPaymentCancel.backToOrders')}</span>
           </button>
         </div>
 
         {/* Info */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
           <p className="text-sm text-blue-900">
-            💡 <span className="font-medium">Lưu ý:</span> Bạn vẫn có thể thanh
-            toán sau. Yêu cầu trả hàng sớm sẽ không được xử lý cho đến khi thanh
-            toán thành công.
+            💡 <span className="font-medium">{t('rentalOrderShippingPaymentCancel.noteTitle')}</span> {t('rentalOrderShippingPaymentCancel.noteMessage')}
           </p>
         </div>
       </motion.div>

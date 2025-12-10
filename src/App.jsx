@@ -23,6 +23,7 @@ import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
+import ChatContainer from "./components/chat/ChatContainer";
 import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
 import OwnerProducts from "./pages/owner/OwnerProducts";
 import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
@@ -47,8 +48,22 @@ import PaymentError from "./pages/payment/PaymentError";
 import RentalPaymentReturn from "./pages/rental/RentalPaymentReturn";
 
 // Chat components
-import ChatContainer from "./components/chat/ChatContainer";
 import ProductChatContainer from "./components/chat/ProductChatContainer";
+import { useI18n } from "./hooks/useI18n";
+
+// Chat empty state component
+const ChatEmptyState = () => {
+  const { t } = useI18n();
+  return (
+    <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="text-gray-500 text-lg">
+          {t('chat.selectConversation')}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Admin components
 import AdminLayout from "./components/admin/AdminLayout";
@@ -274,13 +289,7 @@ export default function App() {
                     <Route
                       index
                       element={
-                        <div className="flex-1 flex items-center justify-center bg-gray-50">
-                          <div className="text-center">
-                            <div className="text-gray-500 text-lg">
-                              Select a conversation to start chatting
-                            </div>
-                          </div>
-                        </div>
+                        <ChatEmptyState />
                       }
                     />
                     {/* Specific conversation */}

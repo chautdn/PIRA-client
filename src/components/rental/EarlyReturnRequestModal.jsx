@@ -16,6 +16,7 @@ import MapSelector from "../common/MapSelector";
 import toast from "react-hot-toast";
 import earlyReturnApi from "../../services/earlyReturn.Api";
 import { useWallet } from "../../context/WalletContext";
+import { useI18n } from "../../hooks/useI18n";
 
 /**
  * Early Return Request Modal - Multi-step flow
@@ -30,6 +31,7 @@ const EarlyReturnRequestModal = ({
   userAddresses,
   onSuccess,
 }) => {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // 1: form, 2: review & confirm, 3: payment
   const [calculatingFee, setCalculatingFee] = useState(false);
@@ -526,7 +528,7 @@ const EarlyReturnRequestModal = ({
       {/* Payment Methods */}
       <div>
         <h3 className="font-medium text-gray-900 mb-3">
-          Chọn phương thức thanh toán
+          {t('paymentMethodSelector.title')}
         </h3>
 
         {/* Wallet Payment */}

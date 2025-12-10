@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useProductForm } from "../../../hooks/useProductForm";
+import { useI18n } from "../../../hooks/useI18n";
 import StepIndicator from "./steps/StepIndicator";
 import BasicInfoStep from "./steps/BasicInfoStep";
 import CategoryStep from "./steps/CategoryStep";
@@ -17,6 +18,7 @@ const fadeInUp = {
 };
 
 const CreateForm = () => {
+  const { t } = useI18n();
   const {
     formData,
     currentStep,
@@ -112,10 +114,10 @@ const CreateForm = () => {
         {/* Header */}
         <motion.div className="text-center mb-8" {...fadeInUp}>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Đăng Sản Phẩm Cho Thuê
+            {t('productForm.pageTitle')}
           </h1>
           <p className="text-gray-600">
-            Điền thông tin chi tiết để tạo tin đăng hấp dẫn
+            {t('productForm.pageSubtitle')}
           </p>
         </motion.div>
 

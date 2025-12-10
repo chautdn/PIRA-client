@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useRentalOrder } from "../context/RentalOrderContext";
 import { useAuth } from "../hooks/useAuth";
+import { useI18n } from "../hooks/useI18n";
 import { useEarlyReturn } from "../hooks/useEarlyReturn";
 import toast from "react-hot-toast";
 import api from "../services/api";
@@ -38,6 +39,7 @@ const RentalOrderDetailPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { t } = useI18n();
   const {
     currentOrder,
     isLoadingOrderDetail, // Changed from isLoading
@@ -619,6 +621,24 @@ const RentalOrderDetailPage = () => {
               >
                 <FileText className="w-5 h-5" />
                 <span>Quản lí vận chuyển</span>
+              </button>
+            )}
+
+            {/* Rating button - shown when order is completed */}
+            {isRenter && currentOrder.status === "COMPLETED" && (
+              <button
+                onClick={() => {
+                  // Navigate to first product detail with order info
+                  const firstProduct = currentOrder.subOrders?.[0]?.products?.[0];
+                  const productId = firstProduct?.product?._id;
+                  if (productId) {
+                    navigate(`/product/${productId}?activeTab=reviews&fromOrder=${currentOrder._id}`);
+                  }
+                }}
+                className="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 flex items-center space-x-2"
+              >
+                <Star className="w-5 h-5" />
+                <span>Đánh giá</span>
               </button>
             )}
           </div>

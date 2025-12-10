@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useI18n } from '../hooks/useI18n';
 import rentalOrderService from '../services/rentalOrder';
 import { toast } from '../components/common/Toast';
 import RenterPartialDecisionModal from '../components/rental/RenterPartialDecisionModal';
@@ -24,6 +25,7 @@ import {
 const RenterConfirmationSummary = () => {
   const { masterOrderId } = useParams();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
@@ -56,9 +58,9 @@ const RenterConfirmationSummary = () => {
     setPartialDecisionSubOrder(null);
     
     if (decision === 'CANCELLED') {
-      toast.success(`Đã hủy đơn hàng và hoàn ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
+      toast.success(`${t('renterConfirmationSummary.cancelOrder')} ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
     } else if (decision === 'ACCEPTED') {
-      toast.success(`Đã chấp nhận đơn hàng. Hoàn tiền: ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
+      toast.success(`${t('renterConfirmationSummary.confirmOrder')} ${result.metadata?.refundAmount?.toLocaleString('vi-VN')}đ`);
       // Auto redirect to contracts
       setTimeout(() => {
         navigate('/rental-orders/contracts');

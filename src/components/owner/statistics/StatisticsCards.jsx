@@ -8,8 +8,10 @@ import {
   Clock,
   XCircle
 } from 'lucide-react';
+import { useI18n } from '../../../hooks/useI18n';
 
 const StatisticsCards = ({ statistics, loading }) => {
+  const { t } = useI18n();
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -29,40 +31,40 @@ const StatisticsCards = ({ statistics, loading }) => {
 
   const cards = [
     {
-      title: 'Tổng sản phẩm',
+      title: t("ownerStatistics.cards.totalProducts"),
       value: products?.total || 0,
       icon: Package,
       color: 'blue',
       details: [
-        { label: 'Đang hoạt động', value: products?.active || 0 },
-        { label: 'Đang cho thuê', value: products?.rented || 0 },
-        { label: 'Không khả dụng', value: products?.unavailable || 0 }
+        { label: t("ownerStatistics.cards.activeProducts"), value: products?.active || 0 },
+        { label: t("ownerStatistics.cards.rentedProducts"), value: products?.rented || 0 },
+        { label: t("ownerStatistics.cards.unavailableProducts"), value: products?.unavailable || 0 }
       ]
     },
     {
-      title: 'Đơn hàng',
+      title: t("ownerStatistics.cards.totalOrders"),
       value: orders?.total || 0,
       icon: ShoppingCart,
       color: 'green',
       details: [
-        { label: 'Chờ xác nhận', value: orders?.pending || 0 },
-        { label: 'Đã xác nhận', value: orders?.confirmed || 0 },
-        { label: 'Hoàn thành', value: orders?.completed || 0 }
+        { label: t("ownerStatistics.cards.pendingOrders"), value: orders?.pending || 0 },
+        { label: t("ownerStatistics.cards.confirmedOrders"), value: orders?.confirmed || 0 },
+        { label: t("ownerStatistics.cards.completedOrders"), value: orders?.completed || 0 }
       ]
     },
     {
-      title: 'Doanh thu',
+      title: t("ownerStatistics.cards.totalRevenue"),
       value: revenue?.totalRevenue || 0,
       icon: DollarSign,
       color: 'yellow',
       format: 'currency',
       details: [
-        { label: 'Tiền cọc', value: revenue?.totalDeposit || 0, format: 'currency' },
-        { label: 'Phí vận chuyển', value: revenue?.totalShippingFee || 0, format: 'currency' }
+        { label: t("ownerStatistics.cards.totalDeposit"), value: revenue?.totalDeposit || 0, format: 'currency' },
+        { label: t("ownerStatistics.cards.totalShipping"), value: revenue?.totalShippingFee || 0, format: 'currency' }
       ]
     },
     {
-      title: 'Doanh thu ròng',
+      title: "Doanh thu ròng",
       value: revenue?.netRevenue || 0,
       icon: TrendingUp,
       color: 'purple',

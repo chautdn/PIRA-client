@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useI18n } from "../hooks/useI18n";
 import { productService } from "../services/product";
 import { categoryApi } from "../services/category.Api";
 import recommendationService from "../services/recommendation";
+import { translateCategory, translateSubCategory } from "../utils/categoryTranslation";
 import ProductCard from "../components/common/ProductCard";
 import VoiceSearch from "../components/common/VoiceSearch";
 import VisualSearch from "../components/common/VisualSearch";
@@ -45,6 +47,8 @@ const CategoryFilter = ({
   onParentClick,
   onSubClick,
   onAllClick,
+  t,
+  i18n,
 }) => {
   // Check if selected category is a subcategory
   const isSubcategorySelected = (subcategoryId) => selectedCategory === subcategoryId;
@@ -66,7 +70,7 @@ const CategoryFilter = ({
             : "text-gray-600 hover:bg-gray-50"
         }`}
       >
-        Tất cả danh mục
+        {t("productList.allCategories")}
       </button>
 
       {parentCategories.map((cat) => (
@@ -84,7 +88,7 @@ const CategoryFilter = ({
             ) : (
               <GoTriangleRight className="w-3.5 h-3.5" />
             )}
-            {cat.name}
+            {translateCategory(cat.name, i18n.language)}
             {/* Show indicator if this category or its subcategories are filtered */}
             {isParentCategoryActive(cat._id) && (
               <span className="ml-auto text-green-600 text-xs">●</span>
@@ -103,7 +107,7 @@ const CategoryFilter = ({
                       : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
-                  • {sub.name}
+                  • {translateCategory(sub.name, i18n.language)}
                   {/* Show indicator if this subcategory is selected */}
                   {isSubcategorySelected(sub._id) && (
                     <span className="ml-auto text-green-600 text-xs">✓</span>
@@ -119,12 +123,12 @@ const CategoryFilter = ({
 };
 
 // === PRICE FILTER ===
-const PriceFilter = ({ minPrice, maxPrice, onChange }) => {
+const PriceFilter = ({ minPrice, maxPrice, onChange, t }) => {
   const ranges = [
-    { label: "Dưới 100k", min: 0, max: 100000 },
-    { label: "100k - 500k", min: 100000, max: 500000 },
-    { label: "500k - 1tr", min: 500000, max: 1000000 },
-    { label: "Trên 1tr", min: 1000000, max: 10000000 },
+    { label: t("productList.under100k"), min: 0, max: 100000 },
+    { label: t("productList.price100to500k"), min: 100000, max: 500000 },
+    { label: t("productList.price500kto1m"), min: 500000, max: 1000000 },
+    { label: t("productList.over1m"), min: 1000000, max: 10000000 },
   ];
 
   return (
@@ -132,14 +136,14 @@ const PriceFilter = ({ minPrice, maxPrice, onChange }) => {
       <div className="grid grid-cols-2 gap-2">
         <input
           type="number"
-          placeholder="Từ"
+          placeholder={t("productList.from")}
           className="px-3 py-1.5 text-sm border rounded-md focus:border-green-500 focus:outline-none"
           value={minPrice || ""}
           onChange={(e) => onChange(parseInt(e.target.value) || 0, maxPrice)}
         />
         <input
           type="number"
-          placeholder="Đến"
+          placeholder={t("productList.to")}
           className="px-3 py-1.5 text-sm border rounded-md focus:border-green-500 focus:outline-none"
           value={maxPrice || ""}
           onChange={(e) => onChange(minPrice, parseInt(e.target.value) || 10000000)}
@@ -165,9 +169,9 @@ const PriceFilter = ({ minPrice, maxPrice, onChange }) => {
 };
 
 // === DISTRICT FILTER ===
-const DistrictFilter = ({ selected, onSelect }) => {
+const DistrictFilter = ({ selected, onSelect, t }) => {
   const districts = [
-    { value: "", label: "Tất cả khu vực" },
+    { value: "", label: t("productList.allDistricts") },
     { value: "hai-chau", label: "Hải Châu" },
     { value: "thanh-khe", label: "Thanh Khê" },
     { value: "son-tra", label: "Sơn Trà" },
@@ -196,13 +200,13 @@ const DistrictFilter = ({ selected, onSelect }) => {
 };
 
 // === CONDITION FILTER ===
-const ConditionFilter = ({ selected, onSelect }) => {
+const ConditionFilter = ({ selected, onSelect, t }) => {
   const conditions = [
-    { value: "", label: "Tất cả tình trạng" },
-    { value: "new", label: "Mới" },
-    { value: "like-new", label: "Như mới" },
-    { value: "good", label: "Tốt" },
-    { value: "fair", label: "Khá" },
+    { value: "", label: t("productList.allConditions") },
+    { value: "new", label: t("productList.conditionNew") },
+    { value: "like-new", label: t("productList.conditionLikeNew") },
+    { value: "good", label: t("productList.conditionGood") },
+    { value: "fair", label: t("productList.conditionFair") },
   ];
 
   return (
@@ -227,6 +231,7 @@ const ConditionFilter = ({ selected, onSelect }) => {
 // === MAIN COMPONENT ===
 export default function ProductList() {
   const navigate = useNavigate();
+  const { t, i18n } = useI18n();
   const [products, setProducts] = useState([]);
   const [parentCategories, setParentCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -435,11 +440,11 @@ export default function ProductList() {
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
             <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              Khám Phá Thiết Bị Du Lịch
+              {t("productList.pageTitle")}
             </h1>
           </div>
           <p className="text-lg sm:text-xl text-gray-600">
-            Thuê những thiết bị tốt nhất cho chuyến đi của bạn
+            {t("productList.pageSubtitle")}
           </p>
         </div>
 
@@ -450,7 +455,7 @@ export default function ProductList() {
               <div className="flex-1 relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm thiết bị du lịch..."
+                  placeholder={t("productList.search")}
                   className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
                   value={filters.search}
                   onChange={(e) => updateFilters({ search: e.target.value })}
@@ -484,15 +489,15 @@ export default function ProductList() {
                   updateFilters({ sort, order });
                 }}
               >
-                <option value="createdAt-desc">Mới nhất</option>
-                <option value="price-asc">Giá thấp đến cao</option>
-                <option value="price-desc">Giá cao đến thấp</option>
-                <option value="rating-desc">Đánh giá cao nhất</option>
+                <option value="createdAt-desc">{t("productList.sortNewest")}</option>
+                <option value="price-asc">{t("productList.sortPriceLow")}</option>
+                <option value="price-desc">{t("productList.sortPriceHigh")}</option>
+                <option value="rating-desc">{t("productList.sortRating")}</option>
               </select>
 
               <div className="text-gray-600 font-medium bg-green-50 px-4 py-2 rounded-lg">
-                Tìm thấy{" "}
-                <span className="text-green-600 font-bold">{pagination.total || 0}</span> sản phẩm
+                {t("productList.found")}{" "}
+                <span className="text-green-600 font-bold">{pagination.total || 0}</span> {t("productList.products")}
               </div>
             </div>
           </div>
@@ -507,14 +512,14 @@ export default function ProductList() {
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
-                  Bộ lọc
+                  {t("productList.filters")}
                 </h3>
               </div>
 
               <div className="p-4 space-y-3">
                 {[
                   {
-                    title: "Danh Mục",
+                    title: t("productList.category"),
                     content: (
                       <CategoryFilter
                         parentCategories={parentCategories}
@@ -528,26 +533,29 @@ export default function ProductList() {
                           setExpandedCategory(null);
                           setSubCategories([]);
                         }}
+                        t={t}
+                        i18n={i18n}
                       />
                     ),
                   },
                   {
-                    title: "Khoảng Giá",
+                    title: t("productList.priceRange"),
                     content: (
                       <PriceFilter
                         minPrice={filters.minPrice}
                         maxPrice={filters.maxPrice}
                         onChange={(min, max) => updateFilters({ minPrice: min, maxPrice: max })}
+                        t={t}
                       />
                     ),
                   },
                   {
-                    title: "Khu Vực",
-                    content: <DistrictFilter selected={filters.district} onSelect={(val) => updateFilters({ district: val })} />,
+                    title: t("productList.district"),
+                    content: <DistrictFilter selected={filters.district} onSelect={(val) => updateFilters({ district: val })} t={t} />,
                   },
                   {
-                    title: "Tình Trạng",
-                    content: <ConditionFilter selected={filters.condition} onSelect={(val) => updateFilters({ condition: val })} />,
+                    title: t("productList.condition"),
+                    content: <ConditionFilter selected={filters.condition} onSelect={(val) => updateFilters({ condition: val })} t={t} />,
                   },
                 ].map((section, i) => (
                   <Accordion key={i} title={section.title} defaultOpen={i === 0}>
@@ -573,7 +581,7 @@ export default function ProductList() {
                       }}
                       className="w-full text-sm text-red-600 hover:text-red-700 font-medium py-2 rounded-lg hover:bg-red-50 transition-colors"
                     >
-                      Xóa tất cả bộ lọc
+                      {t("productList.clearAllFilters")}
                     </button>
                   </div>
                 )}
@@ -586,7 +594,7 @@ export default function ProductList() {
             {loading && (
               <div className="text-center py-20">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-                <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
+                <p className="mt-4 text-gray-600">{t("productList.loading")}</p>
               </div>
             )}
 
@@ -596,10 +604,10 @@ export default function ProductList() {
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">📦</div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  Không tìm thấy sản phẩm
+                  {t("productList.noProducts")}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+                  {t("productList.tryChangeFilter")}
                 </p>
               </div>
             )}
@@ -628,7 +636,7 @@ export default function ProductList() {
                     onClick={() => handlePageChange(pagination.page - 1)}
                     className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
                   >
-                    Previous
+                    {t("productList.previous")}
                   </button>
                 )}
 
@@ -654,7 +662,7 @@ export default function ProductList() {
                     onClick={() => handlePageChange(pagination.page + 1)}
                     className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
                   >
-                    Next
+                    {t("productList.next")}
                   </button>
                 )}
               </div>
@@ -675,10 +683,10 @@ export default function ProductList() {
                 <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
                   <FiTrendingUp className="w-8 h-8 text-orange-600" />
                   <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                    Sản phẩm thịnh hành
+                    {t("productList.trendingTitle")}
                   </span>
                 </h2>
-                <p className="text-sm text-gray-600 mt-2">Sản phẩm được thuê nhiều nhất, đánh giá cao</p>
+                <p className="text-sm text-gray-600 mt-2">{t("productList.trendingDesc")}</p>
               </div>
             </div>
             <div className="relative">
@@ -753,7 +761,7 @@ export default function ProductList() {
                           </div>
                           <p className="text-green-600 font-bold text-lg">
                             {new Intl.NumberFormat('vi-VN').format(item.pricing?.dailyRate || 0)}đ
-                            <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                            <span className="text-sm text-gray-500 font-normal">{t("productList.perDay")}</span>
                           </p>
                         </div>
                       </Link>
@@ -777,10 +785,10 @@ export default function ProductList() {
               <h2 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
                 <FiStar className="w-8 h-8 text-purple-600" />
                 <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                  Đề xuất dành cho bạn
+                  {t("productList.recommendedTitle")}
                 </span>
               </h2>
-              <p className="text-sm text-gray-600 mt-2">Dựa trên sở thích và lịch sử duyệt web của bạn</p>
+              <p className="text-sm text-gray-600 mt-2">{t("productList.recommendedDesc")}</p>
             </div>
             <div className="relative">
               {/* Left Arrow */}
@@ -854,10 +862,10 @@ export default function ProductList() {
                           </div>
                           <p className="text-green-600 font-bold text-lg">
                             {new Intl.NumberFormat('vi-VN').format(item.pricing?.dailyRate || 0)}đ
-                            <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                            <span className="text-sm text-gray-500 font-normal">{t("productList.perDay")}</span>
                           </p>
                           <div className="mt-2 text-xs text-gray-500">
-                            Từ: {item.owner?.profile?.fullName || item.owner?.email?.split('@')[0]}
+                            {t("productList.from")}: {item.owner?.profile?.fullName || item.owner?.email?.split('@')[0]}
                           </div>
                         </div>
                       </Link>

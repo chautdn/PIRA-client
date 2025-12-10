@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { useAuth } from '../../hooks/useAuth';
+import { useI18n } from '../../hooks/useI18n';
+import { translateCategory } from '../../utils/categoryTranslation';
 
 const AdminOrderDetail = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { i18n } = useI18n();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -325,7 +328,7 @@ const AdminOrderDetail = () => {
                               <div className="flex items-center gap-3 flex-wrap">
                                 {item.product?.category?.name && (
                                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
-                                    📁 {item.product.category.name}
+                                    📁 {translateCategory(item.product.category.name, i18n.language)}
                                   </span>
                                 )}
                                 <span className="text-xs text-gray-600">

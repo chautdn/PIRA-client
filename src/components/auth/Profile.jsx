@@ -4,6 +4,7 @@ import userService from "../../services/user.Api";
 import kycService from "../../services/kyc.Api"; // Thêm import này
 import { toast } from "react-hot-toast";
 import { useAuth } from "../../hooks/useAuth";
+import { useI18n } from "../../hooks/useI18n";
 import { motion } from "framer-motion";
 import KycModal from "../common/KycModal";
 import BankAccountSection from "../wallet/BankAccountSection";
@@ -11,6 +12,7 @@ import MapSelector from "../common/MapSelector";
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
+  const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -89,7 +91,7 @@ const Profile = () => {
         },
       },
     }));
-    toast.success("Đã cập nhật vị trí địa chỉ!");
+    toast.success(t('profilePage.updateAddressSuccess'));
   };
 
   // Fetch user profile
@@ -99,7 +101,7 @@ const Profile = () => {
 
     // Show notification if coming from product creation
     if (location.state?.fromProductCreate) {
-      toast("📍 Cập nhật địa chỉ để tiếp tục tạo sản phẩm", {
+      toast("📍 " + t('profilePage.updateAddress'), {
         icon: "💡",
         duration: 4000,
         style: {
@@ -144,7 +146,7 @@ const Profile = () => {
       // **SAU KHI LOAD PROFILE, LOAD KYC STATUS**
       await loadKycStatus();
     } catch (error) {
-      toast.error("Không thể tải thông tin profile");
+      toast.error(t('profilePage.cannotLoadProfile'));
     } finally {
       setLoading(false);
     }
@@ -229,11 +231,11 @@ const Profile = () => {
       setUser(response.data);
       setEditing(false);
       setErrors({});
-      toast.success("Cập nhật thành công!");
+      toast.success(t('profilePage.updateSuccess'));
 
       // Check if came from product creation page
       if (location.state?.fromProductCreate) {
-        toast.success("🔄 Quay lại trang tạo sản phẩm...", { duration: 2000 });
+        toast.success("🔄 " + t('profilePage.backToProductCreate'), { duration: 2000 });
         setTimeout(() => {
           navigate("/owner/products/create", {
             state: { fromProfile: true },
@@ -241,7 +243,7 @@ const Profile = () => {
         }, 1500);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra");
+      toast.error(error.response?.data?.message || t('profilePage.updateError'));
     } finally {
       setSaving(false);
     }
@@ -259,25 +261,25 @@ const Profile = () => {
     
     // Validate firstName
     if (!formData.profile.firstName.trim()) {
-      newErrors.firstName = 'Họ không được để trống';
+      newErrors.firstName = t('profilePage.errorFirstNameRequired');
     } else if (formData.profile.firstName.trim().length < 2) {
-      newErrors.firstName = 'Họ phải có ít nhất 2 ký tự';
+      newErrors.firstName = t('profilePage.errorFirstNameMin');
     } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(formData.profile.firstName)) {
-      newErrors.firstName = 'Họ chỉ được chứa chữ cái';
+      newErrors.firstName = t('profilePage.errorFirstNameLetters');
     }
     
     // Validate lastName
     if (!formData.profile.lastName.trim()) {
-      newErrors.lastName = 'Tên không được để trống';
+      newErrors.lastName = t('profilePage.errorLastNameRequired');
     } else if (formData.profile.lastName.trim().length < 1) {
-      newErrors.lastName = 'Tên phải có ít nhất 1 ký tự';
+      newErrors.lastName = t('profilePage.errorLastNameMin');
     } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(formData.profile.lastName)) {
-      newErrors.lastName = 'Tên chỉ được chứa chữ cái';
+      newErrors.lastName = t('profilePage.errorLastNameLetters');
     }
     
     // Validate phone
     if (formData.phone && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(formData.phone)) {
-      newErrors.phone = 'Số điện thoại không hợp lệ (VD: 0912345678)';
+      newErrors.phone = t('profilePage.errorPhoneInvalid');
     }
     
     // Validate date of birth
@@ -287,9 +289,9 @@ const Profile = () => {
       const age = today.getFullYear() - birthDate.getFullYear();
       
       if (age < 13) {
-        newErrors.dateOfBirth = 'Bạn phải ít nhất 13 tuổi';
+        newErrors.dateOfBirth = t('profilePage.errorAgeMin');
       } else if (age > 120) {
-        newErrors.dateOfBirth = 'Ngày sinh không hợp lệ';
+        newErrors.dateOfBirth = t('profilePage.errorDateInvalid');
       }
     }
     
@@ -301,19 +303,19 @@ const Profile = () => {
     const newErrors = {};
     
     if (!passwordData.currentPassword) {
-      newErrors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại';
+      newErrors.currentPassword = t('profilePage.errorCurrentPasswordRequired');
     }
     
     if (!passwordData.newPassword) {
-      newErrors.newPassword = 'Vui lòng nhập mật khẩu mới';
+      newErrors.newPassword = t('profilePage.errorNewPasswordRequired');
     } else if (passwordData.newPassword.length < 6) {
-      newErrors.newPassword = 'Mật khẩu mới phải có ít nhất 6 ký tự';
+      newErrors.newPassword = t('profilePage.errorNewPasswordMin');
     }
     
     if (!passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu mới';
+      newErrors.confirmPassword = t('profilePage.errorPasswordsNotMatch');
     } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+      newErrors.confirmPassword = t('profilePage.errorPasswordsNotMatch');
     }
     
     setPasswordErrors(newErrors);
@@ -323,7 +325,7 @@ const Profile = () => {
   // Handle change password
   const handleChangePassword = async () => {
     if (!validatePassword()) {
-      toast.error('Vui lòng kiểm tra lại thông tin');
+      toast.error(t('profilePage.checkInfo'));
       return;
     }
     
@@ -334,7 +336,7 @@ const Profile = () => {
         newPassword: passwordData.newPassword
       });
       
-      toast.success('Đổi mật khẩu thành công!');
+      toast.success(t('profilePage.passwordUpdated'));
       setPasswordData({
         currentPassword: '',
         newPassword: '',
@@ -342,7 +344,7 @@ const Profile = () => {
       });
       setPasswordErrors({});
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đổi mật khẩu');
+      toast.error(error.response?.data?.message || t('profilePage.passwordUpdateError'));
     } finally {
       setChangingPassword(false);
     }
@@ -473,14 +475,14 @@ const Profile = () => {
           setCccdImages(imagesResponse.data);
         }
         
-        toast.success('Xác thực thành công!');
+        toast.success(t('profilePage.verifiedSuccess'));
       } else {
         console.error('❌ Invalid response:', dataResponse);
-        toast.error('Không tìm thấy thông tin CCCD');
+        toast.error(t('profilePage.cccdNotFound'));
       }
     } catch (error) {
       console.error('❌ Error:', error);
-      toast.error(error.message || 'Mật khẩu không đúng');
+      toast.error(error.message || t('profilePage.passwordIncorrect'));
       setPasswordForCCCD('');
     } finally {
       setLoadingCCCD(false);
@@ -510,7 +512,7 @@ const Profile = () => {
 
     if (isVerified) {
       return {
-        text: "Đã xác thực",
+        text: t('profilePage.kycVerifiedStatus'),
         color: "text-green-600",
         bgColor: "bg-green-100",
         icon: "✅",
@@ -519,7 +521,7 @@ const Profile = () => {
 
     if (hasImages) {
       return {
-        text: "Chờ xác thực",
+        text: t('profilePage.kycPendingStatus'),
         color: "text-yellow-600",
         bgColor: "bg-yellow-100",
         icon: "⏳",
@@ -527,7 +529,7 @@ const Profile = () => {
     }
 
     return {
-      text: "Chưa xác thực",
+      text: t('profilePage.kycNotVerifiedStatus'),
       color: "text-red-500",
       bgColor: "bg-red-100",
       icon: "❌",
@@ -536,21 +538,21 @@ const Profile = () => {
 
   // Sidebar menu items
   const menuItems = [
-    { id: "notifications", icon: "🔔", label: "Thông Báo" },
+    { id: "notifications", icon: "🔔", label: t('profilePage.menuNotifications') },
     {
       id: "profile",
       icon: "👤",
-      label: "Tài Khoản Của Tôi",
+      label: t('profilePage.menuMyAccount'),
       submenu: [
-        { id: "profile", label: "Hồ Sơ" },
-        { id: "address", label: "Địa Chỉ" },
-        { id: "password", label: "Đổi Mật Khẩu" },
-        { id: "verification", label: "Xác Minh Tài Khoản" },
-        { id: "banking", label: "Tài Khoản Ngân Hàng" },
+        { id: "profile", label: t('profilePage.menuProfile') },
+        { id: "address", label: t('profilePage.menuAddress') },
+        { id: "password", label: t('profilePage.menuPassword') },
+        { id: "verification", label: t('profilePage.menuVerification') },
+        { id: "banking", label: t('profilePage.menuBanking') },
       ],
     },
-    { id: "orders", icon: "📋", label: "Đơn Thuê" },
-    { id: "vouchers", icon: "🎫", label: "Kho Voucher" },
+    { id: "orders", icon: "📋", label: t('profilePage.menuOrders') },
+    { id: "vouchers", icon: "🎫", label: t('profilePage.menuVouchers') },
   ];
 
   if (loading) {
@@ -562,7 +564,7 @@ const Profile = () => {
           animate={{ opacity: 1 }}
         >
           <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 font-medium">Đang tải thông tin...</p>
+          <p className="text-gray-600 font-medium">{t('profilePage.loadingInfo')}</p>
         </motion.div>
       </div>
     );
@@ -608,7 +610,7 @@ const Profile = () => {
                   </p>
                   <p className="text-blue-100 text-sm flex items-center mt-1">
                     <span className="mr-1">✏️</span>
-                    Sửa Hồ Sơ
+                    {t('profilePage.editProfile')}
                   </p>
                 </div>
               </div>
@@ -668,18 +670,18 @@ const Profile = () => {
                         {activeSection === "password" && "🔐"}
                         {activeSection === "banking" && "🏦"}
                       </span>
-                      {activeSection === "profile" && "Hồ Sơ Của Tôi"}
-                      {activeSection === "address" && "Địa Chỉ"}
-                      {activeSection === "verification" && "Xác Minh Tài Khoản"}
-                      {activeSection === "password" && "Đổi Mật Khẩu"}
-                      {activeSection === "banking" && "Tài Khoản Ngân Hàng"}
+                      {activeSection === "profile" && t('profilePage.sectionProfile')}
+                      {activeSection === "address" && t('profilePage.sectionAddress')}
+                      {activeSection === "verification" && t('profilePage.sectionVerification')}
+                      {activeSection === "password" && t('profilePage.sectionPassword')}
+                      {activeSection === "banking" && t('profilePage.sectionBanking')}
                     </h1>
                     <p className="text-green-100 mt-2 text-lg">
                       {activeSection === "verification"
-                        ? "Xác minh danh tính để nâng cao độ tin cậy tài khoản"
+                        ? t('profilePage.manageVerification')
                         : activeSection === "banking"
-                        ? "Quản lý tài khoản ngân hàng để rút tiền"
-                        : "Quản lý thông tin hồ sơ để bảo mật tài khoản"}
+                        ? t('profilePage.manageBanking')
+                        : t('profilePage.manageProfileInfo')}
                     </p>
                   </div>
                 </div>
@@ -698,10 +700,10 @@ const Profile = () => {
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 text-lg">
-                              Xác thực Email
+                              {t('profilePage.emailVerification')}
                             </h3>
                             <p className="text-sm text-gray-600 mt-1">
-                              Xác nhận địa chỉ email của bạn
+                              {t('profilePage.emailVerificationDesc')}
                             </p>
                           </div>
                         </div>
@@ -714,12 +716,12 @@ const Profile = () => {
                             }`}
                           >
                             {user?.verification?.emailVerified
-                              ? "✅ Đã xác thực"
-                              : "❌ Chưa xác thực"}
+                              ? "✅ " + t('profilePage.emailVerified')
+                              : "❌ " + t('profilePage.emailNotVerified')}
                           </span>
                           {!user?.verification?.emailVerified && (
                             <button className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                              Xác thực ngay
+                              {t('profilePage.verifyNow')}
                             </button>
                           )}
                         </div>
@@ -733,12 +735,12 @@ const Profile = () => {
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 text-lg">
-                              Xác thực Danh tính (KYC)
+                              {t('profilePage.kycVerification')}
                             </h3>
                             <p className="text-sm text-gray-600 mt-1">
                               {user?.cccd?.isVerified
-                                ? "Danh tính của bạn đã được xác minh"
-                                : "Upload CCCD/CMND để xác minh danh tính"}
+                                ? t('profilePage.kycVerified')
+                                : t('profilePage.kycNotVerified')}
                             </p>
                           </div>
                         </div>
@@ -760,8 +762,8 @@ const Profile = () => {
                             }`}
                           >
                             {user?.cccd?.isVerified
-                              ? "👁️ Xem thông tin"
-                              : "🔐 Xác thực ngay"}
+                              ? "👁️ " + t('profilePage.viewInfo')
+                              : "🔐 " + t('profilePage.verifyIdentity')}
                           </button>
                         </div>
                       </div>
@@ -770,7 +772,7 @@ const Profile = () => {
                       <div className="mt-8 p-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 rounded-2xl border-2 border-indigo-200 shadow-xl">
                         <h3 className="font-bold text-gray-900 mb-6 flex items-center text-xl">
                           <span className="text-3xl mr-3">🛡️</span>
-                          Mức độ bảo mật tài khoản
+                          {t('profilePage.securityLevel')}
                         </h3>
 
                         <div className="flex items-center mb-6">
@@ -788,13 +790,12 @@ const Profile = () => {
                           <span className="ml-4 text-base font-bold text-gray-700 bg-white px-4 py-2 rounded-full shadow-md">
                             {(user?.verification?.emailVerified ? 1 : 0) +
                               (user?.cccd?.isVerified ? 1 : 0)}
-                            /2 Hoàn thành
+                            /2 {t('profilePage.completed')}
                           </span>
                         </div>
 
                         <p className="text-sm text-gray-700 bg-white/60 p-4 rounded-lg">
-                          Hoàn thành tất cả các bước xác minh để đảm bảo tài
-                          khoản của bạn được bảo mật tốt nhất.
+                          {t('profilePage.securityDesc')}
                         </p>
 
                         {(user?.verification?.emailVerified ? 1 : 0) +
@@ -803,8 +804,7 @@ const Profile = () => {
                           <div className="mt-6 p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl shadow-lg">
                             <p className="text-base text-white font-semibold flex items-center">
                               <span className="text-2xl mr-3">🎉</span>
-                              Chúc mừng! Tài khoản của bạn đã được xác minh hoàn
-                              toàn.
+                              {t('profilePage.congratulations')}
                             </p>
                           </div>
                         )}
@@ -822,7 +822,7 @@ const Profile = () => {
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
                             <span className="text-xl">👤</span>
-                            Họ:
+                            {t('profilePage.firstName')}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -838,7 +838,7 @@ const Profile = () => {
                                     )
                                   }
                                   className={`w-full px-4 py-3 border-2 ${errors.firstName ? 'border-red-300' : 'border-blue-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200`}
-                                  placeholder="Nhập họ của bạn"
+                                  placeholder={t('profilePage.placeholderFirstName')}
                                 />
                                 {errors.firstName && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -850,13 +850,13 @@ const Profile = () => {
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
-                                  {user?.profile?.firstName || "Chưa cập nhật"}
+                                  {user?.profile?.firstName || t('profilePage.notUpdated')}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  ✏️ {t('profilePage.change')}
                                 </button>
                               </div>
                             )}
@@ -869,7 +869,7 @@ const Profile = () => {
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
                             <span className="text-xl">🏷️</span>
-                            Tên:
+                            {t('profilePage.lastName')}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -885,7 +885,7 @@ const Profile = () => {
                                     )
                                   }
                                   className={`w-full px-4 py-3 border-2 ${errors.lastName ? 'border-red-300' : 'border-green-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200`}
-                                  placeholder="Nhập tên của bạn"
+                                  placeholder={t('profilePage.placeholderLastName')}
                                 />
                                 {errors.lastName && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -897,13 +897,13 @@ const Profile = () => {
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
-                                  {user?.profile?.lastName || "Chưa cập nhật"}
+                                  {user?.profile?.lastName || t('profilePage.notUpdated')}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  ✏️ {t('profilePage.change')}
                                 </button>
                               </div>
                             )}
@@ -916,7 +916,7 @@ const Profile = () => {
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
                             <span className="text-xl">📧</span>
-                            Email:
+                            {t('profilePage.email')}:
                           </label>
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
@@ -938,7 +938,7 @@ const Profile = () => {
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
                             <span className="text-xl">📱</span>
-                            Số điện thoại:
+                            {t('profilePage.phone')}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -950,7 +950,7 @@ const Profile = () => {
                                     handleDirectChange("phone", e.target.value)
                                   }
                                   className={`w-full px-4 py-3 border-2 ${errors.phone ? 'border-red-300' : 'border-green-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200`}
-                                  placeholder="Nhập số điện thoại"
+                                  placeholder={t('profilePage.placeholderPhone')}
                                 />
                                 {errors.phone && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -970,7 +970,7 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  ✏️ {t('profilePage.change')}
                                 </button>
                               </div>
                             )}
@@ -983,7 +983,7 @@ const Profile = () => {
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
                             <span className="text-xl">♀️♂️</span>
-                            Giới tính:
+                            {t('profilePage.gender')}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -1003,7 +1003,7 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-blue-600"
                                   />
-                                  <span className="font-medium">👨 Nam</span>
+                                  <span className="font-medium">👨 {t('profilePage.male')}</span>
                                 </label>
                                 <label className="flex items-center px-4 py-3 bg-white border-2 border-pink-200 rounded-lg cursor-pointer hover:bg-pink-50 transition-colors duration-200 has-[:checked]:bg-pink-100 has-[:checked]:border-pink-500">
                                   <input
@@ -1020,7 +1020,7 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-pink-600"
                                   />
-                                  <span className="font-medium">👩 Nữ</span>
+                                  <span className="font-medium">👩 {t('profilePage.female')}</span>
                                 </label>
                                 <label className="flex items-center px-4 py-3 bg-white border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors duration-200 has-[:checked]:bg-purple-100 has-[:checked]:border-purple-500">
                                   <input
@@ -1037,25 +1037,25 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-purple-600"
                                   />
-                                  <span className="font-medium">🧑 Khác</span>
+                                  <span className="font-medium">🧑 {t('profilePage.other')}</span>
                                 </label>
                               </div>
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
                                   {user?.profile?.gender === "MALE"
-                                    ? "👨 Nam"
+                                    ? "👨 " + t('profilePage.male')
                                     : user?.profile?.gender === "FEMALE"
-                                    ? "👩 Nữ"
+                                    ? "👩 " + t('profilePage.female')
                                     : user?.profile?.gender === "OTHER"
-                                    ? "🧑 Khác"
-                                    : "Chưa cập nhật"}
+                                    ? "🧑 " + t('profilePage.other')
+                                    : t('profilePage.notUpdated')}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  ✏️ {t('profilePage.change')}
                                 </button>
                               </div>
                             )}
@@ -1068,7 +1068,7 @@ const Profile = () => {
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
                             <span className="text-xl">🎂</span>
-                            Ngày sinh:
+                            {t('profilePage.dateOfBirth')}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -1196,13 +1196,13 @@ const Profile = () => {
                               disabled={saving}
                               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
                             >
-                              {saving ? "⏳ Đang lưu..." : "💾 Lưu thay đổi"}
+                              {saving ? "⏳ " + t('profilePage.saving') : "💾 " + t('profilePage.save')}
                             </button>
                             <button
                               onClick={handleCancel}
                               className="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 shadow-md transition-all duration-200"
                             >
-                              ❌ Hủy
+                              ❌ {t('profilePage.cancel')}
                             </button>
                           </div>
                         </div>
@@ -1238,12 +1238,12 @@ const Profile = () => {
                           onChange={handleAvatarUpload}
                           className="hidden"
                         />
-                        📸 Chọn Ảnh Mới
+                        📸 {t('profilePage.chooseNewPhoto')}
                       </label>
 
                       <div className="text-xs text-gray-500 mt-4 text-center bg-gray-50 p-3 rounded-lg">
-                        <p className="font-medium">💾 Dung lượng: Tối đa 1 MB</p>
-                        <p className="mt-1">🖼️ Định dạng: JPEG, PNG</p>
+                        <p className="font-medium">💾 {t('profilePage.capacityMax')}</p>
+                        <p className="mt-1">🖼️ {t('profilePage.formatSupported')}</p>
                       </div>
                     </div>
                   </div>
@@ -1252,18 +1252,18 @@ const Profile = () => {
                 {activeSection === "address" && (
                   <div className="max-w-2xl">
                     <h2 className="text-lg font-medium mb-6">
-                      Địa chỉ của tôi
+                      {t('profilePage.myAddress')}
                     </h2>
 
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Chọn địa chỉ trên bản đồ (để tính khoảng cách chính xác)
+                          {t('profilePage.chooseOnMap')}
                         </label>
                         <MapSelector
                           onLocationSelect={handleLocationSelect}
                           initialAddress={formData.address.streetAddress}
-                          placeholder="Nhấn để chọn địa chỉ trên bản đồ VietMap..."
+                          placeholder={t('profilePage.clickToChooseMap')}
                           className="mb-4"
                         />
                         {formData.address.coordinates?.latitude &&
@@ -1278,7 +1278,7 @@ const Profile = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Địa chỉ cụ thể (tự điền từ bản đồ)
+                          {t('profilePage.addressDetail')}
                         </label>
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
                           {formData.address.streetAddress || "Chưa cập nhật"}
@@ -1287,7 +1287,7 @@ const Profile = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Phường
+                          {t('profilePage.ward')}
                         </label>
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
                           {formData.address.ward || "Chưa cập nhật"}
@@ -1296,7 +1296,7 @@ const Profile = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Thành phố
+                          {t('profilePage.city')}
                         </label>
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
                           {formData.address.city || "Chưa cập nhật"}
@@ -1305,7 +1305,7 @@ const Profile = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Tỉnh/Thành phố
+                          {t('profilePage.province')}
                         </label>
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
                           {formData.address.province || "Chưa cập nhật"}
@@ -1316,10 +1316,9 @@ const Profile = () => {
                         <div className="flex items-start gap-3">
                           <span className="text-2xl">ℹ️</span>
                           <div>
-                            <p className="text-sm font-medium text-blue-900">Lưu ý:</p>
+                            <p className="text-sm font-medium text-blue-900">{t('profilePage.locationNote')}</p>
                             <p className="text-sm text-blue-700 mt-1">
-                              Địa chỉ được tự động điền khi bạn chọn vị trí trên bản đồ VietMap. 
-                              Vui lòng chọn địa chỉ chính xác để hệ thống tính phí vận chuyển đúng.
+                              {t('profilePage.locationNoteDesc')}
                             </p>
                           </div>
                         </div>
@@ -1331,7 +1330,7 @@ const Profile = () => {
                           disabled={saving}
                           className="px-6 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50"
                         >
-                          {saving ? "Đang lưu..." : "Lưu Địa Chỉ"}
+                          {saving ? t('profilePage.saving') : t('profilePage.saveAddress')}
                         </button>
                       </div>
                     </div>
@@ -1345,7 +1344,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border-2 border-red-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
                           <span className="text-2xl">🔑</span>
-                          Mật khẩu hiện tại
+                          {t('profilePage.currentPassword')}
                         </label>
                         <div className="relative">
                           <input
@@ -1358,7 +1357,7 @@ const Profile = () => {
                               }
                             }}
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.currentPassword ? 'border-red-300' : 'border-red-200'} rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
-                            placeholder=" Nhập mật khẩu hiện tại..."
+                            placeholder={t('profilePage.placeholderCurrentPassword')}
                           />
                           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔐</span>
                         </div>
@@ -1374,7 +1373,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-primary-50 to-green-50 p-6 rounded-xl border-2 border-primary-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
                           <span className="text-2xl">🆕</span>
-                          Mật khẩu mới
+                          {t('profilePage.newPassword')}
                         </label>
                         <div className="relative">
                           <input
@@ -1387,7 +1386,7 @@ const Profile = () => {
                               }
                             }}
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.newPassword ? 'border-red-300' : 'border-primary-200'} rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
-                            placeholder=" Nhập mật khẩu mới..."
+                            placeholder={t('profilePage.placeholderNewPassword')}
                           />
                           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔑</span>
                         </div>
@@ -1403,7 +1402,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
                           <span className="text-2xl">✅</span>
-                          Xác nhận mật khẩu mới
+                          {t('profilePage.confirmPassword')}
                         </label>
                         <div className="relative">
                           <input
@@ -1416,7 +1415,7 @@ const Profile = () => {
                               }
                             }}
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-green-200'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
-                            placeholder=" Nhập lại mật khẩu mới..."
+                            placeholder={t('profilePage.placeholderConfirmPassword')}
                           />
                           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔓</span>
                         </div>
@@ -1432,20 +1431,20 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-xl border-2 border-yellow-200">
                         <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
                           <span className="text-xl">💡</span>
-                          Mẹo bảo mật
+                          {t('profilePage.passwordTips')}
                         </h4>
                         <ul className="space-y-2 text-sm text-gray-700">
                           <li className="flex items-center gap-2">
                             <span>✅</span>
-                            <span>Sử dụng ít nhất 6 ký tự</span>
+                            <span>{t('profilePage.passwordTip1')}</span>
                           </li>
                           <li className="flex items-center gap-2">
                             <span>✅</span>
-                            <span>Kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt</span>
+                            <span>{t('profilePage.passwordTip2')}</span>
                           </li>
                           <li className="flex items-center gap-2">
                             <span>✅</span>
-                            <span>Không sử dụng thông tin cá nhân dễ đoán</span>
+                            <span>{t('profilePage.passwordTip3')}</span>
                           </li>
                         </ul>
                       </div>
@@ -1457,7 +1456,7 @@ const Profile = () => {
                           disabled={changingPassword}
                           className="px-10 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none"
                         >
-                          {changingPassword ? '⏳ Đang cập nhật...' : '🔒 Cập Nhật Mật Khẩu'}
+                          {changingPassword ? '⏳ ' + t('profilePage.updating') : '🔒 ' + t('profilePage.updatePassword')}
                         </button>
                       </div>
                     </div>
@@ -1491,7 +1490,7 @@ const Profile = () => {
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
               <span className="text-3xl">🔒</span>
-              Xác thực để xem thông tin CCCD
+              {t('profilePage.enterPasswordToView')}
             </h3>
             <p className="text-gray-600 mb-6">
               {user?.authProvider === 'google' 
@@ -1507,13 +1506,13 @@ const Profile = () => {
                 {(!user?.authProvider || user.authProvider === 'local') && (
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Mật khẩu
+                      {t('profilePage.password')}
                     </label>
                     <input
                       type="password"
                       value={passwordForCCCD}
                       onChange={(e) => setPasswordForCCCD(e.target.value)}
-                      placeholder="Nhập mật khẩu của bạn"
+                      placeholder={t('profilePage.placeholderPassword')}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
@@ -1540,7 +1539,7 @@ const Profile = () => {
                     onClick={handleClosePasswordPrompt}
                     className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
                   >
-                    Hủy
+                    {t('profilePage.cancel')}
                   </button>
                   {(!user?.authProvider || user.authProvider === 'local') && (
                     <button
@@ -1548,7 +1547,7 @@ const Profile = () => {
                       disabled={!passwordForCCCD || loadingCCCD}
                       className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 shadow-lg"
                     >
-                      {loadingCCCD ? 'Đang xác thực...' : 'Xác nhận'}
+                      {loadingCCCD ? t('profilePage.verifying') : t('profilePage.verify')}
                     </button>
                   )}
                 </div>

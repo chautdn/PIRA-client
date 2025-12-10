@@ -1,11 +1,13 @@
 import React, { useEffect } from "react";
 import { Outlet, useParams } from "react-router-dom";
+import { useI18n } from "../hooks/useI18n";
 import ChatSidebar from "../components/chat/ChatSidebar";
 import useChatSocket from "../hooks/useChatSocket";
 import toast from "react-hot-toast";
 
 const Chat = () => {
   const { conversationId } = useParams();
+  const { t } = useI18n();
   const { connected, onNotification } = useChatSocket();
 
   // CRITICAL: Handle real-time notifications
@@ -19,7 +21,7 @@ const Chat = () => {
           // Only show notification if not in the conversation
           if (notification.conversationId !== conversationId) {
             toast.success(
-              `New message from ${notification.senderName || "someone"}`
+              t("chat.newMessage").replace('{name}', notification.senderName || "someone")
             );
           }
           break;
@@ -48,7 +50,7 @@ const Chat = () => {
           <div className="bg-yellow-100 border-b border-yellow-200 px-4 py-2 flex-shrink-0">
             <div className="text-yellow-800 text-sm flex items-center">
               <div className="w-3 h-3 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-              Connecting to chat...
+              {t("chat.connecting")}
             </div>
           </div>
         )}

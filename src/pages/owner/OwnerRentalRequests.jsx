@@ -7,10 +7,12 @@ import { formatCurrency } from '../../utils/constants';
 import { Package, Calendar, User, CreditCard, ChevronRight, Filter } from 'lucide-react';
 import ManageExtensionRequestsModal from '../../components/owner/ManageExtensionRequestsModal';
 import OwnerShipmentModal from '../../components/owner/OwnerShipmentModal';
+import { useI18n } from '../../hooks/useI18n';
 
 const OwnerRentalRequests = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
   
   const [subOrders, setSubOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,14 +22,14 @@ const OwnerRentalRequests = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const filterOptions = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'PENDING_CONFIRMATION', label: 'Chờ xác nhận' },
-    { value: 'PARTIALLY_CONFIRMED', label: 'Xác nhận 1 phần' },
-    { value: 'OWNER_CONFIRMED', label: 'Đã xác nhận' },
-    { value: 'READY_FOR_CONTRACT', label: 'Sẵn sàng hợp đồng' },
-    { value: 'CONTRACT_SIGNED', label: 'Đã ký hợp đồng' },
-    { value: 'ACTIVE', label: 'Đang thuê' },
-    { value: 'COMPLETED', label: 'Hoàn thành' }
+    { value: 'all', label: t('ownerRentalRequests.filterAll') },
+    { value: 'PENDING_CONFIRMATION', label: t('ownerRentalRequests.filterPendingConfirmation') },
+    { value: 'PARTIALLY_CONFIRMED', label: t('ownerRentalRequests.filterPartiallyConfirmed') },
+    { value: 'OWNER_CONFIRMED', label: t('ownerRentalRequests.filterOwnerConfirmed') },
+    { value: 'READY_FOR_CONTRACT', label: t('ownerRentalRequests.filterReadyForContract') },
+    { value: 'CONTRACT_SIGNED', label: t('ownerRentalRequests.filterContractSigned') },
+    { value: 'ACTIVE', label: t('ownerRentalRequests.filterActive') },
+    { value: 'COMPLETED', label: t('ownerRentalRequests.filterCompleted') }
   ];
 
   useEffect(() => {
@@ -72,7 +74,7 @@ const OwnerRentalRequests = () => {
       setSubOrders(subOrdersList);
     } catch (error) {
       console.error('Lỗi tải danh sách yêu cầu thuê:', error);
-      toast.error('Không thể tải danh sách yêu cầu thuê');
+      toast.error(t('ownerRentalRequests.errorLoading'));
       setSubOrders([]);
     } finally {
       setLoading(false);
@@ -81,21 +83,21 @@ const OwnerRentalRequests = () => {
 
   const getStatusBadge = (status) => {
     const config = {
-      DRAFT: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Nháp' },
-      PENDING_CONFIRMATION: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ xác nhận' },
-      OWNER_CONFIRMED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã xác nhận' },
-      OWNER_REJECTED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã từ chối' },
-      PARTIALLY_CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Xác nhận 1 phần' },
-      RENTER_REJECTED: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Người thuê từ chối' },
-      READY_FOR_CONTRACT: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Sẵn sàng hợp đồng' },
-      PENDING_OWNER: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Chờ chủ ký' },
-      PENDING_RENTER: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'Chờ người thuê ký' },
-      CONTRACT_SIGNED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã ký hợp đồng' },
-      DELIVERED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã giao' },
-      ACTIVE: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Đang thuê' },
-      IN_PROGRESS: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Đang thuê' },
-      COMPLETED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
-      CANCELLED: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Đã hủy' }
+      DRAFT: { bg: 'bg-gray-100', text: 'text-gray-800', label: t('ownerRentalRequests.statusDraft') },
+      PENDING_CONFIRMATION: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: t('ownerRentalRequests.statusPendingConfirmation') },
+      OWNER_CONFIRMED: { bg: 'bg-green-100', text: 'text-green-800', label: t('ownerRentalRequests.statusOwnerConfirmed') },
+      OWNER_REJECTED: { bg: 'bg-red-100', text: 'text-red-800', label: t('ownerRentalRequests.statusOwnerRejected') },
+      PARTIALLY_CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800', label: t('ownerRentalRequests.statusPartiallyConfirmed') },
+      RENTER_REJECTED: { bg: 'bg-orange-100', text: 'text-orange-800', label: t('ownerRentalRequests.statusRenterRejected') },
+      READY_FOR_CONTRACT: { bg: 'bg-purple-100', text: 'text-purple-800', label: t('ownerRentalRequests.statusReadyForContract') },
+      PENDING_OWNER: { bg: 'bg-blue-100', text: 'text-blue-800', label: t('ownerRentalRequests.statusPendingOwner') },
+      PENDING_RENTER: { bg: 'bg-orange-100', text: 'text-orange-800', label: t('ownerRentalRequests.statusPendingRenter') },
+      CONTRACT_SIGNED: { bg: 'bg-green-100', text: 'text-green-800', label: t('ownerRentalRequests.statusContractSigned') },
+      DELIVERED: { bg: 'bg-green-100', text: 'text-green-800', label: t('ownerRentalRequests.statusDelivered') },
+      ACTIVE: { bg: 'bg-blue-100', text: 'text-blue-800', label: t('ownerRentalRequests.statusActive') },
+      IN_PROGRESS: { bg: 'bg-blue-100', text: 'text-blue-800', label: t('ownerRentalRequests.statusInProgress') },
+      COMPLETED: { bg: 'bg-green-100', text: 'text-green-800', label: t('ownerRentalRequests.statusCompleted') },
+      CANCELLED: { bg: 'bg-gray-100', text: 'text-gray-800', label: t('ownerRentalRequests.statusCancelled') }
     };
 
     const style = config[status] || config.DRAFT;
@@ -111,7 +113,7 @@ const OwnerRentalRequests = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải...</p>
+          <p className="mt-4 text-gray-600">{t('ownerRentalRequests.loading')}</p>
         </div>
       </div>
     );
@@ -123,21 +125,21 @@ const OwnerRentalRequests = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Quản lý yêu cầu thuê</h1>
-            <p className="text-gray-600">Theo dõi và xác nhận các yêu cầu thuê sản phẩm từ khách hàng</p>
+            <h1 className="text-3xl font-bold">{t('ownerRentalRequests.title')}</h1>
+            <p className="text-gray-600">{t('ownerRentalRequests.subtitle')}</p>
           </div>
           <div className="flex space-x-2">
             <button
               onClick={() => fetchSubOrders()}
               className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
             >
-              🔄 Reload
+              🔄 {t('ownerRentalRequests.reload')}
             </button>
             <button
               onClick={() => setShowExtensionModal(true)}
               className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
             >
-              📅 Quản lí gia hạn
+              📅 {t('ownerRentalRequests.manageExtension')}
             </button>
             <button
               onClick={() => {
@@ -146,7 +148,7 @@ const OwnerRentalRequests = () => {
               }}
               className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
             >
-              🚚 Quản lí vận chuyển
+              🚚 {t('ownerRentalRequests.manageShipment')}
             </button>
           </div>
         </div>
@@ -155,7 +157,7 @@ const OwnerRentalRequests = () => {
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex items-center gap-3 mb-3">
             <Filter size={20} className="text-gray-600" />
-            <h3 className="font-semibold text-gray-900">Lọc theo trạng thái</h3>
+            <h3 className="font-semibold text-gray-900">{t('ownerRentalRequests.filterByStatus')}</h3>
           </div>
           <div className="flex flex-wrap gap-2">
             {filterOptions.map((option) => (
@@ -178,11 +180,11 @@ const OwnerRentalRequests = () => {
         {subOrders.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <Package size={64} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có yêu cầu thuê nào</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('ownerRentalRequests.noRequests')}</h3>
             <p className="text-gray-600">
               {statusFilter !== 'all' 
-                ? 'Không có yêu cầu thuê nào với bộ lọc này'
-                : 'Bạn chưa có yêu cầu thuê nào. Đăng sản phẩm để nhận yêu cầu thuê!'
+                ? t('ownerRentalRequests.noRequestsFiltered')
+                : t('ownerRentalRequests.noRequestsMessage')
               }
             </p>
           </div>
@@ -194,19 +196,19 @@ const OwnerRentalRequests = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mã đơn
+                      {t('ownerRentalRequests.orderId')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Người thuê
+                      {t('ownerRentalRequests.renter')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sản phẩm
+                      {t('ownerRentalRequests.product')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng
+                      {t('ownerRentalRequests.total')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
+                      {t('ownerRentalRequests.status')}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       
@@ -234,7 +236,7 @@ const OwnerRentalRequests = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <Package size={16} className="text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-900">{subOrder.products?.length || 0} sản phẩm</span>
+                          <span className="text-sm text-gray-900">{subOrder.products?.length || 0} {t('ownerRentalRequests.products')}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -276,12 +278,12 @@ const OwnerRentalRequests = () => {
                     </div>
                     <div className="flex items-center text-gray-600">
                       <Package size={14} className="mr-2" />
-                      {subOrder.products?.length || 0} sản phẩm
+                      {subOrder.products?.length || 0} {t('ownerRentalRequests.products')}
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">
                         <CreditCard size={14} className="inline mr-2" />
-                        Tổng:
+                        {t('ownerRentalRequests.total')}:
                       </span>
                       <span className="font-semibold text-green-600">
                         {formatCurrency(subOrder.totalAmount)}

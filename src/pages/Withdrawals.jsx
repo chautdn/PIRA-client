@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../hooks/useI18n";
 import {
   AlertTriangle,
   Lock,
@@ -23,6 +24,7 @@ import useChatSocket from "../hooks/useChatSocket";
 const Withdrawals = () => {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [showBankForm, setShowBankForm] = useState(false);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [bankAccount, setBankAccount] = useState(null);
@@ -96,7 +98,7 @@ const Withdrawals = () => {
       setWithdrawals(withdrawalData);
     } catch (error) {
       console.error("Error fetching withdrawals:", error);
-      toast.error("Không thể tải lịch sử rút tiền");
+      toast.error(t('withdrawals.error'));
     } finally {
       setLoadingWithdrawals(false);
     }
@@ -106,7 +108,7 @@ const Withdrawals = () => {
     setShowBankForm(false);
     await fetchBankAccount();
     await refreshUser?.();
-    toast.success("Bank account added! You can now request withdrawals.");
+    toast.success(t('withdrawals.accountAdded'));
   };
 
   const handleWithdrawalSuccess = async () => {
@@ -124,27 +126,27 @@ const Withdrawals = () => {
   const getStatusBadge = (status) => {
     const statusConfig = {
       pending: {
-        label: "Chờ xử lý",
+        label: t('withdrawals.statusPending'),
         color: "bg-yellow-100 text-yellow-800",
         icon: Clock,
       },
       processing: {
-        label: "Đang xử lý",
+        label: t('withdrawals.statusProcessing'),
         color: "bg-blue-100 text-blue-800",
         icon: Clock,
       },
       completed: {
-        label: "Hoàn thành",
+        label: t('withdrawals.statusCompleted'),
         color: "bg-green-100 text-green-800",
         icon: CheckCircle2,
       },
       rejected: {
-        label: "Từ chối",
+        label: t('withdrawals.statusRejected'),
         color: "bg-red-100 text-red-800",
         icon: XCircle,
       },
       cancelled: {
-        label: "Đã hủy",
+        label: t('withdrawals.statusCancelled'),
         color: "bg-gray-100 text-gray-800",
         icon: XCircle,
       },
@@ -171,18 +173,18 @@ const Withdrawals = () => {
   };
 
   const handleCancelWithdrawal = async (withdrawalId) => {
-    if (!window.confirm("Bạn có chắc muốn hủy yêu cầu rút tiền này?")) {
+    if (!window.confirm(t('withdrawals.cancelConfirm'))) {
       return;
     }
 
     try {
       await withdrawalService.cancelWithdrawal(withdrawalId);
-      toast.success("Đã hủy yêu cầu rút tiền");
+      toast.success(t('withdrawals.cancelSuccess'));
       fetchWithdrawals();
       await refreshUser?.();
     } catch (error) {
       console.error("Error canceling withdrawal:", error);
-      toast.error(error.response?.data?.message || "Không thể hủy yêu cầu");
+      toast.error(error.response?.data?.message || t('withdrawals.error'));
     }
   };
 
@@ -191,7 +193,7 @@ const Withdrawals = () => {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Trước khi rút tiền
+          {t('withdrawals.beforeWithdrawing')}
         </h2>
         <div className="space-y-4">
           {/* Step 1: KYC */}
@@ -213,7 +215,7 @@ const Withdrawals = () => {
                   isKycVerified ? "text-green-900" : "text-gray-900"
                 }`}
               >
-                Bước 1: Hoàn thành xác minh danh tính (KYC)
+                {t('withdrawals.step1KYC')}
               </h3>
               <p
                 className={`text-sm mt-1 ${
@@ -221,15 +223,15 @@ const Withdrawals = () => {
                 }`}
               >
                 {isKycVerified
-                  ? "✓ Danh tính của bạn đã được xác minh"
-                  : "Xác minh danh tính để mở khóa chức năng rút tiền"}
+                  ? t('withdrawals.identityVerified')
+                  : t('withdrawals.verifyIdentity')}
               </p>
               {!isKycVerified && (
                 <button
                   onClick={handleGoToKyc}
                   className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Hoàn thành xác minh KYC →
+                  {t('withdrawals.completeKYC')}
                 </button>
               )}
             </div>
@@ -270,7 +272,7 @@ const Withdrawals = () => {
                     : "text-gray-500"
                 }`}
               >
-                Bước 2: Thêm tài khoản ngân hàng
+                {t('withdrawals.step2Bank')}
               </h3>
               <p
                 className={`text-sm mt-1 ${
@@ -284,15 +286,15 @@ const Withdrawals = () => {
                 {hasBankAccount
                   ? `✓ ${bankAccount.bankName} - ${bankAccount.accountNumber}`
                   : isKycVerified
-                  ? "Liên kết tài khoản ngân hàng Việt Nam để rút tiền"
-                  : "Hoàn thành xác minh KYC trước"}
+                  ? t('withdrawals.addBankAccountText')
+                  : t('withdrawals.completeKycFirst')}
               </p>
               {!hasBankAccount && isKycVerified && (
                 <button
                   onClick={() => setShowBankForm(true)}
                   className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Thêm tài khoản ngân hàng →
+                  {t('withdrawals.addBankAccountButton')}
                 </button>
               )}
               {hasBankAccount && (
@@ -300,7 +302,7 @@ const Withdrawals = () => {
                   onClick={() => setShowBankForm(true)}
                   className="mt-2 text-sm text-gray-600 hover:text-gray-700 font-medium"
                 >
-                  Chỉnh sửa tài khoản ngân hàng
+                  {t('withdrawals.editBankAccount')}
                 </button>
               )}
             </div>
@@ -314,7 +316,7 @@ const Withdrawals = () => {
               <CheckCircle className="text-blue-600 mr-2" size={20} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-blue-900">
-                  Bạn đã sẵn sàng! Giờ bạn có thể yêu cầu rút tiền.
+                  {t('withdrawals.readyToWithdraw')}
                 </p>
               </div>
             </div>
@@ -328,9 +330,9 @@ const Withdrawals = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Rút tiền</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('withdrawals.title')}</h1>
         <p className="mt-2 text-gray-600">
-          Rút tiền từ ví PIRA về tài khoản ngân hàng của bạn
+          {t('withdrawals.subtitle')}
         </p>
       </div>
 
@@ -363,7 +365,7 @@ const Withdrawals = () => {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
-              Lịch sử rút tiền
+              {t('withdrawals.withdrawalHistory')}
             </h2>
             {isKycVerified && hasBankAccount && (
               <button
@@ -372,7 +374,7 @@ const Withdrawals = () => {
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 <Plus size={16} className="mr-2" />
-                Yêu cầu rút tiền
+                {t('withdrawals.requestWithdrawal')}
               </button>
             )}
           </div>
@@ -399,12 +401,12 @@ const Withdrawals = () => {
                 />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">
-                Chưa có yêu cầu rút tiền
+                {t('withdrawals.noWithdrawals')}
               </h3>
               <p className="mt-1 text-sm text-gray-500">
                 {isKycVerified && hasBankAccount
-                  ? 'Nhấn "Yêu cầu rút tiền" để bắt đầu'
-                  : "Hoàn thành các bước trên để bắt đầu rút tiền"}
+                  ? t('withdrawals.noWithdrawalsHint')
+                  : t('withdrawals.completeStepsHint')}
               </p>
             </div>
           ) : (
@@ -413,16 +415,16 @@ const Withdrawals = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày tạo
+                      {t('withdrawals.createdDate')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Số tiền
+                      {t('withdrawals.amount')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
+                      {t('withdrawals.status')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phản hồi
+                      {t('withdrawals.feedback')}
                     </th>
                   </tr>
                 </thead>
@@ -454,7 +456,7 @@ const Withdrawals = () => {
                         {withdrawal.rejectionReason && (
                           <div className="text-sm">
                             <span className="font-medium text-red-600">
-                              Lý do từ chối:
+                              {t('withdrawals.rejectionReason')}
                             </span>
                             <p className="text-red-700 mt-1">
                               {withdrawal.rejectionReason}
@@ -465,7 +467,7 @@ const Withdrawals = () => {
                           !withdrawal.rejectionReason && (
                             <div className="text-sm">
                               <span className="font-medium text-gray-600">
-                                Ghi chú:
+                                {t('withdrawals.note')}
                               </span>
                               <p className="text-gray-700 mt-1">
                                 {withdrawal.adminNote}
@@ -475,7 +477,7 @@ const Withdrawals = () => {
                         {!withdrawal.rejectionReason &&
                           !withdrawal.adminNote && (
                             <span className="text-sm text-gray-400">
-                              Chưa có phản hồi
+                              {t('withdrawals.noFeedback')}
                             </span>
                           )}
                       </td>

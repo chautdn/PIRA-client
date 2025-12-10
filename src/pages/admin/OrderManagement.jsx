@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { useAuth } from '../../hooks/useAuth';
+import { useI18n } from '../../hooks/useI18n';
+import { translateCategory } from '../../utils/categoryTranslation';
 
 const OrderManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { i18n } = useI18n();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -561,7 +564,7 @@ const OrderManagement = () => {
                         {order.product?.category && (
                           <div className="mt-1">
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200">
-                              📁 {order.product.category.name}
+                              📁 {translateCategory(order.product.category.name, i18n.language)}
                             </span>
                           </div>
                         )}

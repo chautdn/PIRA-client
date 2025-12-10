@@ -1,7 +1,9 @@
 import React from 'react';
 import { Clock, User, Package, MapPin } from 'lucide-react';
+import { useI18n } from '../../../hooks/useI18n';
 
 const CurrentlyRentedTable = ({ rentedProducts, loading }) => {
+  const { t } = useI18n();
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -39,7 +41,7 @@ const CurrentlyRentedTable = ({ rentedProducts, loading }) => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Clock className="text-blue-500" size={20} />
-          Sản phẩm đang cho thuê
+          {t("ownerStatistics.currentlyRented.title")}
         </h3>
         <div className="animate-pulse space-y-4">
           {[...Array(3)].map((_, i) => (
@@ -58,11 +60,11 @@ const CurrentlyRentedTable = ({ rentedProducts, loading }) => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Clock className="text-blue-500" size={20} />
-          Sản phẩm đang cho thuê
+          {t("ownerStatistics.currentlyRented.title")}
         </h3>
         <div className="text-center py-8 text-gray-500">
           <Package size={48} className="mx-auto mb-2 opacity-50" />
-          <p>Hiện không có sản phẩm nào đang cho thuê</p>
+          <p>{t("ownerStatistics.currentlyRented.noData")}</p>
         </div>
       </div>
     );
@@ -72,7 +74,7 @@ const CurrentlyRentedTable = ({ rentedProducts, loading }) => {
     <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Clock className="text-blue-500" size={20} />
-        Sản phẩm đang cho thuê ({rentedProducts.length})
+        {t("ownerStatistics.currentlyRented.title")} ({rentedProducts.length})
       </h3>
 
       <div className="space-y-4">
@@ -102,7 +104,7 @@ const CurrentlyRentedTable = ({ rentedProducts, loading }) => {
                       {item.productTitle}
                     </h4>
                     <p className="text-sm text-gray-600">
-                      Mã đơn: {item.subOrderNumber}
+                      {t("ownerStatistics.currentlyRented.orderId")}: {item.subOrderNumber}
                     </p>
                     <p className="text-sm text-gray-600">
                       Master Order: {item.masterOrderNumber}
@@ -130,7 +132,7 @@ const CurrentlyRentedTable = ({ rentedProducts, loading }) => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Thời gian thuê</p>
+                    <p className="text-xs text-gray-500 mb-1">{t("ownerStatistics.currentlyRented.rentalPeriod")}</p>
                     <p className="font-medium text-gray-800">
                       {item.rentalPeriod?.duration?.value}{' '}
                       {item.rentalPeriod?.duration?.unit === 'DAY'
@@ -165,7 +167,7 @@ const CurrentlyRentedTable = ({ rentedProducts, loading }) => {
                   <div className="flex items-center gap-2 mb-2">
                     <User size={16} className="text-blue-600" />
                     <span className="text-sm font-semibold text-gray-700">
-                      Thông tin người thuê
+                      {t("ownerStatistics.currentlyRented.renter")}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">

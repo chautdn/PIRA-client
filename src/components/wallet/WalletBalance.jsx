@@ -4,8 +4,10 @@ import { Wallet, Plus, History, RefreshCw, ChevronDown } from "lucide-react";
 import { useWallet } from "../../context/WalletContext";
 import TopUpModal from "./TopUpModal";
 import TransactionHistory from "./TransactionHistory";
+import { useI18n } from "../../hooks/useI18n";
 
 const WalletBalance = () => {
+  const { t } = useI18n();
   const { balance, available, frozen, loading, fetchBalance } = useWallet();
   const [showTopUp, setShowTopUp] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -39,7 +41,7 @@ const WalletBalance = () => {
 
             <div className="flex flex-col items-start">
               <span className="text-[10px] text-gray-500 font-medium leading-tight">
-                Balance
+                {t('walletBalance.balance')}
               </span>
               <div className="flex items-center gap-1">
                 {loading ? (
@@ -75,7 +77,7 @@ const WalletBalance = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-xs text-gray-600 font-medium mb-1">
-                        Current Balance
+                        {t('walletBalance.currentBalance')}
                       </p>
                       {loading ? (
                         <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
@@ -92,7 +94,7 @@ const WalletBalance = () => {
                       }}
                       disabled={loading}
                       className="p-2 hover:bg-white rounded-lg transition-colors disabled:opacity-50"
-                      title="Refresh balance"
+                      title={t('walletBalance.refresh')}
                     >
                       <RefreshCw
                         className={`w-4 h-4 text-gray-600 ${
@@ -110,7 +112,7 @@ const WalletBalance = () => {
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-green-500"></div>
                           <span className="text-xs text-gray-600 font-medium">
-                            Available Balance
+                            {t('walletBalance.availableBalance')}
                           </span>
                         </div>
                         {loading ? (
@@ -130,7 +132,7 @@ const WalletBalance = () => {
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-orange-500"></div>
                             <span className="text-xs text-gray-600 font-medium">
-                              Frozen Balance
+                              {t('walletBalance.frozenBalance')}
                             </span>
                           </div>
                           {loading ? (
@@ -142,7 +144,7 @@ const WalletBalance = () => {
                           )}
                         </div>
                         <p className="text-xs text-gray-500 mt-2 ml-4">
-                          💡 Frozen for 24h after transaction. Will be available soon.
+                          {t('walletBalance.frozenMessage')}
                         </p>
                       </div>
                     )}
@@ -164,10 +166,10 @@ const WalletBalance = () => {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-semibold">
-                        Transaction History
+                        {t('walletBalance.transactionHistory')}
                       </p>
                       <p className="text-xs text-gray-500">
-                        View all transactions
+                        {t('walletBalance.viewAllTransactions')}
                       </p>
                     </div>
                   </button>
@@ -185,7 +187,7 @@ const WalletBalance = () => {
           whileTap={{ scale: 0.98 }}
         >
           <Plus className="w-4 h-4" />
-          <span className="text-sm">Top Up</span>
+          <span className="text-sm">{t('walletBalance.topUp')}</span>
         </motion.button>
       </div>
 

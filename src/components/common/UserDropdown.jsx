@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useI18n } from "../../hooks/useI18n";
 import { ROUTES } from "../../utils/constants";
 import voucherService from "../../services/voucher";
 import icons from "../../utils/icons";
@@ -19,6 +20,7 @@ const {
 
 const UserDropdown = () => {
   const { user, logout, loading } = useAuth();
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [loyaltyData, setLoyaltyData] = useState(null);
@@ -164,7 +166,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <FiUser className="mr-3 text-lg text-blue-500" />
-              Hồ sơ cá nhân
+              {t("userDropdown.profile")}
             </Link>
 
             <Link
@@ -173,7 +175,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <FiGift className="mr-3 text-lg text-purple-500" />
-              <span>Đổi Voucher</span>
+              <span>{t("userDropdown.vouchers")}</span>
             </Link>
 
             <Link
@@ -182,7 +184,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <FiPackage className="mr-3 text-lg text-green-500" />
-              Sản phẩm của tôi
+              {t("userDropdown.myProducts")}
             </Link>
 
             <Link
@@ -191,7 +193,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <FiClipboard className="mr-3 text-lg text-orange-500" />
-              Đơn thuê của tôi
+              {t("userDropdown.myRentals")}
             </Link>
 
             <Link
@@ -200,7 +202,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <FiAlertTriangle className="mr-3 text-lg text-red-500" />
-              Báo cáo của tôi
+              {t("userDropdown.reports")}
             </Link>
 
             <Link
@@ -209,7 +211,7 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <FiDollarSign className="mr-3 text-lg text-emerald-500" />
-              Rút tiền
+              {t("userDropdown.withdraw")}
             </Link>
 
             <Link
@@ -218,24 +220,19 @@ const UserDropdown = () => {
               onClick={() => setIsOpen(false)}
             >
               <FiSettings className="mr-3 text-lg text-gray-500" />
-              Cài đặt
+              {t("userDropdown.settings")}
             </Link>
 
-              {(() => {
-                const role = (user?.role || '').toString();
-                const rolesArray = Array.isArray(user?.roles) ? user.roles : (user?.roles ? [user.roles] : []);
-                const isShipper = role.toUpperCase() === 'SHIPPER' || rolesArray.map(r => String(r).toUpperCase()).includes('SHIPPER');
-                return isShipper ? (
-                  <Link
-                    to="/shipments"
-                    className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-800 transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <FiTruck className="mr-3 text-lg text-blue-600" />
-                    Quản lí vận chuyển
-                  </Link>
-                ) : null;
-              })()}
+            {user?.role === 'SHIPPER' && (
+              <Link
+                to="/shipments"
+                className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-800 transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                <FiTruck className="mr-3 text-lg text-blue-600" />
+                {t("userDropdown.shipments")}
+              </Link>
+            )}
           </div>
 
           {/* Logout */}
@@ -246,7 +243,7 @@ const UserDropdown = () => {
               className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
             >
               <FiLogOut className="mr-3 text-lg text-red-500" />
-              {logoutLoading ? "Đang đăng xuất..." : "Đăng xuất"}
+              {logoutLoading ? t("userDropdown.loggingOut") : t("userDropdown.logout")}
             </button>
           </div>
         </div>

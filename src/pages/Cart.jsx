@@ -1,6 +1,7 @@
   import React from "react";
   import { Link, useNavigate } from "react-router-dom";
   import { motion } from "framer-motion";
+  import { useI18n } from "../hooks/useI18n";
   import { useCart } from "../context/CartContext";
   import { ROUTES } from "../utils/constants";
   import rentalOrderService from "../services/rentalOrder";
@@ -11,6 +12,7 @@
   const Cart = () => {
     const { cart, cartTotal, updateQuantityByItemId, updateRental, updateRentalByItemId, removeFromCartById, clearCart, cartData } = useCart();
     const navigate = useNavigate();
+    const { t } = useI18n();
     const { user, refreshUser } = useAuth();
     const [editingDates, setEditingDates] = React.useState({});
     const [selectedItems, setSelectedItems] = React.useState(new Set());
@@ -46,7 +48,7 @@
     const finalTotal = selectedItemsTotal;
 
     const handleClearCart = () => {
-      if (window.confirm("Bạn có chắc muốn xóa toàn bộ giỏ hàng?")) {
+      if (window.confirm(t("cart.confirmClearCart"))) {
         clearCart();
       }
     };
@@ -468,10 +470,10 @@
               >
                 <div className="text-6xl mb-6">🛒</div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Giỏ hàng trống
+                  {t("cart.empty")}
                 </h2>
                 <p className="text-gray-600 mb-8">
-                  Hãy thêm một số sản phẩm vào giỏ hàng để bắt đầu mua sắm!
+                  {t("productList.tryChangeFilter")}
                 </p>
                 <Link
                   to={ROUTES.PRODUCTS}
@@ -495,7 +497,7 @@
               animate={{ opacity: 1, x: 0 }}
               className="text-3xl font-bold text-gray-900 flex items-center gap-3"
             >
-              <span>🛒</span> Giỏ Hàng Của Bạn
+              <span>🛒</span> {t("cart.title")}
             </motion.h1>
             
             <div className="flex gap-2">
@@ -503,7 +505,7 @@
                 onClick={() => setSelectAll(!selectAll)}
                 className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
-                {selectAll ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                {selectAll ? t("cart.unselectAll") : t("cart.selectAll")}
               </button>
               
               {selectedItems.size > 0 && (

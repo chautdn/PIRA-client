@@ -1,7 +1,9 @@
 import React from 'react';
 import { Award, TrendingUp, Package } from 'lucide-react';
+import { useI18n } from '../../../hooks/useI18n';
 
 const TopProductsTable = ({ products, loading }) => {
+  const { t } = useI18n();
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -28,7 +30,7 @@ const TopProductsTable = ({ products, loading }) => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Award className="text-yellow-500" size={20} />
-          Top sản phẩm có doanh thu cao nhất
+          {t("ownerStatistics.topProducts.title")}
         </h3>
         <div className="animate-pulse space-y-4">
           {[...Array(5)].map((_, i) => (
@@ -50,11 +52,11 @@ const TopProductsTable = ({ products, loading }) => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Award className="text-yellow-500" size={20} />
-          Top sản phẩm có doanh thu cao nhất
+          {t("ownerStatistics.topProducts.title")}
         </h3>
         <div className="text-center py-8 text-gray-500">
           <Package size={48} className="mx-auto mb-2 opacity-50" />
-          <p>Chưa có dữ liệu sản phẩm</p>
+          <p>{t("ownerStatistics.topProducts.noData")}</p>
         </div>
       </div>
     );
@@ -64,7 +66,7 @@ const TopProductsTable = ({ products, loading }) => {
     <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Award className="text-yellow-500" size={20} />
-        Top sản phẩm có doanh thu cao nhất
+        {t("ownerStatistics.topProducts.title")}
       </h3>
 
       <div className="overflow-x-auto">
@@ -75,16 +77,16 @@ const TopProductsTable = ({ products, loading }) => {
                 #
               </th>
               <th className="text-left py-3 px-2 text-sm font-semibold text-gray-700">
-                Sản phẩm
+                {t("ownerStatistics.topProducts.product")}
               </th>
               <th className="text-center py-3 px-2 text-sm font-semibold text-gray-700">
                 Trạng thái
               </th>
               <th className="text-right py-3 px-2 text-sm font-semibold text-gray-700">
-                Số lần thuê
+                {t("ownerStatistics.topProducts.rentals")}
               </th>
               <th className="text-right py-3 px-2 text-sm font-semibold text-gray-700">
-                Doanh thu
+                {t("ownerStatistics.topProducts.revenue")}
               </th>
             </tr>
           </thead>

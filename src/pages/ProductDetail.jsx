@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useI18n } from '../hooks/useI18n';
 import { productService } from '../services/product';
 import { reviewService } from '../services/review';
 import recommendationService from '../services/recommendation';
@@ -18,6 +19,8 @@ import { checkKYCRequirements } from '../utils/kycVerification';
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { t } = useI18n();
   const { addToCart: addToCartContext, loading: cartLoading } = useCart();
   const { user, refreshUser } = useAuth(); // Added to get current user
   const [product, setProduct] = useState(null);
@@ -58,6 +61,11 @@ export default function ProductDetail() {
   const [loadingCarousels, setLoadingCarousels] = useState(false);
   const hotProductsScrollRef = useRef(null);
   const relatedProductsScrollRef = useRef(null);
+  
+  // Order context for rating (when coming from completed order)
+  const [currentOrderId, setCurrentOrderId] = useState(null);
+  const [currentOrder, setCurrentOrder] = useState(null);
+  const [shipperInfo, setShipperInfo] = useState(null);
 
   // Check if current user is the product owner
   const isOwner = user && product?.owner?._id === user._id;
@@ -65,6 +73,17 @@ export default function ProductDetail() {
   useEffect(() => {
     fetchProduct();
   }, [id]);
+
+  // Load order context if coming from completed order
+  useEffect(() => {
+    const fromOrder = searchParams.get('fromOrder');
+    if (fromOrder) {
+      setCurrentOrderId(fromOrder);
+      loadOrderData(fromOrder);
+      // Auto-switch to reviews tab
+      setActiveTab('reviews');
+    }
+  }, [searchParams]);
 
   // Fetch owner hot products and related products
   useEffect(() => {
@@ -322,12 +341,12 @@ export default function ProductDetail() {
   };
 
   // helper to map target code to human label
-  const targetLabel = (t) => {
-    if (!t) return '';
-    if (t === 'PRODUCT') return 'Sản phẩm';
-    if (t === 'OWNER') return 'Chủ sở hữu';
-    if (t === 'SHIPPER') return 'Shipper';
-    return t;
+  const targetLabel = (target) => {
+    if (!target) return '';
+    if (target === 'PRODUCT') return t('productDetail.reviewTargets.PRODUCT');
+    if (target === 'OWNER') return t('productDetail.reviewTargets.OWNER');
+    if (target === 'SHIPPER') return t('productDetail.reviewTargets.SHIPPER');
+    return target;
   };
 
   // compute stats (average, count) from loaded reviews for the current target
@@ -371,7 +390,7 @@ export default function ProductDetail() {
 
   const submitNewReview = async () => {
     if (!newReview.rating) {
-      toast.error('Vui lòng chọn đánh giá sao');
+      toast.error(t("productDetail.selectRating"));
       return;
     }
     try {
@@ -383,7 +402,16 @@ export default function ProductDetail() {
       // When reviewing OWNER or SHIPPER, inform server via targetRole and (if available) reviewee id
       if (reviewsTarget === 'OWNER' || reviewsTarget === 'SHIPPER') {
         fd.append('targetRole', reviewsTarget);
-        const revieweeId = reviewsTarget === 'OWNER' ? product?.owner?._id : product?.shipper;
+        
+        // For SHIPPER: use shipper info from order context if available
+        let revieweeId;
+        if (reviewsTarget === 'SHIPPER' && shipperInfo?._id) {
+          revieweeId = shipperInfo._id;
+          console.log('Using shipper from order context:', shipperInfo);
+        } else {
+          revieweeId = reviewsTarget === 'OWNER' ? product?.owner?._id : product?.shipper;
+        }
+        
         if (revieweeId) fd.append('reviewee', revieweeId);
       }
       fd.append('product', product._id);
@@ -407,7 +435,7 @@ export default function ProductDetail() {
   await changeReviewsTarget(reviewsTarget);
   setNewReview({ rating: 5, title: '', comment: '', photos: [], type: reviewsTarget });
   if (fileInputRef.current) fileInputRef.current.value = null;
-  toast.success('Đánh giá đã được gửi thành công!');
+  toast.success(t("productDetail.reviewSubmitSuccess"));
     } catch (err) {
       console.error('Error creating review', err);
       // Check for duplicate review error - differentiate by type
@@ -415,22 +443,22 @@ export default function ProductDetail() {
       
       // Check if it's a duplicate review based on the target type
       if (errorMessage.toLowerCase().includes('bình luận 1 lần cho sản phẩm')) {
-        toast.error('Bạn đã đánh giá sản phẩm này rồi');
+        toast.error(t("productDetail.reviewProductError"));
       } else if (errorMessage.toLowerCase().includes('bình luận 1 lần cho người')) {
-        toast.error('Bạn đã đánh giá chủ sở hữu này rồi');
+        toast.error(t("productDetail.reviewOwnerError"));
       } else if (errorMessage.toLowerCase().includes('bình luận 1 lần')) {
         // Generic duplicate message from backend
         if (reviewsTarget === 'PRODUCT') {
-          toast.error('Bạn đã đánh giá sản phẩm này rồi');
+          toast.error(t("productDetail.reviewProductError"));
         } else if (reviewsTarget === 'OWNER') {
-          toast.error('Bạn đã đánh giá chủ sở hữu này rồi');
+          toast.error(t("productDetail.reviewOwnerError"));
         } else {
-          toast.error('Bạn đã đánh giá rồi');
+          toast.error(t("productDetail.reviewAlreadyExists"));
         }
       } else if (errorMessage.toLowerCase().includes('hoàn thành một đơn hàng')) {
-        toast.error('Bạn phải hoàn thành một đơn hàng với người này để đánh giá');
+        toast.error(t("productDetail.needCompletedOrder"));
       } else {
-        toast.error('Lỗi khi gửi đánh giá');
+        toast.error(t("productDetail.reviewError"));
       }
     }
   };
@@ -578,10 +606,10 @@ export default function ProductDetail() {
       await reviewService.remove(reviewId);
       // refresh
       fetchReviews(product._id);
-      toast.success('Đánh giá đã được xóa');
+      toast.success(t("productDetail.reviewDeleted"));
     } catch (err) {
       console.error('Error deleting review', err);
-      toast.error('Lỗi khi xóa đánh giá');
+      toast.error(t("productDetail.deleteReviewError"));
     }
   };
 
@@ -601,7 +629,7 @@ export default function ProductDetail() {
       await reviewService.update(reviewId, fd);
       setEditingReview({});
       fetchReviews(product._id);
-      toast.success('Đánh giá đã được cập nhật');
+      toast.success(t("productDetail.reviewUpdated"));
     } catch (err) {
       console.error('Error saving review edit', err);
       toast.error('Lỗi khi lưu chỉnh sửa');
@@ -697,6 +725,46 @@ export default function ProductDetail() {
       setError('Không thể tải thông tin sản phẩm');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load order data when rating from completed order
+  const loadOrderData = async (orderId) => {
+    try {
+      const response = await rentalOrderService.getOrderDetail(orderId);
+      console.log('API Response:', response);
+      
+      // Extract masterOrder from response - API returns { masterOrder, message, ... }
+      const orderData = response.masterOrder || response.data?.masterOrder || response;
+      console.log('Order data:', orderData);
+      
+      setCurrentOrder(orderData);
+      
+      // Extract shipper info from the first suborder's shipments
+      if (orderData?.subOrders && orderData.subOrders.length > 0) {
+        const subOrder = orderData.subOrders[0];
+        console.log('First suborder:', subOrder);
+        console.log('Shipments:', subOrder.shipments);
+        
+        // Get shipper from shipments array
+        if (subOrder.shipments && subOrder.shipments.length > 0) {
+          const deliveryShipment = subOrder.shipments.find(s => s.type === 'DELIVERY');
+          console.log('Delivery shipment:', deliveryShipment);
+          
+          if (deliveryShipment?.shipper) {
+            setShipperInfo(deliveryShipment.shipper);
+            console.log('✅ Shipper info loaded:', deliveryShipment.shipper);
+          } else {
+            console.log('⚠️ No shipper found in delivery shipment');
+          }
+        } else {
+          console.log('⚠️ No shipments found in suborder');
+        }
+      } else {
+        console.log('⚠️ No suborders found in order');
+      }
+    } catch (error) {
+      console.error('❌ Error loading order data:', error);
     }
   };
 
@@ -832,7 +900,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = async () => {
     if (!deliveryDate || !returnDate) {
-      alert('⚠️ Vui lòng chọn ngày giao và trả hàng');
+      alert(t("productDetail.pleaseSelectDates"));
       return;
     }
 
@@ -929,16 +997,16 @@ export default function ProductDetail() {
     
     if (result.success) {
       if (result.warning) {
-        alert(`✅ Đã thêm vào giỏ hàng!\n\n${result.warning}`);
+        alert(`${t("productDetail.addedToCart")}\n\n${result.warning}`);
       } else {
-        alert('✅ Đã thêm sản phẩm vào giỏ hàng!');
+        alert(t("productDetail.addedToCart"));
       }
     } else {
       if (result.requireLogin) {
         alert(result.error);
         navigate('/auth/login', { state: { from: `/products/${id}` } });
       } else {
-        alert(`❌ ${result.error || 'Không thể thêm vào giỏ hàng'}`);
+        alert(`❌ ${result.error || t("productDetail.addCartError")}`);
       }
     }
   };
@@ -970,7 +1038,7 @@ export default function ProductDetail() {
     }
 
     if (!deliveryDate || !returnDate) {
-      alert('⚠️ Vui lòng chọn ngày giao và trả hàng');
+      alert(t("productDetail.pleaseSelectDates"));
       return;
     }
 
@@ -1000,10 +1068,10 @@ export default function ProductDetail() {
         // Navigate to cart page without opening drawer
         navigate('/cart');
       } else {
-        alert(`❌ ${result.error || 'Không thể thêm vào giỏ hàng'}`);
+        alert(`❌ ${result.error || t("productDetail.addCartError")}`);
       }
     } catch (error) {
-      const errorMsg = error.message || 'Không thể thêm vào giỏ hàng';
+      const errorMsg = error.message || t("productDetail.addCartError");
       alert(`❌ ${errorMsg}`);
     }
   };
@@ -1063,7 +1131,7 @@ export default function ProductDetail() {
             onClick={() => navigate('/products')}
             className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg"
           >
-            ← Quay lại danh sách sản phẩm
+            {t("productDetail.backToList")}
           </button>
         </motion.div>
       </div>
@@ -1110,11 +1178,11 @@ export default function ProductDetail() {
                 <div className="flex items-center gap-2">
                   <span className="text-yellow-500">⭐</span>
                   <span className="font-semibold">{product.metrics?.averageRating || 4.8}</span>
-                  <span>({product.metrics?.reviewCount || 0} đánh giá)</span>
+                  <span>{t("productDetail.reviewCount").replace('{count}', product.metrics?.reviewCount || 0)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>👁️</span>
-                  <span>{product.metrics?.viewCount || 0} lượt xem</span>
+                  <span>{product.metrics?.viewCount || 0} {t('productDetail.views')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>📍</span>
@@ -1202,7 +1270,7 @@ export default function ProductDetail() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                   </svg>
-                  Click để phóng to
+                  {t('productDetail.clickToZoom')}
                 </motion.div>
 
                 {/* Gradient Overlays for Better Button Visibility */}
@@ -1328,10 +1396,10 @@ export default function ProductDetail() {
               <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
                 <nav className="flex">
                   {[
-                    { id: 'description', label: '📋 Mô tả', icon: '📋' },
-                    { id: 'specifications', label: '⚙️ Thông số', icon: '⚙️' },
-                    { id: 'rules', label: '📜 Quy định', icon: '📜' },
-                    { id: 'reviews', label: '⭐ Đánh giá', icon: '⭐' }
+                    { id: 'description', label: t("productDetail.tab_description"), icon: '📋' },
+                    { id: 'specifications', label: t("productDetail.tab_specifications"), icon: '⚙️' },
+                    { id: 'rules', label: t("productDetail.tab_rules"), icon: '📜' },
+                    { id: 'reviews', label: t("productDetail.tab_reviews"), icon: '⭐' }
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -1359,7 +1427,7 @@ export default function ProductDetail() {
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <h3 className="text-2xl font-bold text-gray-900 mb-6">Chi tiết sản phẩm</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-6">{t('productDetail.productDetailsTitle')}</h3>
                       <div className="prose prose-lg max-w-none">
                         <p className="text-gray-600 leading-relaxed text-lg">
                           {product.description || 'Máy ảnh chuyên nghiệp với tính năng vượt trội, phù hợp cho nhiếp ảnh gia và người yêu thích chụp ảnh. Thiết bị được bảo trì định kỳ, đảm bảo chất lượng hình ảnh tốt nhất.'}
@@ -1376,7 +1444,7 @@ export default function ProductDetail() {
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <h3 className="text-2xl font-bold text-gray-900 mb-6">Thông số kỹ thuật</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-6">{t('productDetail.specificationsTitle')}</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
                           {product.brand?.name && (
@@ -1406,7 +1474,7 @@ export default function ProductDetail() {
                           </div>
                           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl">
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-600 font-medium">⭐ Đánh giá:</span>
+                              <span className="text-gray-600 font-medium">{t("productDetail.selectedRating")}</span>
                               <div className="flex items-center">
                                 <span className="text-yellow-400 text-lg">★</span>
                                 <span className="font-bold text-gray-900 ml-1">{product.metrics?.averageRating || 4.8}</span>
@@ -1431,17 +1499,17 @@ export default function ProductDetail() {
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
                           <h4 className="font-bold text-blue-900 mb-3 text-lg">🕒 Thời gian thuê</h4>
                           <ul className="space-y-2 text-blue-800">
-                            <li>• Tối thiểu: 4 giờ (đối với thuê theo giờ)</li>
-                            <li>• Tối thiểu: 1 ngày (đối với thuê theo ngày)</li>
-                            <li>• Giao nhận: 8:00 - 20:00 hàng ngày</li>
+                            <li>{t('productDetail.minimumHourlyRental')}</li>
+                            <li>{t('productDetail.minimumDailyRental')}</li>
+                            <li>{t('productDetail.deliveryPickupHours')}</li>
                           </ul>
                         </div>
 
                         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                          <h4 className="font-bold text-green-900 mb-3 text-lg">💰 Thanh toán & Đặt cọc</h4>
+                          <h4 className="font-bold text-green-900 mb-3 text-lg">{t('productDetail.paymentDepositTitle2')}</h4>
                           <ul className="space-y-2 text-green-800">
-                            <li>• Đặt cọc: {formatPrice(product.pricing?.deposit?.amount || 500000)}đ</li>
-                            <li>• Thanh toán: Trước khi nhận hàng</li>
+                            <li>• {t('productDetail.depositAmount', { amount: formatPrice(product.pricing?.deposit?.amount || 500000) })}</li>
+                            <li>• {t('productDetail.paymentBeforeDelivery')}</li>
                           </ul>
                         </div>
                       </div>
@@ -1456,7 +1524,7 @@ export default function ProductDetail() {
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <h3 className="text-2xl font-bold text-gray-900 mb-6">⭐ Đánh giá từ khách thuê</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-6">{t("productDetail.reviews")}</h3>
                       <div className="rounded-2xl p-6 mb-6 bg-yellow-50 border border-yellow-100">
                         <div className="flex items-center gap-6">
                           {/* Left: big average circle */}
@@ -1469,7 +1537,7 @@ export default function ProductDetail() {
                                 <svg className="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .587l3.668 7.431L24 9.748l-6 5.848 1.416 8.257L12 19.771 4.584 23.853 6 15.596 0 9.748l8.332-1.73z"/></svg>
                                 <div className="font-semibold">{(reviewStats.average || product.metrics?.averageRating || 4.8).toFixed(1)}</div>
                                 <div className="text-gray-500">•</div>
-                                <div className="text-gray-500">{reviewStats.count || product.metrics?.reviewCount || 0} đánh giá</div>
+                                <div className="text-gray-500">{t("productDetail.reviewCount").replace('{count}', reviewStats.count || product.metrics?.reviewCount || 0)}</div>
                               </div>
                               {/* removed small description per request; histogram bars will animate */}
                             </div>
@@ -1510,15 +1578,15 @@ export default function ProductDetail() {
                           {/* Right: target pills + CTA */}
                           <div className="w-40 flex flex-col items-end gap-3">
                             <div className="w-full flex flex-col gap-2">
-                              <button onClick={() => changeReviewsTarget('PRODUCT')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'PRODUCT' ? 'bg-yellow-500 text-white' : 'bg-white text-yellow-800 border border-yellow-100'}`}>Sản phẩm</button>
-                              <button onClick={() => changeReviewsTarget('OWNER')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'OWNER' ? 'bg-emerald-400 text-white' : 'bg-white text-emerald-800 border border-emerald-100'}`}>Chủ sở hữu</button>
-                              <button onClick={() => changeReviewsTarget('SHIPPER')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'SHIPPER' ? 'bg-indigo-500 text-white' : 'bg-white text-indigo-700 border border-indigo-100'}`}>Shipper</button>
+                              <button onClick={() => changeReviewsTarget('PRODUCT')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'PRODUCT' ? 'bg-yellow-500 text-white' : 'bg-white text-yellow-800 border border-yellow-100'}`}>{t('productDetail.reviewTargets.PRODUCT')}</button>
+                              <button onClick={() => changeReviewsTarget('OWNER')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'OWNER' ? 'bg-emerald-400 text-white' : 'bg-white text-emerald-800 border border-emerald-100'}`}>{t('productDetail.reviewTargets.OWNER')}</button>
+                              <button onClick={() => changeReviewsTarget('SHIPPER')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'SHIPPER' ? 'bg-indigo-500 text-white' : 'bg-white text-indigo-700 border border-indigo-100'}`}>{t('productDetail.reviewTargets.SHIPPER')}</button>
                             </div>
                             {canWriteReview && (
-                              <button onClick={openWriteModal} className="mt-2 w-full py-3 bg-violet-600 text-white rounded-xl shadow-lg">Viết đánh giá ({targetLabel(reviewsTarget)})</button>
+                              <button onClick={openWriteModal} className="mt-2 w-full py-3 bg-violet-600 text-white rounded-xl shadow-lg">{t("productDetail.writeReview").replace('{target}', targetLabel(reviewsTarget))}</button>
                             )}
                             {!canWriteReview && user && (
-                              <div className="mt-2 w-full py-3 bg-gray-300 text-gray-600 text-center rounded-xl text-sm">Chỉ xem đánh giá</div>
+                              <div className="mt-2 w-full py-3 bg-gray-300 text-gray-600 text-center rounded-xl text-sm">{t('productDetail.viewOnlyReviews')}</div>
                             )}
                           </div>
                         </div>
@@ -1527,11 +1595,11 @@ export default function ProductDetail() {
                       {/* Reviews list */}
                       <div className="space-y-4">
                         {reviewsLoading && (
-                          <div className="text-center text-gray-500 py-6">Đang tải đánh giá...</div>
+                          <div className="text-center text-gray-500 py-6">{t('productDetail.loadingReviews2')}</div>
                         )}
 
                         {!reviewsLoading && reviews.length === 0 && (
-                          <div className="text-center text-gray-500 py-6">Chưa có đánh giá nào cho sản phẩm này.</div>
+                          <div className="text-center text-gray-500 py-6">{t('productDetail.noReviewsYet')}</div>
                         )}
 
                         {reviews.map((r) => (
@@ -1603,7 +1671,7 @@ export default function ProductDetail() {
                                       <span>{(r.likedBy || []).length > 0 ? `${(r.likedBy || []).length}` : 'Like'}</span>
                                     </button>
                                     {r.responses && r.responses.length > 0 && (
-                                      <span className="text-gray-400">Xem tất cả {r.responses.length} phản hồi</span>
+                                      <span className="text-gray-400">{t('productDetail.viewAllResponses').replace('{count}', r.responses.length)}</span>
                                     )}
                                   </div>
 
@@ -1702,18 +1770,18 @@ export default function ProductDetail() {
               <div className="mb-8">
                 <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">
                   {formatPrice(getRentalPrice())}đ
-                  <span className="text-xl text-gray-500 font-normal ml-2">/ngày</span>
+                  <span className="text-xl text-gray-500 font-normal ml-2">{t("productDetail.perDay")}</span>
                 </div>
               </div>
 
               {/* Date Selection for Rental */}
               <div className="mb-8">
-                <h4 className="font-bold text-gray-900 mb-4 text-lg">📅 Chọn thời gian thuê</h4>
+                <h4 className="font-bold text-gray-900 mb-4 text-lg">{t("productDetail.selectRentalTime")}</h4>
                 
                 {/* Delivery Date */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    🚚 Ngày nhận hàng
+                    {t("productDetail.deliveryDate")}
                   </label>
                   <input
                     type="date"
@@ -1733,8 +1801,8 @@ export default function ProductDetail() {
                     {(() => {
                       const now = new Date();
                       return now.getHours() >= 12 
-                        ? "⏰ Sau 12h trưa: Có thể nhận hàng từ ngày mai"
-                        : "⏰ Trước 12h trưa: Có thể nhận hàng từ hôm nay";
+                        ? t("productDetail.deliveryTimeHint_after12")
+                        : t("productDetail.deliveryTimeHint_before12");
                     })()}
                   </p>
                 </div>
@@ -1742,7 +1810,7 @@ export default function ProductDetail() {
                 {/* Return Date */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    📦 Ngày trả hàng
+                    {t("productDetail.returnDate")}
                   </label>
                   <input
                     type="date"
@@ -1758,7 +1826,7 @@ export default function ProductDetail() {
                   />
                   {!deliveryDate && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Vui lòng chọn ngày nhận hàng trước
+                      {t("productDetail.pleaseSelectDeliveryFirst")}
                     </p>
                   )}
                 </div>
@@ -1772,12 +1840,12 @@ export default function ProductDetail() {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="text-center">
-                      <div className="text-sm text-gray-700 mb-1">⏱️ Thời gian thuê</div>
+                      <div className="text-sm text-gray-700 mb-1">⏱️ {t("productDetail.rentalDuration")}</div>
                       <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                        {getRentalDays()} ngày
+                        {getRentalDays()} {t("productDetail.rentalDays")}
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        Từ {new Date(deliveryDate).toLocaleDateString('vi-VN')} đến {new Date(returnDate).toLocaleDateString('vi-VN')}
+                        {t("productDetail.from")} {new Date(deliveryDate).toLocaleDateString('vi-VN')} {t("productDetail.to")} {new Date(returnDate).toLocaleDateString('vi-VN')}
                       </div>
                     </div>
                   </motion.div>
@@ -1786,9 +1854,9 @@ export default function ProductDetail() {
                 {/* Time Selection Hints */}
                 <div className="mt-4 p-3 bg-gray-50 rounded-xl">
                   <div className="text-xs text-gray-600 text-center">
-                    <div className="font-semibold mb-1">🕒 Thời gian giao nhận</div>
-                    <div>8:00 - 20:00 hàng ngày</div>
-                    <div className="text-gray-500 mt-1">Tối thiểu 1 ngày thuê</div>
+                    <div className="font-semibold mb-1">{t("productDetail.deliveryTime")}</div>
+                    <div>{t("productDetail.deliveryHours")}</div>
+                    <div className="text-gray-500 mt-1">{t("productDetail.minimumRental")}</div>
                   </div>
                 </div>
 
@@ -1796,27 +1864,27 @@ export default function ProductDetail() {
                 {deliveryDate && returnDate && (
                   <div className="mt-6">
                     <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h5 className="font-semibold text-blue-800 mb-2">📊 Tình trạng sản phẩm</h5>
+                      <h5 className="font-semibold text-blue-800 mb-2">{t("productDetail.productStatus")}</h5>
                       {checkingAvailability ? (
                         <div className="flex items-center space-x-2">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                          <span className="text-blue-600">Đang kiểm tra availability...</span>
+                          <span className="text-blue-600">{t("productDetail.checkingAvailability")}</span>
                         </div>
                       ) : availableQuantity !== null ? (
                         <div className="text-lg font-semibold">
                           {availableQuantity > 0 ? (
                             <span className="text-green-600">
-                              ✅ Còn lại: {availableQuantity} sản phẩm có sẵn
+                              {t("productDetail.inStock").replace('{count}', availableQuantity)}
                             </span>
                           ) : (
                             <span className="text-red-600">
-                              ❌ Hết hàng trong thời gian này
+                              {t("productDetail.outOfStock")}
                             </span>
                           )}
                         </div>
                       ) : null}
                       <div className="text-sm text-blue-600 mt-1">
-                        Từ {new Date(deliveryDate).toLocaleDateString('vi-VN')} đến {new Date(returnDate).toLocaleDateString('vi-VN')}
+                        {t("productDetail.from")} {new Date(deliveryDate).toLocaleDateString('vi-VN')} {t("productDetail.to")} {new Date(returnDate).toLocaleDateString('vi-VN')}
                       </div>
                     </div>
                   </div>
@@ -1825,7 +1893,7 @@ export default function ProductDetail() {
 
               {/* Quantity Selector */}
               <div className="mb-8">
-                <h4 className="font-bold text-gray-900 mb-4 text-lg">🔢 Số lượng</h4>
+                <h4 className="font-bold text-gray-900 mb-4 text-lg">{t("productDetail.quantity")}</h4>
                 <div className="flex items-center bg-gray-50 rounded-xl p-2">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -1835,7 +1903,7 @@ export default function ProductDetail() {
                   </button>
                   <div className="flex-1 text-center">
                     <div className="text-2xl font-bold text-gray-900">{quantity}</div>
-                    <div className="text-sm text-gray-600">cái</div>
+                    <div className="text-sm text-gray-600">{t("productDetail.pcs")}</div>
                   </div>
                   <button
                     onClick={() => {
@@ -1860,19 +1928,19 @@ export default function ProductDetail() {
                 <div className="mt-2 text-sm text-gray-600 text-center">
                   {deliveryDate && returnDate && availableQuantity !== null ? (
                     <>
-                      Có sẵn trong thời gian đã chọn: {availableQuantity} cái
+                      {t("productDetail.availableInRange").replace('{count}', availableQuantity)}
                       {quantity >= availableQuantity && (
                         <div className="text-orange-600 text-xs mt-1">
-                          ⚠️ Đã đạt số lượng tối đa có sẵn
+                          {t("productDetail.reachedMaxQuantity")}
                         </div>
                       )}
                     </>
                   ) : (
                     <>
-                      Có sẵn: {product.availability?.quantity || 0} cái
+                      {t("productDetail.available").replace('{count}', product.availability?.quantity || 0)}
                       {quantity >= (product.availability?.quantity || 0) && (
                         <div className="text-orange-600 text-xs mt-1">
-                          ⚠️ Đã đạt số lượng tối đa
+                          {t("productDetail.reachedMaxQuantityTotal")}
                         </div>
                       )}
                     </>
@@ -1889,12 +1957,15 @@ export default function ProductDetail() {
                   transition={{ duration: 0.3 }}
                 >
                   <div className="text-center">
-                    <div className="text-lg text-gray-700 mb-2">💰 Tổng chi phí</div>
+                    <div className="text-lg text-gray-700 mb-2">{t("productDetail.totalCost")}</div>
                     <div className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
                       {formatPrice(getTotalPrice())}đ
                     </div>
                     <div className="text-sm text-gray-600 mt-2">
-                      {formatPrice(getRentalPrice())}đ × {getRentalDays()} ngày × {quantity} cái
+                      {t("productDetail.costCalculation")
+                        .replace('{price}', formatPrice(getRentalPrice()))
+                        .replace('{days}', getRentalDays())
+                        .replace('{quantity}', quantity)}
                     </div>
                   </div>
                 </motion.div>
@@ -1909,7 +1980,7 @@ export default function ProductDetail() {
                   whileTap={{ scale: 0.98 }}
                   disabled={cartLoading || !deliveryDate || !returnDate || getRentalDays() <= 0}
                 >
-                  🚀 Thuê ngay
+                  {t("productDetail.rentNow")}
                 </motion.button>
 
                 <motion.button
@@ -1919,7 +1990,7 @@ export default function ProductDetail() {
                   whileTap={{ scale: 0.98 }}
                   disabled={cartLoading || !deliveryDate || !returnDate || getRentalDays() <= 0}
                 >
-                  {cartLoading ? '⏳ Đang thêm...' : '🛒 Thêm vào giỏ hàng'}
+                  {cartLoading ? t("productDetail.adding") : t("productDetail.addToCart")}
                 </motion.button>
 
                 {!isOwner && (
@@ -1929,7 +2000,7 @@ export default function ProductDetail() {
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    💬 Nhắn tin với chủ sở hữu
+                    {t("productDetail.messageOwner")}
                   </motion.button>
                 )}
                 
@@ -1938,7 +2009,7 @@ export default function ProductDetail() {
               {/* Owner Info */}
               {product.owner && (
                 <div className="mt-8 pt-8 border-t border-gray-200">
-                  <h4 className="font-bold text-gray-900 mb-4 text-lg">👤 Chủ sở hữu</h4>
+                  <h4 className="font-bold text-gray-900 mb-4 text-lg">👤 {t('productDetail.ownerLabel')}</h4>
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
                       <span className="text-white font-bold text-xl">
@@ -1950,11 +2021,11 @@ export default function ProductDetail() {
                         {product.owner.profile?.firstName} {product.owner.profile?.lastName}
                       </div>
                       <div className="text-sm text-gray-600 mb-2">
-                        📊 Độ tin cậy: <span className="font-semibold text-green-600">{product.owner.trustScore || 95}%</span>
+                        📊 {t('productDetail.trustScoreLabel')}: <span className="font-semibold text-green-600">{product.owner.trustScore || 95}%</span>
                       </div>
                       <div className="flex items-center text-sm text-yellow-600">
                         <span>⭐</span>
-                        <span className="ml-1 font-medium">4.9 (128 đánh giá)</span>
+                        <span className="ml-1 font-medium">4.9 (128 {t('productDetail.reviewCount').replace('({count} ', '').replace(')', '')})</span>
                       </div>
                     </div>
                   </div>
@@ -1969,7 +2040,7 @@ export default function ProductDetail() {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
-                    Xem tất cả sản phẩm của chủ sở hữu
+                    {t('productDetail.viewAllButton')}
                   </motion.button>
                 </div>
               )}
@@ -1977,7 +2048,7 @@ export default function ProductDetail() {
               {/* Location Info */}
               {product.location?.address && (
                 <div className="mt-8 pt-8 border-t border-gray-200">
-                  <h4 className="font-bold text-gray-900 mb-4 text-lg">📍 Vị trí & Giao nhận</h4>
+                  <h4 className="font-bold text-gray-900 mb-4 text-lg">{t('productDetail.locationAndDeliveryLabel')}</h4>
                   <div className="space-y-3">
                     <div className="flex items-center text-gray-700">
                       <span className="text-lg mr-2">🏠</span>
@@ -1988,7 +2059,7 @@ export default function ProductDetail() {
                       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                         <div className="flex items-center text-green-700">
                           <span className="text-lg mr-2">🚚</span>
-                          <span>Giao tận nơi</span>
+                          <span>{t('productDetail.deliveryOptionLabel')}</span>
                         </div>
                         <span className="font-semibold text-green-600">
                           {formatPrice(product.location.deliveryOptions.deliveryFee || 30000)}đ
@@ -1999,7 +2070,7 @@ export default function ProductDetail() {
                     {product.location.deliveryOptions?.pickup && (
                       <div className="flex items-center p-3 bg-blue-50 rounded-lg">
                         <span className="text-lg mr-2">🏪</span>
-                        <span className="text-blue-700">Nhận tại chỗ (Miễn phí)</span>
+                        <span className="text-blue-700">{t('productDetail.pickupOptionLabel')}</span>
                       </div>
                     )}
                   </div>
@@ -2031,15 +2102,33 @@ export default function ProductDetail() {
             exit={{ opacity: 0 }}
             onClick={() => setShowWriteModal(false)}
           >
-            <motion.div className="bg-white rounded-2xl w-full max-w-2xl p-6" initial={{ y: 20 }} animate={{ y: 0 }} exit={{ y: 20 }} onClick={(e) => e.stopPropagation()}>
+            <motion.div className="bg-white rounded-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto" initial={{ y: 20 }} animate={{ y: 0 }} exit={{ y: 20 }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold">Tạo đánh giá - {targetLabel(reviewsTarget)}</h3>
-                <button onClick={() => setShowWriteModal(false)} className="text-gray-500">Đóng</button>
+                <h3 className="text-lg font-bold">{t("productDetail.createReviewModal").replace("{target}", targetLabel(reviewsTarget))}</h3>
+                <button onClick={() => setShowWriteModal(false)} className="text-gray-500">{t("productDetail.closeButton")}</button>
               </div>
+
+              {/* Display Shipper Info when reviewing shipper */}
+              {reviewsTarget === 'SHIPPER' && shipperInfo && (
+                <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-3">{t("productDetail.shipperInfoLabel")}</h4>
+                  <div className="space-y-2 text-sm">
+                    {shipperInfo.profile?.firstName && (
+                      <p><span className="font-medium text-gray-600">{t("productDetail.shipperName")}:</span> {shipperInfo.profile.firstName} {shipperInfo.profile?.lastName || ''}</p>
+                    )}
+                    {shipperInfo.email && (
+                      <p><span className="font-medium text-gray-600">{t("productDetail.shipperEmail")}:</span> {shipperInfo.email}</p>
+                    )}
+                    {shipperInfo.phone && (
+                      <p><span className="font-medium text-gray-600">{t("productDetail.shipperPhone")}:</span> {shipperInfo.phone}</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Đánh giá</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t("productDetail.ratingLabel")}</label>
                   <div className="flex items-center gap-2">
                     {[1,2,3,4,5].map((n) => {
                       const active = n <= newReview.rating;
@@ -2048,7 +2137,7 @@ export default function ProductDetail() {
                           key={n}
                           onClick={() => setNewReview((s) => ({ ...s, rating: n }))}
                           className={`p-2 rounded-md transition-colors ${active ? 'bg-yellow-100' : 'hover:bg-gray-100'}`}
-                          aria-label={`${n} sao`}
+                          aria-label={t("productDetail.starText").replace("{n}", n)}
                           aria-pressed={active}
                         >
                           <svg className={`w-7 h-7 ${active ? 'text-yellow-500' : 'text-gray-300'}`} viewBox="0 0 24 24" fill="currentColor">
@@ -2057,17 +2146,17 @@ export default function ProductDetail() {
                         </button>
                       );
                     })}
-                    <div className="text-sm text-gray-500 ml-3">{newReview.rating} sao</div>
+                    <div className="text-sm text-gray-500 ml-3">{newReview.rating} {t("productDetail.starText").replace("{n}", "").toLowerCase()}</div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Nội dung</label>
-                  <textarea placeholder="Nội dung đánh giá" value={newReview.comment} onChange={(e) => setNewReview((s) => ({ ...s, comment: e.target.value }))} rows={5} className="w-full p-3 border rounded" />
+                  <label className="block text-sm text-gray-600 mb-1">{t("productDetail.contentLabel")}</label>
+                  <textarea placeholder={t("productDetail.reviewContentPlaceholder")} value={newReview.comment} onChange={(e) => setNewReview((s) => ({ ...s, comment: e.target.value }))} rows={5} className="w-full p-3 border rounded" />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Ảnh (tùy chọn)</label>
+                  <label className="block text-sm text-gray-600 mb-1">{t("productDetail.photosOptional")}</label>
                   <div className="flex items-center gap-4">
                     <input ref={fileInputRef} type="file" multiple onChange={(e) => handleNewReviewFiles(e.target.files)} className="" />
                     <div className="text-sm text-gray-500">
@@ -2077,8 +2166,8 @@ export default function ProductDetail() {
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2">
-                  <button onClick={() => { setShowWriteModal(false); if (fileInputRef.current) fileInputRef.current.value = null; }} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
-                  <button onClick={async () => { await submitNewReview(); if (fileInputRef.current) fileInputRef.current.value = null; }} className="px-4 py-2 bg-green-500 text-white rounded">Gửi</button>
+                  <button onClick={() => { setShowWriteModal(false); if (fileInputRef.current) fileInputRef.current.value = null; }} className="px-4 py-2 bg-gray-200 rounded">{t("productDetail.cancelButton")}</button>
+                  <button onClick={async () => { await submitNewReview(); if (fileInputRef.current) fileInputRef.current.value = null; }} className="px-4 py-2 bg-green-500 text-white rounded">{t("productDetail.submitButton")}</button>
                 </div>
               </div>
             </motion.div>
@@ -2236,7 +2325,7 @@ export default function ProductDetail() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              Nhấn ESC hoặc click bên ngoài để đóng • Lướt hoặc dùng mũi tên để xem ảnh khác
+              {t('productDetail.imageGalleryHint')}
             </motion.div>
           </motion.div>
         )}
@@ -2379,18 +2468,18 @@ export default function ProductDetail() {
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                🔥 Sản phẩm HOT của{' '}
+                {t('productDetail.hotProductsTitle')}{' '}
                 <span className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  {product.owner?.profile?.fullName || 'người chủ này'}
+                  {product.owner?.profile?.fullName || t('productDetail.thisOwner')}
                 </span>
               </h2>
-              <p className="text-sm text-gray-600 mt-1">Các sản phẩm được đánh giá cao nhất</p>
+              <p className="text-sm text-gray-600 mt-1">{t('productDetail.highestRatedProducts')}</p>
             </div>
             <Link
               to={`/owner/${product.owner._id}/products`}
               className="text-green-600 hover:text-green-700 font-medium text-sm flex items-center gap-1 transition-colors"
             >
-              Xem tất cả
+              {t('productDetail.viewAllButton')}
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -2494,12 +2583,12 @@ export default function ProductDetail() {
         >
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              📦 Sản phẩm liên quan trong{' '}
+              {t('productDetail.relatedProductsTitle')}{' '}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 {product.subCategory?.name || product.category?.name}
               </span>
             </h2>
-            <p className="text-sm text-gray-600 mt-1">Khám phá thêm sản phẩm tương tự</p>
+            <p className="text-sm text-gray-600 mt-1">{t('productDetail.discoverSimilarProducts')}</p>
           </div>
           <div className="relative">
             {/* Left Arrow */}

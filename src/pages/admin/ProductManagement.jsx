@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminService } from '../../services/admin';
+import { useI18n } from '../../hooks/useI18n';
+import { translateCategory, translateSubCategory } from '../../utils/categoryTranslation';
 
 const ProductManagement = () => {
+  const { i18n } = useI18n();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -312,7 +315,7 @@ const ProductManagement = () => {
           key={category._id}
           className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200"
         >
-          {categoryIcon} {category.name}{priorityIcon}
+          {categoryIcon} {translateCategory(category.name, i18n.language)}{priorityIcon}
         </span>
       );
     }
@@ -323,7 +326,7 @@ const ProductManagement = () => {
           key={subCategory._id}
           className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md border border-purple-200"
         >
-          📄 {subCategory.name}
+          📄 {translateSubCategory(subCategory.name, i18n.language)}
         </span>
       );
     }
@@ -504,7 +507,7 @@ const ProductManagement = () => {
               <option value="">Tất cả danh mục</option>
               {categories.map((category) => (
                 <option key={category._id} value={category._id}>
-                  {category.name}
+                  {translateCategory(category.name, i18n.language)}
                 </option>
               ))}
             </select>
@@ -613,14 +616,14 @@ const ProductManagement = () => {
                         <div className="flex items-center gap-2 mt-1">
                           {product.category && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200">
-                              {product.category.level === 0 ? '�' : product.category.level === 1 ? '�📂' : '📄'} 
-                              {product.category.name}
+                              {product.category.level === 0 ? '📁' : product.category.level === 1 ? '📂' : '📄'} 
+                              {translateCategory(product.category.name, i18n.language)}
                               {product.category.priority > 5 && <span className="text-yellow-600">⭐</span>}
                             </span>
                           )}
                           {product.subCategory && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md border border-purple-200">
-                              � {product.subCategory.name}
+                              📄 {translateSubCategory(product.subCategory.name, i18n.language)}
                             </span>
                           )}
                           {!product.category && (

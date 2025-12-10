@@ -2,9 +2,11 @@ import React from 'react';
 import { useWishlist } from '../../context/WishlistContext';
 import { Link } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
+import { useI18n } from '../../hooks/useI18n';
 
 export default function WishlistPopup({ open, onClose }) {
   const { wishlist, loading, removeFromWishlist } = useWishlist();
+  const { t } = useI18n();
 
   if (!open) return null;
 
@@ -37,7 +39,7 @@ export default function WishlistPopup({ open, onClose }) {
           ×
         </button>
         
-        <h2 className="text-2xl font-bold mb-6 text-gray-800 pr-6">Danh sách yêu thích</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 pr-6">{t('wishlist.title')}</h2>
 
         {loading ? (
           <div className="flex justify-center py-8">
@@ -46,7 +48,7 @@ export default function WishlistPopup({ open, onClose }) {
         ) : wishlist.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <div className="text-4xl mb-2">❤️</div>
-            <p className="text-lg">Bạn chưa thêm sản phẩm nào vào yêu thích.</p>
+            <p className="text-lg">{t('wishlist.empty')}</p>
           </div>
         ) : (
           <div className="space-y-4">

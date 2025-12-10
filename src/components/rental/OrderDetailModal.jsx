@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../hooks/useI18n";
 import {
   X,
   Calendar,
@@ -33,6 +34,7 @@ const OrderDetailModal = ({
   onExtendRental,
   earlyReturnRequest,
 }) => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -51,10 +53,10 @@ const OrderDetailModal = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-2xl font-bold">
-              Chi tiết đơn thuê #{order.masterOrderNumber}
+              {t('rentalOrders.orderDetail.title')} #{order.masterOrderNumber}
             </h2>
             <p className="text-gray-600">
-              Tạo ngày {formatDateTime(order.createdAt)}
+              {t('rentalOrders.orderDetail.createdDate')} {formatDateTime(order.createdAt)}
             </p>
           </div>
           <button
@@ -69,12 +71,12 @@ const OrderDetailModal = ({
         <div className="p-6">
           {/* Order Summary */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('rentalOrders.orderDetail.orderInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="flex items-center space-x-2">
                 <Calendar className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="text-sm text-gray-600">Thời gian thuê</p>
+                  <p className="text-sm text-gray-600">{t('rentalOrders.orderDetail.rentalTime')}</p>
                   {order.rentalPeriod?.startDate &&
                   order.rentalPeriod?.endDate ? (
                     <>
@@ -83,7 +85,7 @@ const OrderDetailModal = ({
                           order.rentalPeriod.startDate,
                           order.rentalPeriod.endDate
                         )}{" "}
-                        ngày
+                        {t('rentalOrders.orderDetail.days')}
                       </p>
                       <p className="text-xs text-gray-500">
                         {formatDate(order.rentalPeriod.startDate)} -{" "}
@@ -92,7 +94,7 @@ const OrderDetailModal = ({
                     </>
                   ) : (
                     <p className="font-medium text-blue-600">
-                      Nhiều thời gian khác nhau
+                      {t('rentalOrders.orderDetail.multipleRentalTimes')}
                     </p>
                   )}
                 </div>
@@ -100,11 +102,11 @@ const OrderDetailModal = ({
               <div className="flex items-center space-x-2">
                 <MapPin className="w-5 h-5 text-red-600" />
                 <div>
-                  <p className="text-sm text-gray-600">Giao hàng</p>
+                  <p className="text-sm text-gray-600">{t('rentalOrders.orderDetail.delivery')}</p>
                   <p className="font-medium">
                     {order.deliveryMethod === "PICKUP"
-                      ? "Nhận trực tiếp"
-                      : "Giao tận nơi"}
+                      ? t('rentalOrders.orderDetail.pickupDelivery')
+                      : t('rentalOrders.orderDetail.shipmentDelivery')}
                   </p>
                 </div>
               </div>
@@ -121,15 +123,15 @@ const OrderDetailModal = ({
                 <DollarSign className="w-5 h-5 text-orange-600" />
                 <div>
                   <p className="text-sm text-gray-600">
-                    Phương thức thanh toán
+                    {t('rentalOrders.orderDetail.paymentMethod')}
                   </p>
                   <p className="font-medium">
                     {order.paymentMethod === "WALLET"
-                      ? "Ví điện tử"
+                      ? t('rentalOrders.orderDetail.wallet')
                       : order.paymentMethod === "PAYOS"
-                      ? "Chuyển khoản"
+                      ? t('rentalOrders.orderDetail.payos')
                       : order.paymentMethod === "COD"
-                      ? "Thanh toán khi nhận hàng"
+                      ? t('rentalOrders.orderDetail.cod')
                       : order.paymentMethod}
                   </p>
                 </div>
@@ -141,7 +143,7 @@ const OrderDetailModal = ({
           {order.subOrders && order.subOrders.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-4">
-                Chi tiết từng chủ cho thuê ({order.subOrders.length})
+                {t('rentalOrders.orderDetail.subOrderDetails')} ({order.subOrders.length})
               </h3>
               <div className="space-y-4">
                 {order.subOrders.map((subOrder, index) => (
@@ -153,7 +155,7 @@ const OrderDetailModal = ({
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
                         <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                          Chủ thuê #{index + 1}
+                          {t('rentalOrders.orderDetail.ownerNumber')}{index + 1}
                         </div>
                         <span
                           className={`px-2 py-1 rounded text-xs ${getStatusColor(
@@ -172,7 +174,7 @@ const OrderDetailModal = ({
                         <div>
                           <p className="font-medium">
                             {subOrder.owner?.profile?.firstName ||
-                              "Không rõ tên"}{" "}
+                              t('rentalOrders.orderDetail.unknownName')}{" "}
                             {subOrder.owner?.profile?.lastName || ""}
                           </p>
                           <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -202,32 +204,32 @@ const OrderDetailModal = ({
                           onClick={async () => {
                             try {
                               await ownerProductApi.confirmSubOrder(subOrder._id);
-                              toast.success('Đã chấp nhận đơn thuê');
+                              toast.success(t('rentalOrders.orderDetail.acceptSuccess'));
                               onClose();
                             } catch (err) {
                               console.error('Lỗi chấp nhận đơn:', err);
-                              toast.error(err?.response?.data?.message || err?.message || 'Không thể chấp nhận đơn');
+                              toast.error(err?.response?.data?.message || err?.message || t('rentalOrders.orderDetail.acceptError'));
                             }
                           }}
                           className="px-4 py-1.5 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
                         >
-                          ✓ Chấp nhận
+                          {t('rentalOrders.orderDetail.acceptButton')}
                         </button>
                         <button
                           onClick={async () => {
                             try {
-                              const reason = window.prompt('Nhập lý do từ chối (tùy chọn):');
+                              const reason = window.prompt(t('rentalOrders.orderDetail.rejectReasonPrompt'));
                               await ownerProductApi.rejectSubOrder(subOrder._id, { reason });
-                              toast.success('Đã từ chối đơn thuê');
+                              toast.success(t('rentalOrders.orderDetail.rejectSuccess'));
                               onClose();
                             } catch (err) {
                               console.error('Lỗi từ chối đơn:', err);
-                              toast.error(err?.response?.data?.message || err?.message || 'Không thể từ chối đơn');
+                              toast.error(err?.response?.data?.message || err?.message || t('rentalOrders.orderDetail.rejectError'));
                             }
                           }}
                           className="px-4 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
                         >
-                          ✗ Từ chối
+                          {t('rentalOrders.orderDetail.rejectButton')}
                         </button>
                       </div>
                     )}
@@ -236,7 +238,7 @@ const OrderDetailModal = ({
                     {subOrder.products && subOrder.products.length > 0 && (
                       <div>
                         <h4 className="font-medium mb-3">
-                          Sản phẩm ({subOrder.products.length})
+                          {t('rentalOrders.orderDetail.products')} ({subOrder.products.length})
                         </h4>
                         <div className="space-y-3">
                           {subOrder.products.map(
@@ -258,21 +260,20 @@ const OrderDetailModal = ({
                                     {productItem.product.name}
                                   </h5>
                                   <p className="text-sm text-gray-600">
-                                    Số lượng: {productItem.quantity}
+                                    {t('rentalOrders.orderDetail.quantity')}: {productItem.quantity}
                                   </p>
                                   <p className="text-sm text-gray-600">
-                                    Giá thuê:{" "}
+                                    {t('rentalOrders.orderDetail.rentalRate')}:{" "}
                                     {productItem.rentalRate?.toLocaleString(
                                       "vi-VN"
-                                    )}
-                                    đ/ngày
+                                    )}{t('rentalOrders.orderDetail.perDay')}
                                   </p>
                                   {productItem.rentalPeriod && (
                                     <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
                                       <div className="flex items-center space-x-1 text-blue-700">
                                         <Calendar className="w-4 h-4" />
                                         <span className="font-medium">
-                                          Thời gian thuê:
+                                          {t('rentalOrders.orderDetail.rentalPeriodLabel')}
                                         </span>
                                       </div>
                                       <p className="text-blue-600 mt-1">
@@ -292,7 +293,7 @@ const OrderDetailModal = ({
                                             productItem.rentalPeriod.startDate,
                                             productItem.rentalPeriod.endDate
                                           )}{" "}
-                                        ngày)
+                                        {t('rentalOrders.orderDetail.days')})
                                       </p>
                                     </div>
                                   )}
