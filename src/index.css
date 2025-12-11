@@ -4,11 +4,11 @@
 
 @layer base {
   html {
-    @apply h-full;
+    @apply h-full overflow-x-hidden;
   }
   
   body {
-    @apply h-full bg-gray-50 text-gray-900;
+    @apply h-full bg-gray-50 text-gray-900 overflow-x-hidden;
   }
   
   #root {

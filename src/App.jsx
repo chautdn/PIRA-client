@@ -186,11 +186,11 @@ export default function App() {
         <RentalOrderProvider>
           <BrowserRouter>
             <ScrollToTop />
-            <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden max-w-full">
               <ConditionalPromotionBanner />
               <ConditionalNavigation />
               <CartDrawer />
-              <main className="flex-1">
+              <main className="flex-1 overflow-x-hidden max-w-full">
                 <Routes>
                   {/* Public routes */}
                   <Route path={ROUTES.LOGIN} element={<Login />} />

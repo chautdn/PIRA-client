@@ -13,7 +13,6 @@ export default function ShipmentsPage() {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null); // Single date selection
-  const [selectedShipmentType, setSelectedShipmentType] = useState('DELIVERY'); // Filter by type
   const [proofs, setProofs] = useState({}); // Cache proofs by shipmentId
   
   // Customer info modal state
@@ -126,9 +125,9 @@ export default function ShipmentsPage() {
     return new Date(date).toLocaleDateString('vi-VN');
   };
 
-  // Get all unique scheduled dates from shipments - organized by type and date
-  const getAllRentalDatesWithType = () => {
-    const datesMap = {}; // { 'DD/MM/YYYY-DELIVERY': [...], 'DD/MM/YYYY-RETURN': [...] }
+  // Get all unique scheduled dates from shipments - group by date only (all types together)
+  const getAllRentalDatesByDate = () => {
+    const datesMap = {}; // { 'DD/MM/YYYY': [...all shipments for this date...] }
     
     shipments.forEach((s) => {
       const shipmentType = s.type; // 'DELIVERY' or 'RETURN'
@@ -159,11 +158,10 @@ export default function ShipmentsPage() {
       }
       
       if (dateStr) {
-        const key = `${dateStr}-${shipmentType}`;
-        if (!datesMap[key]) {
-          datesMap[key] = [];
+        if (!datesMap[dateStr]) {
+          datesMap[dateStr] = [];
         }
-        datesMap[key].push(s);
+        datesMap[dateStr].push(s);
       } else {
         console.warn('⚠️ Shipment without date:', s.shipmentId, { 
           scheduledAt: s.scheduledAt, 
@@ -178,27 +176,70 @@ export default function ShipmentsPage() {
     return datesMap;
   };
 
-  const datesMapByType = getAllRentalDatesWithType();
+  const datesMap = getAllRentalDatesByDate();
   
-  // Extract and sort unique date-type combinations
-  const getUniqueDateTypePairs = () => {
-    const pairs = Object.keys(datesMapByType);
-    return pairs.sort((a, b) => {
+  // Extract and sort unique dates
+  const getUniqueDates = () => {
+    const dates = Object.keys(datesMap);
+    return dates.sort((a, b) => {
       const parseDate = (str) => {
-        const datePart = str.split('-')[0]; // Extract DD/MM/YYYY
-        const [day, month, year] = datePart.split('/').map(Number);
+        const [day, month, year] = str.split('/').map(Number);
         return new Date(year, month - 1, day);
       };
-      return parseDate(b) - parseDate(a);
+      return parseDate(b) - parseDate(a); // Newest first
     });
   };
 
-  const dateTypePairs = getUniqueDateTypePairs();
+  const uniqueDates = getUniqueDates();
   
-  // Get shipments for selected date-type pair
-  const shipmentsForSelectedDate = selectedDate ? datesMapByType[selectedDate] : [];
+  // Get shipments for selected date
+  const shipmentsForSelectedDate = selectedDate ? datesMap[selectedDate] : [];
+  
+  // Count by type for the selected date
+  const deliveryCount = shipmentsForSelectedDate.filter(s => s.type === 'DELIVERY').length;
+  const returnCount = shipmentsForSelectedDate.filter(s => s.type === 'RETURN').length;
+
+  // Check if shipment can be accepted (must be on or after scheduled date)
+  const canAcceptShipment = (shipment) => {
+    if (!shipment) return false;
+    
+    let scheduledDate = null;
+    
+    // Get scheduled date from shipment
+    if (shipment.scheduledAt) {
+      scheduledDate = new Date(shipment.scheduledAt);
+    } else {
+      // Fallback to rental period dates
+      const rentalPeriod = shipment.subOrder?.rentalPeriod || shipment.subOrder?.masterOrder?.rentalPeriod;
+      if (rentalPeriod) {
+        if (shipment.type === 'DELIVERY' && rentalPeriod.startDate) {
+          scheduledDate = new Date(rentalPeriod.startDate);
+        } else if (shipment.type === 'RETURN' && rentalPeriod.endDate) {
+          scheduledDate = new Date(rentalPeriod.endDate);
+        }
+      }
+    }
+
+    if (!scheduledDate) return true; // Allow if no date found (edge case)
+
+    // Set scheduled date to start of day (00:00:00)
+    scheduledDate.setHours(0, 0, 0, 0);
+    
+    // Get current date at start of day
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Can accept if today >= scheduled date
+    return today >= scheduledDate;
+  };
 
   const handleAccept = async (s) => {
+    // Validate date before accepting
+    if (!canAcceptShipment(s)) {
+      const toast = require('react-hot-toast').default;
+      toast.error('⏰ Chưa đến ngày giao hàng! Bạn chỉ có thể nhận đơn từ 00:00 ngày ' + formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate)));
+      return;
+    }
     try {
       await ShipmentService.acceptShipment(s._id);
       // refresh
@@ -333,108 +374,130 @@ export default function ShipmentsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {loading ? (
-        <div className="p-6 text-center">
-          <p className="text-gray-600">Đang tải dữ liệu...</p>
-        </div>
-      ) : (
-        <>
-          <h1 className="text-3xl font-bold mb-8 text-gray-800">Quản lí vận chuyển</h1>
-          
-          {shipments.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <p className="text-gray-500 text-lg">Không có shipment nào</p>
-            </div>
-          ) : (
-            <div>
-          {/* Type Filter Buttons */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">Loại đơn hàng</h2>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setSelectedShipmentType('DELIVERY')}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  selectedShipmentType === 'DELIVERY'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50'
-                }`}
-              >
-                📦 Giao hàng
-              </button>
-              <button
-                onClick={() => setSelectedShipmentType('RETURN')}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  selectedShipmentType === 'RETURN'
-                    ? 'bg-orange-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-orange-600 hover:bg-orange-50'
-                }`}
-              >
-                🔄 Nhận trả
-              </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-x-hidden max-w-full">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-6 max-w-7xl overflow-x-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 font-medium">Đang tải dữ liệu...</p>
             </div>
           </div>
-
-          {/* Date Buttons Section */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">Chọn ngày xử lý đơn</h2>
-            {(() => {
-              // Filter dates by selected type
-              const filteredPairs = dateTypePairs.filter(pair => pair.endsWith(`-${selectedShipmentType}`));
-              
-              if (filteredPairs.length === 0) {
-                return (
-                  <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-6 text-center">
-                    <p className="text-gray-600">Không có đơn hàng loại này</p>
-                  </div>
-                );
-              }
-              
-              return (
-                <div className="flex flex-wrap gap-3">
-                  {filteredPairs.map((pair) => {
-                    const [dateStr] = pair.split('-');
-                    const count = datesMapByType[pair]?.length || 0;
-                    const isDelivery = selectedShipmentType === 'DELIVERY';
-                    const isSelected = selectedDate === pair;
+        ) : (
+          <>
+            {/* Header with sticky position on mobile */}
+            <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-purple-600 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-4 sm:py-5 mb-4 sm:mb-6 shadow-lg">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+                <span className="text-2xl sm:text-3xl">🚚</span>
+                <span>Quản lí vận chuyển</span>
+              </h1>
+              <p className="text-blue-100 text-xs sm:text-sm mt-1">Theo dõi và quản lý các đơn hàng của bạn</p>
+            </div>
+            
+            {shipments.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12 text-center">
+                <div className="text-6xl mb-4">📦</div>
+                <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">Không có shipment nào</p>
+                <p className="text-gray-500 text-sm">Đơn hàng mới sẽ xuất hiện ở đây</p>
+              </div>
+            ) : (
+              <div>
+          {/* Date Selection - Show all dates with all types */}
+          <div className="mb-4 sm:mb-6">
+            <div className="bg-white rounded-2xl shadow-md p-3 sm:p-4 mb-3 sm:mb-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <span className="text-xl">📅</span>
+                  <span>Lịch giao hàng</span>
+                </h2>
+                <div className="text-xs sm:text-sm bg-gradient-to-r from-blue-50 to-purple-50 px-2.5 sm:px-3 py-1.5 rounded-full border-2 border-blue-300">
+                  <span className="text-gray-700 font-medium">Tổng:</span> <span className="font-extrabold text-blue-700">{shipments.length}</span>
+                </div>
+              </div>
+            </div>
+            
+            {uniqueDates.length === 0 ? (
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-6 sm:p-8 text-center">
+                <p className="text-4xl sm:text-5xl mb-3">📦</p>
+                <p className="text-base sm:text-lg text-gray-700 font-semibold mb-1">Chưa có đơn hàng nào</p>
+                <p className="text-xs sm:text-sm text-gray-500">Đơn hàng mới sẽ hiển thị tại đây</p>
+              </div>
+            ) : (
+              <>
+                {/* Scroll indicator for mobile */}
+                <div className="md:hidden text-center mb-2">
+                  <p className="text-xs text-gray-500 italic">👈 Vuốt sang để xem thêm 👉</p>
+                </div>
+                
+                <div className="flex md:flex-wrap gap-2 sm:gap-3 overflow-x-auto md:overflow-visible pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
+                  {uniqueDates.map((dateStr) => {
+                    const shipmentsOnDate = datesMap[dateStr] || [];
+                    const deliveryCountForDate = shipmentsOnDate.filter(s => s.type === 'DELIVERY').length;
+                    const returnCountForDate = shipmentsOnDate.filter(s => s.type === 'RETURN').length;
+                    const isSelected = selectedDate === dateStr;
                     
                     return (
                       <button
-                        key={pair}
-                        onClick={() => setSelectedDate(isSelected ? null : pair)}
-                        className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                        key={dateStr}
+                        onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                        className={`flex-shrink-0 md:flex-shrink px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl font-bold transition-all duration-200 touch-manipulation text-sm sm:text-base border-2 min-w-[140px] sm:min-w-[160px] ${
                           isSelected
-                            ? isDelivery
-                              ? 'bg-blue-600 text-white shadow-lg'
-                              : 'bg-orange-600 text-white shadow-lg'
-                            : isDelivery
-                            ? 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-600 hover:bg-blue-50'
-                            : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-orange-600 hover:bg-orange-50'
+                            ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white border-transparent scale-105 shadow-xl'
+                            : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 active:scale-95 shadow-md'
                         }`}
                       >
-                        <span className="block text-sm">Đơn ngày {dateStr}</span>
-                        <span className="text-xs opacity-75">({count} đơn)</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-            })()}
+                        <div className="flex flex-col items-center gap-1.5">
+                        <span className="font-extrabold flex items-center gap-1.5 text-[15px] sm:text-base">
+                          <span className="text-lg sm:text-xl">📆</span>
+                          <span>{dateStr}</span>
+                        </span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] xs:text-xs font-extrabold mt-0.5">
+                          {deliveryCountForDate > 0 && (
+                            <span className={`flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
+                              isSelected ? 'bg-white/30 text-white' : 'bg-blue-100 text-blue-800 border border-blue-300'
+                            }`}>
+                              <span className="text-xs sm:text-sm">📦</span> <span>{deliveryCountForDate}</span>
+                            </span>
+                          )}
+                          {returnCountForDate > 0 && (
+                            <span className={`flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
+                              isSelected ? 'bg-white/30 text-white' : 'bg-orange-100 text-orange-800 border border-orange-300'
+                            }`}>
+                              <span className="text-xs sm:text-sm">🔄</span> <span>{returnCountForDate}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              </>
+            )}
           </div>
 
           {/* Shipments Details Section */}
           {selectedDate && shipmentsForSelectedDate.length > 0 && (
-            <div className="bg-white rounded-lg shadow overflow-x-auto">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b">
-                {(() => {
-                  const [dateStr, shipmentType] = selectedDate.split('-');
-                  const typeLabel = shipmentType === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả';
-                  return (
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {typeLabel} - Danh sách đơn hàng ngày {dateStr}
-                    </h3>
-                  );
-                })()}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-sm sm:text-base md:text-lg font-bold text-white flex items-center gap-2">
+                    <span className="text-xl sm:text-2xl">📋</span>
+                    <span>Đơn hàng {selectedDate}</span>
+                  </h3>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                    {deliveryCount > 0 && (
+                      <span className="px-2 sm:px-3 py-1 bg-white/30 text-white rounded-full font-bold border border-white/50">
+                        📦 {deliveryCount}
+                      </span>
+                    )}
+                    {returnCount > 0 && (
+                      <span className="px-2 sm:px-3 py-1 bg-white/30 text-white rounded-full font-bold border border-white/50">
+                        🔄 {returnCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
               
               {/* Desktop Table View */}
@@ -504,15 +567,27 @@ export default function ShipmentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           {s.status === 'PENDING' && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAccept(s);
-                              }}
-                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm whitespace-nowrap"
-                            >
-                              ✓ Nhận đơn
-                            </button>
+                            <div className="relative group">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAccept(s);
+                                }}
+                                disabled={!canAcceptShipment(s)}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap ${
+                                  canAcceptShipment(s)
+                                    ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                                }`}
+                              >
+                                {canAcceptShipment(s) ? '✓ Nhận đơn' : '🔒 Chưa đến ngày'}
+                              </button>
+                              {!canAcceptShipment(s) && (
+                                <div className="hidden group-hover:block absolute z-10 top-full mt-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
+                                  ⏰ Chỉ nhận đơn từ 00:00 ngày {formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate))}
+                                </div>
+                              )}
+                            </div>
                           )}
 
                           {s.status === 'SHIPPER_CONFIRMED' && (
@@ -534,63 +609,73 @@ export default function ShipmentsPage() {
               </div>
 
               {/* Mobile Card View */}
-              <div className="md:hidden space-y-3">
+              <div className="md:hidden space-y-3 sm:space-y-4 p-2 sm:p-3">
                 {shipmentsForSelectedDate.map((s) => (
                   <motion.div
                     key={s._id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 overflow-hidden"
+                    onClick={() => handleOpenManagementModal(s)}
+                    className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all border-2 border-gray-200 overflow-hidden active:scale-[0.99] cursor-pointer touch-manipulation"
                   >
                     {/* Top Bar - Type & Status */}
-                    <div className={`px-4 py-3 ${
+                    <div className={`px-3 sm:px-4 py-2.5 sm:py-3 ${
                       s.type === 'DELIVERY' 
                         ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-500' 
                         : 'bg-gradient-to-r from-orange-50 to-orange-100 border-l-4 border-orange-500'
                     }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{s.type === 'DELIVERY' ? '📦' : '🔄'}</span>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="text-xl shrink-0">{s.type === 'DELIVERY' ? '📦' : '🔄'}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-gray-900 text-sm sm:text-base truncate">
                               {s.type === 'DELIVERY' ? 'Giao Hàng' : 'Nhận Trả'}
                             </p>
-                            <p className="text-xs text-gray-600">{s.shipmentId}</p>
+                            <p className="text-xs text-gray-600 font-mono truncate">{s.shipmentId}</p>
                           </div>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0 ${
                           s.status === 'PENDING' ? 'bg-yellow-200 text-yellow-900' :
                           s.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-200 text-blue-900' :
                           s.status === 'IN_TRANSIT' ? 'bg-purple-200 text-purple-900' :
                           s.status === 'DELIVERED' ? 'bg-green-200 text-green-900' :
                           'bg-gray-200 text-gray-900'
                         }`}>
-                          {s.status === 'PENDING' ? '⏳' :
-                           s.status === 'SHIPPER_CONFIRMED' ? '✓' :
-                           s.status === 'IN_TRANSIT' ? '🚚' :
-                           s.status === 'DELIVERED' ? '✓✓' :
-                           '❓'} {s.status}
+                          <span className="hidden xs:inline">
+                            {s.status === 'PENDING' ? '⏳ ' :
+                             s.status === 'SHIPPER_CONFIRMED' ? '✓ ' :
+                             s.status === 'IN_TRANSIT' ? '🚚 ' :
+                             s.status === 'DELIVERED' ? '✓✓ ' :
+                             '❓ '}
+                          </span>
+                          <span className="text-[10px] xs:text-xs">
+                            {s.status === 'PENDING' ? 'CHỜ' :
+                             s.status === 'SHIPPER_CONFIRMED' ? 'ĐÃ NHẬN' :
+                             s.status === 'IN_TRANSIT' ? 'ĐANG GIAO' :
+                             s.status === 'DELIVERED' ? 'HOÀN TẤT' :
+                             s.status}
+                          </span>
                         </span>
                       </div>
                     </div>
 
                     {/* Content */}
-                    <div className="px-4 py-3 space-y-2">
+                    <div className="px-3 sm:px-4 py-2.5 sm:py-3 space-y-2.5">
                       {/* Fee & Tracking */}
-                      <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-2.5 sm:p-3 border border-gray-200">
                         <div>
-                          <p className="text-xs text-gray-600">Phí vận chuyển</p>
-                          <p className="font-bold text-green-600 text-sm">{formatCurrency(s.fee || 0)}</p>
+                          <p className="text-[10px] xs:text-xs text-gray-600 font-medium mb-0.5">💰 Phí vận chuyển</p>
+                          <p className="font-extrabold text-green-600 text-base sm:text-lg">{formatCurrency(s.fee || 0)}</p>
                         </div>
-                        <div className="text-right text-xs text-gray-600">
+                        <div className="text-right text-[10px] xs:text-xs text-gray-600 space-y-0.5">
                           {s.tracking?.pickedUpAt && (
-                            <p>🕐 {new Date(s.tracking.pickedUpAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                            <p className="font-medium">🕐 Lấy: {new Date(s.tracking.pickedUpAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                           )}
                           {s.tracking?.deliveredAt && (
-                            <p>✓ {new Date(s.tracking.deliveredAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                            <p className="font-medium text-green-600">✓ Giao: {new Date(s.tracking.deliveredAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                           )}
                           {!s.tracking?.pickedUpAt && !s.tracking?.deliveredAt && (
-                            <p className="text-gray-500">Chưa cập nhật</p>
+                            <p className="text-gray-400 italic">Chưa cập nhật</p>
                           )}
                         </div>
                       </div>
@@ -605,54 +690,42 @@ export default function ShipmentsPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="px-4 py-3 border-t border-gray-200 space-y-2">
-                      <button 
-                        onClick={() => {
-                          const customer = s.customerInfo || {};
-                          const renter = s.subOrder?.masterOrder?.renter;
-                          const name = customer.name || renter?.profile?.fullName || renter?.profile?.firstName || 'N/A';
-                          const phone = customer.phone || renter?.phone || 'N/A';
-                          const email = customer.email || renter?.email || 'N/A';
-                          
-                          setSelectedCustomer({
-                            name: name,
-                            phone: phone,
-                            email: email,
-                            address: s.type === 'DELIVERY' ? s.toAddress : s.fromAddress,
-                            type: s.type
-                          });
-                          setIsCustomerModalOpen(true);
-                        }}
-                        className="w-full px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium transition-colors text-sm"
-                      >
-                        👤 Thông tin khách hàng
-                      </button>
-
-                      <div className="grid grid-cols-2 gap-2">
+                    <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-t-2 border-gray-200">
+                      <div className="space-y-2">
                         {s.status === 'PENDING' && (
-                          <button 
-                            onClick={() => handleAccept(s)}
-                            className="px-3 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
-                          >
-                            ✓ Nhận
-                          </button>
+                          <div className="col-span-2">
+                            <button 
+                              onClick={() => handleAccept(s)}
+                              disabled={!canAcceptShipment(s)}
+                              className={`w-full px-4 py-3.5 rounded-xl font-bold transition-all text-sm shadow-md touch-manipulation flex items-center justify-center gap-2 ${
+                                canAcceptShipment(s)
+                                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 active:from-green-700 active:to-emerald-700 text-white active:shadow-lg'
+                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-70'
+              }`}
+                            >
+                              <span className="text-lg">{canAcceptShipment(s) ? '✓' : '🔒'}</span>
+                              <span>{canAcceptShipment(s) ? 'Nhận đơn ngay' : 'Chưa đến ngày giao'}</span>
+                            </button>
+                            {!canAcceptShipment(s) && (
+                              <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                                <p className="text-[10px] xs:text-xs text-orange-700 text-center font-semibold">
+                                  ⏰ Chỉ nhận từ 00:00 ngày {formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate))}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         )}
 
                         {s.status === 'SHIPPER_CONFIRMED' && (
                           <button 
-                            onClick={() => handleUploadAction(s, 'pickup')}
-                            className="px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUploadAction(s, 'pickup');
+                            }}
+                            className="w-full px-4 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 active:from-blue-700 active:to-indigo-700 text-white rounded-xl font-bold transition-all text-sm shadow-md active:shadow-lg touch-manipulation flex items-center justify-center gap-2"
                           >
-                            📸 Pickup
-                          </button>
-                        )}
-
-                        {proofs[s._id] && (proofs[s._id].imagesBeforeDelivery?.length > 0 || proofs[s._id].imagesAfterDelivery?.length > 0) && (
-                          <button
-                            onClick={() => openProofModal(s)}
-                            className="px-3 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors text-sm"
-                          >
-                            🖼️ Proof
+                            <span className="text-lg">📸</span>
+                            <span>Chụp ảnh Pickup</span>
                           </button>
                         )}
                       </div>
@@ -664,16 +737,19 @@ export default function ShipmentsPage() {
           )}
 
           {selectedDate && shipmentsForSelectedDate.length === 0 && (
-            <div className="bg-white rounded-lg shadow p-8 text-center">
-              <p className="text-gray-500 text-lg">Không có dữ liệu cho ngày này</p>
+            <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-10 text-center">
+              <div className="text-5xl mb-3">📭</div>
+              <p className="text-gray-700 text-base sm:text-lg font-bold mb-1">Không có đơn hàng</p>
+              <p className="text-gray-500 text-sm">Chưa có đơn hàng nào cho ngày này</p>
             </div>
           )}
 
-          {!selectedDate && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow p-8 text-center">
-              <p className="text-gray-600 text-lg mb-2">👆 Chọn một ngày để xem danh sách đơn hàng</p>
-              <p className="text-gray-500 text-sm">
-                Tổng cộng: {shipments.filter(s => s.type === selectedShipmentType).length} đơn hàng {selectedShipmentType === 'DELIVERY' ? 'giao hàng' : 'nhận trả'}
+          {!selectedDate && uniqueDates.length > 0 && (
+            <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl p-8 sm:p-12 text-center border-2 border-blue-200">
+              <div className="text-6xl sm:text-7xl mb-4 animate-bounce">👆</div>
+              <p className="text-gray-800 text-lg sm:text-xl font-bold mb-2">Chọn ngày để xem đơn hàng</p>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Bạn có <span className="font-extrabold text-blue-600 text-lg">{shipments.length}</span> đơn hàng cần xử lý
               </p>
             </div>
           )}
@@ -684,74 +760,83 @@ export default function ShipmentsPage() {
       <AnimatePresence>
         {isCustomerModalOpen && selectedCustomer && (
           <motion.div
-            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsCustomerModalOpen(false)}
           >
             <motion.div
-              className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-lg w-full p-5 sm:p-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, y: 100, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 100, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {selectedCustomer.type === 'DELIVERY' ? '👤 Chủ hàng' : '👤 Người thuê'}
+              {/* Modal Header */}
+              <div className="flex items-center justify-between mb-5 sm:mb-6 pb-4 border-b-2 border-gray-200">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-gray-800 flex items-center gap-2">
+                  <span className="text-2xl sm:text-3xl">{selectedCustomer.type === 'DELIVERY' ? '👤' : '🙋'}</span>
+                  <span>{selectedCustomer.type === 'DELIVERY' ? 'Chủ hàng' : 'Người thuê'}</span>
                 </h2>
                 <button
                   onClick={() => setIsCustomerModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
+                  className="w-10 h-10 rounded-full bg-red-100 hover:bg-red-200 active:bg-red-300 flex items-center justify-center text-red-600 font-bold text-xl shadow-md touch-manipulation transition-all"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <label className="text-xs font-semibold text-gray-600 uppercase">Tên khách hàng</label>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">{selectedCustomer.name}</p>
+              {/* Modal Content */}
+              <div className="space-y-3 sm:space-y-4">
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 sm:p-5 border-2 border-blue-200">
+                  <label className="text-[10px] xs:text-xs font-bold text-blue-700 uppercase mb-1 block">👤 Tên khách hàng</label>
+                  <p className="text-base sm:text-lg font-bold text-gray-900">{selectedCustomer.name}</p>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <label className="text-xs font-semibold text-gray-600 uppercase">Số điện thoại</label>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">
-                    <a href={`tel:${selectedCustomer.phone}`} className="text-blue-600 hover:underline">
-                      {selectedCustomer.phone}
-                    </a>
-                  </p>
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-5 border-2 border-green-200">
+                  <label className="text-[10px] xs:text-xs font-bold text-green-700 uppercase mb-1 block">📱 Số điện thoại</label>
+                  <a 
+                    href={`tel:${selectedCustomer.phone}`} 
+                    className="text-base sm:text-lg font-bold text-blue-600 hover:text-blue-800 active:text-blue-900 flex items-center gap-2 touch-manipulation"
+                  >
+                    <span>📞</span>
+                    <span className="underline">{selectedCustomer.phone}</span>
+                  </a>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <label className="text-xs font-semibold text-gray-600 uppercase">Email</label>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">
-                    <a href={`mailto:${selectedCustomer.email}`} className="text-blue-600 hover:underline">
-                      {selectedCustomer.email}
-                    </a>
-                  </p>
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 sm:p-5 border-2 border-purple-200">
+                  <label className="text-[10px] xs:text-xs font-bold text-purple-700 uppercase mb-1 block">📧 Email</label>
+                  <a 
+                    href={`mailto:${selectedCustomer.email}`} 
+                    className="text-sm sm:text-base font-bold text-blue-600 hover:text-blue-800 active:text-blue-900 break-all touch-manipulation underline"
+                  >
+                    {selectedCustomer.email}
+                  </a>
                 </div>
 
                 {selectedCustomer.address && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <label className="text-xs font-semibold text-gray-600 uppercase">Địa chỉ</label>
-                    <p className="text-sm text-gray-900 mt-1 leading-relaxed">
-                      {selectedCustomer.address.streetAddress && <div>{selectedCustomer.address.streetAddress}</div>}
+                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 sm:p-5 border-2 border-orange-200">
+                    <label className="text-[10px] xs:text-xs font-bold text-orange-700 uppercase mb-2 block flex items-center gap-1">
+                      <span>📍</span> <span>Địa chỉ</span>
+                    </label>
+                    <div className="text-sm sm:text-base text-gray-900 space-y-1 leading-relaxed font-medium">
+                      {selectedCustomer.address.streetAddress && <div className="font-bold">{selectedCustomer.address.streetAddress}</div>}
                       {selectedCustomer.address.ward && <div>{selectedCustomer.address.ward}</div>}
                       {selectedCustomer.address.district && <div>{selectedCustomer.address.district}</div>}
                       {selectedCustomer.address.city && <div>{selectedCustomer.address.city}</div>}
                       {selectedCustomer.address.province && <div>{selectedCustomer.address.province}</div>}
-                    </p>
+                    </div>
                   </div>
                 )}
               </div>
 
+              {/* Close Button */}
               <button
                 onClick={() => setIsCustomerModalOpen(false)}
-                className="w-full mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="w-full mt-6 px-4 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:from-blue-800 active:to-purple-800 text-white rounded-xl font-bold transition-all shadow-lg touch-manipulation text-base"
               >
-                Đóng
+                ✓ Đóng
               </button>
             </motion.div>
           </motion.div>
@@ -762,59 +847,71 @@ export default function ShipmentsPage() {
       <AnimatePresence>
         {proofModalOpen && proofModalShipment && proofs[proofModalShipment._id] && (
           <motion.div
-            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setProofModalOpen(false)}
           >
             <motion.div
-              className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6"
+              initial={{ opacity: 0, y: 100, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 100, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">📸 Shipment Proof</h2>
+              {/* Modal Header */}
+              <div className="flex items-center justify-between mb-5 sm:mb-6 pb-4 border-b-2 border-gray-200 sticky top-0 bg-white z-10">
+                <h2 className="text-lg sm:text-2xl font-extrabold text-gray-800 flex items-center gap-2">
+                  <span className="text-2xl sm:text-3xl">📸</span>
+                  <span>Ảnh Proof</span>
+                </h2>
                 <button
                   onClick={() => setProofModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600"
+                  className="w-10 h-10 rounded-full bg-red-100 hover:bg-red-200 active:bg-red-300 flex items-center justify-center text-red-600 font-bold text-xl shadow-md touch-manipulation transition-all"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                 {/* Upload new proof button */}
-                <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
+                <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-300">
                   <button
                     onClick={() => {
                       setProofModalOpen(false);
                       promptForFilesWithPreview(proofModalShipment, proofModalShipment.status === 'SHIPPER_CONFIRMED' ? 'pickup' : 'deliver');
                     }}
-                    className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    className="w-full px-4 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 text-white rounded-xl font-bold transition-all shadow-lg touch-manipulation flex items-center justify-center gap-2 text-base"
                   >
-                    📤 Upload Proof Image
+                    <span className="text-xl">📤</span>
+                    <span>Upload ảnh mới</span>
                   </button>
                 </div>
 
                 {/* Before Delivery Images */}
                 {proofs[proofModalShipment._id].imagesBeforeDelivery?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">B</span>
-                      Ảnh Pickup ({proofs[proofModalShipment._id].imagesBeforeDelivery.length})
+                  <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border-2 border-blue-200">
+                    <h3 className="text-base sm:text-lg font-extrabold text-gray-800 mb-3 flex items-center gap-2">
+                      <span className="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-md">📦</span>
+                      <span>Ảnh Pickup ({proofs[proofModalShipment._id].imagesBeforeDelivery.length})</span>
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                       {proofs[proofModalShipment._id].imagesBeforeDelivery.map((img, idx) => (
-                        <img
+                        <div 
                           key={`before-${idx}`}
-                          src={img}
-                          alt={`pickup-${idx}`}
-                          className="w-full h-32 object-cover rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                          className="relative group cursor-pointer touch-manipulation"
                           onClick={() => openLightbox(proofs[proofModalShipment._id].imagesBeforeDelivery, idx)}
-                        />
+                        >
+                          <img
+                            src={img}
+                            alt={`pickup-${idx}`}
+                            className="w-full h-40 sm:h-48 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-blue-400"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-xl flex items-center justify-center">
+                            <span className="text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity">🔍</span>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -822,20 +919,27 @@ export default function ShipmentsPage() {
 
                 {/* After Delivery Images */}
                 {proofs[proofModalShipment._id].imagesAfterDelivery?.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <span className="bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">A</span>
-                      Ảnh Delivered ({proofs[proofModalShipment._id].imagesAfterDelivery.length})
+                  <div className="bg-green-50 rounded-xl p-3 sm:p-4 border-2 border-green-200">
+                    <h3 className="text-base sm:text-lg font-extrabold text-gray-800 mb-3 flex items-center gap-2">
+                      <span className="bg-green-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-md">✓</span>
+                      <span>Ảnh Delivered ({proofs[proofModalShipment._id].imagesAfterDelivery.length})</span>
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                       {proofs[proofModalShipment._id].imagesAfterDelivery.map((img, idx) => (
-                        <img
+                        <div 
                           key={`after-${idx}`}
-                          src={img}
-                          alt={`delivered-${idx}`}
-                          className="w-full h-32 object-cover rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                          className="relative group cursor-pointer touch-manipulation"
                           onClick={() => openLightbox(proofs[proofModalShipment._id].imagesAfterDelivery, idx)}
-                        />
+                        >
+                          <img
+                            src={img}
+                            alt={`delivered-${idx}`}
+                            className="w-full h-40 sm:h-48 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-green-400"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-xl flex items-center justify-center">
+                            <span className="text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity">🔍</span>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -995,6 +1099,8 @@ export default function ShipmentsPage() {
         onClose={() => setManagementModalOpen(false)}
         onSuccess={handleManagementSuccess}
       />
+      </div>
     </div>
   );
 }
+  

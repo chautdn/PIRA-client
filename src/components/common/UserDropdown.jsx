@@ -84,11 +84,11 @@ const UserDropdown = () => {
       {/* User Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-3 text-gray-700 hover:text-primary-700 transition-colors group"
+        className="flex items-center space-x-1 xs:space-x-2 sm:space-x-3 text-gray-700 hover:text-primary-700 transition-colors group"
         disabled={loading}
       >
         {/* Avatar */}
-        <div className="w-11 h-11 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center ring-2 ring-gray-200 group-hover:ring-primary-400 transition-all shadow-sm">
+        <div className="w-7 h-7 xs:w-9 xs:h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center ring-2 ring-gray-200 group-hover:ring-primary-400 transition-all shadow-sm">
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -100,18 +100,18 @@ const UserDropdown = () => {
               }}
             />
           ) : null}
-          <span className="text-white font-bold text-lg">
+          <span className="text-white font-bold text-sm xs:text-base sm:text-lg">
             {displayName.charAt(0).toUpperCase()}
           </span>
         </div>
 
         {/* Name and Arrow */}
-        <div className="flex items-center space-x-2">
-          <span className="text-base font-semibold hidden sm:block max-w-[120px] truncate">
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <span className="text-sm sm:text-base font-semibold hidden sm:block max-w-[100px] lg:max-w-[120px] truncate">
             {displayName}
           </span>
           <svg
-            className={`w-5 h-5 transition-transform ${
+            className={`w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 transition-transform ${
               isOpen ? "rotate-180" : ""
             }`}
             fill="none"

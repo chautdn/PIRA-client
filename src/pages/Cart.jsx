@@ -510,7 +510,7 @@
               
               {selectedItems.size > 0 && (
                 <div className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
-                  Đã chọn: {cart.filter(item => selectedItems.has(item._id)).reduce((total, item) => total + item.quantity, 0)} sản phẩm
+                  {t('cart.selectedCount', { count: cart.filter(item => selectedItems.has(item._id)).reduce((total, item) => total + item.quantity, 0) })}
                 </div>
               )}
             </div>
@@ -527,7 +527,7 @@
                 <div className="text-yellow-600 text-xl">⚠️</div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-yellow-800 mb-2">
-                    Có sản phẩm với ngày thuê đã quá hạn
+                    {t('cart.expiredItemsWarning')}
                   </h3>
                   <div className="space-y-2">
                     {cartData.expiredItems.map((expiredItem, index) => (
@@ -538,7 +538,7 @@
                     ))}
                   </div>
                   <p className="text-sm text-yellow-600 mt-2">
-                    Vui lòng cập nhật lại ngày thuê cho các sản phẩm này.
+                    {t('cart.pleaseUpdateDates')}
                   </p>
                 </div>
               </div>
@@ -560,7 +560,7 @@
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900">{group.ownerName}</h3>
-                        <p className="text-sm text-gray-600">{group.items.length} sản phẩm</p>
+                        <p className="text-sm text-gray-600">{t('cart.products_count', { count: group.items.length })}</p>
                       </div>
                       <div className="ml-auto">
                         <label className="flex items-center gap-2">
@@ -570,7 +570,7 @@
                             onChange={() => handleSelectOwner(group.ownerId)}
                             className="w-5 h-5 text-blue-600 rounded"
                           />
-                          <span className="text-sm">Chọn tất cả</span>
+                          <span className="text-sm">{t('cart.selectAll')}</span>
                         </label>
                       </div>
                     </div>
@@ -720,7 +720,7 @@
                                 <button
                                   onClick={() => removeFromCartById(item._id)}
                                   className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all ml-auto"
-                                  title="Xóa sản phẩm"
+                                  title={t('cart.deleteProduct')}
                                 >
                                   <svg
                                     className="w-6 h-6"
@@ -765,17 +765,17 @@
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl shadow-md p-6 sticky top-24">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Tóm Tắt Đơn Hàng
+                  {t('cart.orderSummary')}
                 </h2>
 
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
-                    <span>Tạm tính</span>
+                    <span>{t('cart.subtotalLabel')}</span>
                     <span className="font-semibold">{formatPrice(selectedItemsTotal)}</span>
                   </div>
                 
                   <div className="flex justify-between text-gray-600">
-                    <span>Giảm giá</span>
+                    <span>{t('cart.discount')}</span>
                     <span className="text-green-600 font-semibold">-0₫</span>
                   </div>
                 </div>
@@ -783,7 +783,7 @@
                 <div className="border-t border-gray-200 pt-4 mb-6">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-gray-900">
-                      Tổng cộng
+                      {t('cart.totalAmount')}
                     </span>
                     <span className="text-3xl font-bold text-green-600">
                       {formatPrice(finalTotal)}
@@ -801,29 +801,29 @@
                   }}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-4"
                 >
-                  📋 {selectedItems.size > 0 ? `Thuê ${cart.filter(item => selectedItems.has(item._id)).reduce((total, item) => total + item.quantity, 0)} sản phẩm đã chọn` : 'Tạo Đơn Thuê (Tất cả)'}
+                  📋 {selectedItems.size > 0 ? t('cart.rentSelected', { count: cart.filter(item => selectedItems.has(item._id)).reduce((total, item) => total + item.quantity, 0) }) : t('cart.createRentalOrder')}
                 </button>
 
                 <Link
                   to={ROUTES.PRODUCTS}
                   className="block w-full text-center border-2 border-green-500 hover:border-green-600 text-green-600 hover:text-green-700 hover:bg-green-50 py-3 rounded-xl font-semibold transition-all"
                 >
-                  ← Tiếp Tục Mua Sắm
+                  {t('cart.continueShoppingBtn')}
                 </Link>
 
                 {/* Security Info */}
                 <div className="mt-6 pt-6 border-t border-gray-200 space-y-3 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <span>🔒</span>
-                    <span>Thanh toán bảo mật 100%</span>
+                    <span>{t('cart.securePayment')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>✓</span>
-                    <span>Hỗ trợ 24/7</span>
+                    <span>{t('cart.support247')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🚚</span>
-                    <span>Miễn phí vận chuyển</span>
+                    <span>{t('cart.freeShipping')}</span>
                   </div>
                 </div>
               </div>
@@ -847,7 +847,7 @@
                     <span className="text-red-600 text-xl">⚠️</span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-red-800">Cảnh báo khả năng sản phẩm</h3>
+                    <h3 className="text-lg font-bold text-red-800">{t('cart.availabilityWarningTitle')}</h3>
                     <p className="text-sm text-red-600">Một số sản phẩm trong giỏ hàng không còn đủ số lượng</p>
                   </div>
                 </div>

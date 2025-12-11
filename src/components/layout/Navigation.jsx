@@ -277,16 +277,16 @@ const Navigation = () => {
   return (
     <>
       <nav className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 justify-between">
+        <div className="w-full px-2 xs:px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center h-16 justify-between max-w-[1920px] mx-auto">
             {/* Left: Brand + Menu */}
-            <div className="flex items-center gap-6 flex-shrink-0">
+            <div className="flex items-center gap-1 xs:gap-2 sm:gap-4 md:gap-6 flex-shrink-0">
               {/* Brand */}
-              <Link to={ROUTES.HOME} className="flex items-center gap-3 group">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-                  <span className="text-white text-2xl font-bold">P</span>
+              <Link to={ROUTES.HOME} className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 group">
+                <div className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                  <span className="text-white text-lg xs:text-xl sm:text-2xl font-bold">P</span>
                 </div>
-                <span className="text-3xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+                <span className="text-xl xs:text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
                   PIRA
                 </span>
               </Link>
@@ -355,21 +355,23 @@ const Navigation = () => {
             </div>
 
             {/* Right: Icons + Auth */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              {/* Language Switcher */}
-              <LanguageSwitcher />
+            <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
+              {/* Language Switcher - Hide on mobile */}
+              <div className="hidden md:block">
+                <LanguageSwitcher />
+              </div>
 
               {/* Action Icons */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 {/* Cart */}
                 <button
                   title={t("navigation.cart")}
                   onClick={toggleCart}
-                  className="relative p-2.5 text-gray-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all"
+                  className="relative p-1.5 xs:p-2 sm:p-2.5 text-gray-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all"
                 >
-                  <BsCart4 className="text-2xl" />
+                  <BsCart4 className="text-lg xs:text-xl sm:text-2xl" />
                   {cartCount > 0 && (
-                    <span className="absolute top-0.5 right-0.5 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
+                    <span className="absolute top-0 right-0 bg-primary-600 text-white text-[10px] xs:text-xs rounded-full h-4 w-4 xs:h-5 xs:w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
                       {cartCount > 9 ? "9+" : cartCount}
                     </span>
                   )}
@@ -379,27 +381,31 @@ const Navigation = () => {
                 <button
                   title={t("navigation.wishlist")}
                   onClick={() => setShowWishlist(true)}
-                  className="p-2.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                  className="p-1.5 xs:p-2 sm:p-2.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                 >
-                  <IoIosHeart className="text-2xl" />
+                  <IoIosHeart className="text-lg xs:text-xl sm:text-2xl" />
                 </button>
 
                 {/* Chat */}
                 <button
                   title={t("navigation.myChats")}
                   onClick={handleChatClick}
-                  className="relative p-2.5 text-gray-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all"
+                  className="relative p-1.5 xs:p-2 sm:p-2.5 text-gray-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-all"
                 >
-                  <IoChatboxEllipsesOutline className="text-2xl" />
+                  <IoChatboxEllipsesOutline className="text-lg xs:text-xl sm:text-2xl" />
                   {user && unreadCount > 0 && (
-                    <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] xs:text-xs rounded-full h-4 w-4 xs:h-5 xs:w-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
                 </button>
 
                 {/* Notification Bell - Only show for authenticated users */}
-                {user && <NotificationBell />}
+                {user && (
+                  <div className="hidden xs:block">
+                    <NotificationBell />
+                  </div>
+                )}
               </div>
 
               {/* Wallet Balance - show only for authenticated users */}
@@ -407,16 +413,16 @@ const Navigation = () => {
 
               {/* Auth Section */}
               {!user ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-2">
                   <Link
                     to={ROUTES.LOGIN}
-                    className="px-4 py-2 text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                    className="px-1.5 xs:px-2 sm:px-4 py-1 xs:py-1.5 sm:py-2 text-gray-700 hover:text-primary-700 hover:bg-gray-100 rounded-lg text-[10px] xs:text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
                   >
                     {t("navigation.signIn")}
                   </Link>
                   <Link
                     to={ROUTES.REGISTER}
-                    className="px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+                    className="px-2 xs:px-3 sm:px-5 py-1 xs:py-1.5 sm:py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-lg text-[10px] xs:text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all whitespace-nowrap"
                   >
                     {t("navigation.signUp")}
                   </Link>
