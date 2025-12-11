@@ -56,66 +56,77 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
     return Array.from(batchMap.values());
   };
 
-  // ✅ Calculate shipping from recalculated batches
-  const calculateShippingFromRecalculatedBatches = (productIds) => {
+  // ✅ Calculate shipping refund for REJECTED products only
+  // Logic: If batch has ≥1 CONFIRMED → keep fee (refund = 0)
+  //        If batch has ALL REJECTED → refund 100%
+  const calculateShippingRefundForRejected = () => {
     const recalculatedBatches = recalculateBatchesFromProducts();
     
-    if (recalculatedBatches.length === 0) {
+    if (recalculatedBatches.length === 0 || !subOrder.deliveryBatches) {
       return 0;
     }
 
-    // If we have deliveryBatches with fees, use them
-    // Otherwise, split total shipping evenly across batches
-    const totalShippingFee = (subOrder.deliveryBatches || []).reduce(
-      (sum, batch) => sum + (batch.shippingFee?.finalFee || 0),
-      0
-    );
+    let totalRefund = 0;
 
-    if (subOrder.deliveryBatches && subOrder.deliveryBatches.length > 0) {
-      // Use actual batch fees
-      return recalculatedBatches.reduce((total, recalcBatch) => {
-        // Check if this batch contains any of the specified products
-        const hasProduct = recalcBatch.products.some(batchProductId => 
-          productIds.some(pid => pid.toString() === batchProductId.toString())
+    recalculatedBatches.forEach(recalcBatch => {
+      // Check if this batch has ANY confirmed product
+      const hasConfirmed = recalcBatch.confirmedProducts.length > 0;
+
+      if (!hasConfirmed) {
+        // ALL products in this batch are REJECTED → Refund 100%
+        const matchingBatch = subOrder.deliveryBatches.find(
+          db => db.deliveryDate === recalcBatch.deliveryDate
         );
-
-        if (hasProduct) {
-          // Find matching batch in deliveryBatches by date
-          const matchingBatch = subOrder.deliveryBatches.find(
-            db => db.deliveryDate === recalcBatch.deliveryDate
-          );
-          
-          if (matchingBatch) {
-            return total + (matchingBatch.shippingFee?.finalFee || 0);
-          } else {
-            // Fallback: divide evenly
-            return total + Math.round(totalShippingFee / recalculatedBatches.length);
-          }
+        
+        if (matchingBatch) {
+          const batchFee = matchingBatch.shippingFee?.finalFee || 0;
+          totalRefund += batchFee;
+    
         }
-        return total;
-      }, 0);
-    } else {
-      // No batch fees, divide evenly
-      const feePerBatch = Math.round(totalShippingFee / recalculatedBatches.length);
-      return recalculatedBatches.reduce((total, batch) => {
-        const hasProduct = batch.products.some(batchProductId => 
-          productIds.some(pid => pid.toString() === batchProductId.toString())
+      } else {
+        // Has at least 1 CONFIRMED → Keep fee (no refund)
+        const matchingBatch = subOrder.deliveryBatches.find(
+          db => db.deliveryDate === recalcBatch.deliveryDate
         );
-        return hasProduct ? total + feePerBatch : total;
-      }, 0);
-    }
+        if (matchingBatch) {
+          console.log(`📦 Batch ${recalcBatch.deliveryDate}: Has CONFIRMED → Keep fee ${matchingBatch.shippingFee?.finalFee || 0}`);
+        }
+      }
+    });
+
+    return totalRefund;
   };
 
   // Tính toán số tiền
-  const calculateTotals = (products) => {
-    const productIds = products.map(p => p._id);
-    
+  const calculateTotals = (products, includeShipping = true) => {
     // Calculate rental and deposit from products
     const deposit = products.reduce((sum, p) => sum + (p.totalDeposit || 0), 0);
     const rental = products.reduce((sum, p) => sum + (p.totalRental || 0), 0);
     
-    // ✅ Calculate shipping from recalculated batches
-    const shipping = calculateShippingFromRecalculatedBatches(productIds);
+    // ✅ For CONFIRMED products: Calculate shipping fees from batches that have confirmed products
+    // ✅ For REJECTED products: Shipping refund is 0 if batch has any confirmed product
+    let shipping = 0;
+    
+    if (includeShipping) {
+      if (products === confirmedProducts) {
+        // Calculate shipping for CONFIRMED products
+        // Include all batches that have at least 1 confirmed product
+        const recalculatedBatches = recalculateBatchesFromProducts();
+        recalculatedBatches.forEach(batch => {
+          if (batch.confirmedProducts.length > 0) {
+            const matchingBatch = subOrder.deliveryBatches?.find(
+              db => db.deliveryDate === batch.deliveryDate
+            );
+            if (matchingBatch) {
+              shipping += matchingBatch.shippingFee?.finalFee || 0;
+            }
+          }
+        });
+      } else if (products === rejectedProducts) {
+        // ✅ For REJECTED products: Use the refund calculation
+        shipping = calculateShippingRefundForRejected();
+      }
+    }
     
     return {
       deposit,
@@ -138,12 +149,6 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
   };
   allTotals.total = allTotals.deposit + allTotals.rental + allTotals.shipping;
   
-  console.log('📊 Shipping Calculation:', {
-    confirmedShipping: confirmedTotals.shipping,
-    rejectedShipping: rejectedTotals.shipping,
-    totalShipping: allTotals.shipping,
-    batches: subOrder.deliveryBatches
-  });
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -169,7 +174,6 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
       onDecisionMade('CANCELLED', result);
       onClose();
     } catch (error) {
-      console.error('Error cancelling order:', error);
       alert(error.message || 'Không thể hủy đơn hàng');
     } finally {
       setLoading(false);
@@ -189,7 +193,6 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
       // Close modal - parent will redirect to confirmation-summary
       onClose();
     } catch (error) {
-      console.error('Error accepting partial order:', error);
       alert(error.message || 'Không thể chấp nhận đơn hàng');
       setLoading(false);
     }
