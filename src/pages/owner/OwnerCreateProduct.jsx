@@ -5,10 +5,12 @@ import { useAuth } from "../../hooks/useAuth";
 import CreateForm from "../../components/owner/products/CreateForm";
 import icons from "../../utils/icons";
 import { toast } from "react-hot-toast";
+import { useI18n } from "../../hooks/useI18n";
 
 const OwnerCreateProduct = () => {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
+  const { t } = useI18n();
   const [isChecking, setIsChecking] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState({
     cccdVerified: false,
@@ -17,7 +19,7 @@ const OwnerCreateProduct = () => {
   });
 
   useEffect(() => {
-    document.title = "Tạo Sản Phẩm Mới - PIRA";
+    document.title = t('createProduct.title') + " - PIRA";
     window.scrollTo(0, 0);
     checkVerificationStatus();
   }, []);
@@ -51,24 +53,24 @@ const OwnerCreateProduct = () => {
 
       // If requirements are not met, show appropriate error
       if (!cccdVerified) {
-        toast.error("❌ Cần xác thực CCCD trước khi đăng sản phẩm!", {
+        toast.error("❌ " + t('createProduct.cccdNotVerifiedMessage'), {
           duration: 5000,
         });
       } else if (!bankAccountAdded) {
         toast.error(
-          "❌ Cần xác thực tài khoản ngân hàng trước khi đăng sản phẩm!",
+          "❌ " + t('createProduct.bankNotVerifiedMessage'),
           {
             duration: 5000,
           }
         );
       } else if (!addressComplete) {
-        toast.error("❌ Cần cập nhật địa chỉ đầy đủ trước khi đăng sản phẩm!", {
+        toast.error("❌ " + t('createProduct.addressNotUpdatedMessage'), {
           duration: 5000,
         });
       }
     } catch (error) {
       console.error("Error checking verification status:", error);
-      toast.error("Không thể kiểm tra trạng thái xác thực. Vui lòng thử lại.");
+      toast.error(t('common.error') + ". " + t('common.tryAgain'));
     } finally {
       setIsChecking(false);
     }
@@ -114,7 +116,7 @@ const OwnerCreateProduct = () => {
                 className="hover:text-primary-600 transition-colors flex items-center"
               >
                 <icons.BiMap className="w-4 h-4 mr-1" />
-                Bảng điều khiển
+                {t('createProduct.dashboard')}
               </a>
               <icons.BsChevronRight className="w-3 h-3" />
               <a
@@ -122,12 +124,12 @@ const OwnerCreateProduct = () => {
                 className="hover:text-primary-600 transition-colors flex items-center"
               >
                 <icons.BiCategory className="w-4 h-4 mr-1" />
-                Sản phẩm
+                {t('createProduct.products')}
               </a>
               <icons.BsChevronRight className="w-3 h-3" />
               <span className="text-primary-600 font-medium flex items-center">
                 <icons.AiOutlinePlusCircle className="w-4 h-4 mr-1" />
-                Tạo sản phẩm
+                {t('createProduct.createProduct')}
               </span>
             </motion.nav>
 
@@ -142,7 +144,7 @@ const OwnerCreateProduct = () => {
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              Được tin tưởng bởi 10,000+ chủ sản phẩm
+              {t('createProduct.trustedBy')}
             </motion.div>
 
             {/* Main Title */}
@@ -150,7 +152,7 @@ const OwnerCreateProduct = () => {
               className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-6"
               variants={fadeInUp}
             >
-              Đăng Sản Phẩm.
+              {t('createProduct.title')}.
               <br />
               <motion.span
                 className="text-primary-700"
@@ -166,7 +168,7 @@ const OwnerCreateProduct = () => {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Kiếm Tiền Ngay Hôm Nay!
+                {t('createProduct.startEarning')}
               </motion.span>
             </motion.h1>
 
@@ -174,8 +176,7 @@ const OwnerCreateProduct = () => {
               className="text-xl text-gray-600 leading-7 mb-8"
               variants={fadeInUp}
             >
-              Biến tài sản của bạn thành nguồn thu nhập thụ động với hệ thống AI
-              thông minh
+              {t('createProduct.subtitle')}
             </motion.p>
 
             {/* Features */}
@@ -191,7 +192,7 @@ const OwnerCreateProduct = () => {
                   <icons.FiCheck className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-sm font-medium text-gray-700">
-                  Xác thực AI tự động
+                  {t('createProduct.automatedAI')}
                 </span>
               </motion.div>
 
@@ -203,7 +204,7 @@ const OwnerCreateProduct = () => {
                   <icons.HiSparkles className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-sm font-medium text-gray-700">
-                  Đăng trong 5 phút
+                  {t('createProduct.postIn5Minutes')}
                 </span>
               </motion.div>
 
@@ -215,7 +216,7 @@ const OwnerCreateProduct = () => {
                   <icons.HiCash className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-sm font-medium text-gray-700">
-                  Thu nhập ổn định
+                  {t('createProduct.steadyIncome')}
                 </span>
               </motion.div>
             </motion.div>
@@ -232,7 +233,7 @@ const OwnerCreateProduct = () => {
               <div className="text-center">
                 <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-600 border-t-transparent mx-auto mb-4"></div>
                 <p className="text-gray-600 font-medium">
-                  Đang kiểm tra trạng thái xác thực...
+                  {t('createProduct.checkingStatus')}
                 </p>
               </div>
             </div>
@@ -250,9 +251,9 @@ const OwnerCreateProduct = () => {
                 {/* Header */}
                 <div className="bg-gradient-to-r from-red-500 to-red-600 px-8 py-6 text-white text-center">
                   <div className="text-6xl mb-4">🔒</div>
-                  <h2 className="text-2xl font-bold mb-2">Yêu Cầu Xác Thực</h2>
+                  <h2 className="text-2xl font-bold mb-2">{t('createProduct.verificationRequired')}</h2>
                   <p className="text-red-100">
-                    Hoàn thành các bước xác thực để đăng sản phẩm
+                    {t('createProduct.completeVerification')}
                   </p>
                 </div>
 
@@ -281,17 +282,17 @@ const OwnerCreateProduct = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                        Xác Thực CCCD
+                        {t('createProduct.cccdVerification')}
                         {verificationStatus.cccdVerified && (
                           <span className="text-sm bg-green-500 text-white px-3 py-1 rounded-full">
-                            Đã xác thực
+                            {t('createProduct.verified')}
                           </span>
                         )}
                       </h3>
                       <p className="text-gray-600 mb-4">
                         {verificationStatus.cccdVerified
-                          ? "Căn cước công dân của bạn đã được xác thực thành công."
-                          : "Xác thực danh tính để đảm bảo an toàn cho cộng đồng và tăng độ tin cậy của bạn."}
+                          ? t('createProduct.cccdVerifiedMessage')
+                          : t('createProduct.cccdNotVerifiedMessage')}
                       </p>
                       {!verificationStatus.cccdVerified && (
                         <button
@@ -299,7 +300,7 @@ const OwnerCreateProduct = () => {
                           className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
                         >
                           <icons.FiCheck className="w-5 h-5" />
-                          Xác Thực Ngay
+                          {t('createProduct.verifyNow')}
                         </button>
                       )}
                     </div>
@@ -328,17 +329,17 @@ const OwnerCreateProduct = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                        Tài Khoản Ngân Hàng
+                        {t('createProduct.bankAccount')}
                         {verificationStatus.bankAccountAdded && (
                           <span className="text-sm bg-green-500 text-white px-3 py-1 rounded-full">
-                            Đã xác thực
+                            {t('createProduct.verified')}
                           </span>
                         )}
                       </h3>
                       <p className="text-gray-600 mb-4">
                         {verificationStatus.bankAccountAdded
-                          ? "Tài khoản ngân hàng của bạn đã được xác thực thành công."
-                          : "Thêm và xác thực tài khoản ngân hàng để nhận thanh toán từ việc cho thuê sản phẩm."}
+                          ? t('createProduct.bankVerifiedMessage')
+                          : t('createProduct.bankNotVerifiedMessage')}
                       </p>
                       {!verificationStatus.bankAccountAdded && (
                         <button
@@ -346,7 +347,7 @@ const OwnerCreateProduct = () => {
                           className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
                         >
                           <icons.HiCash className="w-5 h-5" />
-                          Xác Thực Tài Khoản
+                          {t('createProduct.verifyAccount')}
                         </button>
                       )}
                     </div>
@@ -375,17 +376,17 @@ const OwnerCreateProduct = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                        Địa Chỉ
+                        {t('createProduct.address')}
                         {verificationStatus.addressComplete && (
                           <span className="text-sm bg-green-500 text-white px-3 py-1 rounded-full">
-                            Đã cập nhật
+                            {t('createProduct.addressUpdated')}
                           </span>
                         )}
                       </h3>
                       <p className="text-gray-600 mb-4">
                         {verificationStatus.addressComplete
-                          ? "Địa chỉ của bạn đã được cập nhật đầy đủ."
-                          : "Cập nhật địa chỉ đầy đủ (đường, thành phố, tỉnh) để người thuê biết vị trí sản phẩm."}
+                          ? t('createProduct.addressUpdatedMessage')
+                          : t('createProduct.addressNotUpdatedMessage')}
                       </p>
                       {!verificationStatus.addressComplete && (
                         <button
@@ -393,7 +394,7 @@ const OwnerCreateProduct = () => {
                           className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
                         >
                           <icons.BiMap className="w-5 h-5" />
-                          Cập Nhật Địa Chỉ
+                          {t('createProduct.updateAddress')}
                         </button>
                       )}
                     </div>
@@ -405,39 +406,28 @@ const OwnerCreateProduct = () => {
                       <icons.HiLightBulb className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                       <div>
                         <h4 className="font-bold text-blue-900 mb-2">
-                          Tại sao cần xác thực?
+                          {t('createProduct.whyVerification')}
                         </h4>
                         <ul className="text-sm text-blue-800 space-y-2">
                           <li className="flex items-start gap-2">
                             <span>•</span>
-                            <span>
-                              <strong>CCCD:</strong> Bảo vệ cộng đồng khỏi gian
-                              lận và lừa đảo
-                            </span>
+                            <span>{t('createProduct.cccdReason')}</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
-                            <span>
-                              <strong>Ngân hàng:</strong> Đảm bảo thanh toán
-                              nhanh chóng và an toàn
-                            </span>
+                            <span>{t('createProduct.bankReason')}</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
-                            <span>
-                              <strong>Địa chỉ:</strong> Người thuê biết vị trí
-                              và khoảng cách sản phẩm
-                            </span>
+                            <span>{t('createProduct.addressReason')}</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
-                            <span>
-                              Tăng độ tin cậy và uy tín của bạn với khách hàng
-                            </span>
+                            <span>{t('createProduct.trustReason')}</span>
                           </li>
                           <li className="flex items-start gap-2">
                             <span>•</span>
-                            <span>Tuân thủ quy định pháp luật Việt Nam</span>
+                            <span>{t('createProduct.complianceReason')}</span>
                           </li>
                         </ul>
                       </div>
@@ -451,14 +441,14 @@ const OwnerCreateProduct = () => {
                       className="flex items-center gap-2 px-6 py-3 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-semibold"
                     >
                       <icons.GrLinkPrevious className="w-4 h-4" />
-                      Quay Lại
+                      {t('createProduct.goBack')}
                     </button>
                     <button
                       onClick={checkVerificationStatus}
                       className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                     >
                       <icons.BiRefresh className="w-5 h-5" />
-                      Kiểm Tra Lại
+                      {t('createProduct.checkAgain')}
                     </button>
                   </div>
                 </div>
@@ -483,10 +473,10 @@ const OwnerCreateProduct = () => {
           >
             <div className="flex items-center justify-center mb-4">
               <icons.BiSupport className="w-8 h-8 text-primary-600 mr-3" />
-              <h2 className="text-3xl font-bold text-gray-900">Cần Hỗ Trợ?</h2>
+              <h2 className="text-3xl font-bold text-gray-900">{t('createProduct.needHelp')}</h2>
             </div>
             <p className="text-lg text-gray-600">
-              Hướng dẫn chi tiết để tạo sản phẩm thành công
+              {t('createProduct.helpSubtitle')}
             </p>
           </motion.div>
 
@@ -505,11 +495,10 @@ const OwnerCreateProduct = () => {
                 <icons.BiCheckCircle className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Xác Thực AI
+                {t('createProduct.aiVerification')}
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Hệ thống AI của chúng tôi tự động kiểm tra hình ảnh để đảm bảo
-                nội dung phù hợp và khớp với danh mục đã chọn.
+                {t('createProduct.aiVerificationDesc')}
               </p>
             </motion.div>
 
@@ -521,11 +510,10 @@ const OwnerCreateProduct = () => {
                 <icons.HiCash className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Mẹo Định Giá
+                {t('createProduct.pricingTips')}
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Tìm hiểu giá của các sản phẩm tương tự trong khu vực. Đặt giá
-                thuê hàng ngày cạnh tranh và tiền đặt cọc hợp lý.
+                {t('createProduct.pricingTipsDesc')}
               </p>
             </motion.div>
 
@@ -537,11 +525,10 @@ const OwnerCreateProduct = () => {
                 <icons.HiPhotograph className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Hướng Dẫn Chụp Ảnh
+                {t('createProduct.photoGuide')}
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Sử dụng ảnh chất lượng cao, ánh sáng tốt. Chụp nhiều góc độ và
-                bao gồm cận cảnh các chi tiết quan trọng.
+                {t('createProduct.photoGuideDesc')}
               </p>
             </motion.div>
           </motion.div>
@@ -557,21 +544,21 @@ const OwnerCreateProduct = () => {
             <div className="flex items-center mb-6">
               <icons.HiLightBulb className="w-6 h-6 text-yellow-500 mr-3" />
               <h3 className="text-xl font-bold text-gray-900">
-                Mẹo Thành Công
+                {t('createProduct.successTips')}
               </h3>
             </div>
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-4 py-3 rounded-full">
                 <icons.HiLightBulb className="w-4 h-4 mr-2" />
-                Mô tả chi tiết giúp tăng lượt thuê
+                {t('createProduct.detailedDescription')}
               </div>
               <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-4 py-3 rounded-full">
                 <icons.HiSparkles className="w-4 h-4 mr-2" />
-                Phản hồi nhanh tăng độ tin cậy
+                {t('createProduct.quickResponse')}
               </div>
               <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-4 py-3 rounded-full">
                 <icons.BiCategory className="w-4 h-4 mr-2" />
-                Danh mục chính xác giúp tìm kiếm dễ hơn
+                {t('createProduct.correctCategory')}
               </div>
             </div>
           </motion.div>
@@ -596,10 +583,10 @@ const OwnerCreateProduct = () => {
             >
               <h3 className="text-2xl font-bold flex items-center justify-center mb-4">
                 <icons.HiSparkles className="w-6 h-6 mr-3" />
-                Bắt Đầu Kiếm Tiền Ngay Hôm Nay!
+                {t('createProduct.startEarning')}
               </h3>
               <p className="text-primary-100">
-                Hơn 10,000 chủ sản phẩm đã tin tưởng PIRA
+                {t('createProduct.trustedBy')}
               </p>
             </motion.div>
 
@@ -615,14 +602,14 @@ const OwnerCreateProduct = () => {
                 whileHover={{ scale: 1.05 }}
               >
                 <icons.MdPhone className="w-4 h-4 mr-2" />
-                Hỗ Trợ Trực Tiếp
+                {t('createProduct.liveSupport')}
               </motion.button>
               <motion.button
                 className="inline-flex items-center bg-yellow-400 text-gray-900 px-6 py-3 rounded-xl font-medium hover:bg-yellow-300 transition-colors"
                 whileHover={{ scale: 1.05 }}
               >
                 <icons.HiPhotograph className="w-4 h-4 mr-2" />
-                Xem Video Hướng Dẫn
+                {t('createProduct.watchGuide')}
               </motion.button>
             </motion.div>
           </motion.div>

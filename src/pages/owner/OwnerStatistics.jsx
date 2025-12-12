@@ -7,6 +7,7 @@ import {
   TrendingUp,
   BarChart3
 } from 'lucide-react';
+import { useI18n } from '../../hooks/useI18n';
 import ownerStatisticsApi from '../../services/ownerStatistics.Api';
 import StatisticsCards from '../../components/owner/statistics/StatisticsCards';
 import RevenueChart from '../../components/owner/statistics/RevenueChart';
@@ -14,6 +15,7 @@ import TopProductsTable from '../../components/owner/statistics/TopProductsTable
 import CurrentlyRentedTable from '../../components/owner/statistics/CurrentlyRentedTable';
 
 const OwnerStatistics = () => {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
   const [revenueData, setRevenueData] = useState(null);
@@ -110,9 +112,9 @@ const OwnerStatistics = () => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
-    { id: 'revenue', label: 'Doanh thu', icon: TrendingUp },
-    { id: 'rented', label: 'Đang cho thuê', icon: Calendar },
+    { id: 'overview', label: t("ownerStatistics.tabs.overview"), icon: BarChart3 },
+    { id: 'revenue', label: t("ownerStatistics.tabs.revenue"), icon: TrendingUp },
+    { id: 'rented', label: t("ownerStatistics.tabs.rented"), icon: Calendar },
   ];
 
   return (
@@ -123,10 +125,10 @@ const OwnerStatistics = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Thống kê Owner
+                {t("ownerStatistics.title")}
               </h1>
               <p className="text-gray-600">
-                Xem tổng quan về sản phẩm, đơn hàng và doanh thu của bạn
+                {t("ownerStatistics.subtitle")}
               </p>
             </div>
             <button
@@ -135,7 +137,7 @@ const OwnerStatistics = () => {
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-              Làm mới
+              {t("ownerStatistics.refresh")}
             </button>
           </div>
         </div>
@@ -186,12 +188,12 @@ const OwnerStatistics = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Filter size={18} className="text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Bộ lọc</h3>
+                <h3 className="text-lg font-semibold text-gray-800">{t("ownerStatistics.filters.label")}</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Từ ngày
+                    {t("ownerStatistics.filters.startDate")}
                   </label>
                   <input
                     type="date"
@@ -202,7 +204,7 @@ const OwnerStatistics = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Đến ngày
+                    {t("ownerStatistics.filters.endDate")}
                   </label>
                   <input
                     type="date"
@@ -213,17 +215,17 @@ const OwnerStatistics = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nhóm theo
+                    {t("ownerStatistics.filters.groupBy")}
                   </label>
                   <select
                     value={filters.groupBy}
                     onChange={(e) => handleFilterChange('groupBy', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="day">Ngày</option>
-                    <option value="week">Tuần</option>
-                    <option value="month">Tháng</option>
-                    <option value="year">Năm</option>
+                    <option value="day">{t("ownerStatistics.filters.day")}</option>
+                    <option value="week">{t("ownerStatistics.filters.week")}</option>
+                    <option value="month">{t("ownerStatistics.filters.month")}</option>
+                    <option value="year">{t("ownerStatistics.filters.year")}</option>
                   </select>
                 </div>
               </div>

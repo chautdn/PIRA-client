@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminService } from '../../services/admin';
+import { useI18n } from '../../hooks/useI18n';
+import { translateCategory, translateSubCategory } from '../../utils/categoryTranslation';
 import icons from "../../utils/icons";
 
 const { FiPackage, BiCheckCircle, BiLoaderAlt, FiClipboard, FiSearch, FiTrash2, BiClipboard, BsBuildings, BiRefresh, FiUser, FiDollarSign, FiBell, FiCalendar, FiSettings, FiAlertTriangle, FiEye, BiInfoCircle, FiStar, FiX, FiLock } = icons;
 
 const ProductManagement = () => {
+  const { i18n } = useI18n();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -315,7 +318,7 @@ const ProductManagement = () => {
           key={category._id}
           className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200"
         >
-          {categoryIcon} {category.name}{priorityIcon}
+          {categoryIcon} {translateCategory(category.name, i18n.language)}{priorityIcon}
         </span>
       );
     }
@@ -326,7 +329,7 @@ const ProductManagement = () => {
           key={subCategory._id}
           className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md border border-purple-200"
         >
-          <FiClipboard className="text-sm" /> {subCategory.name}
+          <FiClipboard className="text-sm" /> {translateSubCategory(subCategory.name, i18n.language)}
         </span>
       );
     }
@@ -506,7 +509,7 @@ const ProductManagement = () => {
               <option value="">Tất cả danh mục</option>
               {categories.map((category) => (
                 <option key={category._id} value={category._id}>
-                  {category.name}
+                  {translateCategory(category.name, i18n.language)}
                 </option>
               ))}
             </select>
@@ -613,7 +616,23 @@ const ProductManagement = () => {
                           {product.title || product.name || 'Tên sản phẩm'}
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          {getCategoryDisplay(product.category, product.subCategory)}
+                          {product.category && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200">
+                              {product.category.level === 0 ? '📁' : product.category.level === 1 ? '📂' : '📄'} 
+                              {translateCategory(product.category.name, i18n.language)}
+                              {product.category.priority > 5 && <span className="text-yellow-600">⭐</span>}
+                            </span>
+                          )}
+                          {product.subCategory && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-md border border-purple-200">
+                              📄 {translateSubCategory(product.subCategory.name, i18n.language)}
+                            </span>
+                          )}
+                          {!product.category && (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded-md border border-gray-200">
+                              ❓ Chưa phân loại
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

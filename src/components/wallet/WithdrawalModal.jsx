@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, AlertCircle, DollarSign, Loader } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { useI18n } from "../../hooks/useI18n";
 import withdrawalService from "../../services/withdrawal";
 import {
   formatCurrency,
@@ -12,6 +13,7 @@ import toast from "react-hot-toast";
 
 const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
     const numAmount = parseInt(amount);
 
     if (!amount || numAmount <= 0) {
-      newErrors.amount = "Vui lòng nhập số tiền";
+      newErrors.amount = t('withdrawals.enterAmount');
       setErrors(newErrors);
       return false;
     }
@@ -90,13 +92,13 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
         note: note.trim() || undefined,
       });
 
-      toast.success("Yêu cầu rút tiền đã được gửi! Chờ xử lý trong 3-5 ngày.");
+      toast.success(t('withdrawals.requestSent'));
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error("Withdrawal request failed:", error);
       const errorMsg =
-        error.response?.data?.message || "Không thể tạo yêu cầu rút tiền";
+        error.response?.data?.message || t('withdrawals.error');
       toast.error(errorMsg);
 
       // Set field-specific errors if available
@@ -118,7 +120,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Yêu cầu rút tiền</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t('withdrawals.withdrawalModal')}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -133,7 +135,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Số dư khả dụng</p>
+                <p className="text-sm text-gray-600 mb-1">{t('withdrawals.availableBalance')}</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {formatCurrency(balance)}
                 </p>
@@ -147,7 +149,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
           {/* Bank Account Display */}
           {bankAccount && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-2">Rút về tài khoản</p>
+              <p className="text-sm text-gray-600 mb-2">{t('withdrawals.withdrawingTo')}</p>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-gray-900">
@@ -167,14 +169,14 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
           {/* Amount Input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Số tiền muốn rút <span className="text-red-500">*</span>
+              {t('withdrawals.amountToWithdraw')} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={amount ? parseInt(amount).toLocaleString("vi-VN") : ""}
                 onChange={(e) => handleAmountChange(e.target.value)}
-                placeholder="Nhập số tiền"
+                placeholder={t('withdrawals.enterAmount')}
                 className={`w-full px-4 py-3 pr-12 border-2 rounded-lg focus:outline-none transition-colors ${
                   errors.amount
                     ? "border-red-300 focus:border-red-500"
@@ -193,14 +195,13 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
               </div>
             )}
             <p className="mt-1 text-xs text-gray-500">
-              Tối thiểu: {formatCurrency(LIMITS.MIN)} - Tối đa:{" "}
-              {formatCurrency(LIMITS.MAX)}
+              {t('withdrawals.minMax')} {formatCurrency(LIMITS.MIN)} - {formatCurrency(LIMITS.MAX)}
             </p>
           </div>
 
           {/* Quick Amount Buttons */}
           <div>
-            <p className="text-sm text-gray-600 mb-2">Chọn nhanh</p>
+            <p className="text-sm text-gray-600 mb-2">{t('withdrawals.quickSelect')}</p>
             <div className="grid grid-cols-3 gap-2">
               {[100000, 500000, 1000000, 2000000, 5000000, 10000000].map(
                 (quickAmount) => (
@@ -232,7 +233,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-700">
-                Hạn mức hôm nay
+                {t('withdrawals.dailyLimit')}
               </p>
               <p className="text-sm text-gray-600">
                 {formatCurrency(dailyTotal)} / {formatCurrency(LIMITS.DAILY)}
@@ -251,19 +252,19 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Còn lại: {formatCurrency(remainingDaily)}
+              {t('withdrawals.remaining')} {formatCurrency(remainingDaily)}
             </p>
           </div>
 
           {/* Note Input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ghi chú (tùy chọn)
+              {t('withdrawals.noteOptional')}
             </label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Thêm ghi chú cho yêu cầu rút tiền..."
+              placeholder={t('withdrawals.addNote')}
               rows={3}
               maxLength={200}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
@@ -282,11 +283,11 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
                 size={18}
               />
               <div className="text-sm text-orange-800">
-                <p className="font-medium mb-1">Lưu ý quan trọng:</p>
+                <p className="font-medium mb-1">{t('withdrawals.importantWarning')}</p>
                 <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Yêu cầu sẽ được xử lý trong 3-5 ngày làm việc</li>
-                  <li>Bạn có thể hủy yêu cầu nếu chưa được xử lý</li>
-                  <li>Kiểm tra kỹ thông tin tài khoản ngân hàng</li>
+                  <li>{t('withdrawals.warning1')}</li>
+                  <li>{t('withdrawals.warning2')}</li>
+                  <li>{t('withdrawals.warning3')}</li>
                 </ul>
               </div>
             </div>
@@ -300,7 +301,7 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
               disabled={loading}
               className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Hủy
+              {t('withdrawals.cancel')}
             </button>
             <button
               type="submit"
@@ -310,10 +311,10 @@ const WithdrawalModal = ({ isOpen, onClose, onSuccess, bankAccount }) => {
               {loading ? (
                 <>
                   <Loader className="animate-spin mr-2" size={18} />
-                  Đang xử lý...
+                  {t('withdrawals.processing')}
                 </>
               ) : (
-                "Xác nhận rút tiền"
+                t('withdrawals.confirmWithdrawal')
               )}
             </button>
           </div>

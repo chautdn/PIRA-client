@@ -4,6 +4,7 @@ import otpService from '../../services/otp';
 import { toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/constants';
 import ContractEditModal from '../rental/ContractEditModal';
+import { useI18n } from '../../hooks/useI18n';
 
 const ContractSigningInline = ({ 
   subOrder, 
@@ -13,6 +14,7 @@ const ContractSigningInline = ({
   onSignSuccess, 
   loadContractForSigning 
 }) => {
+  const { t, language } = useI18n();
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureData, setSignatureData] = useState('');
@@ -71,7 +73,7 @@ const ContractSigningInline = ({
 
 const startDrawing = (e) => {
   if (!otpVerified) {
-    toast.error('Vui lòng xác minh OTP trước khi ký');
+    toast.error(t('contractSigning.verifyOTPFirst'));
     return;
   }
 
@@ -113,7 +115,7 @@ const stopDrawing = () => {
 
   const handleSendOTP = async () => {
     if (sentCount >= 3) {
-      toast.error('Bạn đã vượt quá số lần gửi OTP (tối đa 3 lần)');
+      toast.error(t('contractSigning.maxOTPAttempts'));
       return;
     }
 
@@ -128,11 +130,11 @@ const stopDrawing = () => {
       setSentCount(prev => prev + 1);
       setRemainingTime(5 * 60 * 1000);
       
-      toast.success('✅ Mã OTP đã được gửi đến email của bạn');
+      toast.success('✅ ' + t('contractSigning.otpSentSuccess'));
     } catch (error) {
       console.error('Error sending OTP:', error);
-      setOtpError(error.message || 'Không thể gửi OTP');
-      toast.error(error.message || 'Không thể gửi OTP');
+      setOtpError(error.message || t('contractSigning.cannotSendOTP'));
+      toast.error(error.message || t('contractSigning.cannotSendOTP'));
     } finally {
       setIsSendingOTP(false);
     }
@@ -140,7 +142,7 @@ const stopDrawing = () => {
 
   const handleVerifyOTP = async () => {
     if (otpCode.length !== 6) {
-      toast.error('Vui lòng nhập đầy đủ 6 chữ số');
+      toast.error(t('contractSigning.enterAll6Digits'));
       return;
     }
 
@@ -151,11 +153,11 @@ const stopDrawing = () => {
       await otpService.verifyContractSigningOTP(contractData._id, otpCode);
       
       setOtpVerified(true);
-      toast.success('✅ Xác minh thành công! Bạn có thể ký hợp đồng');
+      toast.success('✅ ' + t('contractSigning.verifySuccess'));
     } catch (error) {
       console.error('Error verifying OTP:', error);
-      setOtpError(error.message || 'Mã OTP không hợp lệ');
-      toast.error(error.message || 'Mã OTP không hợp lệ');
+      setOtpError(error.message || t('contractSigning.invalidOTP'));
+      toast.error(error.message || t('contractSigning.invalidOTP'));
       setOtpCode('');
     } finally {
       setIsVerifyingOTP(false);
@@ -176,12 +178,12 @@ const stopDrawing = () => {
 
   const handleSign = async () => {
     if (!otpVerified) {
-      toast.error('Vui lòng xác minh OTP trước khi ký');
+      toast.error(t('contractSigning.verifyOTPFirst'));
       return;
     }
 
     if (!signatureData) {
-      toast.error('Vui lòng ký trước khi xác nhận');
+      toast.error(t('contractSigning.signBeforeConfirm'));
       return;
     }
 
@@ -195,10 +197,10 @@ const stopDrawing = () => {
         signatureMethod: 'canvas'
       });
       
-      toast.success('✅ Ký hợp đồng thành công!');
+      toast.success('✅ ' + t('contractSigning.signSuccess'));
       onSignSuccess();
     } catch (error) {
-      toast.error(error.message || 'Không thể ký hợp đồng');
+      toast.error(error.message || t('contractSigning.cannotSign'));
     } finally {
       setSigning(false);
     }
@@ -208,7 +210,7 @@ const stopDrawing = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-        <span className="ml-3 text-gray-600">Đang tải hợp đồng...</span>
+        <span className="ml-3 text-gray-600">{t('contractSigning.loadingContract')}</span>
       </div>
     );
   }
@@ -216,9 +218,9 @@ const stopDrawing = () => {
   if (!contractData) {
     return (
       <div className="text-center text-gray-500 py-8">
-        <p>Không tìm thấy hợp đồng</p>
+        <p>{t('contractSigning.contractNotFound')}</p>
         <button onClick={onBack} className="mt-4 text-blue-600 hover:text-blue-800">
-          ← Quay lại
+          ← {t('contractSigning.backButton')}
         </button>
       </div>
     );
@@ -233,42 +235,42 @@ const stopDrawing = () => {
           className="text-blue-600 hover:text-blue-800 flex items-center space-x-2 font-medium"
         >
           <span>←</span>
-          <span>Quay lại</span>
+          <span>{t('contractSigning.backButton')}</span>
         </button>
       </div>
 
       {/* Contract Info */}
       <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xl font-bold text-gray-900">📄 Hợp đồng thuê sản phẩm</h3>
+          <h3 className="text-xl font-bold text-gray-900">📄 {t('contractSigning.rentalContract')}</h3>
           {!contractData.signatures?.owner?.signed && (
             <button
               onClick={() => setShowEditModal(true)}
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm flex items-center gap-2"
             >
-              ✏️ Chỉnh sửa điều khoản
+              ✏️ {t('contractSigning.editTerms')}
             </button>
           )}
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <span className="text-gray-600">Mã hợp đồng:</span>
+            <span className="text-gray-600">{t('contractSigning.contractCode')}</span>
             <span className="font-semibold ml-2">{contractData.contractNumber}</span>
           </div>
           <div>
-            <span className="text-gray-600">Trạng thái:</span>
+            <span className="text-gray-600">{t('contractSigning.status')}</span>
             <span className="font-semibold ml-2 text-yellow-600">
-              {contractData.status === 'PENDING_OWNER' ? 'Chờ chủ ký' : contractData.status}
+              {contractData.status === 'PENDING_OWNER' ? t('contractSigning.waitingOwnerSign') : contractData.status}
             </span>
           </div>
           <div>
-            <span className="text-gray-600">Người thuê:</span>
+            <span className="text-gray-600">{t('contractSigning.renter')}</span>
             <span className="font-semibold ml-2">
               {contractData.renter?.profile?.firstName} {contractData.renter?.profile?.lastName}
             </span>
           </div>
           <div>
-            <span className="text-gray-600">Tổng tiền:</span>
+            <span className="text-gray-600">{t('contractSigning.totalAmount')}</span>
             <span className="font-bold ml-2 text-green-600">
               {formatCurrency(contractData.terms?.totalAmount)}
             </span>
@@ -276,9 +278,9 @@ const stopDrawing = () => {
         </div>
         {contractData.editableTerms?.isEdited && (
           <div className="mt-3 bg-orange-100 border border-orange-300 rounded-lg p-2 text-sm">
-            <span className="text-orange-800 font-semibold">⚠️ Hợp đồng đã được chỉnh sửa</span>
+            <span className="text-orange-800 font-semibold">{t('contractSigning.contractEdited')}</span>
             <span className="text-orange-700 ml-2">
-              ({new Date(contractData.editableTerms.lastEditedAt).toLocaleString('vi-VN')})
+              ({new Date(contractData.editableTerms.lastEditedAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')})
             </span>
           </div>
         )}
@@ -289,23 +291,23 @@ const stopDrawing = () => {
         <div 
           className="prose max-w-none"
           dangerouslySetInnerHTML={{ 
-            __html: contractData.content?.htmlContent || '<p>Đang tải nội dung hợp đồng...</p>' 
+            __html: contractData.content?.htmlContent || '<p>' + t('contractSigning.loadingContent') + '</p>' 
           }}
         />
       </div>
 
       {/* Signature Section */}
       <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 border-2 border-purple-200">
-        <h4 className="text-lg font-bold text-gray-900 mb-4">✍️ Chữ ký của chủ cho thuê</h4>
+        <h4 className="text-lg font-bold text-gray-900 mb-4">✍️ {t('contractSigning.ownerSignature')}</h4>
         
         {/* Existing Signatures Display */}
         {(contractData.signatures?.owner?.signed || contractData.signatures?.renter?.signed) && (
           <div className="mb-6 bg-white rounded-lg p-4 border border-gray-200">
-            <h5 className="font-semibold mb-3 text-gray-700">Chữ ký đã có:</h5>
+            <h5 className="font-semibold mb-3 text-gray-700">{t('contractSigning.signaturesPresent')}</h5>
             <div className="grid grid-cols-2 gap-4">
               {/* Owner Signature */}
               <div className="border rounded-lg p-3">
-                <p className="text-sm font-medium text-gray-700 mb-2">👤 Chủ cho thuê</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">👤 {t('contractSigning.owner')}</p>
                 {contractData.signatures.owner?.signed ? (
                   <>
                     <img 
@@ -314,33 +316,33 @@ const stopDrawing = () => {
                       className="w-full h-24 object-contain bg-gray-50 rounded border"
                     />
                     <p className="text-xs text-green-600 mt-2">
-                      ✓ Đã ký lúc {new Date(contractData.signatures.owner.signedAt).toLocaleString('vi-VN')}
+                      ✓ {t('contractSigning.signedAt')} {new Date(contractData.signatures.owner.signedAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}
                     </p>
                   </>
                 ) : (
                   <div className="h-24 bg-gray-100 rounded border border-dashed border-gray-300 flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">Chưa ký</span>
+                    <span className="text-gray-400 text-sm">{t('contractSigning.notSignedYet')}</span>
                   </div>
                 )}
               </div>
 
               {/* Renter Signature */}
               <div className="border rounded-lg p-3">
-                <p className="text-sm font-medium text-gray-700 mb-2">👤 Người thuê</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">👤 {t('contractSigning.renter')}</p>
                 {contractData.signatures.renter?.signed ? (
                   <>
                     <img 
                       src={contractData.signatures.renter.signature} 
-                      alt="Chữ ký người thuê" 
+                      alt="Renter signature" 
                       className="w-full h-24 object-contain bg-gray-50 rounded border"
                     />
                     <p className="text-xs text-green-600 mt-2">
-                      ✓ Đã ký lúc {new Date(contractData.signatures.renter.signedAt).toLocaleString('vi-VN')}
+                      ✓ {t('contractSigning.signedAt')} {new Date(contractData.signatures.renter.signedAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}
                     </p>
                   </>
                 ) : (
                   <div className="h-24 bg-gray-100 rounded border border-dashed border-gray-300 flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">Chờ chủ ký trước</span>
+                    <span className="text-gray-400 text-sm">{t('contractSigning.waitOwnerFirst')}</span>
                   </div>
                 )}
               </div>
@@ -355,13 +357,13 @@ const stopDrawing = () => {
             <div className="mb-6 bg-white rounded-lg p-5 border-2 border-blue-200">
               <div className="flex items-center space-x-2 mb-3">
                 <span className="text-2xl">🔐</span>
-                <h5 className="font-bold text-gray-900">Xác minh danh tính</h5>
+                <h5 className="font-bold text-gray-900">{t('contractSigning.identityVerification')}</h5>
               </div>
               
               {!otpVerified ? (
                 <>
                   <p className="text-sm text-gray-600 mb-4">
-                    Để bảo mật, vui lòng xác minh email của bạn trước khi ký hợp đồng
+                    {t('contractSigning.verifyDescription')}
                   </p>
                   
                   {!otpSent ? (
@@ -370,7 +372,7 @@ const stopDrawing = () => {
                       disabled={isSendingOTP || sentCount >= 3}
                       className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
-                      {isSendingOTP ? '⏳ Đang gửi...' : '📧 Gửi mã xác nhận qua Email'}
+                      {isSendingOTP ? '⏳ ' + t('contractSigning.sending') : '📧 ' + t('contractSigning.sendOTPEmail')}
                     </button>
                   ) : (
                     <div className="space-y-3">
@@ -379,7 +381,7 @@ const stopDrawing = () => {
                           type="text"
                           value={otpCode}
                           onChange={handleOTPChange}
-                          placeholder="Nhập 6 chữ số"
+                          placeholder={t('contractSigning.enterOTP')}
                           maxLength={6}
                           className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-center text-2xl font-bold tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
@@ -388,14 +390,14 @@ const stopDrawing = () => {
                           disabled={otpCode.length !== 6 || isVerifyingOTP}
                           className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                         >
-                          {isVerifyingOTP ? '⏳' : '✓'} Xác minh
+                          {isVerifyingOTP ? '⏳ ' + t('contractSigning.verifying') : '✓ ' + t('contractSigning.verify')}
                         </button>
                       </div>
                       
                       {remainingTime > 0 && (
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-gray-600">
-                            ⏰ Mã hết hạn sau: <span className="font-bold text-red-600">{formatTime(remainingTime)}</span>
+                            ⏰ {t('contractSigning.otpExpires')} <span className="font-bold text-red-600">{formatTime(remainingTime)}</span>
                           </span>
                           {sentCount < 3 && remainingTime < 30000 && (
                             <button
@@ -403,7 +405,7 @@ const stopDrawing = () => {
                               disabled={isSendingOTP}
                               className="text-blue-600 hover:text-blue-800 font-medium"
                             >
-                              🔄 Gửi lại ({sentCount}/3)
+                              🔄 {t('contractSigning.resendOTP')} ({sentCount}/3)
                             </button>
                           )}
                         </div>
@@ -420,12 +422,12 @@ const stopDrawing = () => {
               ) : (
                 <div className="flex items-center space-x-3 text-green-700 bg-green-50 p-4 rounded-lg">
                   <span className="text-2xl">✅</span>
-                  <span className="font-semibold">Đã xác minh thành công! Bạn có thể ký hợp đồng bên dưới.</span>
+                  <span className="font-semibold">{t('contractSigning.verifiedSuccess')}</span>
                 </div>
               )}
             </div>
 
-            <p className="text-sm text-gray-600 mb-3">Vui lòng ký tên vào khung bên dưới:</p>
+            <p className="text-sm text-gray-600 mb-3">{t('contractSigning.signHere')}</p>
             <div className="bg-white rounded-lg p-4 border-2 border-dashed border-purple-300">
               <canvas
                 ref={canvasRef}
@@ -446,14 +448,14 @@ const stopDrawing = () => {
                 disabled={!otpVerified}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                🗑️ Xóa chữ ký
+                🗑️ {t('contractSigning.clearSignature')}
               </button>
               <button
                 onClick={handleSign}
                 disabled={!signatureData || signing || !otpVerified}
                 className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg"
               >
-                {signing ? '⏳ Đang ký...' : (!otpVerified ? '🔒 Xác minh OTP để ký' : '✍️ Xác nhận ký hợp đồng')}
+                {signing ? '⏳ ' + t('contractSigning.signing') : (!otpVerified ? '🔒 ' + t('contractSigning.verifyOTPToSign') : '✍️ ' + t('contractSigning.confirmSign'))}
               </button>
             </div>
           </>
@@ -461,8 +463,8 @@ const stopDrawing = () => {
 
         {contractData.signatures?.owner?.signed && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-            <p className="text-green-700 font-semibold text-lg mb-2">✅ Bạn đã ký hợp đồng này</p>
-            <p className="text-sm text-gray-600">Đang chờ người thuê ký hợp đồng</p>
+            <p className="text-green-700 font-semibold text-lg mb-2">✅ {t('contractSigning.alreadySigned')}</p>
+            <p className="text-sm text-gray-600">{t('contractSigning.waitingRenterSign')}</p>
           </div>
         )}
       </div>
@@ -476,7 +478,7 @@ const stopDrawing = () => {
             setShowEditModal(false);
             // Reload contract to show updated terms
             loadContractForSigning(contractData._id);
-            toast.success('✅ Đã lưu thay đổi hợp đồng');
+            toast.success('✅ ' + t('contractSigning.savedChanges'));
           }}
         />
       )}

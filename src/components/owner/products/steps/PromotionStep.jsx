@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import icons from "../../../../utils/icons";
 import promotionService from "../../../../services/promotion";
+import { useI18n } from "../../../../hooks/useI18n";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -16,6 +17,7 @@ const PromotionStep = ({
   handleInputChange,
   errors = {},
 }) => {
+  const { t } = useI18n();
   const handlePromotionToggle = (enabled, tier = null) => {
     handleInputChange({
       target: {
@@ -82,13 +84,13 @@ const PromotionStep = ({
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-full font-bold text-sm mb-4 shadow-lg">
-          🚀 TĂNG TỐC BÁN HÀNG
+          🚀 {t('productForm.promotionBadge')}
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-3">
-          Quảng Cáo Sản Phẩm
+          {t('productForm.promotionTitle')}
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Xuất hiện đầu trang, tăng 300% lượt xem và gấp 5 lần cơ hội được thuê
+          {t('productForm.promotionSubtitle')}
         </p>
       </div>
 
@@ -96,22 +98,22 @@ const PromotionStep = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center border-2 border-blue-200">
           <div className="text-3xl mb-2">⚡</div>
-          <div className="font-bold text-gray-900 mb-1">Hiển thị đầu tiên</div>
+          <div className="font-bold text-gray-900 mb-1">{t('productForm.showFirst')}</div>
           <div className="text-sm text-gray-600">
-            Xuất hiện trên cùng kết quả tìm kiếm
+            {t('productForm.showFirstDesc')}
           </div>
         </div>
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center border-2 border-purple-200">
           <div className="text-3xl mb-2">👑</div>
-          <div className="font-bold text-gray-900 mb-1">Huy hiệu đặc biệt</div>
+          <div className="font-bold text-gray-900 mb-1">{t('productForm.specialBadge')}</div>
           <div className="text-sm text-gray-600">
-            Badge nổi bật thu hút khách hàng
+            {t('productForm.specialBadgeDesc')}
           </div>
         </div>
         <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center border-2 border-green-200">
           <div className="text-3xl mb-2">📈</div>
-          <div className="font-bold text-gray-900 mb-1">Tăng lượt xem</div>
-          <div className="text-sm text-gray-600">Nhiều người xem hơn 300%</div>
+          <div className="font-bold text-gray-900 mb-1">{t('productForm.moreViews')}</div>
+          <div className="text-sm text-gray-600">{t('productForm.moreViewsDesc')}</div>
         </div>
       </div>
 
@@ -137,11 +139,11 @@ const PromotionStep = ({
               </div>
             )}
             <span className="font-semibold text-gray-700">
-              Không, tôi sẽ đăng bình thường (Miễn phí)
+              {t('productForm.normalPost')}
             </span>
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Sản phẩm sẽ xuất hiện theo thứ tự mặc định
+            {t('productForm.normalPostDesc')}
           </p>
         </motion.button>
       </div>
@@ -153,7 +155,7 @@ const PromotionStep = ({
         </div>
         <div className="relative flex justify-center">
           <span className="bg-white px-4 text-sm font-bold text-gray-500 uppercase">
-            Hoặc chọn gói quảng cáo
+            {t('productForm.orSelectPackage')}
           </span>
         </div>
       </div>
@@ -178,7 +180,7 @@ const PromotionStep = ({
                     <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10">
                       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 whitespace-nowrap">
                         <span>🔥</span>
-                        <span>Phổ Biến</span>
+                        <span>{t('productForm.popular')}</span>
                       </div>
                     </div>
                   )}
@@ -212,7 +214,7 @@ const PromotionStep = ({
 
                       {/* Tier Name */}
                       <h4 className="font-bold text-lg mb-2 text-gray-900 truncate px-1">
-                        {config.name}
+                        {t(`productForm.tier${tier}Name`)}
                       </h4>
 
                       {/* Price */}
@@ -228,15 +230,15 @@ const PromotionStep = ({
                           </span>
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          /ngày
+                          {t('productForm.perDay')}
                         </div>
                       </div>
 
                       {/* Features */}
                       <div className="space-y-1.5 text-left px-1">
-                        {config.features.map((feature, idx) => (
+                        {[1, 2, 3, 4].map((featureNum) => (
                           <div
-                            key={idx}
+                            key={featureNum}
                             className="flex items-start gap-1.5 text-xs text-gray-600"
                           >
                             <icons.FiCheck
@@ -247,7 +249,7 @@ const PromotionStep = ({
                               }`}
                             />
                             <span className="leading-tight break-words">
-                              {feature}
+                              {t(`productForm.tier${tier}Feature${featureNum}`)}
                             </span>
                           </div>
                         ))}
@@ -268,7 +270,7 @@ const PromotionStep = ({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <icons.BiCalendar className="w-5 h-5 mr-2 text-primary-600" />
-              Thời Gian Quảng Cáo
+              {t('productForm.promotionDuration')}
             </h3>
             <div className="flex items-center gap-4">
               <input
@@ -282,7 +284,7 @@ const PromotionStep = ({
               <div className="flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-xl border border-primary-200 min-w-[120px]">
                 <icons.BiCalendar className="w-5 h-5 text-primary-600" />
                 <span className="font-bold text-primary-700">
-                  {formData.promotion.duration} ngày
+                  {formData.promotion.duration} {t('productForm.days')}
                 </span>
               </div>
             </div>
@@ -291,7 +293,7 @@ const PromotionStep = ({
                 <icons.BiCheckCircle className="w-5 h-5 text-green-600" />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-green-800">
-                    🎉 Giảm giá 10% cho quảng cáo từ 3 ngày trở lên!
+                    {t('productForm.discount10')}
                   </p>
                 </div>
               </div>
@@ -302,17 +304,17 @@ const PromotionStep = ({
           <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-2xl p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
               <icons.BiCalculator className="w-5 h-5 mr-2 text-yellow-600" />
-              Chi Phí Ước Tính
+              {t('productForm.estimatedCost')}
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-gray-700">Gói đã chọn:</span>
+                <span className="text-gray-700">{t('productForm.selectedPackage')}</span>
                 <span className="font-bold text-gray-900">
-                  {promotionService.TIER_CONFIG[formData.promotion.tier]?.name}
+                  {t(`productForm.tier${formData.promotion.tier}Name`)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700">Giá mỗi ngày:</span>
+                <span className="text-gray-700">{t('productForm.pricePerDay')}</span>
                 <span className="font-semibold text-gray-900">
                   {promotionService.formatCurrency(
                     promotionService.TIER_PRICES[formData.promotion.tier]
@@ -320,14 +322,14 @@ const PromotionStep = ({
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700">Thời gian:</span>
+                <span className="text-gray-700">{t('productForm.duration')}</span>
                 <span className="font-semibold text-gray-900">
-                  {formData.promotion.duration} ngày
+                  {formData.promotion.duration} {t('productForm.days')}
                 </span>
               </div>
               <div className="border-t-2 border-yellow-300 pt-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Tổng trước giảm:</span>
+                  <span className="text-gray-700">{t('productForm.totalBeforeDiscount')}</span>
                   <span className="font-semibold text-gray-900">
                     {promotionService.formatCurrency(
                       promotionService.TIER_PRICES[formData.promotion.tier] *
@@ -338,7 +340,7 @@ const PromotionStep = ({
               </div>
               {formData.promotion.duration >= 3 && (
                 <div className="flex justify-between items-center text-green-700">
-                  <span className="font-semibold">Giảm giá (10%):</span>
+                  <span className="font-semibold">{t('productForm.discountLabel')}</span>
                   <span className="font-bold">
                     -
                     {promotionService.formatCurrency(
@@ -351,7 +353,7 @@ const PromotionStep = ({
               )}
               <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-xl p-4 mt-3">
                 <div className="flex justify-between items-center text-white">
-                  <span className="text-lg font-bold">Tổng thanh toán:</span>
+                  <span className="text-lg font-bold">{t('productForm.totalPayment')}</span>
                   <span className="text-2xl font-extrabold">
                     {promotionService.formatCurrency(calculateTotal())}
                   </span>
@@ -364,7 +366,7 @@ const PromotionStep = ({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <icons.HiCash className="w-5 h-5 mr-2 text-primary-600" />
-              Phương Thức Thanh Toán
+              {t('productForm.paymentMethod')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Wallet Payment */}
@@ -390,13 +392,13 @@ const PromotionStep = ({
                   </div>
                   <div className="flex-1 text-left">
                     <h4 className="font-bold text-gray-900 mb-1 text-lg">
-                      Ví PIRA
+                      {t('productForm.piraWallet')}
                     </h4>
                     <p className="text-sm text-gray-600">
                       {walletLoading ? (
                         <span className="flex items-center gap-2">
                           <icons.BiLoaderAlt className="w-3 h-3 animate-spin" />
-                          Đang tải...
+                          {t('productForm.loading')}
                         </span>
                       ) : (
                         <span className="font-semibold text-primary-600">
@@ -431,10 +433,10 @@ const PromotionStep = ({
                   </div>
                   <div className="flex-1 text-left">
                     <h4 className="font-bold text-gray-900 mb-1 text-lg">
-                      PayOS
+                      {t('productForm.payosBank')}
                     </h4>
                     <p className="text-sm text-gray-600">
-                      Thanh toán qua ngân hàng
+                      {t('productForm.payViaBank')}
                     </p>
                   </div>
                 </div>
@@ -449,7 +451,7 @@ const PromotionStep = ({
         <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 text-center">
           <icons.BiInfoCircle className="w-8 h-8 text-blue-600 mx-auto mb-3" />
           <p className="text-blue-800 font-semibold">
-            👆 Vui lòng chọn gói quảng cáo ở trên để xem chi tiết thanh toán
+            {t('productForm.selectPromotionPackage')}
           </p>
         </div>
       )}
@@ -458,7 +460,7 @@ const PromotionStep = ({
       <div className="bg-gray-50 border-2 border-gray-300 rounded-2xl p-6 mt-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <icons.BiInfoCircle className="w-5 h-5 mr-2 text-gray-700" />
-          Điều Khoản và Điều Kiện
+          {t('productForm.termsTitle')}
         </h3>
         <div className="flex items-start gap-3">
           <input
@@ -479,16 +481,16 @@ const PromotionStep = ({
             htmlFor="agreedToTerms"
             className="text-gray-700 leading-relaxed cursor-pointer"
           >
-            Tôi đã đọc và đồng ý với{" "}
+            {t('productForm.termsAgree')}{" "}
             <a
               href="/terms-and-conditions"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary-600 hover:text-primary-700 font-semibold underline"
             >
-              Điều Khoản và Điều Kiện
+              {t('productForm.termsLink')}
             </a>{" "}
-            của PIRA khi đăng sản phẩm cho thuê trên nền tảng.
+            {t('productForm.termsOf')}
           </label>
         </div>
         {errors.agreedToTerms && (

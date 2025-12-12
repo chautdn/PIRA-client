@@ -261,17 +261,22 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   };
 
   // Check if pickup already uploaded (status is IN_TRANSIT or DELIVERED)
-  const pickupUploaded = currentStatus === 'IN_TRANSIT' || currentStatus === 'DELIVERED';
+  // Allow functionality even for CANCELLED, DELIVERY_FAILED, FAILED to document the shipment
+  const pickupUploaded = ['IN_TRANSIT', 'DELIVERED'].includes(currentStatus);
 
   // Check if delivery already uploaded (status is DELIVERED)
   const deliveryUploaded = currentStatus === 'DELIVERED';
+  
+  // Check if shipment is in a final failed state but still allow documentation
+  const isFailedState = ['CANCELLED', 'DELIVERY_FAILED', 'FAILED'].includes(currentStatus);
+  const canStillDocument = isFailedState || ['SHIPPER_CONFIRMED', 'PENDING', 'IN_TRANSIT'].includes(currentStatus);
 
   if (!isOpen || !shipment) {
     return null;
   }
 
-  const ownerName = shipment?.subOrder?.masterOrder?.owner?.profile?.fullName ||
-                    shipment?.subOrder?.masterOrder?.owner?.profile?.firstName ||
+  const ownerName = shipment?.subOrder?.owner?.profile?.fullName ||
+                    shipment?.subOrder?.owner?.profile?.firstName ||
                     'Chủ hàng';
   
   const renterName = shipment?.subOrder?.masterOrder?.renter?.profile?.fullName ||
@@ -279,7 +284,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                      'Người thuê';
 
   const renterPhone = shipment?.subOrder?.masterOrder?.renter?.phone || 'N/A';
-  const ownerPhone = shipment?.subOrder?.masterOrder?.owner?.phone || 'N/A';
+  const ownerPhone = shipment?.subOrder?.owner?.phone || 'N/A';
   
   // Determine if this is a return shipment
   const isReturnShipment = shipment?.type === 'RETURN';
@@ -287,37 +292,39 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <motion.div
-          className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
+          className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:max-w-4xl sm:w-full h-[90vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
+          style={{ maxWidth: '100vw', touchAction: 'pan-y' }}
+          initial={{ opacity: 0, scale: 1, y: 100 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 1, y: 100 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6 flex items-center justify-between z-10">
-            <div>
-              <p className="text-blue-100 text-sm mt-1">Shipment ID: {shipment.shipmentId}</p>
+          <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-blue-700 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between z-10 shadow-md">
+            <div className="min-w-0 flex-1 pr-2 overflow-hidden">
+              <p className="text-blue-100 text-[10px] xs:text-xs sm:text-sm truncate font-semibold break-all">ID: {shipment.shipmentId}</p>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+              className="w-10 h-10 shrink-0 rounded-full bg-white/20 active:bg-white/30 text-white flex items-center justify-center transition-colors touch-manipulation"
             >
               <X size={20} />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 xs:p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
             {/* Warning if not applicable status */}
             {shipment?.status !== 'SHIPPER_CONFIRMED' && shipment?.status !== 'IN_TRANSIT' && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 rounded-lg text-xs sm:text-sm">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">⚠️</span>
                   <div>
@@ -331,31 +338,31 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
               </div>
             )}
 
-            {/* Top Section - Order & Renter Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Top Section - Order & Renter & Owner Info */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 max-w-full overflow-hidden">
               {/* Order Info */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
-                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <span className="text-lg">📋</span> Thông tin đơn hàng
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-3 sm:p-4 border border-slate-200 max-w-full overflow-hidden">
+                <h3 className="font-bold text-gray-800 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                  <span className="text-base sm:text-lg">📋</span> Thông tin đơn hàng
                 </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Mã shipment:</span>
-                    <span className="font-semibold text-gray-900">{shipment.shipmentId}</span>
+                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm break-words">
+                  <div>
+                    <span className="text-gray-600 block">Mã shipment:</span>
+                    <span className="font-semibold text-gray-900 break-all">{shipment.shipmentId}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Loại:</span>
+                  <div>
+                    <span className="text-gray-600 block">Loại:</span>
                     <span className="font-semibold text-gray-900">
                       {shipment.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả'}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Phí vận chuyển:</span>
+                  <div>
+                    <span className="text-gray-600 block">Phí vận chuyển:</span>
                     <span className="font-semibold text-green-600">{formatCurrency(shipment.fee || 0)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Trạng thái:</span>
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                  <div>
+                    <span className="text-gray-600 block mb-1">Trạng thái:</span>
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${
                       shipment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                       shipment.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-100 text-blue-800' :
                       shipment.status === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-800' :
@@ -367,25 +374,52 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
               </div>
 
-              {/* Renter Info */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-orange-200">
-                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <span className="text-lg">👤</span> Thông tin người thuê
+              {/* Owner Info */}
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 sm:p-4 border border-blue-200 max-w-full overflow-hidden">
+                <h3 className="font-bold text-gray-800 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                  <span className="text-base sm:text-lg">👤</span> Thông tin chủ sở hữu
                 </h3>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm break-words">
                   <div>
-                    <span className="text-gray-600 block text-xs mb-1">Tên địa chỉ điện thoại</span>
-                    <span className="font-semibold text-gray-900">{renterName}</span>
+                    <span className="text-gray-600 block text-[10px] xs:text-xs mb-0.5 sm:mb-1 font-medium">Tên chủ sở hữu</span>
+                    <span className="font-semibold text-gray-900 text-xs sm:text-sm">{ownerName}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600 block text-xs mb-1">Số điện thoại</span>
-                    <a href={`tel:${renterPhone}`} className="font-semibold text-blue-600 hover:underline">
+                    <span className="text-gray-600 block text-[10px] xs:text-xs mb-0.5 sm:mb-1 font-medium">Số điện thoại</span>
+                    <a href={`tel:${ownerPhone}`} className="font-semibold text-blue-600 hover:underline text-xs sm:text-sm">
+                      {ownerPhone}
+                    </a>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 block text-[10px] xs:text-xs mb-0.5 sm:mb-1 font-medium">Địa chỉ giao/nhận</span>
+                    <div className="font-semibold text-gray-900 text-[10px] xs:text-xs leading-relaxed">
+                      {shipment.fromAddress?.streetAddress && <div>{shipment.fromAddress.streetAddress}</div>}
+                      {shipment.fromAddress?.ward && <div>{shipment.fromAddress.ward}</div>}
+                      {shipment.fromAddress?.district && <div>{shipment.fromAddress.district}</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Renter Info */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 sm:p-4 border border-orange-200 max-w-full overflow-hidden">
+                <h3 className="font-bold text-gray-800 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                  <span className="text-base sm:text-lg">👤</span> Thông tin người thuê
+                </h3>
+                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm break-words">
+                  <div>
+                    <span className="text-gray-600 block text-[10px] xs:text-xs mb-0.5 sm:mb-1 font-medium">Tên người thuê</span>
+                    <span className="font-semibold text-gray-900 text-xs sm:text-sm">{renterName}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 block text-[10px] xs:text-xs mb-0.5 sm:mb-1 font-medium">Số điện thoại</span>
+                    <a href={`tel:${renterPhone}`} className="font-semibold text-blue-600 hover:underline text-xs sm:text-sm">
                       {renterPhone}
                     </a>
                   </div>
                   <div>
-                    <span className="text-gray-600 block text-xs mb-1">Địa chỉ giao/nhận</span>
-                    <div className="font-semibold text-gray-900 text-xs leading-relaxed">
+                    <span className="text-gray-600 block text-[10px] xs:text-xs mb-0.5 sm:mb-1 font-medium">Địa chỉ giao/nhận</span>
+                    <div className="font-semibold text-gray-900 text-[10px] xs:text-xs leading-relaxed">
                       {shipment.toAddress?.streetAddress && <div>{shipment.toAddress.streetAddress}</div>}
                       {shipment.toAddress?.ward && <div>{shipment.toAddress.ward}</div>}
                       {shipment.toAddress?.district && <div>{shipment.toAddress.district}</div>}
@@ -395,17 +429,19 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
               </div>
             </div>
 
-            <div className="border-t pt-6">
+            <div className="border-t pt-3 sm:pt-4 max-w-full overflow-hidden">
               {/* Section 1: Pickup Images */}
-              <div className="mb-8">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 mb-4 border-l-4 border-blue-500">
-                  <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                    <span className="text-lg">📸</span> 
+              <div className="mb-4 sm:mb-6 max-w-full">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 border-l-4 border-blue-500 max-w-full overflow-hidden">
+                  <h3 className="font-bold text-blue-900 mb-1.5 sm:mb-2 flex items-center gap-2 text-sm sm:text-base break-words">
+                    <span className="text-base sm:text-lg flex-shrink-0">📸</span> 
+                    <span className="break-words">
                     {isReturnShipment 
                       ? `Chụp ảnh lúc nhận hàng từ ${renterName}` 
                       : `Chụp ảnh lúc nhận hàng từ ${ownerName}`}
+                    </span>
                   </h3>
-                  <p className="text-sm text-blue-800">
+                  <p className="text-xs sm:text-sm text-blue-800 break-words">
                     {isReturnShipment
                       ? 'Tải lên ảnh chứng minh khi nhận hàng trả từ người thuê (tối thiểu 1 ảnh)'
                       : 'Tải lên ảnh chứng minh khi nhận hàng từ chủ hàng (tối thiểu 1 ảnh)'}
@@ -413,7 +449,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
 
                 <div className="bg-white rounded-lg border-2 border-dashed border-blue-300 p-6">
-                  {pickupImages.length < 3 && !pickupUploaded && (
+                  {pickupImages.length < 3 && !pickupUploaded && canStillDocument && (
                     <label className="block cursor-pointer">
                       <div className="flex flex-col items-center justify-center py-6">
                         <Upload className="text-blue-500 mb-2" size={32} />
@@ -433,15 +469,15 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   )}
 
                   {pickupImages.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                       {pickupImages.map((file, idx) => (
                         <div key={idx} className="relative group">
                           <img
                             src={typeof file === 'string' ? file : URL.createObjectURL(file)}
                             alt={`pickup-${idx}`}
-                            className="w-full h-24 object-cover rounded-lg shadow-sm"
+                            className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm"
                           />
-                          {!pickupUploaded && !deliveryUploaded && (
+                          {!pickupUploaded && !deliveryUploaded && canStillDocument && (
                             <button
                               onClick={() => removePickupImage(idx)}
                               className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -454,11 +490,11 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           </div>
                         </div>
                       ))}
-                      {pickupImages.length < 3 && !pickupUploaded && !deliveryUploaded && (
-                        <label className="border-2 border-dashed border-blue-300 rounded-lg h-24 flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors">
+                      {pickupImages.length < 3 && !pickupUploaded && !deliveryUploaded && canStillDocument && (
+                        <label className="border-2 border-dashed border-blue-300 rounded-lg h-20 sm:h-24 flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors">
                           <div className="text-center">
-                            <Upload className="text-blue-400 mx-auto mb-1" size={20} />
-                            <span className="text-xs text-blue-600 font-semibold">Thêm</span>
+                            <Upload className="text-blue-400 mx-auto mb-0.5 sm:mb-1" size={18} />
+                            <span className="text-[10px] xs:text-xs text-blue-600 font-semibold">Thêm</span>
                           </div>
                           <input
                             type="file"
@@ -475,21 +511,21 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
 
                 {/* Pickup Status */}
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   {pickupUploaded ? (
-                    <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-center gap-3">
-                      <CheckCircle2 className="text-green-600 flex-shrink-0" size={24} />
+                    <div className="bg-green-50 border border-green-300 rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+                      <CheckCircle2 className="text-green-600 flex-shrink-0" size={20} />
                       <div>
-                        <p className="font-bold text-green-900">Đã xác nhận pickup</p>
-                        <p className="text-sm text-green-700">Status: IN_TRANSIT</p>
+                        <p className="font-bold text-green-900 text-xs sm:text-sm">Đã xác nhận pickup</p>
+                        <p className="text-[10px] xs:text-xs sm:text-sm text-green-700">Status: IN_TRANSIT</p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
+                  ) : canStillDocument ? (
+                    <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={handleConfirmPickup}
-                        disabled={pickupImages.length === 0 || loading}
-                        className={`w-full px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all ${
+                        disabled={pickupImages.length === 0 || loading || isFailedState}
+                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
                           pickupImages.length > 0 && !loading
                             ? 'bg-blue-600 hover:bg-blue-700 text-white'
                             : 'bg-gray-300 text-gray-600 cursor-not-allowed'
@@ -497,14 +533,16 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                       >
                         {loading ? (
                           <>
-                            <CheckCircle2 size={20} /> ⏳ Đang xử lý...
+                            <CheckCircle2 size={18} className="flex-shrink-0" /> ⏳ Đang xử lý...
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 size={20} /> 
+                            <CheckCircle2 size={18} className="flex-shrink-0" /> 
+                            <span className="truncate">
                             {isReturnShipment 
                               ? `Xác nhận đã nhận hàng từ ${renterName}`
                               : `Xác nhận đã nhận hàng từ ${ownerName}`}
+                            </span>
                           </>
                         )}
                       </button>
@@ -514,13 +552,13 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         <button
                           onClick={handleCannotPickup}
                           disabled={loading}
-                          className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                          className="w-full px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-1.5 sm:gap-2"
                         >
                           {loading ? (
                             <>⏳ Đang xử lý...</>
                           ) : (
                             <>
-                              <AlertCircle size={20} /> Không thể nhận hàng từ {ownerName}
+                              <AlertCircle size={16} className="flex-shrink-0" /> <span className="text-[10px] xs:text-xs truncate">Không thể nhận hàng từ {ownerName}</span>
                             </>
                           )}
                         </button>
@@ -531,46 +569,55 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         <button
                           onClick={handleCannotPickupRenter}
                           disabled={loading}
-                          className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                          className="w-full px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-1.5 sm:gap-2"
                         >
                           {loading ? (
                             <>⏳ Đang xử lý...</>
                           ) : (
                             <>
-                              <AlertCircle size={20} /> Không thể liên lạc được với renter
+                              <AlertCircle size={16} className="flex-shrink-0" /> <span className="text-[10px] xs:text-xs truncate">Không thể liên lạc được với renter</span>
                             </>
                           )}
                         </button>
                       )}
+                    </div>
+                  ) : null}
+                  {isFailedState && (
+                    <div className="bg-orange-50 border border-orange-300 rounded-lg p-3 sm:p-4 mt-2">
+                      <p className="text-xs sm:text-sm text-orange-700">
+                        ℹ️ Đơn hàng đã bị hủy/thất bại. Bạn vẫn có thể tải ảnh lên để lưu trữ nhưng không thể thay đổi trạng thái.
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Section 2: Delivery Images */}
-              <div className="mb-8">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-lg p-4 mb-4 border-l-4 border-green-500">
-                  <h3 className="font-bold text-green-900 mb-2 flex items-center gap-2">
-                    <span className="text-lg">📸</span> 
+              <div className="mb-4 sm:mb-6 max-w-full">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 border-l-4 border-green-500 max-w-full overflow-hidden">
+                  <h3 className="font-bold text-green-900 mb-1.5 sm:mb-2 flex items-center gap-2 text-sm sm:text-base break-words">
+                    <span className="text-base sm:text-lg flex-shrink-0">📸</span> 
+                    <span className="break-words">
                     {isReturnShipment 
                       ? `Chụp ảnh lúc giao hàng tới ${ownerName}` 
-                      : `Chụp ảnh lúc giao hàng tới ${renterName}`}
+                      : `Chụp ảnh lúc giao hàng tời ${renterName}`}
+                    </span>
                   </h3>
-                  <p className="text-sm text-green-800">
+                  <p className="text-xs sm:text-sm text-green-800 break-words">
                     {isReturnShipment
                       ? 'Tải lên ảnh chứng minh khi giao hàng cho chủ hàng (tối thiểu 1 ảnh)'
                       : 'Tải lên ảnh chứng minh khi giao hàng cho người thuê (tối thiểu 1 ảnh)'}
                   </p>
                 </div>
 
-                <div className="bg-white rounded-lg border-2 border-dashed border-green-300 p-6">
-                  {deliveryImages.length < 4 && !deliveryUploaded && pickupUploaded && (
+                <div className="bg-white rounded-lg border-2 border-dashed border-green-300 p-3 sm:p-4">
+                  {deliveryImages.length < 4 && !deliveryUploaded && (pickupUploaded || isFailedState) && (
                     <label className="block cursor-pointer">
-                      <div className="flex flex-col items-center justify-center py-6">
-                        <Upload className="text-green-500 mb-2" size={32} />
-                        <p className="text-sm font-semibold text-gray-700">Nhấn để tải ảnh lên</p>
-                        <p className="text-xs text-gray-500 mt-1">hoặc kéo thả ảnh vào đây</p>
-                        <p className="text-xs text-gray-400 mt-2">Tối đa 4 ảnh ({deliveryImages.length}/4)</p>
+                      <div className="flex flex-col items-center justify-center py-4 sm:py-6">
+                        <Upload className="text-green-500 mb-1.5 sm:mb-2" size={28} />
+                        <p className="text-xs sm:text-sm font-semibold text-gray-700">Nhấn để tải ảnh lên</p>
+                        <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5 sm:mt-1">hoặc kéo thả ảnh vào đây</p>
+                        <p className="text-[10px] xs:text-xs text-gray-400 mt-1.5 sm:mt-2">Tối đa 4 ảnh ({deliveryImages.length}/4)</p>
                       </div>
                       <input
                         type="file"
@@ -590,32 +637,32 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   )}
 
                   {deliveryImages.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                       {deliveryImages.map((file, idx) => (
                         <div key={idx} className="relative group">
                           <img
                             src={typeof file === 'string' ? file : URL.createObjectURL(file)}
                             alt={`delivery-${idx}`}
-                            className="w-full h-24 object-cover rounded-lg shadow-sm"
+                            className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm"
                           />
-                          {!deliveryUploaded && (
+                          {!deliveryUploaded && canStillDocument && (
                             <button
                               onClick={() => removeDeliveryImage(idx)}
-                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs sm:text-sm"
                             >
                               ✕
                             </button>
                           )}
-                          <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded max-w-[90%] truncate">
+                          <div className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] xs:text-xs px-1.5 sm:px-2 py-0.5 rounded max-w-[90%] truncate">
                             {typeof file === 'string' ? '✓' : '●'} {idx + 1}
                           </div>
                         </div>
                       ))}
-                      {deliveryImages.length < 4 && !deliveryUploaded && pickupUploaded && (
-                        <label className="border-2 border-dashed border-green-300 rounded-lg h-24 flex items-center justify-center cursor-pointer hover:bg-green-50 transition-colors">
+                      {deliveryImages.length < 4 && !deliveryUploaded && (pickupUploaded || isFailedState) && canStillDocument && (
+                        <label className="border-2 border-dashed border-green-300 rounded-lg h-20 sm:h-24 flex items-center justify-center cursor-pointer hover:bg-green-50 transition-colors">
                           <div className="text-center">
-                            <Upload className="text-green-400 mx-auto mb-1" size={20} />
-                            <span className="text-xs text-green-600 font-semibold">Thêm</span>
+                            <Upload className="text-green-400 mx-auto mb-0.5 sm:mb-1" size={18} />
+                            <span className="text-[10px] xs:text-xs text-green-600 font-semibold">Thêm</span>
                           </div>
                           <input
                             type="file"
@@ -632,29 +679,29 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
 
                 {/* Delivery Status */}
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   {deliveryUploaded ? (
-                    <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-center gap-3">
-                      <CheckCircle2 className="text-green-600 flex-shrink-0" size={24} />
+                    <div className="bg-green-50 border border-green-300 rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+                      <CheckCircle2 className="text-green-600 flex-shrink-0" size={20} />
                       <div>
-                        <p className="font-bold text-green-900">Đã hoàn tất vận chuyển</p>
-                        <p className="text-sm text-green-700">Status: DELIVERED</p>
+                        <p className="font-bold text-green-900 text-xs sm:text-sm">Đã hoàn tất vận chuyển</p>
+                        <p className="text-[10px] xs:text-xs sm:text-sm text-green-700">Status: DELIVERED</p>
                       </div>
                     </div>
                   ) : !pickupUploaded ? (
-                    <div className="bg-gray-50 border border-gray-300 rounded-lg p-4 flex items-center gap-3 opacity-50">
-                      <AlertCircle className="text-gray-500 flex-shrink-0" size={24} />
+                    <div className="bg-gray-50 border border-gray-300 rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3 opacity-50">
+                      <AlertCircle className="text-gray-500 flex-shrink-0" size={20} />
                       <div>
-                        <p className="font-bold text-gray-700">Chờ pickup</p>
-                        <p className="text-sm text-gray-600">Hoàn thành pickup trước</p>
+                        <p className="font-bold text-gray-700 text-xs sm:text-sm">Chờ pickup</p>
+                        <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600">Hoàn thành pickup trước</p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
+                  ) : canStillDocument ? (
+                    <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={handleConfirmDelivery}
-                        disabled={deliveryImages.length === 0 || loading}
-                        className={`w-full px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all ${
+                        disabled={deliveryImages.length === 0 || loading || isFailedState}
+                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
                           deliveryImages.length > 0 && !loading
                             ? 'bg-green-600 hover:bg-green-700 text-white'
                             : 'bg-gray-300 text-gray-600 cursor-not-allowed'
@@ -662,14 +709,16 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                       >
                         {loading ? (
                           <>
-                            <CheckCircle2 size={20} /> ⏳ Đang xử lý...
+                            <CheckCircle2 size={18} className="flex-shrink-0" /> ⏳ Đang xử lý...
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 size={20} /> 
+                            <CheckCircle2 size={18} className="flex-shrink-0" /> 
+                            <span className="truncate">
                             {isReturnShipment 
                               ? `Xác nhận ${ownerName} đã nhận hàng`
                               : `Xác nhận ${renterName} đã nhận hàng`}
+                            </span>
                           </>
                         )}
                       </button>
@@ -679,22 +728,22 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         <button
                           onClick={() => setShowRenterRejectDialog(true)}
                           disabled={loading}
-                          className="w-full px-4 py-2 rounded-lg font-semibold border-2 border-orange-400 text-orange-600 hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
+                          className="w-full px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm border-2 border-orange-400 text-orange-600 hover:bg-orange-50 transition-all flex items-center justify-center gap-1.5 sm:gap-2"
                         >
-                          <AlertCircle size={20} /> Renter không nhận hàng
+                          <AlertCircle size={16} className="flex-shrink-0" /> <span className="text-[10px] xs:text-xs truncate">Renter không nhận hàng</span>
                         </button>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3">
-                <AlertCircle className="text-red-500 flex-shrink-0" size={20} />
-                <span className="text-red-700 font-medium">{error}</span>
+              <div className="bg-red-50 border border-red-300 rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+                <AlertCircle className="text-red-500 flex-shrink-0" size={18} />
+                <span className="text-red-700 font-medium text-xs sm:text-sm">{error}</span>
               </div>
             )}
 
@@ -708,31 +757,31 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   exit={{ opacity: 0 }}
                 >
                   <motion.div
-                    className="bg-white rounded-xl shadow-2xl max-w-md w-full"
+                    className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4"
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                   >
-                    <div className="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <AlertCircle size={24} /> Renter không nhận hàng
+                    <div className="bg-gradient-to-r from-orange-600 to-red-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <AlertCircle size={20} /> Renter không nhận hàng
                       </h3>
                       <button
                         onClick={() => setShowRenterRejectDialog(false)}
-                        className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center"
                       >
-                        <X size={20} />
+                        <X size={18} />
                       </button>
                     </div>
 
-                    <div className="p-6 space-y-4">
+                    <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                       {/* Reason Selection */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
                           Lý do renter không nhận hàng:
                         </label>
                         <div className="space-y-2">
-                          <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                          <label className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
                             style={{ borderColor: rejectReason === 'PRODUCT_DAMAGED' ? '#2563eb' : '#d1d5db' }}>
                             <input
                               type="radio"
@@ -742,9 +791,9 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                               onChange={(e) => setRejectReason(e.target.value)}
                               className="w-4 h-4"
                             />
-                            <span className="text-gray-700 font-medium">🔨 Sản phẩm có lỗi</span>
+                            <span className="text-gray-700 font-medium text-xs sm:text-sm">🔨 Sản phẩm có lỗi</span>
                           </label>
-                          <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                          <label className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
                             style={{ borderColor: rejectReason === 'NO_CONTACT' ? '#2563eb' : '#d1d5db' }}>
                             <input
                               type="radio"
@@ -754,39 +803,39 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                               onChange={(e) => setRejectReason(e.target.value)}
                               className="w-4 h-4"
                             />
-                            <span className="text-gray-700 font-medium">📞 Không liên lạc được với renter</span>
+                            <span className="text-gray-700 font-medium text-xs sm:text-sm">📞 Không liên lạc được với renter</span>
                           </label>
                         </div>
                       </div>
 
                       {/* Notes Input */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
                           Ghi chú chi tiết:
                         </label>
                         <textarea
                           value={rejectNotes}
                           onChange={(e) => setRejectNotes(e.target.value)}
                           placeholder="Nhập chi tiết lý do..."
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          rows={4}
+                          className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm"
+                          rows={3}
                           disabled={loading}
                         />
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex gap-3 pt-4 border-t">
+                      <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
                         <button
                           onClick={() => setShowRenterRejectDialog(false)}
                           disabled={loading}
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+                          className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold text-xs sm:text-sm hover:bg-gray-50 transition disabled:opacity-50"
                         >
                           Hủy
                         </button>
                         <button
                           onClick={handleRenterReject}
                           disabled={loading || !rejectNotes.trim()}
-                          className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg font-semibold text-xs sm:text-sm hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading ? '⏳ Đang xử lý...' : 'Xác nhận'}
                         </button>

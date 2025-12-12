@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { userReportService } from '../../services/userReport';
 import { useAuth } from '../../hooks/useAuth';
+import { useI18n } from '../../hooks/useI18n';
 
 const MyReports = () => {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,7 +43,7 @@ const MyReports = () => {
       }
     } catch (error) {
       console.error('Load reports error:', error);
-      setError('Không thể tải danh sách báo cáo');
+      setError(t('myReports.errorLoadingReports'));
     } finally {
       setLoading(false);
     }
@@ -51,22 +53,22 @@ const MyReports = () => {
     const statusConfig = {
       PENDING: { 
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
-        text: '⏳ Chờ xử lý',
+        text: t('myReports.statusPending'),
         icon: '⏳'
       },
       REVIEWED: { 
         color: 'bg-blue-100 text-blue-800 border-blue-200', 
-        text: '👀 Đang xem xét',
+        text: t('myReports.statusReviewed'),
         icon: '👀'
       },
       RESOLVED: { 
         color: 'bg-green-100 text-green-800 border-green-200', 
-        text: '✅ Đã giải quyết',
+        text: t('myReports.statusResolved'),
         icon: '✅'
       },
       DISMISSED: { 
         color: 'bg-gray-100 text-gray-800 border-gray-200', 
-        text: '❌ Đã bác bỏ',
+        text: t('myReports.statusDismissed'),
         icon: '❌'
       }
     };
@@ -83,10 +85,10 @@ const MyReports = () => {
 
   const getReportTypeBadge = (type) => {
     const typeConfig = {
-      SPAM: { color: 'bg-red-100 text-red-800', text: 'Spam' },
-      INAPPROPRIATE: { color: 'bg-orange-100 text-orange-800', text: 'Không phù hợp' },
-      HARASSMENT: { color: 'bg-purple-100 text-purple-800', text: 'Quấy rối' },
-      OTHER: { color: 'bg-gray-100 text-gray-800', text: 'Khác' }
+      SPAM: { color: 'bg-red-100 text-red-800', text: t('myReports.typeSpam') },
+      INAPPROPRIATE: { color: 'bg-orange-100 text-orange-800', text: t('myReports.typeInappropriate') },
+      HARASSMENT: { color: 'bg-purple-100 text-purple-800', text: t('myReports.typeHarassment') },
+      OTHER: { color: 'bg-gray-100 text-gray-800', text: t('myReports.typeOther') }
     };
 
     const config = typeConfig[type] || typeConfig.OTHER;
@@ -120,12 +122,12 @@ const MyReports = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Vui lòng đăng nhập để xem báo cáo của bạn</p>
+          <p className="text-gray-600 mb-4">{t('myReports.pleaseLogin')}</p>
           <Link 
             to="/login" 
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Đăng nhập
+            {t('myReports.login')}
           </Link>
         </div>
       </div>
@@ -147,10 +149,10 @@ const MyReports = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <span className="text-red-600">🚨</span>
-            Báo cáo của tôi
+            {t('myReports.title')}
           </h1>
           <p className="text-gray-600 mt-2">
-            Quản lý và theo dõi trạng thái các báo cáo bạn đã gửi
+            {t('myReports.subtitle')}
           </p>
         </div>
 
@@ -159,23 +161,23 @@ const MyReports = () => {
           <div className="flex flex-wrap gap-4 items-center">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Trạng thái
+                {t('myReports.filterStatus')}
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Tất cả</option>
-                <option value="PENDING">⏳ Chờ xử lý</option>
-                <option value="REVIEWED">👀 Đang xem xét</option>
-                <option value="RESOLVED">✅ Đã giải quyết</option>
-                <option value="DISMISSED">❌ Đã bác bỏ</option>
+                <option value="">{t('myReports.filterAll')}</option>
+                <option value="PENDING">⏳ {t('myReports.statusPending')}</option>
+                <option value="REVIEWED">👀 {t('myReports.statusReviewed')}</option>
+                <option value="RESOLVED">✅ {t('myReports.statusResolved')}</option>
+                <option value="DISMISSED">❌ {t('myReports.statusDismissed')}</option>
               </select>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>📊 Tổng cộng:</span>
-              <span className="font-semibold text-blue-600">{pagination.total} báo cáo</span>
+              <span>📊 {t('myReports.totalReports')}:</span>
+              <span className="font-semibold text-blue-600">{pagination.total} {t('myReports.reports')}</span>
             </div>
           </div>
         </div>
@@ -209,24 +211,24 @@ const MyReports = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {report.reportedItem?.title || 'Sản phẩm đã bị xóa'}
+                            {report.reportedItem?.title || t('myReports.deletedProduct')}
                           </h3>
                           {getReportTypeBadge(report.reportType)}
                           {getStatusBadge(report.status)}
                         </div>
                         
                         <div className="text-sm text-gray-600 space-y-1">
-                          <p><span className="font-medium">Lý do:</span> {report.reason || 'Không có'}</p>
+                          <p><span className="font-medium">{t('myReports.reason')}:</span> {report.reason || 'Không có'}</p>
                           {report.description && (
-                            <p><span className="font-medium">Mô tả:</span> {report.description}</p>
+                            <p><span className="font-medium">{t('myReports.description')}:</span> {report.description}</p>
                           )}
-                          <p><span className="font-medium">Ngày gửi:</span> {formatDate(report.createdAt)}</p>
+                          <p><span className="font-medium">{t('myReports.submittedDate')}:</span> {formatDate(report.createdAt)}</p>
                         </div>
 
                         {report.adminNotes && (
                           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                             <p className="text-sm text-blue-800">
-                              <span className="font-medium">📝 Ghi chú của admin:</span> {report.adminNotes}
+                              <span className="font-medium">📝 {t('myReports.adminNotes')}:</span> {report.adminNotes}
                             </p>
                           </div>
                         )}
@@ -267,16 +269,16 @@ const MyReports = () => {
               >
                 <div className="text-6xl mb-4">📋</div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Chưa có báo cáo nào
+                  {t('myReports.noReports')}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Bạn chưa gửi báo cáo nào. Khi bạn gặp vấn đề với sản phẩm, hãy báo cáo để chúng tôi xử lý.
+                  {t('myReports.noReportsDesc')}
                 </p>
                 <Link
                   to="/"
                   className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  🔍 Khám phá sản phẩm
+                  🔍 {t('myReports.exploreProducts')}
                 </Link>
               </motion.div>
             )}
@@ -292,7 +294,7 @@ const MyReports = () => {
                 disabled={filters.page <= 1}
                 className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Trước
+                {t('myReports.previous')}
               </button>
               
               {[...Array(pagination.totalPages)].map((_, index) => {
@@ -317,7 +319,7 @@ const MyReports = () => {
                 disabled={filters.page >= pagination.totalPages}
                 className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sau
+                {t('myReports.next')}
               </button>
             </nav>
           </div>

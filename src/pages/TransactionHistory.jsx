@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useI18n } from '../hooks/useI18n';
 import paymentService from '../services/payment';
 import { 
   CreditCard, 
@@ -13,6 +14,7 @@ import {
 
 const TransactionHistory = () => {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -90,11 +92,11 @@ const TransactionHistory = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'success': return 'Thành công';
-      case 'pending': return 'Đang chờ';
-      case 'processing': return 'Đang xử lý';
-      case 'failed': return 'Thất bại';
-      case 'cancelled': return 'Đã hủy';
+      case 'success': return t('transactionHistory.successStatus');
+      case 'pending': return t('transactionHistory.pendingStatus');
+      case 'processing': return t('transactionHistory.processingStatus');
+      case 'failed': return t('transactionHistory.failedStatus');
+      case 'cancelled': return t('transactionHistory.cancelledStatus');
       default: return status;
     }
   };

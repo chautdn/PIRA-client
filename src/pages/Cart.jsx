@@ -1,6 +1,7 @@
   import React from "react";
   import { Link, useNavigate } from "react-router-dom";
   import { motion } from "framer-motion";
+  import { useI18n } from "../hooks/useI18n";
   import { useCart } from "../context/CartContext";
   import { ROUTES } from "../utils/constants";
   import rentalOrderService from "../services/rentalOrder";
@@ -11,6 +12,7 @@
   const Cart = () => {
     const { cart, cartTotal, updateQuantityByItemId, updateRental, updateRentalByItemId, removeFromCartById, clearCart, cartData } = useCart();
     const navigate = useNavigate();
+    const { t } = useI18n();
     const { user, refreshUser } = useAuth();
     const [editingDates, setEditingDates] = React.useState({});
     const [selectedItems, setSelectedItems] = React.useState(new Set());
@@ -46,7 +48,7 @@
     const finalTotal = selectedItemsTotal;
 
     const handleClearCart = () => {
-      if (window.confirm("Bạn có chắc muốn xóa toàn bộ giỏ hàng?")) {
+      if (window.confirm(t("cart.confirmClearCart"))) {
         clearCart();
       }
     };
@@ -86,7 +88,7 @@
       const endDate = new Date(dates.endDate);
       
       if (startDate >= endDate) {
-        alert('Ngày kết thúc phải sau ngày bắt đầu');
+        alert(t('cart.endDateMustBeAfterStart'));
         return;
       }
 
@@ -105,8 +107,8 @@
           }
         });
       } catch (error) {
-        console.error('Lỗi cập nhật thời gian thuê:', error);
-        alert('Không thể cập nhật thời gian thuê. Vui lòng thử lại.');
+        console.error(t('cart.errorUpdateRentalTime'), error);
+        alert(t('cart.cannotUpdateRentalTime'));
       }
     };
 
@@ -122,8 +124,8 @@
       if (value < minStartDate) {
         const now = new Date();
         const message = now.getHours() >= 12 
-          ? 'Sau 12h trưa, bạn chỉ có thể chọn từ ngày mai trở đi'
-          : 'Ngày bắt đầu phải từ hôm nay trở đi';
+          ? t('cart.after12pmNextDay')
+          : t('cart.startDateFromToday');
         alert(message);
         return;
       }
@@ -142,7 +144,7 @@
         const startDate = new Date(rental.startDate);
         const endDate = new Date(value);
         if (endDate <= startDate) {
-          alert('Ngày kết thúc phải sau ngày bắt đầu');
+          alert(t('cart.endDateMustBeAfterStart'));
           return;
         }
       }
@@ -160,13 +162,13 @@
       const result = await updateRentalByItemId(item._id, rental);
       
       if (result && !result.success) {
-        alert(result.error || 'Không thể cập nhật thời gian thuê');
+        alert(result.error || t('cart.cannotUpdateRentalTime'));
         return;
       }
       
     } catch (error) {
-      console.error('Lỗi cập nhật thời gian thuê:', error);
-      alert('Không thể cập nhật thời gian thuê. Vui lòng thử lại.');
+      console.error(t('cart.errorUpdateRentalTime'), error);
+      alert(t('cart.cannotUpdateRentalTime'));
     }
   };  // Get minimum start date based on current time
   const getMinStartDate = () => {
@@ -468,10 +470,10 @@
               >
                 <div className="text-6xl mb-6">🛒</div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  Giỏ hàng trống
+                  {t("cart.empty")}
                 </h2>
                 <p className="text-gray-600 mb-8">
-                  Hãy thêm một số sản phẩm vào giỏ hàng để bắt đầu mua sắm!
+                  {t("productList.tryChangeFilter")}
                 </p>
                 <Link
                   to={ROUTES.PRODUCTS}
@@ -495,7 +497,7 @@
               animate={{ opacity: 1, x: 0 }}
               className="text-3xl font-bold text-gray-900 flex items-center gap-3"
             >
-              <span>🛒</span> Giỏ Hàng Của Bạn
+              <span>🛒</span> {t("cart.title")}
             </motion.h1>
             
             <div className="flex gap-2">
@@ -503,12 +505,12 @@
                 onClick={() => setSelectAll(!selectAll)}
                 className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
-                {selectAll ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                {selectAll ? t("cart.unselectAll") : t("cart.selectAll")}
               </button>
               
               {selectedItems.size > 0 && (
                 <div className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
-                  Đã chọn: {cart.filter(item => selectedItems.has(item._id)).reduce((total, item) => total + item.quantity, 0)} sản phẩm
+                  {t('cart.selectedCount', { count: cart.filter(item => selectedItems.has(item._id)).reduce((total, item) => total + item.quantity, 0) })}
                 </div>
               )}
             </div>
@@ -525,7 +527,7 @@
                 <div className="text-yellow-600 text-xl">⚠️</div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-yellow-800 mb-2">
-                    Có sản phẩm với ngày thuê đã quá hạn
+                    {t('cart.expiredItemsWarning')}
                   </h3>
                   <div className="space-y-2">
                     {cartData.expiredItems.map((expiredItem, index) => (
@@ -536,7 +538,7 @@
                     ))}
                   </div>
                   <p className="text-sm text-yellow-600 mt-2">
-                    Vui lòng cập nhật lại ngày thuê cho các sản phẩm này.
+                    {t('cart.pleaseUpdateDates')}
                   </p>
                 </div>
               </div>
@@ -558,7 +560,7 @@
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900">{group.ownerName}</h3>
-                        <p className="text-sm text-gray-600">{group.items.length} sản phẩm</p>
+                        <p className="text-sm text-gray-600">{t('cart.products_count', { count: group.items.length })}</p>
                       </div>
                       <div className="ml-auto">
                         <label className="flex items-center gap-2">
@@ -568,7 +570,7 @@
                             onChange={() => handleSelectOwner(group.ownerId)}
                             className="w-5 h-5 text-blue-600 rounded"
                           />
-                          <span className="text-sm">Chọn tất cả</span>
+                          <span className="text-sm">{t('cart.selectAll')}</span>
                         </label>
                       </div>
                     </div>
@@ -650,12 +652,12 @@
                               {/* Rental Dates */}
                               <div className="bg-gray-50 rounded-lg p-3">
                                 <div className="text-sm font-medium text-gray-700 mb-2">
-                                  Thời gian thuê:
+                                  {t('cart.rentalTime')}
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
                                     <label className="block text-xs text-gray-600 mb-1">
-                                      Ngày bắt đầu
+                                      {t('cart.startDate')}
                                     </label>
                                     <input
                                       type="date"
@@ -669,7 +671,7 @@
                                   </div>
                                   <div>
                                     <label className="block text-xs text-gray-600 mb-1">
-                                      Ngày kết thúc
+                                      {t('cart.endDate')}
                                     </label>
                                     <input
                                       type="date"
@@ -681,14 +683,14 @@
                                   </div>
                                 </div>
                                 <div className="mt-2 text-sm text-blue-600 font-medium">
-                                  Tổng thời gian: {days} ngày
+                                  {t('cart.totalDuration', { count: days, days })}
                                 </div>
                               </div>
 
                               {/* Quantity Controls */}
                               <div className="flex items-center gap-4">
                                 <span className="text-sm font-medium text-gray-700">
-                                  Số lượng:
+                                  {t('cart.quantityLabel')}
                                 </span>
                                 
                                 <div className="flex items-center bg-gray-100 rounded-lg">
@@ -712,13 +714,13 @@
                                 </div>
 
                                 <div className="text-xs text-gray-500">
-                                  Có sẵn: {product.availability?.quantity || 0} cái
+                                  {t('cart.availableStock', { count: product.availability?.quantity || 0 })}
                                 </div>
 
                                 <button
                                   onClick={() => removeFromCartById(item._id)}
                                   className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all ml-auto"
-                                  title="Xóa sản phẩm"
+                                  title={t('cart.deleteProduct')}
                                 >
                                   <svg
                                     className="w-6 h-6"
@@ -763,17 +765,17 @@
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl shadow-md p-6 sticky top-24">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
-                  Tóm Tắt Đơn Hàng
+                  {t('cart.orderSummary')}
                 </h2>
 
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
-                    <span>Tạm tính</span>
+                    <span>{t('cart.subtotalLabel')}</span>
                     <span className="font-semibold">{formatPrice(selectedItemsTotal)}</span>
                   </div>
                 
                   <div className="flex justify-between text-gray-600">
-                    <span>Giảm giá</span>
+                    <span>{t('cart.discount')}</span>
                     <span className="text-green-600 font-semibold">-0₫</span>
                   </div>
                 </div>
@@ -781,7 +783,7 @@
                 <div className="border-t border-gray-200 pt-4 mb-6">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-gray-900">
-                      Tổng cộng
+                      {t('cart.totalAmount')}
                     </span>
                     <span className="text-3xl font-bold text-green-600">
                       {formatPrice(finalTotal)}
@@ -799,29 +801,29 @@
                   }}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl mb-4"
                 >
-                  📋 {selectedItems.size > 0 ? `Thuê ${cart.filter(item => selectedItems.has(item._id)).reduce((total, item) => total + item.quantity, 0)} sản phẩm đã chọn` : 'Tạo Đơn Thuê (Tất cả)'}
+                  📋 {selectedItems.size > 0 ? t('cart.rentSelected', { count: cart.filter(item => selectedItems.has(item._id)).reduce((total, item) => total + item.quantity, 0) }) : t('cart.createRentalOrder')}
                 </button>
 
                 <Link
                   to={ROUTES.PRODUCTS}
                   className="block w-full text-center border-2 border-green-500 hover:border-green-600 text-green-600 hover:text-green-700 hover:bg-green-50 py-3 rounded-xl font-semibold transition-all"
                 >
-                  ← Tiếp Tục Mua Sắm
+                  {t('cart.continueShoppingBtn')}
                 </Link>
 
                 {/* Security Info */}
                 <div className="mt-6 pt-6 border-t border-gray-200 space-y-3 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <span>🔒</span>
-                    <span>Thanh toán bảo mật 100%</span>
+                    <span>{t('cart.securePayment')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>✓</span>
-                    <span>Hỗ trợ 24/7</span>
+                    <span>{t('cart.support247')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🚚</span>
-                    <span>Miễn phí vận chuyển</span>
+                    <span>{t('cart.freeShipping')}</span>
                   </div>
                 </div>
               </div>
@@ -845,7 +847,7 @@
                     <span className="text-red-600 text-xl">⚠️</span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-red-800">Cảnh báo khả năng sản phẩm</h3>
+                    <h3 className="text-lg font-bold text-red-800">{t('cart.availabilityWarningTitle')}</h3>
                     <p className="text-sm text-red-600">Một số sản phẩm trong giỏ hàng không còn đủ số lượng</p>
                   </div>
                 </div>

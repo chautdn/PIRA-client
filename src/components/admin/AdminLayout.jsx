@@ -73,6 +73,11 @@ const AdminLayout = () => {
       icon: <FiDollarSign />,
     },
     {
+      name: "Quản lí Vận chuyển",
+      path: "/admin/shipments",
+      icon: "🚚",
+    },
+    {
       name: "Cài đặt",
       path: "/admin/settings",
       icon: <FiSettings />,

@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Check, Trash2, X } from "lucide-react";
 import { useNotification } from "../../hooks/useNotification";
 import { formatDistanceToNow } from "date-fns";
-import { vi } from "date-fns/locale";
+import { vi, enUS } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../hooks/useI18n";
 
 const NotificationBell = () => {
+  const { t, language } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -67,6 +69,10 @@ const NotificationBell = () => {
       // Fallback: Navigate to dispute detail
       setIsOpen(false);
       navigate(`/disputes/${notification.relatedDispute}`);
+    } else if (notification.relatedProduct) {
+      // Fallback: Navigate to product detail with reviews tab
+      setIsOpen(false);
+      navigate(`/product/${notification.relatedProduct}?activeTab=reviews`);
     } else if (notification.relatedOrder) {
       // Fallback: Navigate to order detail based on user role
       setIsOpen(false);
@@ -103,20 +109,7 @@ const NotificationBell = () => {
   };
 
   const getTypeTranslation = (type) => {
-    const translations = {
-      ORDER: "Đơn hàng",
-      PAYMENT: "Thanh toán",
-      SHIPMENT: "Vận chuyển",
-      REVIEW: "Đánh giá",
-      DISPUTE: "Tranh chấp",
-      PROMOTION: "Khuyến mãi",
-      PROMOTION_PAYMENT: "Thanh toán quảng cáo",
-      SYSTEM: "Hệ thống",
-      REMINDER: "Nhắc nhở",
-      WITHDRAWAL: "Rút tiền",
-      VOUCHER: "Phiếu giảm giá",
-    };
-    return translations[type] || type;
+    return t(`notifications.types.${type}`) || type;
   };
 
   const getCategoryIcon = (category) => {
@@ -138,12 +131,12 @@ const NotificationBell = () => {
       {/* Bell Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-        aria-label="Thông báo"
+        className="relative p-2 sm:p-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        aria-label={t('notifications.notificationLabel')}
       >
-        <Bell className="w-6 h-6" />
+        <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full min-w-[18px] sm:min-w-[20px]">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -161,13 +154,13 @@ const NotificationBell = () => {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Thông báo</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('notifications.title')}</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Đánh dấu đã đọc
+                  {t('notifications.markAllAsRead')}
                 </button>
               )}
             </div>
@@ -181,7 +174,7 @@ const NotificationBell = () => {
               ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-8 text-gray-500">
                   <Bell className="w-12 h-12 mb-2 opacity-50" />
-                  <p className="text-sm">Không có thông báo</p>
+                  <p className="text-sm">{t('notifications.noNotifications')}</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
@@ -227,7 +220,7 @@ const NotificationBell = () => {
                             new Date(notification.createdAt),
                             {
                               addSuffix: true,
-                              locale: vi,
+                              locale: language === 'vi' ? vi : enUS,
                             }
                           )}
                         </p>
@@ -237,7 +230,7 @@ const NotificationBell = () => {
                       <button
                         onClick={(e) => handleDelete(e, notification._id)}
                         className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                        aria-label="Xóa thông báo"
+                        aria-label={t('notifications.deleteNotification')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -257,7 +250,7 @@ const NotificationBell = () => {
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Xem tất cả thông báo
+                  {t('notifications.viewAll')}
                 </button>
               </div>
             )}

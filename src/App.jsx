@@ -24,6 +24,7 @@ import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
+import ChatContainer from "./components/chat/ChatContainer";
 import OwnerCreateProduct from "./pages/owner/OwnerCreateProduct";
 import OwnerProducts from "./pages/owner/OwnerProducts";
 import OwnerProductEdit from "./pages/owner/OwnerProductEdit";
@@ -48,8 +49,22 @@ import PaymentError from "./pages/payment/PaymentError";
 import RentalPaymentReturn from "./pages/rental/RentalPaymentReturn";
 
 // Chat components
-import ChatContainer from "./components/chat/ChatContainer";
 import ProductChatContainer from "./components/chat/ProductChatContainer";
+import { useI18n } from "./hooks/useI18n";
+
+// Chat empty state component
+const ChatEmptyState = () => {
+  const { t } = useI18n();
+  return (
+    <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="text-gray-500 text-lg">
+          {t('chat.selectConversation')}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Admin components
 import AdminLayout from "./components/admin/AdminLayout";
@@ -91,6 +106,10 @@ import DisputesPage from "./pages/DisputesPage";
 import DisputeDetail from "./components/dispute/DisputeDetail";
 import AdminDisputeManagement from "./pages/admin/AdminDisputeManagement";
 import AdminDisputeDetail from "./pages/admin/AdminDisputeDetail";
+
+// Shipment management page
+import AdminShipmentManagement from "./pages/admin/AdminShipmentManagement";
+import AdminShipperDetail from "./pages/admin/AdminShipperDetail";
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -170,11 +189,11 @@ export default function App() {
           <RentalOrderProvider>
             <BrowserRouter>
             <ScrollToTop />
-            <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden max-w-full">
               <ConditionalPromotionBanner />
               <ConditionalNavigation />
               <CartDrawer />
-              <main className="flex-1">
+              <main className="flex-1 overflow-x-hidden max-w-full">
                 <Routes>
                   {/* Public routes */}
                   <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -273,13 +292,7 @@ export default function App() {
                     <Route
                       index
                       element={
-                        <div className="flex-1 flex items-center justify-center bg-gray-50">
-                          <div className="text-center">
-                            <div className="text-gray-500 text-lg">
-                              Select a conversation to start chatting
-                            </div>
-                          </div>
-                        </div>
+                        <ChatEmptyState />
                       }
                     />
                     {/* Specific conversation */}
@@ -479,6 +492,8 @@ export default function App() {
                     />
                     <Route path="disputes" element={<AdminDisputeManagement />} />
                     <Route path="disputes/:disputeId" element={<AdminDisputeDetail />} />
+                    <Route path="shipments" element={<AdminShipmentManagement />} />
+                    <Route path="shipments/:shipperId" element={<AdminShipperDetail />} />
                     <Route path="bank-accounts" element={<BankManagement />} />
                     <Route
                       path="bank-accounts/:userId"

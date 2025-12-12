@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCart } from "../../context/CartContext";
 import { ROUTES } from "../../utils/constants";
+import { useI18n } from "../../hooks/useI18n";
 
 const CartItem = ({ item }) => {
   const { updateQuantityByItemId, removeFromCartById } = useCart();
   const { product, quantity, rental, _id: itemId } = item;
+  const { t } = useI18n();
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -16,7 +18,7 @@ const CartItem = ({ item }) => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Chưa chọn';
+    if (!dateString) return t('cart.notSelected');
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
 
@@ -29,7 +31,7 @@ const CartItem = ({ item }) => {
   };
 
   const handleRemove = () => {
-    if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
+    if (window.confirm(t('cart.confirmDelete'))) {
       removeFromCartById(itemId);
     }
   };
@@ -73,15 +75,15 @@ const CartItem = ({ item }) => {
         {product.owner && (
           <div className="text-xs text-blue-600 mb-1 flex items-center gap-1">
             <span>👤</span>
-            <span>Chủ: {product.owner.profile?.firstName || 'N/A'}</span>
+            <span>{t('cart.owner')} {product.owner.profile?.firstName || 'N/A'}</span>
           </div>
         )}
 
         <div className="text-sm text-gray-600 mb-2">
-          <div>{formatPrice(dailyRate)}/ngày</div>
+          <div>{formatPrice(dailyRate)}{t('cart.perDay')}</div>
           {rental?.duration > 0 && (
             <div className="text-xs text-gray-500">
-              {rental.duration} ngày thuê
+              {rental.duration} {t('cart.daysRental')}
             </div>
           )}
           {/* Rental Period */}
@@ -116,7 +118,7 @@ const CartItem = ({ item }) => {
           <button
             onClick={handleRemove}
             className="text-red-500 hover:text-red-700 p-1 transition-colors"
-            title="Xóa"
+            title={t('cart.delete')}
           >
             <svg
               className="w-5 h-5"

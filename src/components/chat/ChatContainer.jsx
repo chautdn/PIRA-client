@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useI18n } from "../../hooks/useI18n";
 import useChat from "../../hooks/useChat";
 import useChatSocket from "../../hooks/useChatSocket";
 import ChatHeader from "./ChatHeader";
@@ -11,6 +12,7 @@ import Loading from "../common/Loading";
 const ChatContainer = () => {
   const { conversationId } = useParams();
   const { user } = useAuth();
+  const { t } = useI18n();
   const {
     messages,
     messagesLoading,
@@ -112,7 +114,7 @@ const ChatContainer = () => {
       <div className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-gray-500 text-lg">
-            Select a conversation to start chatting
+            {t('chat.selectConversation')}
           </div>
         </div>
       </div>

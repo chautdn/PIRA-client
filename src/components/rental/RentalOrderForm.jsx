@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useRentalOrder } from "../../context/RentalOrderContext";
 import { useAuth } from "../../hooks/useAuth";
+import { useI18n } from "../../hooks/useI18n";
 import {
   Calendar,
   MapPin,
@@ -28,6 +29,7 @@ import icons from "../../utils/icons";
 
 const RentalOrderForm = () => {
   try {
+    const { t, language } = useI18n();
     const { user } = useAuth();
     const { cart: cartItems, clearCart } = useCart();
     const rentalOrderContext = useRentalOrder();
@@ -921,11 +923,10 @@ const RentalOrderForm = () => {
           depositAmount: totalDeposit,
           depositPaymentMethod: depositPaymentMethod,
           depositTransactionId: depositResult.transactionId,
-          message: `Đã thanh toán cọc ${totalDeposit.toLocaleString(
-            "vi-VN"
-          )}đ. Còn lại ${(totals.grandTotal - totalDeposit).toLocaleString(
-            "vi-VN"
-          )}đ thanh toán khi nhận hàng`,
+          message: t('rentalOrderForm.depositCodMessage', {
+            depositAmount: new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US').format(totalDeposit),
+            remainingAmount: new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US').format(totals.grandTotal - totalDeposit)
+          }),
         };
       } catch (error) {
         console.error("❌ COD deposit payment error:", error);
@@ -1078,18 +1079,18 @@ const RentalOrderForm = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">
-              {directRentalData ? "Lỗi dữ liệu thuê" : "Giỏ thuê trống"}
+              {directRentalData ? t("rentalOrderForm.emptyDirectRental") : t("rentalOrderForm.emptyCart")}
             </h2>
             <p className="text-gray-600 mb-4">
               {directRentalData
-                ? "Dữ liệu thuê không hợp lệ. Vui lòng thử lại."
-                : "Vui lòng thêm sản phẩm vào giỏ trước khi tạo đơn thuê"}
+                ? t("rentalOrderForm.emptyDirectMessage")
+                : t("rentalOrderForm.emptyMessage")}
             </p>
             <button
               onClick={() => navigate("/products")}
               className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
             >
-              Xem sản phẩm
+              {t("rentalOrderForm.viewProducts")}
             </button>
           </div>
         </div>
@@ -1101,12 +1102,13 @@ const RentalOrderForm = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-8">
             <h1 className="text-3xl font-bold">
-              {directRentalData ? "Thuê Ngay" : "Tạo Đơn Thuê"}
+              {directRentalData ? t("rentalOrderForm.directRental") : t("rentalOrderForm.title")}
             </h1>
             {directRentalData && (
+
               <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1">
                 <icons.FaBolt className="inline" />
-                Thuê trực tiếp
+                {t("rentalOrderForm.directRentalBadge")}
               </span>
             )}
           </div>
@@ -1118,7 +1120,7 @@ const RentalOrderForm = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold mb-6 flex items-center">
                   <Calendar className="w-5 h-5 mr-2" />
-                  Thông tin thuê chi tiết
+                  {t("rentalOrderForm.rentalDetailsTitle")}
                 </h2>
 
                 {/* Products grouped by owner with individual rental info */}
@@ -1131,8 +1133,8 @@ const RentalOrderForm = () => {
                       >
                         <h3 className="text-lg font-medium mb-4 text-blue-700 flex items-center gap-2">
                           <icons.FaBox className="inline" />
-                          Đơn hàng #{groupIndex + 1} - Chủ cho thuê:{" "}
-                          {group.owner.profile?.firstName || "Không rõ"}
+                          Order #{groupIndex + 1} - {t("rentalOrderForm.orderNumberLabel")}:
+                          {group.owner.profile?.firstName || t("rentalOrderForm.unknown")}
                         </h3>
 
                         {/* Products in this group */}
@@ -1178,24 +1180,24 @@ const RentalOrderForm = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div>
                                         <p className="text-sm text-gray-600">
-                                          Số lượng:{" "}
+                                          {t("rentalOrderForm.quantity")}{" "}
                                           <span className="font-medium">
                                             {item.quantity}
                                           </span>
                                         </p>
                                         <p className="text-sm text-gray-600">
-                                          Giá thuê:{" "}
+                                          {t("rentalOrderForm.rentalPrice")}{" "}
                                           <span className="font-medium">
                                             {(
                                               item.product.pricing?.dailyRate ||
                                               item.product.price ||
                                               0
                                             ).toLocaleString("vi-VN")}
-                                            đ/ngày
+                                            đ/{t("rentalOrderForm.days")}
                                           </span>
                                         </p>
                                         <p className="text-sm text-gray-600">
-                                          Tiền cọc:{" "}
+                                          {t("rentalOrderForm.deposit")}{" "}
                                           <span className="font-medium">
                                             {(
                                               item.product.pricing?.deposit
@@ -1211,13 +1213,13 @@ const RentalOrderForm = () => {
                                         <div className="bg-blue-50 p-3 rounded-md">
                                           <p className="text-sm font-medium text-blue-800 mb-1 flex items-center gap-1">
                                             <icons.FaClock className="inline" />
-                                            Thời gian thuê:
+                                            {t("rentalOrderForm.rentalTime")}
                                           </p>
                                           {itemStartDate && itemEndDate ? (
                                             <>
                                               <p className="text-xs text-gray-700">
                                                 <span className="font-medium">
-                                                  Từ:
+                                                  {t("rentalOrderForm.from")}:
                                                 </span>{" "}
                                                 {itemStartDate.toLocaleDateString(
                                                   "vi-VN"
@@ -1225,19 +1227,19 @@ const RentalOrderForm = () => {
                                               </p>
                                               <p className="text-xs text-gray-700">
                                                 <span className="font-medium">
-                                                  Đến:
+                                                  {t("rentalOrderForm.to")}:
                                                 </span>{" "}
                                                 {itemEndDate.toLocaleDateString(
                                                   "vi-VN"
                                                 )}
                                               </p>
                                               <p className="text-sm font-semibold text-blue-700 mt-1">
-                                                Tổng: {itemDuration} ngày
+                                                {t("rentalOrderForm.total")}: {itemDuration} {t("rentalOrderForm.days")}
                                               </p>
                                             </>
                                           ) : (
                                             <p className="text-xs text-gray-500">
-                                              Chưa có thông tin thời gian thuê
+                                              {t("rentalOrderForm.noRentalTime")}
                                             </p>
                                           )}
                                         </div>
@@ -1246,7 +1248,7 @@ const RentalOrderForm = () => {
                                     <div className="mt-3 pt-3 border-t border-gray-200">
                                       <div className="flex justify-between items-center">
                                         <span className="text-sm text-gray-600">
-                                          Tổng tiền thuê:
+                                          {t("rentalOrderForm.totalRentalAmount")}:
                                         </span>
                                         <span className="font-semibold text-green-600">
                                           {(
@@ -1261,7 +1263,7 @@ const RentalOrderForm = () => {
                                       </div>
                                       <div className="flex justify-between items-center">
                                         <span className="text-sm text-gray-600">
-                                          Tổng tiền cọc:
+                                          {t("rentalOrderForm.totalDepositAmount")}:
                                         </span>
                                         <span className="font-semibold text-orange-600">
                                           {(
@@ -1328,7 +1330,16 @@ const RentalOrderForm = () => {
                                           productShippingFee = Math.round(feePerDelivery / productsInBatch);
                                         }
 
-                                        
+                                        return productShippingFee > 0 ? (
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">
+                                              {t("rentalOrderForm.shippingFee")}:
+                                            </span>
+                                            <span className="font-semibold text-blue-600">
+                                              {productShippingFee.toLocaleString("vi-VN")}đ
+                                            </span>
+                                          </div>
+                                        ) : null;
                                       })()}
                                     </div>
                                   </div>
@@ -1350,7 +1361,7 @@ const RentalOrderForm = () => {
                               className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors"
                             >
                               <Lightbulb className="w-4 h-4" />
-                              <span className="text-sm font-medium">Cách tính phí vận chuyển</span>
+                              <span className="text-sm font-medium">{t("rentalOrderForm.shippingCalculation")}</span>
                             </button>
                           </div>
                         )}
@@ -1364,18 +1375,19 @@ const RentalOrderForm = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-6 flex items-center">
                 <Truck className="w-5 h-5 mr-2" />
-                Hình thức nhận hàng
+                {t("rentalOrderForm.deliveryMethod")}
               </h2>
               <div className="space-y-3">
 
-<label className="flex items-center space-x-3 cursor-pointer">
-<input
-  type="radio"
-  value="DELIVERY"
-  checked={orderData.deliveryMethod === 'DELIVERY'}
-  onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
-/>
-<span>Giao tận nơi (Có phí ship)</span>
+  <label className="flex items-center space-x-3 cursor-pointer">
+  <input
+    type="radio"
+    value="DELIVERY"
+    checked={orderData.deliveryMethod === 'DELIVERY'}
+    onChange={(e) => setOrderData(prev => ({ ...prev, deliveryMethod: e.target.value }))}
+    className="w-4 h-4 text-blue-500"
+  />
+  <span>{t("rentalOrderForm.delivery")}</span>
 </label>
               </div>
             </div>
@@ -1421,17 +1433,17 @@ const RentalOrderForm = () => {
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h2 className="text-xl font-semibold mb-6 flex items-center">
                     <MapPin className="w-5 h-5 mr-2" />
-                    Địa chỉ giao hàng
+                    {t("rentalOrderForm.deliveryAddress")}
                   </h2>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">
-                        Địa chỉ chi tiết
+                        {t("rentalOrderForm.detailedAddress")}
                       </label>
                       <MapSelector
                         onLocationSelect={handleAddressSelect}
                         initialAddress={orderData.deliveryAddress.streetAddress}
-                        placeholder="Chọn địa chỉ trên bản đồ..."
+                        placeholder={t("rentalOrderForm.selectOnMap")}
                         className={errors.streetAddress ? "border-red-500" : ""}
                       />
                       {errors.streetAddress && (
@@ -1448,32 +1460,33 @@ const RentalOrderForm = () => {
                     {orderData.deliveryAddress.latitude &&
                       orderData.deliveryAddress.longitude && (
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+
                           <h4 className="text-sm font-medium text-blue-800 mb-2 flex items-center gap-1">
                             <icons.FaMapMarkerAlt className="inline" />
-                            Địa chỉ từ bản đồ:
+                            {t("rentalOrderForm.mapAddress")}
                           </h4>
                           <div className="space-y-1 text-sm text-blue-700">
                             {orderData.deliveryAddress.streetAddress && (
                               <p>
-                                <span className="font-medium">Địa chỉ:</span>{" "}
+                                <span className="font-medium">{t("rentalOrderForm.address")}:</span>{" "}
                                 {orderData.deliveryAddress.streetAddress}
                               </p>
                             )}
                             {orderData.deliveryAddress.ward && (
                               <p>
-                                <span className="font-medium">Phường/Xã:</span>{" "}
+                                <span className="font-medium">{t("rentalOrderForm.ward")}:</span>{" "}
                                 {orderData.deliveryAddress.ward}
                               </p>
                             )}
                             {orderData.deliveryAddress.district && (
                               <p>
-                                <span className="font-medium">Quận/Huyện:</span>{" "}
+                                <span className="font-medium">{t("rentalOrderForm.district")}:</span>{" "}
                                 {orderData.deliveryAddress.district}
                               </p>
                             )}
                             {orderData.deliveryAddress.city && (
                               <p>
-                                <span className="font-medium">Thành phố:</span>{" "}
+                                <span className="font-medium">{t("rentalOrderForm.city")}:</span>{" "}
                                 {orderData.deliveryAddress.city}
                               </p>
                             )}
@@ -1495,15 +1508,16 @@ const RentalOrderForm = () => {
                             }
                             className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
                           >
+                            
                             <icons.FaRedo className="inline" />
-                            Chọn lại địa chỉ
+                            {t("rentalOrderForm.changeAddress")}
                           </button>
                         </div>
                       )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Tên người nhận
+                          {t("rentalOrderForm.recipientName")}
                         </label>
                         <input
                           type="text"
@@ -1522,7 +1536,7 @@ const RentalOrderForm = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Số điện thoại
+                          {t("rentalOrderForm.phoneNumber")}
                         </label>
                         <input
                           type="tel"
@@ -1558,8 +1572,8 @@ const RentalOrderForm = () => {
                     className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
                   >
                     {isCalculatingShipping
-                      ? "Đang tính phí ship..."
-                      : "Tính phí vận chuyển"}
+                      ? t("rentalOrderForm.calculating")
+                      : t("rentalOrderForm.calculateShipping")}
                   </button>
                 </div>
               )}
@@ -1572,7 +1586,7 @@ const RentalOrderForm = () => {
                     disabled={isCreatingDraft || !isFormValid}
                     className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-semibold"
                   >
-                    {isCreatingDraft ? "Đang tạo đơn thuê..." : "Tạo đơn thuê"}
+                    {isCreatingDraft ? t("rentalOrderForm.creating") : t("rentalOrderForm.createOrder")}
                   </button>
                 </div>
               </div>
@@ -1581,7 +1595,7 @@ const RentalOrderForm = () => {
             {/* Order Summary Sidebar */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-                <h3 className="text-lg font-semibold mb-4">Tổng đơn hàng</h3>
+                <h3 className="text-lg font-semibold mb-4">{t("rentalOrderForm.orderSummary")}</h3>
 
                 {/* Active Promotion Banner (Auto-applied) */}
                 {activePromotion && !loadingPromotion && (
@@ -1624,7 +1638,7 @@ const RentalOrderForm = () => {
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span>Số sản phẩm:</span>
+                    <span>{t("rentalOrderForm.numProducts")}:</span>
                     <span>
                       {directRentalData
                         ? directRentalData.quantity || 1
@@ -1632,19 +1646,19 @@ const RentalOrderForm = () => {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Thời gian thuê:</span>
-                    <span>{totals.duration} ngày</span>
+                    <span>{t("rentalOrderForm.rentalDays")}:</span>
+                    <span>{totals.duration} {t("rentalOrderForm.days")}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Tiền thuê:</span>
+                    <span>{t("rentalOrderForm.totalRental")}:</span>
                     <span>{totals.totalRental.toLocaleString("vi-VN")}đ</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Tiền cọc:</span>
+                    <span>{t("rentalOrderForm.totalDeposit")}:</span>
                     <span>{totals.totalDeposit.toLocaleString("vi-VN")}đ</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Phí vận chuyển:</span>
+                    <span>{t("rentalOrderForm.shippingTotal")}:</span>
                     <span
                       className={
                         (activePromotion || selectedVoucher) && originalTotalShipping > totalShipping
@@ -1658,21 +1672,91 @@ const RentalOrderForm = () => {
                   {(activePromotion || selectedVoucher) && originalTotalShipping > totalShipping && (
                     <>
                       <div className="flex justify-between text-green-600">
-                        <span>Giảm phí ship (khuyến mãi):</span>
+                        <span>{t("rentalOrderForm.shippingDiscountPromotion")}:</span>
                         <span>
                           -
                           {(originalTotalShipping - totalShipping).toLocaleString("vi-VN")}đ
                         </span>
                       </div>
-                      <div className="flex justify-between font-medium text-green-600">
-                        <span>Phí ship sau giảm:</span>
-                        <span>{totalShipping.toLocaleString("vi-VN")}đ</span>
-                      </div>
                     </>
+                  )}
+                  {selectedVoucher && (
+                    <div className="flex justify-between text-green-600">
+                      <span>
+                        {t("rentalOrderForm.shippingDiscountVoucher")} ({selectedVoucher.discountPercent}%):
+                      </span>
+                      <span>
+                        -
+                        {(() => {
+                          const baseShipping = activePromotion
+                            ? totals.totalShipping -
+                              (activePromotion.systemPromotion.discountType ===
+                              "PERCENTAGE"
+                                ? (totals.totalShipping *
+                                    activePromotion.systemPromotion
+                                      .shippingDiscountValue) /
+                                  100
+                                : Math.min(
+                                    activePromotion.systemPromotion
+                                      .shippingDiscountValue,
+                                    totals.totalShipping
+                                  ))
+                            : totals.totalShipping;
+                          const voucherDiscount = Math.round(
+                            (baseShipping * selectedVoucher.discountPercent) /
+                              100
+                          );
+                          return voucherDiscount.toLocaleString("vi-VN");
+                        })()}
+                        đ
+                      </span>
+                    </div>
+                  )}
+                  {(activePromotion || selectedVoucher) && (
+                    <div className="flex justify-between font-medium">
+                      <span>{t("rentalOrderForm.shippingAfterDiscount")}:</span>
+                      <span className="text-green-600">
+                        {(() => {
+                          let finalShipping = totals.totalShipping;
+
+                          // Apply promotion discount first
+                          if (activePromotion) {
+                            const discount =
+                              activePromotion.systemPromotion.discountType ===
+                              "PERCENTAGE"
+                                ? (totals.totalShipping *
+                                    activePromotion.systemPromotion
+                                      .shippingDiscountValue) /
+                                  100
+                                : Math.min(
+                                    activePromotion.systemPromotion
+                                      .shippingDiscountValue,
+                                    totals.totalShipping
+                                  );
+                            finalShipping -= discount;
+                          }
+
+                          // Apply voucher discount on remaining amount
+                          if (selectedVoucher) {
+                            const voucherDiscount = Math.round(
+                              (finalShipping *
+                                selectedVoucher.discountPercent) /
+                                100
+                            );
+                            finalShipping -= voucherDiscount;
+                          }
+
+                          return Math.max(0, finalShipping).toLocaleString(
+                            "vi-VN"
+                          );
+                        })()}
+                        đ
+                      </span>
+                    </div>
                   )}
                   <hr className="my-3" />
                   <div className="flex justify-between font-semibold text-lg">
-                    <span>Tổng cộng:</span>
+                    <span>{t("rentalOrderForm.grandTotal")}:</span>
                     <span className="text-blue-600">
                       {(() => {
                         // Use totalShipping state directly (already discounted)
@@ -1692,8 +1776,7 @@ const RentalOrderForm = () => {
                 <div className="mt-4 p-3 bg-yellow-50 rounded-md">
                   <p className="text-sm text-yellow-800 flex items-start gap-1">
                     <icons.FaLightbulb className="inline mt-0.5 flex-shrink-0" />
-                    <strong>Lưu ý:</strong> Tiền cọc sẽ được hoàn lại sau khi
-                    bạn trả sản phẩm trong tình trạng tốt.
+                    {t('rentalOrderForm.depositNote')}
                   </p>
                 </div>
               </div>
@@ -1905,19 +1988,21 @@ const DepositPaymentModal = ({
   onSelect,
   onCancel,
 }) => {
+  const { t } = useI18n();
   const [selectedMethod, setSelectedMethod] = useState("");
 
   const depositMethods = [
     {
       key: "WALLET",
-      title: "Ví điện tử",
-      description: "Thanh toán cọc từ số dư ví",
+      title: t("rentalOrders.depositPaymentModal.ewallet"),
+      description: t("rentalOrders.depositPaymentModal.ewalletDesc"),
       icon: <HiCreditCard className="text-2xl text-blue-600" />,
     },
     {
       key: "PAYOS",
-      title: "Chuyển khoản ngân hàng",
-      description: "Thanh toán cọc qua PayOS (QR Code)",
+
+      title: t("rentalOrders.depositPaymentModal.bankTransfer"),
+      description: t("rentalOrders.depositPaymentModal.bankTransferDesc"),
       icon: <PiBank className="text-2xl text-green-600" />,
     },
   ];
@@ -1928,34 +2013,36 @@ const DepositPaymentModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+
           <PiHandDeposit className="text-orange-600" />
-          Thanh toán cọc - COD
+          {t("rentalOrders.depositPaymentModal.title")}
         </h2>
 
         {/* Amount breakdown */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
           <div className="text-sm space-y-2">
             <div className="flex justify-between">
-              <span>Tổng đơn hàng:</span>
+              <span>{t("rentalOrders.depositPaymentModal.totalOrder")}</span>
               <span className="font-medium">
                 {totalAmount.toLocaleString("vi-VN")}đ
               </span>
             </div>
             <div className="flex justify-between text-orange-600">
-              <span>Cọc cần thanh toán:</span>
+              <span>{t("rentalOrders.depositPaymentModal.depositAmount")}</span>
               <span className="font-bold">
                 {depositAmount.toLocaleString("vi-VN")}đ
               </span>
             </div>
             <div className="flex justify-between text-gray-600 border-t pt-2">
-              <span>Còn lại khi nhận hàng:</span>
+
+              <span>{t("rentalOrders.depositPaymentModal.remainingWhenReceive")}</span>
                            <span>{remainingAmount.toLocaleString("vi-VN")}đ</span>
             </div>
           </div>
         </div>
 
         <p className="text-sm text-gray-600 mb-4">
-          Chọn phương thức thanh toán cọc:
+          {t("rentalOrders.depositPaymentModal.selectPaymentMethod")}
         </p>
 
         <div className="space-y-3 mb-6">
@@ -1997,14 +2084,14 @@ const DepositPaymentModal = ({
             onClick={onCancel}
             className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Hủy
+            {t("rentalOrders.depositPaymentModal.cancel")}
           </button>
           <button
             onClick={() => selectedMethod && onSelect(selectedMethod)}
             disabled={!selectedMethod}
             className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Thanh toán cọc
+            {t("rentalOrders.depositPaymentModal.submitPayment")}
           </button>
         </div>
       </div>
