@@ -224,8 +224,12 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
             <p className="text-sm text-orange-800">
               <strong>Chủ chỉ xác nhận {confirmedProducts.length}/{subOrder.products?.length || 0} sản phẩm.</strong>
-              {' '}Vui lòng chọn một trong hai lựa chọn bên dưới:
+              {' '}Bạn có 2 lựa chọn:
             </p>
+            <ul className="mt-2 text-xs text-orange-700 space-y-1 ml-4">
+              <li>• Lựa chọn A: Hủy toàn bộ đơn hàng và nhận lại 100% tiền</li>
+              <li>• Lựa chọn B: Tiếp tục với phần đã xác nhận, nhận hoàn tiền cho phần bị từ chối</li>
+            </ul>
           </div>
 
           {/* Thống kê sản phẩm */}
