@@ -320,7 +320,9 @@ const OwnerRentalRequestDetail = () => {
       READY_FOR_CONTRACT: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Sẵn sàng hợp đồng' },
       CONTRACT_SIGNED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã ký hợp đồng' },
       COMPLETED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Hoàn thành' },
-      CANCELLED: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Đã hủy' }
+      CANCELLED: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Đã hủy' },
+      PENDING_RENTER_DECISION: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ quyết định người thuê' },
+      RETURN_FAILED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Trả hàng thất bại' }
     };
 
     const style = config[status] || config.DRAFT;

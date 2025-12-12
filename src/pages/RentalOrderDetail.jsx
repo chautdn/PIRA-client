@@ -365,6 +365,8 @@ const RentalOrderDetailPage = () => {
       ACTIVE: "bg-green-100 text-green-800",
       COMPLETED: "bg-gray-100 text-gray-800",
       CANCELLED: "bg-red-100 text-red-800",
+      PENDING_RENTER_DECISION: "bg-yellow-100 text-yellow-800",
+      RETURN_FAILED: "bg-red-100 text-red-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
   };
@@ -383,6 +385,8 @@ const RentalOrderDetailPage = () => {
       ACTIVE: "Đang thuê",
       COMPLETED: "Hoàn thành",
       CANCELLED: "Đã hủy",
+      PENDING_RENTER_DECISION: "Chờ quyết định người thuê",
+      RETURN_FAILED: "Trả hàng thất bại",
     };
     return texts[status] || status;
   };
