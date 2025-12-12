@@ -190,6 +190,7 @@ const Profile = () => {
       // **SAU KHI LOAD PROFILE, LOAD KYC STATUS**
       await loadKycStatus();
     } catch (error) {
+      console.error('Error loading profile:', error);
       toast.error(t('profilePage.cannotLoadProfile'));
     } finally {
       setLoading(false);
@@ -265,7 +266,7 @@ const Profile = () => {
 
   const handleSave = async () => {
     if (!validateProfile()) {
-      toast.error('Vui lòng kiểm tra lại thông tin');
+      toast.error(t('profilePage.checkInfo'));
       return;
     }
     
@@ -1105,9 +1106,9 @@ const Profile = () => {
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
                                   {user?.profile?.gender === "MALE"
-                                    ? <><FaMale className="inline mr-1" />t('profilePage.male')</>
+                                    ? <><FaMale className="inline mr-1" />{t('profilePage.male')}</>
                                     : user?.profile?.gender === "FEMALE"
-                                    ? <><FaFemale className="inline mr-1" />t('profilePage.female')</>
+                                    ? <><FaFemale className="inline mr-1" />{t('profilePage.female')}</>
                                     : user?.profile?.gender === "OTHER"
                                     ? <><FaUserFriends className="inline mr-1" />{t('profilePage.other')}</>
                                     : t('profilePage.notUpdated')}
@@ -1571,10 +1572,10 @@ const Profile = () => {
             </h3>
             <p className="text-gray-600 mb-6">
               {user?.authProvider === 'google' 
-                ? 'Bạn đăng nhập bằng Google, hệ thống sẽ xác thực tự động'
+                ? t('profilePage.googleAutoVerify')
                 : user?.authProvider === 'facebook'
-                ? 'Bạn đăng nhập bằng Facebook, hệ thống sẽ xác thực tự động' 
-                : 'Vui lòng nhập mật khẩu của bạn để xem thông tin CCCD đã xác thực'}
+                ? t('profilePage.facebookAutoVerify') 
+                : t('profilePage.enterPasswordToViewCCCD')}
             </p>
 
             {!cccdData ? (
@@ -1606,7 +1607,7 @@ const Profile = () => {
                   <div className="mb-6 text-center">
                     <div className="inline-flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-6 py-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                      <span className="text-blue-800 font-medium">Đang tải thông tin CCCD...</span>
+                      <span className="text-blue-800 font-medium">{t('profilePage.loadingCCCDInfo')}</span>
                     </div>
                   </div>
                 )}
@@ -1636,26 +1637,26 @@ const Profile = () => {
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-semibold text-green-700">Số CCCD:</label>
+                        <label className="text-sm font-semibold text-green-700">{t('profilePage.cccdNumber')}:</label>
                         <p className="text-green-900 font-bold text-lg">{cccdData.cccdNumber || 'N/A'}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-semibold text-green-700">Họ và tên:</label>
+                        <label className="text-sm font-semibold text-green-700">{t('profilePage.fullName')}:</label>
                         <p className="text-green-900 font-bold text-lg">{cccdData.fullName || 'N/A'}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-semibold text-green-700">Ngày sinh:</label>
+                        <label className="text-sm font-semibold text-green-700">{t('profilePage.cccdDateOfBirth')}:</label>
                         <p className="text-green-900">{cccdData.dateOfBirth ? new Date(cccdData.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-semibold text-green-700">Giới tính:</label>
+                        <label className="text-sm font-semibold text-green-700">{t('profilePage.cccdGender')}:</label>
                         <p className="text-green-900">
-                          {cccdData.gender === 'MALE' ? 'Nam' : cccdData.gender === 'FEMALE' ? 'Nữ' : 'Khác'}
+                          {cccdData.gender === 'MALE' ? t('profilePage.male_display') : cccdData.gender === 'FEMALE' ? t('profilePage.female_display') : t('profilePage.other_display')}
                         </p>
                       </div>
                     </div>
                     <div className="mt-4">
-                      <label className="text-sm font-semibold text-green-700">Địa chỉ:</label>
+                      <label className="text-sm font-semibold text-green-700">{t('profilePage.cccdAddress')}:</label>
                       <p className="text-green-900">{cccdData.address || 'N/A'}</p>
                     </div>
                   </div>
@@ -1664,13 +1665,13 @@ const Profile = () => {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
                         <FiCheck className="inline mr-1" />
-                        <span className="font-semibold">Đã xác thực:</span>{' '}
+                        <span className="font-semibold">{t('profilePage.verifiedAt')}:</span>{' '}
                         {new Date(cccdData.verifiedAt).toLocaleString('vi-VN')}
                       </p>
                       {cccdData.verificationSource && (
                         <p className="text-sm text-blue-700 mt-1">
                           <FiInfo className="inline mr-1" />
-                          <span className="font-semibold">Nguồn:</span> {cccdData.verificationSource}
+                          <span className="font-semibold">{t('profilePage.verificationSource')}:</span> {cccdData.verificationSource}
                         </p>
                       )}
                     </div>

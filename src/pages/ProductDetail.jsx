@@ -1336,7 +1336,7 @@ export default function ProductDetail() {
                 <div className="flex items-center gap-2">
                   <FaStar className="text-yellow-500" />
                   <span className="font-semibold">{product.metrics?.averageRating || 4.8}</span>
-                  <span>{t("productDetail.reviewCount").replace('{count}', product.metrics?.reviewCount || 0)}</span>
+                  <span>{t("productDetail.reviewCount", { count: product.metrics?.reviewCount || 0 })}</span>
                 </div>
                 <div className="flex items-center gap-2">
 
@@ -1841,7 +1841,7 @@ export default function ProductDetail() {
                                       <span>{(r.likedBy || []).length > 0 ? `${(r.likedBy || []).length}` : 'Like'}</span>
                                     </button>
                                     {r.responses && r.responses.length > 0 && (
-                                      <span className="text-gray-400">{t('productDetail.viewAllResponses').replace('{count}', r.responses.length)}</span>
+                                      <span className="text-gray-400">{t('productDetail.viewAllResponses', { count: r.responses.length })}</span>
                                     )}
                                   </div>
 
@@ -2117,7 +2117,7 @@ export default function ProductDetail() {
                 <div className="mt-2 text-sm text-gray-600 text-center">
                   {deliveryDate && returnDate && availableQuantity !== null ? (
                     <>
-                      {t("productDetail.availableInRange").replace('{count}', availableQuantity)}
+                      {t("productDetail.availableInRange", { count: availableQuantity })}
                       {quantity >= availableQuantity && (
                         <div className="text-orange-600 text-xs mt-1">
                           
@@ -2128,7 +2128,7 @@ export default function ProductDetail() {
                     </>
                   ) : (
                     <>
-                      {t("productDetail.available").replace('{count}', product.availability?.quantity || 0)}
+                      {t("productDetail.available", { count: product.availability?.quantity || 0 })}
                       {quantity >= (product.availability?.quantity || 0) && (
                         <div className="text-orange-600 text-xs mt-1">
                           
@@ -2229,7 +2229,7 @@ export default function ProductDetail() {
                       </div>
                       <div className="flex items-center text-sm text-yellow-600">
                         <FaStar className="mr-1" />
-                        <span className="font-medium">4.9 (128 {t('productDetail.reviewCount').replace('({count} ', '').replace(')', '')})</span>
+                        <span className="font-medium">{product.owner.metrics?.averageRating?.toFixed(1) || '4.9'} {t('productDetail.reviewCount', { count: product.owner.metrics?.reviewCount || 128 })}</span>
                       </div>
                     </div>
                   </div>

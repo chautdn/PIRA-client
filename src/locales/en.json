@@ -1322,7 +1322,7 @@
     "pickupOptionLabel": "Pickup (Free)",
     "deliveryFeeLabel": "Delivery Fee",
     "thisOwner": "this owner",
-    "viewAllResponses": "View all {count} responses",
+    "viewAllResponses": "View all {{count}} responses",
     "hotProductsTitle": "Hot Products from",
     "relatedProductsTitle": "Related Products in"
   },
@@ -1775,7 +1775,20 @@
     "addedDate": "Added Date",
     "cannotWithdraw": "Cannot withdraw until a new account is added",
     "confirmDeleteBankAccount": "Confirm Delete Bank Account",
-    "confirmDeleteBankAccountDesc": "Are you sure you want to delete this bank account? You will not be able to withdraw money until you add a new account."
+    "confirmDeleteBankAccountDesc": "Are you sure you want to delete this bank account? You will not be able to withdraw money until you add a new account.",
+    "googleAutoVerify": "You logged in with Google, the system will verify automatically",
+    "facebookAutoVerify": "You logged in with Facebook, the system will verify automatically",
+    "enterPasswordToViewCCCD": "Please enter your password to view verified CCCD information",
+    "loadingCCCDInfo": "Loading CCCD information...",
+    "cccdAddress": "Address",
+    "verifiedAt": "Verified at",
+    "verificationSource": "Source",
+    "returningToProductCreate": "Returning to product creation page...",
+    "updateAddressToContinueCreatingProduct": "Please update your address to continue creating product",
+    "male_display": "Male",
+    "female_display": "Female",
+    "other_display": "Other",
+    "verifyToViewCCCD": "Verify to View CCCD Information"
   },
   "voucherRedeem": {
     "title": "Redeem Voucher",
