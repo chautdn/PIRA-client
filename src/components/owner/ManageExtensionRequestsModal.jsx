@@ -25,24 +25,12 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       setLoading(true);
       const response = await api.get('/extensions/owner-requests?status=PENDING');
-      
-      console.log('📦 API Response:', {
-        fullResponse: response.data,
-        hasData: !!response.data?.data,
-        hasMetadata: !!response.data?.metadata,
-        dataType: typeof response.data?.data,
-        metadataType: typeof response.data?.metadata
-      });
 
       const requests = response.data?.data || response.data?.metadata?.requests || [];
       
       // Ensure it's always an array
       const requestsArray = Array.isArray(requests) ? requests : (requests ? [requests] : []);
-      
-      console.log('📋 Extracted requests:', {
-        count: requestsArray.length,
-        firstRequest: requestsArray[0]
-      });
+
 
       setExtensionRequests(requestsArray);
     } catch (error) {
@@ -56,11 +44,9 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
   const handleApproveExtension = async (extensionId, productId) => {
     try {
       setSubmitting(true);
-      console.log('📤 Approving extension:', { extensionId, productId });
       
       const response = await api.put(`/extensions/${extensionId}/approve`, { productId });
       
-      console.log('✅ Response from approve:', response);
       toast.success(t('manageExtensionRequests.approveSuccess'));
       
       // Re-fetch the list to remove the approved product
@@ -88,18 +74,12 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       setSubmitting(true);
-      console.log('📤 Rejecting extension:', { 
-        extensionId: selectedRequest.extensionId, 
-        productId: selectedRequest.productId,
-        rejectionReason: rejectReason
-      });
-      
+
       const response = await api.put(`/extensions/${selectedRequest.extensionId}/reject`, {
         productId: selectedRequest.productId,
         rejectionReason: rejectReason
       });
 
-      console.log('✅ Response from reject:', response);
       toast.success(t('manageExtensionRequests.rejectSuccess'));
       
       setShowRejectModal(false);
@@ -176,14 +156,6 @@ const ManageExtensionRequestsModal = ({ isOpen, onClose, onSuccess }) => {
                 const currentEndDate = new Date(productData.currentEndDate);
                 const newEndDate = new Date(productData.newEndDate);
                 const extensionDays = productData.extensionDays;
-
-                console.log('🎯 Rendering request card:', {
-                  extensionId: request.extensionId,
-                  productId: productData.productId,
-                  productName: productData.productName,
-                  hasDetail: !!productDetail
-                });
-
                 return (
                   <div
                     key={`${request.extensionId}-${productData.productId}`}

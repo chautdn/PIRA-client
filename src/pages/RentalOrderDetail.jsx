@@ -32,6 +32,7 @@ import {
   MessageCircle,
   RotateCcw,
   Plus,
+  Loader2,
 } from "lucide-react";
 
 const RentalOrderDetailPage = () => {
@@ -61,6 +62,9 @@ const RentalOrderDetailPage = () => {
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
   const { getRenterRequests, deleteRequest } = useEarlyReturn();
+  const [showCancelPendingModal, setShowCancelPendingModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Check if this is a payment return
   const payment = searchParams.get("payment");
@@ -454,6 +458,37 @@ const RentalOrderDetailPage = () => {
     }
   };
 
+  const handleCancelPendingOrder = async () => {
+    if (!cancelReason.trim()) {
+      toast.error('Vui lòng nhập lý do hủy đơn');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Cancel all suborders in this master order
+      const cancelPromises = currentOrder.subOrders
+        .filter(sub => sub.status === 'PENDING_CONFIRMATION')
+        .map(sub => 
+          rentalOrderService.renterCancelPendingOrder(sub._id, cancelReason)
+        );
+      
+      await Promise.all(cancelPromises);
+      
+      toast.success('Đã hủy đơn hàng thành công! Tiền sẽ được hoàn lại 100%.');
+      setShowCancelPendingModal(false);
+      setCancelReason('');
+      
+      // Reload order
+      await loadOrderDetail(currentOrder._id);
+    } catch (error) {
+      console.error('Error canceling pending order:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi hủy đơn hàng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Check if has pending decision subOrder
   const hasPendingDecision = currentOrder?.subOrders?.some(
     sub => sub.status === 'PENDING_RENTER_DECISION'
@@ -528,6 +563,17 @@ const RentalOrderDetailPage = () => {
             >
               {getStatusText(currentOrder.status)}
             </span>
+
+            {/* Cancel Pending Order Button for Renter */}
+            {isRenter && currentOrder.status === "PENDING_CONFIRMATION" && (
+              <button
+                onClick={() => setShowCancelPendingModal(true)}
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 flex items-center space-x-2"
+              >
+                <XCircle className="w-5 h-5" />
+                <span>Hủy đơn hàng</span>
+              </button>
+            )}
 
             {/* ✅ MODIFIED: Hiển thị "Chi tiết xác nhận" khi có SubOrder OWNER_CONFIRMED (không cần tất cả) */}
             {(currentOrder.status === "CONFIRMED" ||
@@ -1889,6 +1935,127 @@ const RentalOrderDetailPage = () => {
         />
       )}
 
+      {/* Cancel Pending Order Modal */}
+      {showCancelPendingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full mx-4 shadow-2xl">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 rounded-t-xl">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <XCircle size={24} />
+                Hủy đơn hàng
+              </h3>
+            </div>
+            
+            <div className="p-6">
+              <div className="bg-orange-50 border-l-4 border-orange-400 rounded-lg p-4 mb-5">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-orange-800 font-semibold mb-1">
+                      Cảnh báo: Hành động này không thể hoàn tác!
+                    </p>
+                    <p className="text-xs text-orange-700 mb-1">
+                      Đơn hàng: <strong>#{currentOrder.masterOrderNumber}</strong>
+                    </p>
+                    <p className="text-xs text-orange-700">
+                      Bạn sẽ được hoàn 100% tiền (bao gồm cọc, phí thuê và phí vận chuyển).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-800 font-semibold mb-1">
+                      💰 Số tiền hoàn trả
+                    </p>
+                    <p className="text-3xl font-bold text-green-600">
+                      {(
+                        (currentOrder.totalAmount || 0) + 
+                        (currentOrder.totalDepositAmount || 0) + 
+                        (currentOrder.totalShippingFee || 0)
+                      ).toLocaleString('vi-VN')} ₫
+                    </p>
+                  </div>
+                  <div className="text-right text-xs text-green-700">
+                    <div>Phí thuê: {(currentOrder.totalAmount || 0).toLocaleString('vi-VN')}₫</div>
+                    <div>Tiền cọc: {(currentOrder.totalDepositAmount || 0).toLocaleString('vi-VN')}₫</div>
+                    <div>Phí ship: {(currentOrder.totalShippingFee || 0).toLocaleString('vi-VN')}₫</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Lý do hủy đơn <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
+                  disabled={loading}
+                >
+                  <option value="">-- Chọn lý do hủy đơn --</option>
+                  <option value="Tìm được sản phẩm tốt hơn">Tìm được sản phẩm tốt hơn</option>
+                  <option value="Đổi ý, không cần thuê nữa">Đổi ý, không cần thuê nữa</option>
+                  <option value="Thời gian thuê không phù hợp">Thời gian thuê không phù hợp</option>
+                  <option value="Giá thuê quá cao">Giá thuê quá cao</option>
+                  <option value="Sản phẩm không đúng mong đợi">Sản phẩm không đúng mong đợi</option>
+                  <option value="Không liên hệ được với chủ">Không liên hệ được với chủ</option>
+                  <option value="Thay đổi kế hoạch">Thay đổi kế hoạch</option>
+                  <option value="other">Lý do khác...</option>
+                </select>
+              </div>
+
+              {cancelReason === 'other' && (
+                <div className="mb-5">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Nhập lý do cụ thể <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={cancelReason === 'other' ? '' : cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    placeholder="Vui lòng nhập lý do hủy đơn hàng..."
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    disabled={loading}
+                  />
+                </div>
+              )}
+              
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowCancelPendingModal(false);
+                    setCancelReason('');
+                  }}
+                  disabled={loading}
+                  className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-all font-semibold disabled:opacity-50 border border-gray-300"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={handleCancelPendingOrder}
+                  disabled={loading || !cancelReason.trim() || cancelReason === 'other'}
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-3 rounded-lg hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-2 shadow-lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang hủy...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle size={18} />
+                      Xác nhận hủy đơn
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
