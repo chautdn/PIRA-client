@@ -54,6 +54,74 @@ class AdminService {
     };
   }
 
+  // Statistics APIs
+  async getRevenueStatistics(params) {
+    try {
+      const response = await api.get("/admin/statistics/revenue", { params });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching revenue statistics:", error);
+      throw error;
+    }
+  }
+
+  async getProfitStatistics(params) {
+    try {
+      const response = await api.get("/admin/statistics/profit", { params });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching profit statistics:", error);
+      throw error;
+    }
+  }
+
+  // SubOrder Statistics APIs
+  async getRevenueByOwner(params) {
+    try {
+      const response = await api.get("/admin/statistics/revenue-by-owner", {
+        params,
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching revenue by owner:", error);
+      throw error;
+    }
+  }
+
+  async getDepositStatistics(params) {
+    try {
+      const response = await api.get("/admin/statistics/deposit", { params });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching deposit statistics:", error);
+      throw error;
+    }
+  }
+
+  async getTopRentalProducts(params) {
+    try {
+      const response = await api.get("/admin/statistics/top-products", {
+        params,
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching top rental products:", error);
+      throw error;
+    }
+  }
+
+  async getSubOrderStatusBreakdown(params) {
+    try {
+      const response = await api.get("/admin/statistics/suborder-status", {
+        params,
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      console.error("Error fetching suborder status breakdown:", error);
+      throw error;
+    }
+  }
+
   // User Management APIs
   async getUsers(params = {}) {
     try {
@@ -690,6 +758,26 @@ class AdminService {
     }
   }
 
+  async getShipperById(shipperId) {
+    try {
+      const response = await api.get(`/admin/shippers/${shipperId}`);
+      console.log('getShipperById raw response:', response);
+      
+      // Handle responseUtils format: { status: 'success', data: {...} }
+      if (response.data?.status === 'success' && response.data?.data) {
+        return response.data.data;
+      }
+      // Handle direct data
+      if (response.data?.data) {
+        return response.data.data;
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching shipper details:", error);
+      throw error;
+    }
+  }
+
   async bulkUpdateProducts(productIds, updateData) {
     try {
       const response = await api.patch("/admin/products/bulk-update", {
@@ -964,7 +1052,7 @@ class AdminService {
       const queryParams = new URLSearchParams();
 
       Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== '') {
+        if (value && value !== "") {
           queryParams.append(key, value);
         }
       });
@@ -1002,7 +1090,7 @@ class AdminService {
       const queryParams = new URLSearchParams();
 
       Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== '') {
+        if (value && value !== "") {
           queryParams.append(key, value);
         }
       });
@@ -1026,7 +1114,7 @@ class AdminService {
       const queryParams = new URLSearchParams();
 
       Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== '') {
+        if (value && value !== "") {
           queryParams.append(key, value);
         }
       });
@@ -1034,15 +1122,17 @@ class AdminService {
       const response = await api.get(
         `/admin/transactions/export?${queryParams.toString()}`,
         {
-          responseType: 'blob'
+          responseType: "blob",
         }
       );
 
       // Create blob link to download CSV
       const href = URL.createObjectURL(response.data);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = href;
-      link.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `transactions-${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1058,7 +1148,9 @@ class AdminService {
   // ========== WITHDRAWAL FINANCIAL ANALYSIS ==========
   async getWithdrawalFinancialAnalysis(withdrawalId) {
     try {
-      const response = await api.get(`/admin/withdrawals/${withdrawalId}/financial-analysis`);
+      const response = await api.get(
+        `/admin/withdrawals/${withdrawalId}/financial-analysis`
+      );
 
       if (response.data.success) {
         return response.data.data;
@@ -1072,7 +1164,9 @@ class AdminService {
 
   async getUserFinancialProfile(userId) {
     try {
-      const response = await api.get(`/admin/users/${userId}/financial-profile`);
+      const response = await api.get(
+        `/admin/users/${userId}/financial-profile`
+      );
 
       if (response.data.success) {
         return response.data.data;
@@ -1115,6 +1209,8 @@ export const adminService = new AdminService();
 // Export individual methods for convenience
 export const {
   getDashboardStats,
+  getRevenueStatistics,
+  getProfitStatistics,
   getUsers,
   getUserById,
   updateUser,
@@ -1143,6 +1239,7 @@ export const {
   bulkUpdateUsers,
   getShipmentStats,
   getAllShippers,
+  getShipperById,
   bulkUpdateProducts,
   sendNotification,
   broadcastNotification,

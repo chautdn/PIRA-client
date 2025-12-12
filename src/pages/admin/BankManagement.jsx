@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { motion } from 'framer-motion';
+import icons from "../../utils/icons";
+
+const { FiCreditCard, BiLoaderAlt, BiCheckCircle, FiX, FiSearch, BiClipboard, BsBuildings, FiFile, FiEye } = icons;
 
 const BankManagement = () => {
   const navigate = useNavigate();
@@ -84,38 +87,22 @@ const BankManagement = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: '⏳ Chờ xác minh' },
-      VERIFIED: { bg: 'bg-green-100', text: 'text-green-800', label: '✅ Đã xác minh' },
-      REJECTED: { bg: 'bg-red-100', text: 'text-red-800', label: '❌ Đã từ chối' }
+      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Chờ xác minh', icon: <BiLoaderAlt className="text-sm" /> },
+      VERIFIED: { bg: 'bg-green-100', text: 'text-green-800', label: 'Đã xác minh', icon: <BiCheckCircle className="text-sm" /> },
+      REJECTED: { bg: 'bg-red-100', text: 'text-red-800', label: 'Đã từ chối', icon: <FiX className="text-sm" /> }
     };
 
     const config = statusConfig[status] || statusConfig.PENDING;
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${config.bg} ${config.text}`}>
-        {config.label}
+      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold ${config.bg} ${config.text}`}>
+        {config.icon}
+        <span>{config.label}</span>
       </span>
     );
   };
 
   const getBankLogo = (bankCode) => {
-    const bankLogos = {
-      VCB: '🏦',
-      TCB: '🏦',
-      BIDV: '🏦',
-      VTB: '🏦',
-      ACB: '🏦',
-      MB: '🏦',
-      TPB: '🏦',
-      STB: '🏦',
-      VPB: '🏦',
-      AGR: '🏦',
-      EIB: '🏦',
-      MSB: '🏦',
-      SCB: '🏦',
-      SHB: '🏦',
-      OCB: '🏦'
-    };
-    return bankLogos[bankCode] || '🏦';
+    return <BsBuildings className="text-2xl" />;
   };
 
   return (
@@ -139,7 +126,7 @@ const BankManagement = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <span className="text-5xl">🏦</span>
+              <FiCreditCard className="text-5xl" />
               Xác minh Tài khoản Ngân hàng
             </h1>
             <p className="text-blue-100 text-lg">Quản lý và xác minh thông tin tài khoản ngân hàng</p>
@@ -157,7 +144,9 @@ const BankManagement = () => {
                 <p className="text-blue-100 text-sm font-medium">Tổng số</p>
                 <p className="text-3xl font-bold mt-1">{stats.total}</p>
               </div>
-              <div className="text-4xl">🏦</div>
+              <div className="text-4xl">
+                <FiCreditCard className="text-4xl" />
+              </div>
             </div>
           </motion.div>
 
@@ -170,7 +159,9 @@ const BankManagement = () => {
                 <p className="text-yellow-100 text-sm font-medium">Chờ xác minh</p>
                 <p className="text-3xl font-bold mt-1">{stats.pending}</p>
               </div>
-              <div className="text-4xl">⏳</div>
+              <div className="text-4xl">
+                <BiLoaderAlt className="text-4xl" />
+              </div>
             </div>
           </motion.div>
 
@@ -183,7 +174,9 @@ const BankManagement = () => {
                 <p className="text-green-100 text-sm font-medium">Đã xác minh</p>
                 <p className="text-3xl font-bold mt-1">{stats.verified}</p>
               </div>
-              <div className="text-4xl">✅</div>
+              <div className="text-4xl">
+                <BiCheckCircle className="text-4xl" />
+              </div>
             </div>
           </motion.div>
 
@@ -196,7 +189,9 @@ const BankManagement = () => {
                 <p className="text-red-100 text-sm font-medium">Đã từ chối</p>
                 <p className="text-3xl font-bold mt-1">{stats.rejected}</p>
               </div>
-              <div className="text-4xl">❌</div>
+              <div className="text-4xl">
+                <FiX className="text-4xl" />
+              </div>
             </div>
           </motion.div>
         </div>
@@ -207,7 +202,12 @@ const BankManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">🔍 Tìm kiếm</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <FiSearch />
+                Tìm kiếm
+              </span>
+            </label>
             <input
               type="text"
               placeholder="Số TK, tên, email..."
@@ -219,7 +219,12 @@ const BankManagement = () => {
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">📊 Trạng thái</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <BiClipboard />
+                Trạng thái
+              </span>
+            </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -234,7 +239,12 @@ const BankManagement = () => {
 
           {/* Bank Code Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">🏦 Ngân hàng</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <BsBuildings />
+                Ngân hàng
+              </span>
+            </label>
             <select
               value={filters.bankCode}
               onChange={(e) => handleFilterChange('bankCode', e.target.value)}
@@ -256,7 +266,12 @@ const BankManagement = () => {
 
           {/* Limit */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">📄 Hiển thị</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                <FiFile />
+                Hiển thị
+              </span>
+            </label>
             <select
               value={filters.limit}
               onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
@@ -279,7 +294,9 @@ const BankManagement = () => {
           </div>
         ) : bankAccounts.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">🏦</div>
+            <div className="text-6xl mb-4">
+              <FiCreditCard className="text-6xl" />
+            </div>
             <p className="text-gray-500 text-lg">Không có tài khoản ngân hàng nào</p>
           </div>
         ) : (
@@ -336,7 +353,7 @@ const BankManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl">{getBankLogo(account.bankAccount?.bankCode)}</span>
+                        {getBankLogo(account.bankAccount?.bankCode)}
                         <div>
                           <div className="text-sm font-medium text-gray-900">
                             {account.bankAccount?.bankCode}
@@ -366,9 +383,10 @@ const BankManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <button
                         onClick={() => handleViewDetail(account._id)}
-                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-purple-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-purple-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                       >
-                        👁️ Xem chi tiết
+                        <FiEye />
+                        Xem chi tiết
                       </button>
                     </td>
                   </motion.tr>

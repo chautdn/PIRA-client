@@ -56,7 +56,7 @@ const AdminShipmentManagement = () => {
 
       // Fetch shippers list
       const shippersRes = await adminService.getAllShippers?.();
-      console.log('🚚 Shippers response:', shippersRes);
+      console.log(' Shippers response:', shippersRes);
       
       // Handle different response structures
       let shipperList = [];
@@ -69,7 +69,7 @@ const AdminShipmentManagement = () => {
       }
       
       if (shipperList.length > 0) {
-        console.log(`✅ Loaded ${shipperList.length} shippers from API`);
+        console.log(`Loaded ${shipperList.length} shippers from API`);
         setShippers(shipperList);
         setPagination({
           ...pagination,
@@ -77,7 +77,7 @@ const AdminShipmentManagement = () => {
           totalPages: Math.ceil(shipperList.length / pagination.limit)
         });
       } else {
-        console.warn('⚠️ No shippers from API, using mock data');
+        console.warn('No shippers from API, using mock data');
         // Use mock shippers for testing
         const mockShippers = getMockShippers();
         setShippers(mockShippers);
@@ -89,7 +89,7 @@ const AdminShipmentManagement = () => {
       }
     } catch (err) {
       setError(err.message || 'Lỗi tải dữ liệu vận chuyển');
-      console.error('❌ Error loading shipment data:', err);
+      console.error(' Error loading shipment data:', err);
       
       // Use mock data on error
       setStats(getMockStats());
@@ -258,7 +258,7 @@ const AdminShipmentManagement = () => {
 
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">📈 Số đơn theo ngày (7 ngày gần đây)</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Số đơn theo ngày (7 ngày gần đây)</h3>
         <div className="flex items-end justify-between h-64 gap-1 px-2">
           {stats.dailyData.map((item, idx) => {
             const height = (item.count / maxCount) * chartHeight;
@@ -290,7 +290,7 @@ const AdminShipmentManagement = () => {
 
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">🎯 Tỉ lệ giao thành công / thất bại</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Tỉ lệ giao thành công / thất bại</h3>
         <div className="flex items-center justify-center gap-12">
           <div className="relative w-48 h-48">
             <svg className="w-full h-full" viewBox="0 0 120 120">
@@ -342,7 +342,7 @@ const AdminShipmentManagement = () => {
 
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">🌟 Hiệu suất 5 shipper hoạt động mạnh nhất</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-6"> Hiệu suất 5 shipper hoạt động mạnh nhất</h3>
         <div className="flex items-end justify-between h-80 gap-4">
           {stats.topShippers.map((shipper, idx) => {
             const height = ((shipper.totalShipments || 0) / maxShipments) * chartHeight;
@@ -389,7 +389,7 @@ const AdminShipmentManagement = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <span>🚚</span> Quản lí Vận chuyển
+             Quản lí Vận chuyển
           </h1>
           <p className="text-gray-600 mt-2">Quản lý shipper và thống kê vận chuyển toàn hệ thống</p>
         </div>
@@ -402,7 +402,6 @@ const AdminShipmentManagement = () => {
                 <p className="text-gray-600 text-sm">Tổng Shipper</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalShippers || 0}</p>
               </div>
-              <span className="text-3xl">🚚</span>
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
@@ -411,7 +410,6 @@ const AdminShipmentManagement = () => {
                 <p className="text-gray-600 text-sm">Tổng Đơn Vận chuyển</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalShipments || 0}</p>
               </div>
-              <span className="text-3xl">📦</span>
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
@@ -420,7 +418,6 @@ const AdminShipmentManagement = () => {
                 <p className="text-gray-600 text-sm">Tỉ lệ Thành công</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{stats.successRate || 0}%</p>
               </div>
-              <span className="text-3xl">✅</span>
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
@@ -429,7 +426,6 @@ const AdminShipmentManagement = () => {
                 <p className="text-gray-600 text-sm">Tổng Doanh thu</p>
                 <p className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(stats.totalRevenue || 0)}</p>
               </div>
-              <span className="text-3xl">💰</span>
             </div>
           </div>
         </div>
@@ -445,7 +441,7 @@ const AdminShipmentManagement = () => {
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              📊 Thống kê
+               Thống kê
             </button>
             <button
               onClick={() => setActiveTab('shippers')}
@@ -455,7 +451,7 @@ const AdminShipmentManagement = () => {
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              🚚 Danh sách Shipper
+               Danh sách Shipper
             </button>
           </nav>
         </div>
@@ -475,7 +471,7 @@ const AdminShipmentManagement = () => {
           <div className="space-y-6">
             {/* Filters */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">🔍 Tìm kiếm & Lọc</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Tìm kiếm & Lọc</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm theo tên/email/SĐT</label>
@@ -506,13 +502,14 @@ const AdminShipmentManagement = () => {
                 <table className="w-full">
                   <thead className="bg-gray-100 border-b">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">👤 Shipper</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">📍 Khu vực</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">📦 Tổng đơn</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">✅ Hoàn thành</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">❌ Thất bại</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">📊 Tỉ lệ %</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">💰 Doanh thu</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Shipper</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Khu vực</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Tổng đơn</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Hoàn thành</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Thất bại</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Tỉ lệ %</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Đánh giá</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Doanh thu</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -528,7 +525,6 @@ const AdminShipmentManagement = () => {
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <span className="text-lg">🚚</span>
                                 </div>
                                 <div>
                                   <p className="font-medium text-gray-900">
@@ -546,12 +542,12 @@ const AdminShipmentManagement = () => {
                             <td className="px-6 py-4 font-semibold text-gray-900">{shipper.totalShipments || 0}</td>
                             <td className="px-6 py-4">
                               <span className="inline-flex items-center gap-1 text-green-600 font-semibold">
-                                ✅ {shipper.completedShipments || 0}
+                                 {shipper.completedShipments || 0}
                               </span>
                             </td>
                             <td className="px-6 py-4">
                               <span className="inline-flex items-center gap-1 text-red-600 font-semibold">
-                                ❌ {(shipper.totalShipments || 0) - (shipper.completedShipments || 0)}
+                                 {(shipper.totalShipments || 0) - (shipper.completedShipments || 0)}
                               </span>
                             </td>
                             <td className="px-6 py-4">
@@ -563,6 +559,17 @@ const AdminShipmentManagement = () => {
                               </div>
                               <span className="text-sm font-semibold text-gray-900 mt-1 block">{successRate}%</span>
                             </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-1">
+                                <span className="text-yellow-500 text-lg">★</span>
+                                <span className="font-semibold text-gray-900">
+                                  {shipper.averageRating || 0}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  ({shipper.totalReviews || 0})
+                                </span>
+                              </div>
+                            </td>
                             <td className="px-6 py-4 font-semibold text-gray-900">
                               {formatCurrency(shipper.revenue || 0)}
                             </td>
@@ -571,7 +578,7 @@ const AdminShipmentManagement = () => {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                        <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                           Không tìm thấy shipper
                         </td>
                       </tr>

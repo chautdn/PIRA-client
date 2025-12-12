@@ -179,7 +179,7 @@ const UserDropdown = () => {
             </Link>
 
             <Link
-              to="/my-products"
+              to="/owner/products"
               className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >
@@ -188,7 +188,7 @@ const UserDropdown = () => {
             </Link>
 
             <Link
-              to="/bookings"
+              to="/rental-orders"
               className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors"
               onClick={() => setIsOpen(false)}
             >

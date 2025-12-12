@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import AppProviders from "./providers/AppProviders";
 import Navigation from "./components/layout/Navigation";
 import Footer from "./components/layout/Footer";
@@ -68,6 +69,7 @@ const ChatEmptyState = () => {
 // Admin components
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminSettings from "./pages/admin/AdminSettings";
 import UserManagement from "./pages/admin/UserManagement";
 import UserDetail from "./pages/admin/UserDetail";
 import ProductManagement from "./pages/admin/ProductManagement";
@@ -181,10 +183,11 @@ function ConditionalFooter() {
 
 export default function App() {
   return (
-    <AppProviders>
-      <WishlistProvider>
-        <RentalOrderProvider>
-          <BrowserRouter>
+    <ThemeProvider>
+      <AppProviders>
+        <WishlistProvider>
+          <RentalOrderProvider>
+            <BrowserRouter>
             <ScrollToTop />
             <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden max-w-full">
               <ConditionalPromotionBanner />
@@ -506,7 +509,7 @@ export default function App() {
                     />
                     <Route
                       path="settings"
-                      element={<div>System Settings - Coming Soon</div>}
+                      element={<AdminSettings />}
                     />
                     <Route path="profile" element={<Profile />} />
                   </Route>
@@ -514,9 +517,10 @@ export default function App() {
               </main>
               <ConditionalFooter />
             </div>
-          </BrowserRouter>
-        </RentalOrderProvider>
-      </WishlistProvider>
-    </AppProviders>
+            </BrowserRouter>
+          </RentalOrderProvider>
+        </WishlistProvider>
+      </AppProviders>
+    </ThemeProvider>
   );
 }

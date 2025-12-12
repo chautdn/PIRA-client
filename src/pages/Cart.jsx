@@ -88,7 +88,7 @@
       const endDate = new Date(dates.endDate);
       
       if (startDate >= endDate) {
-        alert('Ngày kết thúc phải sau ngày bắt đầu');
+        alert(t('cart.endDateMustBeAfterStart'));
         return;
       }
 
@@ -107,8 +107,8 @@
           }
         });
       } catch (error) {
-        console.error('Lỗi cập nhật thời gian thuê:', error);
-        alert('Không thể cập nhật thời gian thuê. Vui lòng thử lại.');
+        console.error(t('cart.errorUpdateRentalTime'), error);
+        alert(t('cart.cannotUpdateRentalTime'));
       }
     };
 
@@ -124,8 +124,8 @@
       if (value < minStartDate) {
         const now = new Date();
         const message = now.getHours() >= 12 
-          ? 'Sau 12h trưa, bạn chỉ có thể chọn từ ngày mai trở đi'
-          : 'Ngày bắt đầu phải từ hôm nay trở đi';
+          ? t('cart.after12pmNextDay')
+          : t('cart.startDateFromToday');
         alert(message);
         return;
       }
@@ -144,7 +144,7 @@
         const startDate = new Date(rental.startDate);
         const endDate = new Date(value);
         if (endDate <= startDate) {
-          alert('Ngày kết thúc phải sau ngày bắt đầu');
+          alert(t('cart.endDateMustBeAfterStart'));
           return;
         }
       }
@@ -162,13 +162,13 @@
       const result = await updateRentalByItemId(item._id, rental);
       
       if (result && !result.success) {
-        alert(result.error || 'Không thể cập nhật thời gian thuê');
+        alert(result.error || t('cart.cannotUpdateRentalTime'));
         return;
       }
       
     } catch (error) {
-      console.error('Lỗi cập nhật thời gian thuê:', error);
-      alert('Không thể cập nhật thời gian thuê. Vui lòng thử lại.');
+      console.error(t('cart.errorUpdateRentalTime'), error);
+      alert(t('cart.cannotUpdateRentalTime'));
     }
   };  // Get minimum start date based on current time
   const getMinStartDate = () => {
@@ -652,12 +652,12 @@
                               {/* Rental Dates */}
                               <div className="bg-gray-50 rounded-lg p-3">
                                 <div className="text-sm font-medium text-gray-700 mb-2">
-                                  Thời gian thuê:
+                                  {t('cart.rentalTime')}
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
                                     <label className="block text-xs text-gray-600 mb-1">
-                                      Ngày bắt đầu
+                                      {t('cart.startDate')}
                                     </label>
                                     <input
                                       type="date"
@@ -671,7 +671,7 @@
                                   </div>
                                   <div>
                                     <label className="block text-xs text-gray-600 mb-1">
-                                      Ngày kết thúc
+                                      {t('cart.endDate')}
                                     </label>
                                     <input
                                       type="date"
@@ -683,14 +683,14 @@
                                   </div>
                                 </div>
                                 <div className="mt-2 text-sm text-blue-600 font-medium">
-                                  Tổng thời gian: {days} ngày
+                                  {t('cart.totalDuration', { count: days, days })}
                                 </div>
                               </div>
 
                               {/* Quantity Controls */}
                               <div className="flex items-center gap-4">
                                 <span className="text-sm font-medium text-gray-700">
-                                  Số lượng:
+                                  {t('cart.quantityLabel')}
                                 </span>
                                 
                                 <div className="flex items-center bg-gray-100 rounded-lg">
@@ -714,7 +714,7 @@
                                 </div>
 
                                 <div className="text-xs text-gray-500">
-                                  Có sẵn: {product.availability?.quantity || 0} cái
+                                  {t('cart.availableStock', { count: product.availability?.quantity || 0 })}
                                 </div>
 
                                 <button

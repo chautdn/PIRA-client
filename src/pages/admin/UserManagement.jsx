@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { adminService } from '../../services/admin';
+import icons from "../../utils/icons";
+
+const { FiUser, FiPackage, BsCart4, BiCategory, BiLoaderAlt, BiCheckCircle, FiDollarSign, FiAlertTriangle, FiSettings, FiTruck, BiErrorCircle, FiEdit3, IoBarChart, LuBoxes, FiSearch, FiShield, FiBell, FiCalendar, FiEye, FiLock, FiUnlock, FiX, FiPause, BiClipboard, FiTrash2 } = icons;
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -363,13 +366,12 @@ const UserManagement = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
-              <span className="text-5xl">👥</span>
+              <FiUser className="text-5xl" />
               Quản lý Users
             </h1>
             <p className="text-blue-100 text-lg">Quản lý và theo dõi toàn bộ người dùng trong hệ thống</p>
           </div>
           <button className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
-            <span>📥</span>
             Export CSV
           </button>
         </div>
@@ -384,7 +386,7 @@ const UserManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(stats?.total || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-blue-100 p-4 rounded-full">
-              <span className="text-3xl">👥</span>
+              <FiUser className="text-3xl" />
             </div>
           </div>
         </div>
@@ -396,7 +398,7 @@ const UserManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(stats?.active || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-green-100 p-4 rounded-full">
-              <span className="text-3xl">✅</span>
+              <BiCheckCircle className="text-3xl" />
             </div>
           </div>
         </div>
@@ -408,7 +410,7 @@ const UserManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(stats?.owners || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-orange-100 p-4 rounded-full">
-              <span className="text-3xl">🏠</span>
+              <LuBoxes className="text-3xl" />
             </div>
           </div>
         </div>
@@ -420,7 +422,7 @@ const UserManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(stats?.renters || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">👤</span>
+              <FiUser className="text-3xl" />
             </div>
           </div>
         </div>
@@ -430,7 +432,7 @@ const UserManagement = () => {
       <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span className="text-2xl">🔍</span>
+            <FiSearch className="text-2xl" />
             Bộ lọc & Tìm kiếm
           </h2>
           <button
@@ -444,7 +446,7 @@ const UserManagement = () => {
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
-            <span>🗑️</span>
+            <FiTrash2 />
             Xóa bộ lọc
           </button>
         </div>
@@ -453,7 +455,7 @@ const UserManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>🔍</span>
+                <FiSearch />
                 Tìm kiếm
               </span>
             </label>
@@ -477,7 +479,7 @@ const UserManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>👥</span>
+                <FiUser />
                 Vai trò
               </span>
             </label>
@@ -487,10 +489,10 @@ const UserManagement = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả vai trò</option>
-              <option value="RENTER">💼 Người thuê</option>
-              <option value="OWNER">🏠 Chủ sở hữu</option>
-              <option value="SHIPPER">🚚 Shipper</option>
-              <option value="ADMIN">⚙️ Admin</option>
+              <option value="RENTER">Người thuê</option>
+              <option value="OWNER">Chủ sở hữu</option>
+              <option value="SHIPPER">Shipper</option>
+              <option value="ADMIN">Admin</option>
             </select>
           </div>
 
@@ -498,7 +500,7 @@ const UserManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>📋</span>
+                <BiClipboard />
                 Trạng thái
               </span>
             </label>
@@ -508,10 +510,10 @@ const UserManagement = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="ACTIVE">✅ Hoạt động</option>
-              <option value="INACTIVE">❌ Không hoạt động</option>
-              <option value="SUSPENDED">⏸️ Tạm khóa</option>
-              <option value="PENDING">⏳ Chờ xác thực</option>
+              <option value="ACTIVE">Hoạt động</option>
+              <option value="INACTIVE">Không hoạt động</option>
+              <option value="SUSPENDED">Tạm khóa</option>
+              <option value="PENDING">Chờ xác thực</option>
             </select>
           </div>
 
@@ -519,7 +521,6 @@ const UserManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>↕️</span>
                 Sắp xếp
               </span>
             </label>
@@ -536,11 +537,11 @@ const UserManagement = () => {
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
-              <option value="createdAt-desc">🆕 Mới nhất</option>
-              <option value="createdAt-asc">🔼 Cũ nhất</option>
-              <option value="firstName-asc">🔤 Tên A-Z</option>
-              <option value="firstName-desc">🔥 Tên Z-A</option>
-              <option value="email-asc">📧 Email A-Z</option>
+              <option value="createdAt-desc">Mới nhất</option>
+              <option value="createdAt-asc">Cũ nhất</option>
+              <option value="firstName-asc">Tên A-Z</option>
+              <option value="firstName-desc">Tên Z-A</option>
+              <option value="email-asc">Email A-Z</option>
             </select>
           </div>
         </div>
@@ -552,7 +553,7 @@ const UserManagement = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-orange-500 text-white p-2 rounded-lg">
-                <span className="text-xl">📋</span>
+                <BiClipboard className="text-xl" />
               </div>
               <div>
                 <span className="text-lg text-orange-900 font-bold">
@@ -566,19 +567,19 @@ const UserManagement = () => {
                 onClick={() => handleBulkAction('activate')}
                 className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-emerald-600 flex items-center gap-2 font-semibold transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                <span className="text-lg">✅</span> Kích hoạt
+                <BiCheckCircle className="text-lg" /> Kích hoạt
               </button>
               <button
                 onClick={() => handleBulkAction('deactivate')}
                 className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm rounded-lg hover:from-yellow-600 hover:to-orange-600 flex items-center gap-2 font-semibold transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                <span className="text-lg">❌</span> Vô hiệu hóa
+                <FiX className="text-lg" /> Vô hiệu hóa
               </button>
               <button
                 onClick={() => handleBulkAction('suspend')}
                 className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm rounded-lg hover:from-red-600 hover:to-pink-600 flex items-center gap-2 font-semibold transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
-                <span className="text-lg">⏸️</span> Tạm khóa
+                <FiPause className="text-lg" /> Tạm khóa
               </button>
             </div>
           </div>
@@ -590,7 +591,7 @@ const UserManagement = () => {
         <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-              <span className="text-2xl">👥</span>
+              <FiUser className="text-2xl" />
               Danh sách users
               <span className="ml-2 px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-full">
                 {users.length}
@@ -615,22 +616,22 @@ const UserManagement = () => {
                   />
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  👤 User
+                  <FiUser className="inline mr-1" /> User
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📧 Liên hệ
+                  Liên hệ
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🎭 Vai trò
+                  <FiShield className="inline mr-1" /> Vai trò
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🔔 Trạng thái
+                  <FiBell className="inline mr-1" /> Trạng thái
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📅 Ngày tạo
+                  <FiCalendar className="inline mr-1" /> Ngày tạo
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  ⚙️ Thao tác
+                  <FiSettings className="inline mr-1" /> Thao tác
                 </th>
               </tr>
             </thead>
@@ -686,7 +687,7 @@ const UserManagement = () => {
                         to={`/admin/users/${user._id}`}
                         className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                       >
-                        <span className="text-sm">👁️</span> Xem
+                        <FiEye className="text-sm" /> Xem
                       </Link>
                       <button
                         onClick={() => handleStatusChangeClick(
@@ -701,7 +702,7 @@ const UserManagement = () => {
                             : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
                         }`}
                       >
-                        <span className="text-sm">{user.status === 'ACTIVE' ? '🔒' : '🔓'}</span>
+                        {user.status === 'ACTIVE' ? <FiLock className="text-sm" /> : <FiUnlock className="text-sm" />}
                         {user.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
                       </button>
                     </div>
@@ -860,7 +861,7 @@ const UserManagement = () => {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
-            <span className="text-red-500 mr-2">⚠️</span>
+            <FiAlertTriangle className="text-red-500 mr-2" />
             <span className="text-red-800">{error}</span>
           </div>
         </div>
@@ -872,7 +873,7 @@ const UserManagement = () => {
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
-                <span className="text-3xl">⚠️</span>
+                <FiAlertTriangle className="text-3xl" />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">
                 Xác nhận thay đổi trạng thái
@@ -898,7 +899,7 @@ const UserManagement = () => {
                 onClick={cancelStatusChange}
                 className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 transform hover:-translate-y-0.5"
               >
-                ❌ Hủy
+                <FiX /> Hủy
               </button>
               <button
                 onClick={confirmStatusChange}
@@ -908,7 +909,7 @@ const UserManagement = () => {
                     : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
                 }`}
               >
-                {confirmDialog.newStatus === 'INACTIVE' ? '🔒 Khóa tài khoản' : '🔓 Kích hoạt'}
+                {confirmDialog.newStatus === 'INACTIVE' ? <FiLock /> : <FiUnlock />} {confirmDialog.newStatus === 'INACTIVE' ? 'Khóa tài khoản' : 'Kích hoạt'}
               </button>
             </div>
           </div>

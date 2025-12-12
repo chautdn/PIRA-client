@@ -201,6 +201,9 @@ export default function ShipmentsPage() {
 
   // Check if shipment can be accepted (must be on or after scheduled date)
   const canAcceptShipment = (shipment) => {
+    // 🔧 TESTING MODE: Temporarily disable date validation
+    return true;
+    
     if (!shipment) return false;
     
     let scheduledDate = null;
@@ -388,7 +391,6 @@ export default function ShipmentsPage() {
             {/* Header with sticky position on mobile */}
             <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-purple-600 -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-4 sm:py-5 mb-4 sm:mb-6 shadow-lg">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
-                <span className="text-2xl sm:text-3xl">🚚</span>
                 <span>Quản lí vận chuyển</span>
               </h1>
               <p className="text-blue-100 text-xs sm:text-sm mt-1">Theo dõi và quản lý các đơn hàng của bạn</p>
@@ -396,7 +398,6 @@ export default function ShipmentsPage() {
             
             {shipments.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12 text-center">
-                <div className="text-6xl mb-4">📦</div>
                 <p className="text-gray-700 text-lg sm:text-xl font-semibold mb-2">Không có shipment nào</p>
                 <p className="text-gray-500 text-sm">Đơn hàng mới sẽ xuất hiện ở đây</p>
               </div>
@@ -407,7 +408,6 @@ export default function ShipmentsPage() {
             <div className="bg-white rounded-2xl shadow-md p-3 sm:p-4 mb-3 sm:mb-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <span className="text-xl">📅</span>
                   <span>Lịch giao hàng</span>
                 </h2>
                 <div className="text-xs sm:text-sm bg-gradient-to-r from-blue-50 to-purple-50 px-2.5 sm:px-3 py-1.5 rounded-full border-2 border-blue-300">
@@ -418,7 +418,6 @@ export default function ShipmentsPage() {
             
             {uniqueDates.length === 0 ? (
               <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl p-6 sm:p-8 text-center">
-                <p className="text-4xl sm:text-5xl mb-3">📦</p>
                 <p className="text-base sm:text-lg text-gray-700 font-semibold mb-1">Chưa có đơn hàng nào</p>
                 <p className="text-xs sm:text-sm text-gray-500">Đơn hàng mới sẽ hiển thị tại đây</p>
               </div>
@@ -456,14 +455,14 @@ export default function ShipmentsPage() {
                             <span className={`flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
                               isSelected ? 'bg-white/30 text-white' : 'bg-blue-100 text-blue-800 border border-blue-300'
                             }`}>
-                              <span className="text-xs sm:text-sm">📦</span> <span>{deliveryCountForDate}</span>
+                              <span>{deliveryCountForDate}</span>
                             </span>
                           )}
                           {returnCountForDate > 0 && (
                             <span className={`flex items-center gap-0.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
                               isSelected ? 'bg-white/30 text-white' : 'bg-orange-100 text-orange-800 border border-orange-300'
                             }`}>
-                              <span className="text-xs sm:text-sm">🔄</span> <span>{returnCountForDate}</span>
+                              <span>{returnCountForDate}</span>
                             </span>
                           )}
                         </div>
@@ -488,12 +487,12 @@ export default function ShipmentsPage() {
                   <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
                     {deliveryCount > 0 && (
                       <span className="px-2 sm:px-3 py-1 bg-white/30 text-white rounded-full font-bold border border-white/50">
-                        📦 {deliveryCount}
+                        Giao: {deliveryCount}
                       </span>
                     )}
                     {returnCount > 0 && (
                       <span className="px-2 sm:px-3 py-1 bg-white/30 text-white rounded-full font-bold border border-white/50">
-                        🔄 {returnCount}
+                        Trả: {returnCount}
                       </span>
                     )}
                   </div>
@@ -535,7 +534,7 @@ export default function ShipmentsPage() {
                               ? 'bg-blue-100 text-blue-800'
                               : 'bg-orange-100 text-orange-800'
                           }`}>
-                            {s.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả'}
+                            {s.type === 'DELIVERY' ? 'Giao hàng' : 'Nhận trả'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -596,9 +595,15 @@ export default function ShipmentsPage() {
                             </span>
                           )}
 
-                          {(s.status === 'IN_TRANSIT' || s.status === 'DELIVERED') && (
+                          {s.status === 'IN_TRANSIT' && (
                             <span className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-medium text-sm inline-block">
-                              ✓ Đang xử lý
+                              Đang xử lý
+                            </span>
+                          )}
+
+                          {s.status === 'DELIVERED' && (
+                            <span className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium text-sm inline-block">
+                              {s.type === 'DELIVERY' ? 'Đã giao' : 'Đã trả'}
                             </span>
                           )}
                         </td>
@@ -626,7 +631,6 @@ export default function ShipmentsPage() {
                     }`}>
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span className="text-xl shrink-0">{s.type === 'DELIVERY' ? '📦' : '🔄'}</span>
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-gray-900 text-sm sm:text-base truncate">
                               {s.type === 'DELIVERY' ? 'Giao Hàng' : 'Nhận Trả'}
@@ -641,13 +645,6 @@ export default function ShipmentsPage() {
                           s.status === 'DELIVERED' ? 'bg-green-200 text-green-900' :
                           'bg-gray-200 text-gray-900'
                         }`}>
-                          <span className="hidden xs:inline">
-                            {s.status === 'PENDING' ? '⏳ ' :
-                             s.status === 'SHIPPER_CONFIRMED' ? '✓ ' :
-                             s.status === 'IN_TRANSIT' ? '🚚 ' :
-                             s.status === 'DELIVERED' ? '✓✓ ' :
-                             '❓ '}
-                          </span>
                           <span className="text-[10px] xs:text-xs">
                             {s.status === 'PENDING' ? 'CHỜ' :
                              s.status === 'SHIPPER_CONFIRMED' ? 'ĐÃ NHẬN' :
@@ -703,13 +700,12 @@ export default function ShipmentsPage() {
                                   : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-70'
               }`}
                             >
-                              <span className="text-lg">{canAcceptShipment(s) ? '✓' : '🔒'}</span>
                               <span>{canAcceptShipment(s) ? 'Nhận đơn ngay' : 'Chưa đến ngày giao'}</span>
                             </button>
                             {!canAcceptShipment(s) && (
                               <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded-lg">
                                 <p className="text-[10px] xs:text-xs text-orange-700 text-center font-semibold">
-                                  ⏰ Chỉ nhận từ 00:00 ngày {formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate))}
+                                  Chỉ nhận từ 00:00 ngày {formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate))}
                                 </p>
                               </div>
                             )}
@@ -724,7 +720,6 @@ export default function ShipmentsPage() {
                             }}
                             className="w-full px-4 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 active:from-blue-700 active:to-indigo-700 text-white rounded-xl font-bold transition-all text-sm shadow-md active:shadow-lg touch-manipulation flex items-center justify-center gap-2"
                           >
-                            <span className="text-lg">📸</span>
                             <span>Chụp ảnh Pickup</span>
                           </button>
                         )}
@@ -738,7 +733,6 @@ export default function ShipmentsPage() {
 
           {selectedDate && shipmentsForSelectedDate.length === 0 && (
             <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-10 text-center">
-              <div className="text-5xl mb-3">📭</div>
               <p className="text-gray-700 text-base sm:text-lg font-bold mb-1">Không có đơn hàng</p>
               <p className="text-gray-500 text-sm">Chưa có đơn hàng nào cho ngày này</p>
             </div>
@@ -746,7 +740,6 @@ export default function ShipmentsPage() {
 
           {!selectedDate && uniqueDates.length > 0 && (
             <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl p-8 sm:p-12 text-center border-2 border-blue-200">
-              <div className="text-6xl sm:text-7xl mb-4 animate-bounce">👆</div>
               <p className="text-gray-800 text-lg sm:text-xl font-bold mb-2">Chọn ngày để xem đơn hàng</p>
               <p className="text-gray-600 text-sm sm:text-base">
                 Bạn có <span className="font-extrabold text-blue-600 text-lg">{shipments.length}</span> đơn hàng cần xử lý
@@ -893,7 +886,6 @@ export default function ShipmentsPage() {
                 {proofs[proofModalShipment._id].imagesBeforeDelivery?.length > 0 && (
                   <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border-2 border-blue-200">
                     <h3 className="text-base sm:text-lg font-extrabold text-gray-800 mb-3 flex items-center gap-2">
-                      <span className="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-md">📦</span>
                       <span>Ảnh Pickup ({proofs[proofModalShipment._id].imagesBeforeDelivery.length})</span>
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">

@@ -18,19 +18,137 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
   const confirmedProducts = subOrder.products?.filter(p => p.productStatus === 'CONFIRMED') || [];
   const rejectedProducts = subOrder.products?.filter(p => p.productStatus === 'REJECTED') || [];
 
+  // ✅ NEW: Recalculate batches from products (don't trust deliveryBatches in DB)
+  const recalculateBatchesFromProducts = () => {
+    if (!subOrder.products || subOrder.products.length === 0) {
+      return [];
+    }
+
+    // Group products by delivery date
+    const batchMap = new Map();
+    
+    subOrder.products.forEach(productItem => {
+      const deliveryDate = productItem.rentalPeriod?.startDate
+        ? new Date(productItem.rentalPeriod.startDate).toISOString().split('T')[0]
+        : null;
+      
+      if (!deliveryDate) return;
+
+      if (!batchMap.has(deliveryDate)) {
+        batchMap.set(deliveryDate, {
+          deliveryDate,
+          products: [],
+          confirmedProducts: [],
+          rejectedProducts: []
+        });
+      }
+
+      const batch = batchMap.get(deliveryDate);
+      batch.products.push(productItem._id);
+
+      if (productItem.productStatus === 'CONFIRMED') {
+        batch.confirmedProducts.push(productItem._id);
+      } else if (productItem.productStatus === 'REJECTED') {
+        batch.rejectedProducts.push(productItem._id);
+      }
+    });
+
+    return Array.from(batchMap.values());
+  };
+
+  // ✅ Calculate shipping refund for REJECTED products only
+  // Logic: If batch has ≥1 CONFIRMED → keep fee (refund = 0)
+  //        If batch has ALL REJECTED → refund 100%
+  const calculateShippingRefundForRejected = () => {
+    const recalculatedBatches = recalculateBatchesFromProducts();
+    
+    if (recalculatedBatches.length === 0 || !subOrder.deliveryBatches) {
+      return 0;
+    }
+
+    let totalRefund = 0;
+
+    recalculatedBatches.forEach(recalcBatch => {
+      // Check if this batch has ANY confirmed product
+      const hasConfirmed = recalcBatch.confirmedProducts.length > 0;
+
+      if (!hasConfirmed) {
+        // ALL products in this batch are REJECTED → Refund 100%
+        const matchingBatch = subOrder.deliveryBatches.find(
+          db => db.deliveryDate === recalcBatch.deliveryDate
+        );
+        
+        if (matchingBatch) {
+          const batchFee = matchingBatch.shippingFee?.finalFee || 0;
+          totalRefund += batchFee;
+    
+        }
+      } else {
+        // Has at least 1 CONFIRMED → Keep fee (no refund)
+        const matchingBatch = subOrder.deliveryBatches.find(
+          db => db.deliveryDate === recalcBatch.deliveryDate
+        );
+        if (matchingBatch) {
+          console.log(`📦 Batch ${recalcBatch.deliveryDate}: Has CONFIRMED → Keep fee ${matchingBatch.shippingFee?.finalFee || 0}`);
+        }
+      }
+    });
+
+    return totalRefund;
+  };
+
   // Tính toán số tiền
-  const calculateTotals = (products) => {
-    return products.reduce((acc, p) => ({
-      deposit: acc.deposit + (p.totalDeposit || 0),
-      rental: acc.rental + (p.totalRental || 0),
-      shipping: acc.shipping + (p.totalShippingFee || 0),
-      total: acc.total + (p.totalDeposit || 0) + (p.totalRental || 0) + (p.totalShippingFee || 0)
-    }), { deposit: 0, rental: 0, shipping: 0, total: 0 });
+  const calculateTotals = (products, includeShipping = true) => {
+    // Calculate rental and deposit from products
+    const deposit = products.reduce((sum, p) => sum + (p.totalDeposit || 0), 0);
+    const rental = products.reduce((sum, p) => sum + (p.totalRental || 0), 0);
+    
+    // ✅ For CONFIRMED products: Calculate shipping fees from batches that have confirmed products
+    // ✅ For REJECTED products: Shipping refund is 0 if batch has any confirmed product
+    let shipping = 0;
+    
+    if (includeShipping) {
+      if (products === confirmedProducts) {
+        // Calculate shipping for CONFIRMED products
+        // Include all batches that have at least 1 confirmed product
+        const recalculatedBatches = recalculateBatchesFromProducts();
+        recalculatedBatches.forEach(batch => {
+          if (batch.confirmedProducts.length > 0) {
+            const matchingBatch = subOrder.deliveryBatches?.find(
+              db => db.deliveryDate === batch.deliveryDate
+            );
+            if (matchingBatch) {
+              shipping += matchingBatch.shippingFee?.finalFee || 0;
+            }
+          }
+        });
+      } else if (products === rejectedProducts) {
+        // ✅ For REJECTED products: Use the refund calculation
+        shipping = calculateShippingRefundForRejected();
+      }
+    }
+    
+    return {
+      deposit,
+      rental,
+      shipping,
+      total: deposit + rental + shipping
+    };
   };
 
   const confirmedTotals = calculateTotals(confirmedProducts);
   const rejectedTotals = calculateTotals(rejectedProducts);
-  const allTotals = calculateTotals(subOrder.products || []);
+  
+  // For "Cancel All" option - calculate total shipping from all batches
+  const allProducts = subOrder.products || [];
+  const allTotals = {
+    deposit: allProducts.reduce((sum, p) => sum + (p.totalDeposit || 0), 0),
+    rental: allProducts.reduce((sum, p) => sum + (p.totalRental || 0), 0),
+    shipping: (subOrder.deliveryBatches || []).reduce((sum, batch) => sum + (batch.shippingFee.finalFee || 0), 0),
+    total: 0
+  };
+  allTotals.total = allTotals.deposit + allTotals.rental + allTotals.shipping;
+  
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -56,7 +174,6 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
       onDecisionMade('CANCELLED', result);
       onClose();
     } catch (error) {
-      console.error('Error cancelling order:', error);
       alert(error.message || 'Không thể hủy đơn hàng');
     } finally {
       setLoading(false);
@@ -65,7 +182,7 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
 
   const handleAcceptPartial = async () => {
     // Xác nhận trước khi tiếp tục
-    if (!window.confirm('Bạn xác nhận TIẾP TỤC với các sản phẩm đã được chủ xác nhận? Bạn sẽ được chuyển đến trang ký hợp đồng.')) {
+    if (!window.confirm('Bạn xác nhận TIẾP TỤC với các sản phẩm đã được chủ xác nhận?')) {
       return;
     }
 
@@ -73,10 +190,9 @@ const RenterPartialDecisionModal = ({ isOpen, onClose, subOrder, onDecisionMade 
     try {
       const result = await rentalOrderService.renterAcceptPartialOrder(subOrder._id);
       onDecisionMade('ACCEPTED', result);
-      // Modal will close and page will redirect to contract
+      // Close modal - parent will redirect to confirmation-summary
       onClose();
     } catch (error) {
-      console.error('Error accepting partial order:', error);
       alert(error.message || 'Không thể chấp nhận đơn hàng');
       setLoading(false);
     }

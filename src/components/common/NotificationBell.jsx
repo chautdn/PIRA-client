@@ -69,6 +69,10 @@ const NotificationBell = () => {
       // Fallback: Navigate to dispute detail
       setIsOpen(false);
       navigate(`/disputes/${notification.relatedDispute}`);
+    } else if (notification.relatedProduct) {
+      // Fallback: Navigate to product detail with reviews tab
+      setIsOpen(false);
+      navigate(`/product/${notification.relatedProduct}?activeTab=reviews`);
     } else if (notification.relatedOrder) {
       // Fallback: Navigate to order detail based on user role
       setIsOpen(false);

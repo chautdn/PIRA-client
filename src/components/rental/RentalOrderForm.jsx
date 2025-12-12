@@ -24,11 +24,12 @@ import paymentService from "../../services/payment";
 import rentalOrderService from "../../services/rentalOrder";
 import systemPromotionService from "../../services/systemPromotion";
 import { HiCreditCard } from "react-icons/hi";
-import { PiBank , PiHandDeposit  } from "react-icons/pi";
+import { PiBank, PiHandDeposit } from "react-icons/pi";
+import icons from "../../utils/icons";
 
 const RentalOrderForm = () => {
   try {
-    const { t } = useI18n();
+    const { t, language } = useI18n();
     const { user } = useAuth();
     const { cart: cartItems, clearCart } = useCart();
     const rentalOrderContext = useRentalOrder();
@@ -51,29 +52,30 @@ const RentalOrderForm = () => {
     const selectedItems = location.state?.selectedItems || null;
     const fromCart = location.state?.fromCart || false;
 
-  const [orderData, setOrderData] = useState(() => ({
-    rentalPeriod: {
-      startDate: '',
-      endDate: ''
-    },
-    deliveryAddress: {
-      streetAddress: '',
-      ward: '',
-      district: '',
-      city: '',
-      contactPhone: (user && (user.phone || (user.profile && user.profile.phone))) ? (user.phone || user.profile.phone) : '',
-      contactName: (user && (user.profile && (user.profile.firstName || user.profile.lastName)))
-        ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
-        : (user && user.profile && user.profile.fullName) || ''
-    },
-    deliveryMethod: 'DELIVERY',
-  }));
+    const [orderData, setOrderData] = useState(() => ({
+      rentalPeriod: {
+        startDate: "",
+        endDate: "",
+      },
+      deliveryAddress: {
+        streetAddress: "",
+        ward: "",
+        district: "",
+        city: "",
+        contactPhone: (user && (user.phone || (user.profile && user.profile.phone))) ? (user.phone || user.profile.phone) : "",
+        contactName: (user && (user.profile && (user.profile.firstName || user.profile.lastName)))
+          ? `${user.profile.firstName || ""}${user.profile.firstName && user.profile.lastName ? " " : ""}${user.profile.lastName || ""}`.trim()
+          : (user && user.profile && user.profile.fullName) || "",
+      },
+      deliveryMethod: "DELIVERY",
+    }));
 
     const [errors, setErrors] = useState({});
     const [step, setStep] = useState(1);
     const [groupedProducts, setGroupedProducts] = useState({});
     const [sourceItems, setSourceItems] = useState([]); // Store the items being processed
-    const [totalShipping, setTotalShipping] = useState(0);
+    const [totalShipping, setTotalShipping] = useState(0); // Final shipping (after discounts applied to products)
+    const [originalTotalShipping, setOriginalTotalShipping] = useState(0); // Original shipping (before discounts)
     const [showPaymentSelector, setShowPaymentSelector] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
     const [showDepositModal, setShowDepositModal] = useState(false);
@@ -83,12 +85,12 @@ const RentalOrderForm = () => {
     const [selectedVoucher, setSelectedVoucher] = useState(null);
     const [showShippingModal, setShowShippingModal] = useState(false);
     const [selectedShippingInfo, setSelectedShippingInfo] = useState(null);
-    
+
     // Use ref to store calculated shipping data (persist across renders)
     const calculatedShippingRef = useRef(null);
 
     // Address related states
-    const [userAddresses, setUserAddresses] = useState(() => (user && user.addresses) ? user.addresses : (user && user.address ? [{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }] : []));
+    const [userAddresses, setUserAddresses] = useState(() => (user && user.addresses) ? user.addresses : (user && user.address ? [{ ...user.address, isDefault: true, id: "default", phone: user.phone || user.profile?.phone }] : []));
     const [loadingAddresses, setLoadingAddresses] = useState(false);
     const [showAddressModal, setShowAddressModal] = useState(false);
 
@@ -98,7 +100,7 @@ const RentalOrderForm = () => {
         if (user.addresses && Array.isArray(user.addresses)) {
           setUserAddresses(user.addresses);
         } else if (user.address) {
-          setUserAddresses([{ ...user.address, isDefault: true, id: 'default', phone: user.phone || user.profile?.phone }]);
+          setUserAddresses([{ ...user.address, isDefault: true, id: "default", phone: user.phone || user.profile?.phone }]);
         } else {
           setUserAddresses([]);
         }
@@ -164,10 +166,10 @@ const RentalOrderForm = () => {
     // Update contact info when user changes (use top-level phone and profile name parts)
     useEffect(() => {
       if (user) {
-        const phoneFromUser = user.phone || (user.profile && user.profile.phone) || '';
+        const phoneFromUser = user.phone || (user.profile && user.profile.phone) || "";
         const nameFromProfile = (user.profile && (user.profile.firstName || user.profile.lastName))
-          ? `${user.profile.firstName || ''}${user.profile.firstName && user.profile.lastName ? ' ' : ''}${user.profile.lastName || ''}`.trim()
-          : (user.profile && user.profile.fullName) || '';
+          ? `${user.profile.firstName || ""}${user.profile.firstName && user.profile.lastName ? " " : ""}${user.profile.lastName || ""}`.trim()
+          : (user.profile && user.profile.fullName) || "";
 
         setOrderData((prev) => ({
           ...prev,
@@ -228,10 +230,10 @@ const RentalOrderForm = () => {
       } else {
         return;
       }
-      
+
       // Store sourceItems in state for later use when submitting
       setSourceItems(sourceItems);
-      
+
       const grouped = {};
       let earliestStart = null;
       let latestEnd = null;
@@ -291,32 +293,11 @@ const RentalOrderForm = () => {
     };
 
     // Helper function to calculate final shipping after discounts
+    // NOTE: Discounts are already applied when allocating fees to products in handleCalculateShipping
+    // This function just returns the sum of all product shipping fees
     const calculateFinalShipping = () => {
-      let finalShipping = totalShipping;
-
-      // Apply promotion discount first
-      if (activePromotion) {
-        const discount =
-          activePromotion.systemPromotion.discountType === "PERCENTAGE"
-            ? (totalShipping *
-                activePromotion.systemPromotion.shippingDiscountValue) /
-              100
-            : Math.min(
-                activePromotion.systemPromotion.shippingDiscountValue,
-                totalShipping
-              );
-        finalShipping -= discount;
-      }
-
-      // Apply voucher discount on remaining amount
-      if (selectedVoucher) {
-        const voucherDiscount = Math.round(
-          (finalShipping * selectedVoucher.discountPercent) / 100
-        );
-        finalShipping -= voucherDiscount;
-      }
-
-      return Math.max(0, finalShipping);
+      // totalShipping already includes discounts applied at product level
+      return totalShipping;
     };
 
     // Calculate total amounts using dates from cart items
@@ -392,7 +373,8 @@ const RentalOrderForm = () => {
       }
 
       try {
-        let masterTotalShipping = 0;
+        let masterTotalShipping = 0; // Final shipping (after discounts)
+        let masterOriginalShipping = 0; // Original shipping (before discounts)
         // Create a mutable copy of groupedProducts
         const updatedGroups = {};
         Object.keys(groupedProducts).forEach(ownerId => {
@@ -430,40 +412,42 @@ const RentalOrderForm = () => {
             });
           });
 
-          let subOrderTotalShipping = 0;
-          const subOrderDeliveries = [];
+          let subOrderTotalShipping = 0; // Final shipping (after discount)
+          let subOrderOriginalShipping = 0; // Original shipping (before discount)
+          const subOrderDeliveryBatches = []; // ✅ NEW: Store batches for backend
           let deliveryCount = 0;
+
+          // ✅ NEW: Get owner location once (same for all batches)
+          const ownerLocation = {
+            latitude: group.owner.address?.coordinates?.latitude || null,
+            longitude: group.owner.address?.coordinates?.longitude || null,
+          };
+          console.log("Owner Location:", ownerLocation);
+
+          const userLocation = {
+            latitude: orderData.deliveryAddress.latitude || null,
+            longitude: orderData.deliveryAddress.longitude || null,
+          };
+          console.log("User Location:", userLocation);
+
+          // Kiểm tra tọa độ - KHÔNG fallback, báo lỗi rõ ràng
+          if (!ownerLocation.latitude || !ownerLocation.longitude) {
+            throw new Error(
+              `Chủ sản phẩm ${group.owner.profile?.firstName || "Unknown"} chưa có tọa độ địa chỉ. Vui lòng liên hệ chủ sản phẩm cập nhật địa chỉ.`
+            );
+          }
+
+          if (!userLocation.latitude || !userLocation.longitude) {
+            throw new Error(
+              "Địa chỉ giao hàng chưa có tọa độ. Vui lòng chọn địa chỉ trên bản đồ."
+            );
+          }
 
           // Calculate shipping for each delivery batch (same owner, same date = 1 delivery trip)
           for (const [deliveryDate, batchProducts] of Object.entries(
             deliveryBatches
           )) {
             deliveryCount++;
-
-            const ownerLocation = {
-              latitude: group.owner.address?.coordinates?.latitude || null,
-              longitude: group.owner.address?.coordinates?.longitude || null,
-            };
-            console.log("Owner Location:", ownerLocation);
-
-            const userLocation = {
-              latitude: orderData.deliveryAddress.latitude || null,
-              longitude: orderData.deliveryAddress.longitude || null,
-            };
-            console.log("User Location:", userLocation);
-
-            // Kiểm tra tọa độ - KHÔNG fallback, báo lỗi rõ ràng
-            if (!ownerLocation.latitude || !ownerLocation.longitude) {
-              throw new Error(
-                `Chủ sản phẩm ${group.owner.profile?.firstName || "Unknown"} chưa có tọa độ địa chỉ. Vui lòng liên hệ chủ sản phẩm cập nhật địa chỉ.`
-              );
-            }
-
-            if (!userLocation.latitude || !userLocation.longitude) {
-              throw new Error(
-                "Địa chỉ giao hàng chưa có tọa độ. Vui lòng chọn địa chỉ trên bản đồ."
-              );
-            }
 
             // Use backend API to calculate exact shipping for this batch
             const products = batchProducts.map((item) => ({
@@ -499,107 +483,101 @@ const RentalOrderForm = () => {
             const shippingResponse = await calculateShipping(shippingData);
 
             // Xử lý response từ API
-            // Response có thể có nhiều format:
-            // 1. Trực tiếp: { distance: 20.5, fee: 120000, success: true, ... }
-            // 2. Wrapped: { data: { shipping: {...} } }
-            // 3. Wrapped: { metadata: { shipping: {...} } }
             let shipping;
-            
             if (shippingResponse?.distance !== undefined && shippingResponse?.fee !== undefined) {
-              // Format 1: Response trực tiếp là shipping object
               shipping = shippingResponse;
             } else {
-              // Format 2 & 3: Response wrapped
-              shipping = 
-                shippingResponse?.data?.shipping || 
+              shipping =
+                shippingResponse?.data?.shipping ||
                 shippingResponse?.metadata?.shipping ||
                 shippingResponse?.shipping;
             }
-            
+
             if (!shipping || !shipping.distance || !shipping.fee) {
               throw new Error(
                 shippingResponse?.message || "Không thể tính phí ship từ API - Dữ liệu không hợp lệ"
               );
             }
-            const batchFee = shipping.fee || 0;
-
-            const allocatedFeePerProduct = Math.round(batchFee / batchProducts.length);
             
-            const batchInfo = {
+            // Get original batch fee (before any discounts)
+            const originalBatchFee = shipping.fee || 0;
+            let batchFinalFee = originalBatchFee;
+            let batchDiscountAmount = 0;
+
+            // Apply promotion discount to this batch's fee
+            if (activePromotion) {
+              const discount =
+                activePromotion.systemPromotion.discountType === "PERCENTAGE"
+                  ? (batchFinalFee * activePromotion.systemPromotion.shippingDiscountValue) / 100
+                  : Math.min(activePromotion.systemPromotion.shippingDiscountValue, batchFinalFee);
+              batchDiscountAmount += discount;
+              batchFinalFee = Math.round(batchFinalFee - discount);
+            }
+
+            // Apply voucher discount to this batch's fee
+            if (selectedVoucher) {
+              const voucherDiscount = Math.round(
+                (batchFinalFee * selectedVoucher.discountPercent) / 100
+              );
+              batchDiscountAmount += voucherDiscount;
+              batchFinalFee = Math.max(0, batchFinalFee - voucherDiscount);
+            }
+
+            // ✅ NEW: Create batch object for backend
+            const batchData = {
               deliveryDate,
-              batchSize: batchProducts.length,
-              batchQuantity: batchProducts.reduce(
-                (sum, p) => sum + (p.quantity || 1),
-                0
-              ),
-              deliveryFee: batchFee,
+              productIds: batchProducts.map(p => p.product._id), // Array of product IDs
               distance: shipping.distance,
-              distanceMeters: shipping.distanceMeters,
-              estimatedTime: shipping.estimatedTime,
-              shippingDetails: shipping.shippingDetails,
-              products: batchProducts.map((p) => ({
-                productId: p.product._id,
-                quantity: p.quantity || 1,
-                allocatedFee: allocatedFeePerProduct,
-              })),
+              shippingFee: {
+                originalFee: originalBatchFee,
+                discountAmount: Math.round(batchDiscountAmount),
+                finalFee: batchFinalFee
+              }
             };
 
-            // Update each product with its shipping fee in the updatedGroups
-            batchProducts.forEach((batchProduct) => {
-              const productIndex = group.products.findIndex(
-                (prod) => prod.product._id === batchProduct.product._id
-              );
-              if (productIndex !== -1) {
-                // Create new product object to ensure immutability
-                updatedGroups[ownerId].products[productIndex] = {
-                  ...updatedGroups[ownerId].products[productIndex],
-                  product: {
-                    ...updatedGroups[ownerId].products[productIndex].product,
-                    totalShippingFee: allocatedFeePerProduct
-                  }
-                };
-              }
-            });
-
-            subOrderTotalShipping += batchFee;
-            subOrderDeliveries.push(batchInfo);
+            subOrderDeliveryBatches.push(batchData);
+            subOrderTotalShipping += batchFinalFee;
+            subOrderOriginalShipping += originalBatchFee;
 
             console.log(
               `✅ Delivery batch ${deliveryDate} - Owner ${
                 group.owner.profile?.firstName
-              }: ${batchFee.toLocaleString("vi-VN")}đ (${shipping.distance.toFixed(2)}km)`
+              }: ${batchFinalFee.toLocaleString("vi-VN")}đ (original: ${originalBatchFee.toLocaleString("vi-VN")}đ) - ${shipping.distance.toFixed(2)}km - ${batchProducts.length} products`
             );
           }
 
           // Update SubOrder shipping info
-          updatedGroups[ownerId].shippingFee = subOrderTotalShipping;
+          updatedGroups[ownerId].shippingFee = subOrderTotalShipping; // Final fee
+          updatedGroups[ownerId].originalShippingFee = subOrderOriginalShipping; // Original fee
+          updatedGroups[ownerId].deliveryBatches = subOrderDeliveryBatches; // ✅ NEW: Array of batch objects
           updatedGroups[ownerId].deliveryInfo = {
             deliveryCount,
-            deliveryBatches: subOrderDeliveries,
-            distance: subOrderDeliveries[0]?.distance || 0,
-            summary: `${deliveryCount} lần giao hàng - ${subOrderDeliveries[0]?.distance?.toFixed(2) || 0}km`,
+            totalDistance: subOrderDeliveryBatches[0]?.distance || 0,
+            summary: `${deliveryCount} lần giao hàng - ${subOrderDeliveryBatches[0]?.distance?.toFixed(2) || 0}km`,
           };
 
           masterTotalShipping += subOrderTotalShipping;
+          masterOriginalShipping += subOrderOriginalShipping;
 
           console.log(
             `📦 SubOrder ${ownerId} total: ${subOrderTotalShipping.toLocaleString(
               "vi-VN"
-            )}đ (${deliveryCount} deliveries)`
+            )}đ (original: ${subOrderOriginalShipping.toLocaleString("vi-VN")}đ) - ${deliveryCount} deliveries`
           );
         }
 
         // Update state with calculated shipping fees
         setGroupedProducts(updatedGroups);
-        setTotalShipping(masterTotalShipping);
-        
+        setTotalShipping(masterTotalShipping); // Final shipping (after discounts)
+        setOriginalTotalShipping(masterOriginalShipping); // Original shipping (before discounts)
+
         // Store in ref to persist across renders
         calculatedShippingRef.current = {
           groupedProducts: updatedGroups,
           totalShipping: masterTotalShipping,
           timestamp: Date.now()
         };
-        
+
         toast.success(
           `Đã tính phí ship: ${masterTotalShipping.toLocaleString(
             "vi-VN"
@@ -668,11 +646,11 @@ const RentalOrderForm = () => {
       if (orderData.deliveryMethod === "DELIVERY") {
         // Use ref as source of truth if available
         const shippingSource = calculatedShippingRef.current?.groupedProducts || groupedProducts;
-        
+
         const hasShippingCalculated = Object.values(shippingSource).some(
           group => group.shippingFee > 0
         );
-        
+
         if (!hasShippingCalculated) {
           toast.error("Vui lòng nhấn 'Tính phí vận chuyển' trước khi tạo đơn hàng");
           return;
@@ -729,7 +707,7 @@ const RentalOrderForm = () => {
         // Use ref for shipping data if available (more reliable than state)
         const shippingSource = calculatedShippingRef.current?.groupedProducts || groupedProducts;
         const shippingTotal = calculatedShippingRef.current?.totalShipping || totalShipping;
-        
+
         const orderWithPayment = {
           ...orderData,
           paymentMethod: paymentMethod,
@@ -755,20 +733,18 @@ const RentalOrderForm = () => {
               title: activePromotion.title,
               systemPromotion: activePromotion.systemPromotion
             } : null,
+            // ✅ NEW: Send delivery batches instead of per-product shipping
             groupedShipping: Object.fromEntries(
               Object.entries(shippingSource).map(([ownerId, group]) => [
                 ownerId,
                 {
-                  shippingFee: group.shippingFee || 0,
+                  shippingFee: group.originalShippingFee || group.shippingFee || 0,
                   deliveryInfo: group.deliveryInfo || null,
-                  products: (group.products || []).map(item => ({
-                    productId: item.product._id,
-                    totalShippingFee: item.product.totalShippingFee || 0,
-                    deliveryDate: item.rental?.startDate
-                  }))
+                  // ✅ NEW: Send deliveryBatches array
+                  deliveryBatches: group.deliveryBatches || []
                 }
               ])
-            )
+            ),
           },
           // COD specific fields
           ...(paymentMethod === "COD" && {
@@ -846,17 +822,14 @@ const RentalOrderForm = () => {
         clearCart();
 
         // Show success notification
-        let successMessage = `Đơn thuê #${
-          paidOrder.masterOrderNumber || paidOrder._id
-        } đã được tạo thành công!`;
+        let successMessage = `Đơn thuê #${paidOrder.masterOrderNumber || paidOrder._id} đã được tạo thành công!`;
         let paymentMessage = "";
 
         if (paymentMethod === "WALLET") {
           paymentMessage = "✅ Đã thanh toán từ ví thành công!";
           successMessage += " Đã thanh toán từ ví.";
         } else if (paymentMethod === "COD") {
-          paymentMessage =
-            "📦 Đơn hàng đã được tạo! Bạn sẽ thanh toán khi nhận hàng.";
+          paymentMessage = "📦 Đơn hàng đã được tạo! Bạn sẽ thanh toán khi nhận hàng.";
           successMessage += " Bạn sẽ thanh toán khi nhận hàng.";
         } else {
           paymentMessage = "✅ Đã thanh toán qua PayOS thành công!";
@@ -864,13 +837,22 @@ const RentalOrderForm = () => {
         }
 
         // Show success toast notification
-        toast.success(`🎉 ${successMessage}\n\n${paymentMessage}`, {
-          duration: 6000,
-          style: {
-            maxWidth: "500px",
-            padding: "16px",
-          },
-        });
+        toast.success(
+          <div className="flex items-start gap-2">
+            <icons.FiGift className="text-green-500 mt-1" />
+            <div>
+              <strong>{successMessage}</strong><br />
+              {paymentMessage}
+            </div>
+          </div>,
+          {
+            duration: 6000,
+            style: {
+              maxWidth: "500px",
+              padding: "16px",
+            },
+          }
+        );
 
         // Navigate to user's rental orders page
         navigate("/rental-orders", {
@@ -941,11 +923,10 @@ const RentalOrderForm = () => {
           depositAmount: totalDeposit,
           depositPaymentMethod: depositPaymentMethod,
           depositTransactionId: depositResult.transactionId,
-          message: `Đã thanh toán cọc ${totalDeposit.toLocaleString(
-            "vi-VN"
-          )}đ. Còn lại ${(totals.grandTotal - totalDeposit).toLocaleString(
-            "vi-VN"
-          )}đ thanh toán khi nhận hàng`,
+          message: t('rentalOrderForm.depositCodMessage', {
+            depositAmount: new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US').format(totalDeposit),
+            remainingAmount: new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US').format(totals.grandTotal - totalDeposit)
+          }),
         };
       } catch (error) {
         console.error("❌ COD deposit payment error:", error);
@@ -1124,7 +1105,9 @@ const RentalOrderForm = () => {
               {directRentalData ? t("rentalOrderForm.directRental") : t("rentalOrderForm.title")}
             </h1>
             {directRentalData && (
-              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+
+              <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1">
+                <icons.FaBolt className="inline" />
                 {t("rentalOrderForm.directRentalBadge")}
               </span>
             )}
@@ -1148,8 +1131,10 @@ const RentalOrderForm = () => {
                         key={ownerId}
                         className="border border-gray-200 rounded-lg p-4"
                       >
-                        <h3 className="text-lg font-medium mb-4 text-blue-700">
-                          📦 Order #{groupIndex + 1} - {t("rentalOrderForm.orderNumberLabel")}: {group.owner.profile?.firstName || t("rentalOrderForm.unknown")}
+                        <h3 className="text-lg font-medium mb-4 text-blue-700 flex items-center gap-2">
+                          <icons.FaBox className="inline" />
+                          Order #{groupIndex + 1} - {t("rentalOrderForm.orderNumberLabel")}:
+                          {group.owner.profile?.firstName || t("rentalOrderForm.unknown")}
                         </h3>
 
                         {/* Products in this group */}
@@ -1226,7 +1211,8 @@ const RentalOrderForm = () => {
                                       </div>
                                       <div>
                                         <div className="bg-blue-50 p-3 rounded-md">
-                                          <p className="text-sm font-medium text-blue-800 mb-1">
+                                          <p className="text-sm font-medium text-blue-800 mb-1 flex items-center gap-1">
+                                            <icons.FaClock className="inline" />
                                             {t("rentalOrderForm.rentalTime")}
                                           </p>
                                           {itemStartDate && itemEndDate ? (
@@ -1292,7 +1278,7 @@ const RentalOrderForm = () => {
                                       {orderData.deliveryMethod === "DELIVERY" && group.shippingFee > 0 && (() => {
                                         // Calculate shipping fee for this product
                                         let productShippingFee = 0;
-                                        const deliveryDate = item.rental?.startDate 
+                                        const deliveryDate = item.rental?.startDate
                                           ? new Date(item.rental.startDate).toLocaleDateString("vi-VN")
                                           : null;
 
@@ -1322,25 +1308,25 @@ const RentalOrderForm = () => {
                                         if (productShippingFee === 0 && deliveryDate) {
                                           // Count products with same delivery date
                                           const productsOnSameDate = group.products.filter(p => {
-                                            const pDate = p.rental?.startDate 
+                                            const pDate = p.rental?.startDate
                                               ? new Date(p.rental.startDate).toLocaleDateString("vi-VN")
                                               : null;
                                             return pDate === deliveryDate;
                                           });
-                                          
+
                                           // Get unique delivery dates to calculate number of deliveries
                                           const uniqueDates = [...new Set(
-                                            group.products.map(p => 
-                                              p.rental?.startDate 
+                                            group.products.map(p =>
+                                              p.rental?.startDate
                                                 ? new Date(p.rental.startDate).toLocaleDateString("vi-VN")
                                                 : null
                                             ).filter(d => d !== null)
                                           )];
-                                          
+
                                           const numDeliveries = uniqueDates.length || 1;
                                           const feePerDelivery = Math.round((group.shippingFee || 0) / numDeliveries);
                                           const productsInBatch = productsOnSameDate.length || 1;
-                                          
+
                                           productShippingFee = Math.round(feePerDelivery / productsInBatch);
                                         }
 
@@ -1405,7 +1391,7 @@ const RentalOrderForm = () => {
 </label>
               </div>
             </div>
-            
+
             {showAddressModal && (
               <AddressSelectionModal
                 isOpen={showAddressModal}
@@ -1466,15 +1452,17 @@ const RentalOrderForm = () => {
                         </p>
                       )}
 
-                      
+
                     </div>
-                   
+
 
                     {/* Hiển thị thông tin địa chỉ từ map (read-only) */}
                     {orderData.deliveryAddress.latitude &&
                       orderData.deliveryAddress.longitude && (
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                          <h4 className="text-sm font-medium text-blue-800 mb-2">
+
+                          <h4 className="text-sm font-medium text-blue-800 mb-2 flex items-center gap-1">
+                            <icons.FaMapMarkerAlt className="inline" />
                             {t("rentalOrderForm.mapAddress")}
                           </h4>
                           <div className="space-y-1 text-sm text-blue-700">
@@ -1518,8 +1506,10 @@ const RentalOrderForm = () => {
                                 },
                               }))
                             }
-                            className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                            className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
                           >
+                            
+                            <icons.FaRedo className="inline" />
                             {t("rentalOrderForm.changeAddress")}
                           </button>
                         </div>
@@ -1587,7 +1577,7 @@ const RentalOrderForm = () => {
                   </button>
                 </div>
               )}
-  
+
               {/* Order Action */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-center">
@@ -1671,36 +1661,21 @@ const RentalOrderForm = () => {
                     <span>{t("rentalOrderForm.shippingTotal")}:</span>
                     <span
                       className={
-                        activePromotion || selectedVoucher
+                        (activePromotion || selectedVoucher) && originalTotalShipping > totalShipping
                           ? "line-through text-gray-400"
                           : ""
                       }
                     >
-                      {totals.totalShipping.toLocaleString("vi-VN")}đ
+                      {originalTotalShipping > 0 ? originalTotalShipping.toLocaleString("vi-VN") : totals.totalShipping.toLocaleString("vi-VN")}đ
                     </span>
                   </div>
-                  {activePromotion && (
+                  {(activePromotion || selectedVoucher) && originalTotalShipping > totalShipping && (
                     <>
                       <div className="flex justify-between text-green-600">
                         <span>{t("rentalOrderForm.shippingDiscountPromotion")}:</span>
                         <span>
                           -
-                          {(() => {
-                            const discount =
-                              activePromotion.systemPromotion.discountType ===
-                              "PERCENTAGE"
-                                ? (totals.totalShipping *
-                                    activePromotion.systemPromotion
-                                      .shippingDiscountValue) /
-                                  100
-                                : Math.min(
-                                    activePromotion.systemPromotion
-                                      .shippingDiscountValue,
-                                    totals.totalShipping
-                                  );
-                            return discount.toLocaleString("vi-VN");
-                          })()}
-                          đ
+                          {(originalTotalShipping - totalShipping).toLocaleString("vi-VN")}đ
                         </span>
                       </div>
                     </>
@@ -1784,35 +1759,8 @@ const RentalOrderForm = () => {
                     <span>{t("rentalOrderForm.grandTotal")}:</span>
                     <span className="text-blue-600">
                       {(() => {
-                        let finalShipping = totals.totalShipping;
-
-                        // Apply promotion discount
-                        if (activePromotion) {
-                          const discount =
-                            activePromotion.systemPromotion.discountType ===
-                            "PERCENTAGE"
-                              ? (totals.totalShipping *
-                                  activePromotion.systemPromotion
-                                    .shippingDiscountValue) /
-                                100
-                              : Math.min(
-                                  activePromotion.systemPromotion
-                                    .shippingDiscountValue,
-                                  totals.totalShipping
-                                );
-                          finalShipping -= discount;
-                        }
-
-                        // Apply voucher discount
-                        if (selectedVoucher) {
-                          const voucherDiscount = Math.round(
-                            (finalShipping * selectedVoucher.discountPercent) /
-                              100
-                          );
-                          finalShipping -= voucherDiscount;
-                        }
-
-                        finalShipping = Math.max(0, finalShipping);
+                        // Use totalShipping state directly (already discounted)
+                        const finalShipping = totalShipping;
                         const grandTotal =
                           totals.totalRental +
                           totals.totalDeposit +
@@ -1826,8 +1774,9 @@ const RentalOrderForm = () => {
                 </div>
 
                 <div className="mt-4 p-3 bg-yellow-50 rounded-md">
-                  <p className="text-sm text-yellow-800">
-                    {t("rentalOrderForm.depositNote")}
+                  <p className="text-sm text-yellow-800 flex items-start gap-1">
+                    <icons.FaLightbulb className="inline mt-0.5 flex-shrink-0" />
+                    {t('rentalOrderForm.depositNote')}
                   </p>
                 </div>
               </div>
@@ -1849,8 +1798,9 @@ const RentalOrderForm = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  💡 Cách tính phí vận chuyển
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <icons.FaLightbulb className="inline" />
+                  Cách tính phí vận chuyển
                 </h3>
                 <button
                   onClick={() => setShowShippingModal(false)}
@@ -1876,7 +1826,10 @@ const RentalOrderForm = () => {
                 {/* Calculation Formula */}
                 {selectedShippingInfo.deliveryInfo && (
                   <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                    <h4 className="font-medium text-gray-800 mb-3">📝 Công thức tính:</h4>
+                    <h4 className="font-medium text-gray-800 mb-3 flex items-center gap-2">
+                      <icons.FaClipboardList className="inline" />
+                      Công thức tính:
+                    </h4>
                     <div className="text-sm text-gray-700 space-y-2">
                       <div className="flex items-start">
                         <span className="mr-2">•</span>
@@ -1935,7 +1888,7 @@ const RentalOrderForm = () => {
                 {selectedShippingInfo.deliveryInfo?.deliveryBatches &&
                   selectedShippingInfo.deliveryInfo.deliveryBatches.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="font-medium text-gray-800 flex items-center">
+                      <h4 className="font-medium text-gray-800 flex items-center gap-2">
                         <Package className="w-4 h-4 mr-2" />
                         Chi tiết giao hàng theo ngày:
                       </h4>
@@ -1943,8 +1896,9 @@ const RentalOrderForm = () => {
                         {selectedShippingInfo.deliveryInfo.deliveryBatches.map((batch, index) => (
                           <div key={index} className="bg-white border rounded-lg p-3">
                             <div className="flex justify-between items-center mb-2">
-                              <span className="font-medium text-gray-700">
-                                📅 {new Date(batch.deliveryDate).toLocaleDateString("vi-VN")}
+                              <span className="font-medium text-gray-700 flex items-center gap-2">
+                                <icons.BiCalendar className="inline" />
+                                {new Date(batch.deliveryDate).toLocaleDateString("vi-VN")}
                               </span>
                               <span className="font-bold text-blue-600">
                                 {batch.deliveryFee?.toLocaleString("vi-VN")}đ
@@ -1962,7 +1916,10 @@ const RentalOrderForm = () => {
                 {/* Calculation Example */}
                 {selectedShippingInfo.deliveryInfo?.summary && (
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">✅ Tính toán:</h4>
+                    <h4 className="font-medium text-gray-800 mb-2 flex items-center gap-2">
+                      <icons.FaCheckCircle className="inline" />
+                      Tính toán:
+                    </h4>
                     <div className="text-sm text-gray-700">
                       {selectedShippingInfo.deliveryInfo.deliveryCount} lần giao ×{" "}
                       {Math.round(
@@ -2043,9 +2000,10 @@ const DepositPaymentModal = ({
     },
     {
       key: "PAYOS",
+
       title: t("rentalOrders.depositPaymentModal.bankTransfer"),
       description: t("rentalOrders.depositPaymentModal.bankTransferDesc"),
-      icon: <PiBank  className="text-2xl text-green-600" />,
+      icon: <PiBank className="text-2xl text-green-600" />,
     },
   ];
 
@@ -2055,7 +2013,8 @@ const DepositPaymentModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <PiHandDeposit  className="text-orange-600" />
+
+          <PiHandDeposit className="text-orange-600" />
           {t("rentalOrders.depositPaymentModal.title")}
         </h2>
 
@@ -2075,8 +2034,9 @@ const DepositPaymentModal = ({
               </span>
             </div>
             <div className="flex justify-between text-gray-600 border-t pt-2">
-              <span>{t("rentalOrders.depositPaymentModal.remainingAmount")}</span>
-              <span>{remainingAmount.toLocaleString("vi-VN")}đ</span>
+
+              <span>{t("rentalOrders.depositPaymentModal.remainingWhenReceive")}</span>
+                           <span>{remainingAmount.toLocaleString("vi-VN")}đ</span>
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { translateCategory, translateSubCategory } from "../utils/categoryTransl
 import ProductCard from "../components/common/ProductCard";
 import VoiceSearch from "../components/common/VoiceSearch";
 import VisualSearch from "../components/common/VisualSearch";
+import ChatbotAI from "../components/common/ChatbotAI";
 import { GoTriangleDown, GoTriangleRight } from "react-icons/go";
 import { FiTrendingUp, FiStar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
@@ -877,6 +878,9 @@ export default function ProductList() {
           </motion.div>
         )}
       </div>
+
+      {/* AI Chatbot */}
+      <ChatbotAI />
     </div>
   );
 }

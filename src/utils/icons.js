@@ -1,49 +1,5 @@
 import { AiOutlinePlusCircle } from "react-icons/ai";
-import { GrNext, GrChapterNext, GrLinkPrevious } from "react-icons/gr";
-import {
-  MdOutlineAddLocationAlt,
-  MdOutlineStarPurple500,
-  MdKeyboardArrowUp,
-  MdKeyboardArrowDown,
-  MdMessage,
-  MdPhone,
-  MdOutlineHouseSiding,
-  MdLocationCity,
-  MdOutlinePercent,
-} from "react-icons/md";
-import { FaRegMoneyBillAlt, FaSearchLocation } from "react-icons/fa";
-import { FaChartArea, FaDeleteLeft } from "react-icons/fa6";
-import {
-  BsBuildings,
-  BsChevronRight,
-  BsBookmarkStarFill,
-  BsCurrencyDollar,
-  BsShieldCheck,
-} from "react-icons/bs";
-import { IoIosHeart, IoIosHeartEmpty, IoMdClose } from "react-icons/io";
-import {
-  HiOutlineLocationMarker,
-  HiOutlineHome,
-  HiOutlinePhotograph,
-} from "react-icons/hi";
-import { TbReportMoney } from "react-icons/tb";
-import { RiCrop2Line } from "react-icons/ri";
-import {
-  FiSearch,
-  FiEdit3,
-  FiTrash2,
-  FiUpload,
-  FiImage,
-  FiMapPin,
-  FiStar,
-  FiCheck,
-  FiInfo,
-  FiAward,
-  FiShield,
-  FiArrowRight,
-  FiArrowLeft,
-} from "react-icons/fi";
-import { GiTakeMyMoney } from "react-icons/gi";
+
 import {
   BiCategory,
   BiText,
@@ -64,8 +20,106 @@ import {
   BiImage,
   BiMapPin,
   BiLoaderAlt,
+  BiClipboard,
 } from "react-icons/bi";
+
 import {
+  BsBuildings,
+  BsChevronRight,
+  BsBookmarkStarFill,
+  BsCurrencyDollar,
+  BsShieldCheck,
+  BsCart4,
+} from "react-icons/bs";
+
+import {
+  FaRegMoneyBillAlt,
+  FaSearchLocation,
+  FaChartArea,
+  FaHourglassHalf,
+  FaQuestion,
+  FaBell,
+  FaClipboardList,
+  FaTicketAlt,
+  FaUserFriends,
+  FaStar,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaClock,
+  FaLock,
+  FaMapMarkerAlt,
+  FaLightbulb,
+  FaRedo,
+  FaExclamationTriangle,
+  FaBalanceScale,
+  FaMale,
+  FaFemale,
+  FaRegBell,
+  FaBolt,
+  FaBox,
+} from "react-icons/fa";
+
+import { FaSearchengin, FaDeleteLeft } from "react-icons/fa6";
+
+import {
+  FiSearch,
+  FiEdit3,
+  FiTrash2,
+  FiUpload,
+  FiImage,
+  FiMapPin,
+  FiStar,
+  FiCheck,
+  FiInfo,
+  FiAward,
+  FiShield,
+  FiArrowRight,
+  FiArrowLeft,
+  FiMail,
+  FiClock,
+  FiPlus,
+  FiZap,
+  FiUser,
+  FiGift,
+  FiPackage,
+  FiAlertTriangle,
+  FiDollarSign,
+  FiSettings,
+  FiTruck,
+  FiLogOut,
+  FiBell,
+  FiFilter,
+  FiCalendar,
+  FiEye,
+  FiLock,
+  FiUnlock,
+  FiX,
+  FiPause,
+  FiCreditCard,
+  FiRefreshCcw,
+  FiFile,
+  FiHome,
+  FiCamera,
+  FiZoomIn,
+  FiPhone,
+  FiDatabase,
+  FiGlobe,
+  FiSun,
+  FiMoon,
+  FiMonitor,
+  FiKey,
+  FiSave,
+  FiClipboard,
+} from "react-icons/fi";
+
+import { GiTakeMyMoney } from "react-icons/gi";
+
+import { GrNext, GrChapterNext, GrLinkPrevious } from "react-icons/gr";
+
+import {
+  HiOutlineLocationMarker,
+  HiOutlineHome,
+  HiOutlinePhotograph,
   HiSparkles,
   HiLightBulb,
   HiPhotograph,
@@ -75,121 +129,210 @@ import {
   HiInformationCircle,
   HiCreditCard,
 } from "react-icons/hi";
-import { LuBoxes } from "react-icons/lu";
-import { IoChatboxEllipsesOutline } from "react-icons/io5";
-import { FaRegBell } from "react-icons/fa";
-import { TbWorld } from "react-icons/tb";
-import { FaSearchengin } from "react-icons/fa6";
-import { LuPackagePlus } from "react-icons/lu";
-import { LuPackageSearch } from "react-icons/lu";
-import { FaBalanceScale } from "react-icons/fa";
-import { IoBarChart } from "react-icons/io5";
-import { BsCart4 } from "react-icons/bs";
-import {
-  FiUser,
-  FiGift,
-  FiPackage,
-  FiClipboard,
-  FiAlertTriangle,
-  FiDollarSign,
-  FiSettings,
-  FiTruck,
-  FiLogOut,
-} from "react-icons/fi";
 
-const icons = {
-  FaSearchengin,
-  BsCart4,
-  FaBalanceScale,
+import { IoIosHeart, IoIosHeartEmpty, IoMdClose } from "react-icons/io";
+import {
+  IoChatboxEllipsesOutline,
   IoBarChart,
-  LuPackagePlus,
-  LuPackageSearch,
-  TbWorld,
-  FiUser,
-  FiGift,
-  FiPackage,
-  FiClipboard,
-  FiAlertTriangle,
-  FiDollarSign,
-  FiSettings,
-  FiTruck,
-  FiLogOut,
-  AiOutlinePlusCircle,
-  IoMdClose,
-  GrNext,
+  IoCalendarSharp,
+} from "react-icons/io5";
+
+import { LuBoxes, LuPackagePlus, LuPackageSearch } from "react-icons/lu";
+
+import {
   MdOutlineAddLocationAlt,
-  FaRegMoneyBillAlt,
-  FaChartArea,
-  FaDeleteLeft,
-  BsBuildings,
-  FaSearchLocation,
   MdOutlineStarPurple500,
-  IoIosHeart,
-  BsBookmarkStarFill,
   MdKeyboardArrowUp,
   MdKeyboardArrowDown,
-  IoIosHeartEmpty,
+  MdMessage,
+  MdPhone,
+  MdOutlineHouseSiding,
+  MdLocationCity,
+  MdOutlinePercent,
+  MdOutlineRefresh,
+  MdLocalShipping,
+} from "react-icons/md";
+
+import { RiCrop2Line } from "react-icons/ri";
+
+import { TbReportMoney, TbWorld } from "react-icons/tb";
+
+// ===================================================================
+// Unified & Cleaned Icons Object
+// ===================================================================
+
+const icons = {
+  // Common actions
+  AiOutlinePlusCircle,
+  FiPlus,
+  FiEdit3,
+  FiTrash2,
+  FiUpload,
+  FiRefreshCcw,
+  FiSave,
+  FiCheck,
+  FiX,
+  IoMdClose,
+  FaDeleteLeft,
+  FiClipboard,
+  FaBolt,
+
+  // Navigation & Arrows
+  GrNext,
   GrChapterNext,
   GrLinkPrevious,
   BsChevronRight,
-  GiTakeMyMoney,
-  HiOutlineLocationMarker,
-  TbReportMoney,
-  RiCrop2Line,
-  MdOutlineHouseSiding,
-  FiSearch,
-  MdPhone,
-  MdMessage,
-  // New icons for create form
-  FiEdit3,
-  FiTrash2,
-  FiUpload,
-  FiImage,
-  FiMapPin,
-  FiStar,
-  FiCheck,
-  FiInfo,
-  FiAward,
-  FiShield,
-  BiCategory,
-  BiText,
-  BiMoney,
-  BiMap,
-  BiCamera,
-  BiCheckCircle,
-  BiInfoCircle,
-  BiAward,
-  BiShield,
-  BiSupport,
-  BiRefresh,
-  HiOutlinePhotograph,
-  HiOutlineHome,
-  BsCurrencyDollar,
-  BsShieldCheck,
-  MdLocationCity,
-  MdOutlinePercent,
-  HiSparkles,
-  HiLightBulb,
-  HiPhotograph,
-  HiCash,
-  HiCheckCircle,
-  HiExclamationCircle,
-  HiInformationCircle,
-  BiCrown,
-  BiCalendar,
-  BiCalculator,
-  BiErrorCircle,
-  BiCreditCard,
-  BiImage,
-  BiMapPin,
-  BiLoaderAlt,
-  BiError: BiErrorCircle, // Alias for FormNavigation
   FiArrowRight,
   FiArrowLeft,
-  HiCreditCard,
-  LuBoxes,
-  IoChatboxEllipsesOutline,
+  MdKeyboardArrowUp,
+  MdKeyboardArrowDown,
+
+  // Search & Location
+  FiSearch,
+  FaSearchengin,
+  FaSearchLocation,
+  HiOutlineLocationMarker,
+  FiMapPin,
+  BiMapPin,
+  MdOutlineAddLocationAlt,
+  FaMapMarkerAlt,
+
+  // Home & Property
+  HiOutlineHome,
+  FiHome,
+  MdOutlineHouseSiding,
+  MdLocationCity,
+  BsBuildings,
+  FaBox,
+
+  // Money & Finance
+  FaRegMoneyBillAlt,
+  TbReportMoney,
+  GiTakeMyMoney,
+  BsCurrencyDollar,
+  HiCash,
+  FiDollarSign,
+  BiMoney,
+  MdOutlinePercent,
+
+  // Media & Images
+  FiImage,
+  BiImage,
+  FiCamera,
+  BiCamera,
+  HiOutlinePhotograph,
+  HiPhotograph,
+  FiZoomIn,
+  BiMap,
+
+  // Ratings & Awards
+  FiStar,
+  MdOutlineStarPurple500,
+  BsBookmarkStarFill,
+  IoIosHeart,
+  IoIosHeartEmpty,
+  FiAward,
+  BiAward,
+  BiCrown,
+  FaStar,
+
+  // Status & Indicators
+  FiInfo,
+  BiInfoCircle,
+  HiInformationCircle,
+  FiShield,
+  BiShield,
+  BsShieldCheck,
+  HiCheckCircle,
+  BiCheckCircle,
+  FaCheckCircle,
+  FaTimesCircle,
+  HiExclamationCircle,
+  FaExclamationTriangle,
+  BiErrorCircle,
+  FiAlertTriangle,
+  BiLoaderAlt,
+
+  // User & Profile
+  FiUser,
+  FiMail,
+  FiPhone,
+  MdPhone,
+  MdMessage,
+  FiLock,
+  FiUnlock,
+  FiKey,
+  FaLock,
+  FaMale,
+  FaFemale,
+  FaUserFriends,
+
+  // Notifications & Time
+  FiBell,
   FaRegBell,
+  FaBell,
+  FiClock,
+  FaClock,
+  FaHourglassHalf,
+  BiCalendar,
+  FiCalendar,
+
+  // Categories & Packages
+  BiCategory,
+  BiText,
+  LuBoxes,
+  FiPackage,
+  LuPackagePlus,
+  LuPackageSearch,
+  FiGift,
+  FaTicketAlt,
+
+  // Support & Misc
+  BiSupport,
+  FiSettings,
+  FiLogOut,
+  FaQuestion,
+  FaLightbulb,
+  HiLightBulb,
+  HiSparkles,
+  FiZap,
+  FaRedo,
+  MdOutlineRefresh,
+  BiRefresh,
+
+  // Charts & Data
+  FaChartArea,
+  IoBarChart,
+  FiDatabase,
+  FiFile,
+  BiClipboard,
+  FaClipboardList,
+  FiFilter,
+  FiEye,
+
+  // Payment & Credit
+  FiCreditCard,
+  BiCreditCard,
+  HiCreditCard,
+  BsCart4,
+
+  // Extra
+  FiTruck,
+  TbWorld,
+  FiGlobe,
+  FiSun,
+  FiMoon,
+  FiMonitor,
+  RiCrop2Line,
+  IoChatboxEllipsesOutline,
+  LuPackageSearch,
+  FaBalanceScale,
+  BiCalculator,
+
+  // Alias phổ biến
+  BiError: BiErrorCircle, // thường dùng cho lỗi form
+  IoCalendarSharp,
+  MdLocalShipping,
 };
 
 export default icons;

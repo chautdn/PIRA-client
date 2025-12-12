@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ROUTES } from "../utils/constants";
 import { productService } from "../services/product";
 import Loading from "../components/common/Loading";
+import ChatbotAI from "../components/common/ChatbotAI";
 import { useWallet } from "../context/WalletContext";
 import { useTranslationHelper } from "../hooks/useTranslationHelper";
 import { useI18n } from "../hooks/useI18n";
@@ -1165,6 +1166,9 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* AI Chatbot */}
+      <ChatbotAI />
     </div>
   );
 }

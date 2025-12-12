@@ -261,10 +261,15 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   };
 
   // Check if pickup already uploaded (status is IN_TRANSIT or DELIVERED)
-  const pickupUploaded = currentStatus === 'IN_TRANSIT' || currentStatus === 'DELIVERED';
+  // Allow functionality even for CANCELLED, DELIVERY_FAILED, FAILED to document the shipment
+  const pickupUploaded = ['IN_TRANSIT', 'DELIVERED'].includes(currentStatus);
 
   // Check if delivery already uploaded (status is DELIVERED)
   const deliveryUploaded = currentStatus === 'DELIVERED';
+  
+  // Check if shipment is in a final failed state but still allow documentation
+  const isFailedState = ['CANCELLED', 'DELIVERY_FAILED', 'FAILED'].includes(currentStatus);
+  const canStillDocument = isFailedState || ['SHIPPER_CONFIRMED', 'PENDING', 'IN_TRANSIT'].includes(currentStatus);
 
   if (!isOpen || !shipment) {
     return null;
@@ -334,7 +339,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
             )}
 
             {/* Top Section - Order & Renter & Owner Info */}
-            <div className="grid grid-cols-1 gap-3 sm:gap-4 max-w-full overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 max-w-full overflow-hidden">
               {/* Order Info */}
               <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-3 sm:p-4 border border-slate-200 max-w-full overflow-hidden">
                 <h3 className="font-bold text-gray-800 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
@@ -444,7 +449,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
 
                 <div className="bg-white rounded-lg border-2 border-dashed border-blue-300 p-6">
-                  {pickupImages.length < 3 && !pickupUploaded && (
+                  {pickupImages.length < 3 && !pickupUploaded && canStillDocument && (
                     <label className="block cursor-pointer">
                       <div className="flex flex-col items-center justify-center py-6">
                         <Upload className="text-blue-500 mb-2" size={32} />
@@ -472,7 +477,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                             alt={`pickup-${idx}`}
                             className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm"
                           />
-                          {!pickupUploaded && !deliveryUploaded && (
+                          {!pickupUploaded && !deliveryUploaded && canStillDocument && (
                             <button
                               onClick={() => removePickupImage(idx)}
                               className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -485,7 +490,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           </div>
                         </div>
                       ))}
-                      {pickupImages.length < 3 && !pickupUploaded && !deliveryUploaded && (
+                      {pickupImages.length < 3 && !pickupUploaded && !deliveryUploaded && canStillDocument && (
                         <label className="border-2 border-dashed border-blue-300 rounded-lg h-20 sm:h-24 flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors">
                           <div className="text-center">
                             <Upload className="text-blue-400 mx-auto mb-0.5 sm:mb-1" size={18} />
@@ -515,11 +520,11 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         <p className="text-[10px] xs:text-xs sm:text-sm text-green-700">Status: IN_TRANSIT</p>
                       </div>
                     </div>
-                  ) : (
+                  ) : canStillDocument ? (
                     <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={handleConfirmPickup}
-                        disabled={pickupImages.length === 0 || loading}
+                        disabled={pickupImages.length === 0 || loading || isFailedState}
                         className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
                           pickupImages.length > 0 && !loading
                             ? 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -576,6 +581,13 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         </button>
                       )}
                     </div>
+                  ) : null}
+                  {isFailedState && (
+                    <div className="bg-orange-50 border border-orange-300 rounded-lg p-3 sm:p-4 mt-2">
+                      <p className="text-xs sm:text-sm text-orange-700">
+                        ℹ️ Đơn hàng đã bị hủy/thất bại. Bạn vẫn có thể tải ảnh lên để lưu trữ nhưng không thể thay đổi trạng thái.
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -599,7 +611,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
 
                 <div className="bg-white rounded-lg border-2 border-dashed border-green-300 p-3 sm:p-4">
-                  {deliveryImages.length < 4 && !deliveryUploaded && pickupUploaded && (
+                  {deliveryImages.length < 4 && !deliveryUploaded && (pickupUploaded || isFailedState) && (
                     <label className="block cursor-pointer">
                       <div className="flex flex-col items-center justify-center py-4 sm:py-6">
                         <Upload className="text-green-500 mb-1.5 sm:mb-2" size={28} />
@@ -633,7 +645,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                             alt={`delivery-${idx}`}
                             className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm"
                           />
-                          {!deliveryUploaded && (
+                          {!deliveryUploaded && canStillDocument && (
                             <button
                               onClick={() => removeDeliveryImage(idx)}
                               className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs sm:text-sm"
@@ -646,7 +658,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           </div>
                         </div>
                       ))}
-                      {deliveryImages.length < 4 && !deliveryUploaded && pickupUploaded && (
+                      {deliveryImages.length < 4 && !deliveryUploaded && (pickupUploaded || isFailedState) && canStillDocument && (
                         <label className="border-2 border-dashed border-green-300 rounded-lg h-20 sm:h-24 flex items-center justify-center cursor-pointer hover:bg-green-50 transition-colors">
                           <div className="text-center">
                             <Upload className="text-green-400 mx-auto mb-0.5 sm:mb-1" size={18} />
@@ -684,11 +696,11 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600">Hoàn thành pickup trước</p>
                       </div>
                     </div>
-                  ) : (
+                  ) : canStillDocument ? (
                     <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={handleConfirmDelivery}
-                        disabled={deliveryImages.length === 0 || loading}
+                        disabled={deliveryImages.length === 0 || loading || isFailedState}
                         className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
                           deliveryImages.length > 0 && !loading
                             ? 'bg-green-600 hover:bg-green-700 text-white'
@@ -722,7 +734,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         </button>
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>

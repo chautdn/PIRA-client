@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Ticket, X, AlertCircle, CheckCircle2 } from "lucide-react";
 import voucherService from "../../services/voucher";
 import toast from "react-hot-toast";
+import { useI18n } from "../../hooks/useI18n";
 
 const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
+  const { t, language } = useI18n();
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
@@ -23,7 +25,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
       setVouchers(response.vouchers);
     } catch (error) {
       console.error("Error fetching vouchers:", error);
-      toast.error("Không thể tải danh sách voucher");
+      toast.error(t('voucherSelector.cannotLoad'));
     } finally {
       setLoading(false);
     }
@@ -33,13 +35,13 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
     onVoucherSelect(voucher);
     setShowVoucherModal(false);
     toast.success(
-      `Đã áp dụng voucher giảm ${voucher.discountPercent}% phí ship`
+      t('voucherSelector.applied', { percent: voucher.discountPercent })
     );
   };
 
   const handleValidateManualCode = async () => {
     if (!manualCode.trim()) {
-      toast.error("Vui lòng nhập mã voucher");
+      toast.error(t('voucherSelector.enterCodePrompt'));
       return;
     }
 
@@ -50,7 +52,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
       setManualCode("");
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || "Mã voucher không hợp lệ";
+        error.response?.data?.message || t('voucherSelector.invalidCode');
       toast.error(errorMessage);
     } finally {
       setValidating(false);
@@ -64,7 +66,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
 
   const handleRemoveVoucher = () => {
     onVoucherSelect(null);
-    toast.success("Đã xóa voucher");
+    toast.success(t('voucherSelector.removed'));
   };
 
   return (
@@ -74,7 +76,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Ticket className="w-5 h-5 text-indigo-600" />
-            <span className="font-medium text-gray-900">Voucher giảm giá</span>
+            <span className="font-medium text-gray-900">{t('voucherSelector.title')}</span>
           </div>
 
           {selectedVoucher ? (
@@ -84,7 +86,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
                   {selectedVoucher.code}
                 </p>
                 <p className="text-sm text-green-600">
-                  -{calculateDiscount(selectedVoucher).toLocaleString("vi-VN")}đ
+                  -{calculateDiscount(selectedVoucher).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ
                   ({selectedVoucher.discountPercent}%)
                 </p>
               </div>
@@ -100,7 +102,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
               onClick={() => setShowVoucherModal(true)}
               className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
             >
-              Chọn voucher
+              {t('voucherSelector.selectVoucher')}
             </button>
           )}
         </div>
@@ -114,7 +116,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
             <div className="border-b border-gray-200 p-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <Ticket className="w-6 h-6 text-indigo-600" />
-                Chọn Voucher
+                {t('voucherSelector.chooseVoucher')}
               </h2>
               <button
                 onClick={() => setShowVoucherModal(false)}
@@ -127,7 +129,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
             {/* Manual Code Input */}
             <div className="p-6 border-b border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nhập mã voucher
+                {t('voucherSelector.enterCode')}
               </label>
               <div className="flex gap-2">
                 <input
@@ -137,7 +139,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
                   onKeyPress={(e) =>
                     e.key === "Enter" && handleValidateManualCode()
                   }
-                  placeholder="VD: SHIP25-ABC123"
+                  placeholder={t('voucherSelector.codePlaceholder')}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent uppercase"
                 />
                 <button
@@ -145,7 +147,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
                   disabled={validating}
                   className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition-colors font-medium"
                 >
-                  {validating ? "Đang kiểm tra..." : "Áp dụng"}
+                  {validating ? t('voucherSelector.validating') : t('voucherSelector.apply')}
                 </button>
               </div>
             </div>
@@ -159,9 +161,9 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
               ) : vouchers.length === 0 ? (
                 <div className="text-center py-8">
                   <Ticket className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Bạn chưa có voucher nào</p>
+                  <p className="text-gray-500">{t('voucherSelector.noVouchers')}</p>
                   <p className="text-sm text-gray-400 mt-2">
-                    Tích điểm loyalty để đổi voucher miễn phí ship
+                    {t('voucherSelector.earnLoyalty')}
                   </p>
                 </div>
               ) : (
@@ -184,7 +186,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
                               </span>
                             </div>
                             <p className="text-gray-600 text-sm">
-                              Giảm {voucher.discountPercent}% phí ship
+                              {t('voucherSelector.discountPercent', { percent: voucher.discountPercent })}
                             </p>
                           </div>
                           <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-semibold">
@@ -195,16 +197,13 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
                         {shippingFee > 0 && (
                           <div className="bg-green-50 border border-green-200 rounded p-2 mt-2">
                             <p className="text-green-700 text-sm font-medium">
-                              Tiết kiệm: {discount.toLocaleString("vi-VN")}đ
+                              {t('voucherSelector.savings', { amount: discount.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US') })}
                             </p>
                           </div>
                         )}
 
                         <div className="mt-2 text-xs text-gray-500">
-                          Hết hạn:{" "}
-                          {new Date(voucher.expiresAt).toLocaleDateString(
-                            "vi-VN"
-                          )}
+                          {t('voucherSelector.expiresAt', { date: new Date(voucher.expiresAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US') })}
                         </div>
                       </div>
                     );
@@ -218,8 +217,7 @@ const VoucherSelector = ({ onVoucherSelect, selectedVoucher, shippingFee }) => {
               <div className="flex items-start gap-2 text-sm text-gray-600">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p>
-                  Mỗi đơn hàng chỉ áp dụng được 1 voucher. Voucher có thể được
-                  chia sẻ và sử dụng bởi bất kỳ ai.
+                  {t('voucherSelector.onePerOrder')}
                 </p>
               </div>
             </div>

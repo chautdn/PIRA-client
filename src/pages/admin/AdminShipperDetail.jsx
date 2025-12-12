@@ -29,19 +29,27 @@ const AdminShipperDetail = () => {
       setLoading(true);
       setError(null);
 
-      // Get mock shipper details
-      const mockShippers = getMockShippers();
-      const shipperData = mockShippers.find(s => s._id === shipperId);
+      // Get shipper details from API
+      const shipperData = await adminService.getShipperById(shipperId);
       
       if (shipperData) {
         setShipper(shipperData);
-        setShipments(getMockShipments(shipperId));
+        setShipments(shipperData.recentShipments || []);
+        
+        // Calculate stats from recent shipments
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        const recentShipments = shipperData.recentShipments || [];
+        
         setStats({
-          today: 5,
-          thisWeek: 28,
-          thisMonth: 65,
-          totalCompleted: 62,
-          totalFailed: 3
+          today: recentShipments.filter(s => new Date(s.createdAt) >= today).length,
+          thisWeek: recentShipments.filter(s => new Date(s.createdAt) >= weekAgo).length,
+          thisMonth: recentShipments.filter(s => new Date(s.createdAt) >= monthAgo).length,
+          totalCompleted: shipperData.completedShipments || 0,
+          totalFailed: shipperData.failedShipments || 0
         });
       } else {
         setError('Không tìm thấy shipper');
@@ -52,115 +60,6 @@ const AdminShipperDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getMockShippers = () => {
-    return [
-      {
-        _id: '1',
-        profile: { firstName: 'Nguyễn Văn A', fullName: 'Nguyễn Văn A' },
-        email: 'shipper1@example.com',
-        phone: '0901234567',
-        address: { district: 'Quận 1', city: 'TP HCM' },
-        status: 'ACTIVE',
-        totalShipments: 65,
-        completedShipments: 62,
-        revenue: 3250000,
-        joinDate: '2024-01-15',
-        rating: 4.8
-      },
-      {
-        _id: '2',
-        profile: { firstName: 'Trần Thị B', fullName: 'Trần Thị B' },
-        email: 'shipper2@example.com',
-        phone: '0902345678',
-        address: { district: 'Quận 3', city: 'TP HCM' },
-        status: 'ACTIVE',
-        totalShipments: 58,
-        completedShipments: 56,
-        revenue: 2900000,
-        joinDate: '2024-02-20',
-        rating: 4.6
-      }
-    ];
-  };
-
-  const getMockShipments = (shipperId) => {
-    const shipmentTypes = [
-      {
-        id: '#SHP001',
-        time: '09:06\n08/12/2025',
-        customer: 'N/A',
-        email: 'customer1@gmail.com',
-        product: 'N/A',
-        price: '0 VND',
-        status: 'CHỜ XỬ LÝ',
-        statusColor: 'yellow',
-        paymentStatus: 'ĐÃ THANH TOÁN',
-        timeRange: 'N/A'
-      },
-      {
-        id: '#SHP002',
-        time: '00:11\n08/12/2025',
-        customer: 'N/A',
-        email: 'customer2@gmail.com',
-        product: 'N/A',
-        price: '0 VND',
-        status: 'CHỜ XỬ LÝ',
-        statusColor: 'yellow',
-        paymentStatus: 'ĐÃ THANH TOÁN',
-        timeRange: 'N/A'
-      },
-      {
-        id: '#SHP003',
-        time: '23:58\n07/12/2025',
-        customer: 'N/A',
-        email: 'customer3@gmail.com',
-        product: 'N/A',
-        price: '0 VND',
-        status: 'HOÀN THÀNH',
-        statusColor: 'green',
-        paymentStatus: 'ĐÃ THANH TOÁN',
-        timeRange: 'N/A'
-      },
-      {
-        id: '#SHP004',
-        time: '13:04\n06/12/2025',
-        customer: 'N/A',
-        email: 'customer4@gmail.com',
-        product: 'N/A',
-        price: '0 VND',
-        status: 'HOÀN THÀNH',
-        statusColor: 'green',
-        paymentStatus: 'ĐÃ THANH TOÁN',
-        timeRange: 'N/A'
-      },
-      {
-        id: '#SHP005',
-        time: '13:03\n06/12/2025',
-        customer: 'N/A',
-        email: 'customer5@gmail.com',
-        product: 'N/A',
-        price: '0 VND',
-        status: 'ĐÃ HỦY',
-        statusColor: 'red',
-        paymentStatus: 'ĐÃ THANH TOÁN',
-        timeRange: 'N/A'
-      },
-      {
-        id: '#SHP006',
-        time: '13:01\n06/12/2025',
-        customer: 'N/A',
-        email: 'customer6@gmail.com',
-        product: 'N/A',
-        price: '0 VND',
-        status: 'CHỜ XỬ LÝ',
-        statusColor: 'yellow',
-        paymentStatus: 'ĐÃ THANH TOÁN',
-        timeRange: 'N/A'
-      }
-    ];
-    return shipmentTypes;
   };
 
   const getStatusBadge = (status) => {
@@ -266,6 +165,34 @@ const AdminShipperDetail = () => {
           </div>
         </div>
 
+        {/* Rating Card */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8 border-l-4 border-orange-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm mb-2">Đánh giá trung bình</p>
+              <div className="flex items-center gap-2">
+                <span className="text-4xl font-bold text-orange-500">
+                  {shipper.averageRating || 0}
+                </span>
+                <span className="text-2xl">⭐</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Từ {shipper.totalReviews || 0} đánh giá
+              </p>
+            </div>
+            {shipper.recentReviews && shipper.recentReviews.length > 0 && (
+              <div className="text-right">
+                <p className="text-xs text-gray-500 mb-2">Đánh giá gần nhất</p>
+                {shipper.recentReviews.slice(0, 3).map((review, idx) => (
+                  <div key={idx} className="text-xs text-gray-600 mb-1">
+                    {review.rating}⭐ - {review.userId?.profile?.firstName || 'Người dùng'}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow p-4 text-center">
@@ -351,37 +278,73 @@ const AdminShipperDetail = () => {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {shipments.map((shipment, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="font-semibold text-blue-600">{shipment.id}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{shipment.customer}</p>
-                        <p className="text-xs text-gray-500">{shipment.email}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{shipment.product}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900">{shipment.price}</td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(shipment.status)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                        ✓ {shipment.paymentStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      <div className="whitespace-pre-line">{shipment.time}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                        Xem chi tiết
-                      </button>
+                {shipments.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                      Chưa có đơn vận chuyển nào
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  shipments.map((shipment, idx) => {
+                    const statusDisplay = {
+                      'PENDING': 'CHỜ XỬ LÝ',
+                      'SHIPPER_CONFIRMED': 'ĐÃ XÁC NHẬN',
+                      'IN_TRANSIT': 'ĐANG GIAO',
+                      'DELIVERED': 'HOÀN THÀNH',
+                      'CANCELLED': 'ĐÃ HỦY',
+                      'DELIVERY_FAILED': 'GIAO THẤT BẠI',
+                      'FAILED': 'THẤT BẠI'
+                    }[shipment.status] || shipment.status;
+
+                    return (
+                      <tr key={shipment._id || idx} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div>
+                            <span className="font-semibold text-blue-600">
+                              {shipment.masterOrder?.orderNumber || 'N/A'}
+                            </span>
+                            <p className="text-xs text-gray-500">
+                              {shipment.subOrder?.subOrderNumber || ''}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="font-medium text-gray-900">N/A</p>
+                            <p className="text-xs text-gray-500">-</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {shipment.type === 'PICKUP_FROM_OWNER' ? 'Lấy hàng' : 
+                           shipment.type === 'DELIVER_TO_RENTER' ? 'Giao hàng' :
+                           shipment.type === 'PICKUP_FROM_RENTER' ? 'Lấy về' :
+                           shipment.type === 'RETURN_TO_OWNER' ? 'Trả về' : shipment.type}
+                        </td>
+                        <td className="px-6 py-4 font-medium text-gray-900">
+                          {formatCurrency(shipment.fee || 0)}
+                        </td>
+                        <td className="px-6 py-4">
+                          {getStatusBadge(statusDisplay)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                            ✓ Đã thanh toán
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          <div>
+                            {new Date(shipment.createdAt).toLocaleString('vi-VN')}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                            Xem chi tiết
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

@@ -15,6 +15,7 @@ import OrderFilters from "../components/rental/OrderFilters";
 import OrdersTable from "../components/rental/OrdersTable";
 import OrderDetailModal from "../components/rental/OrderDetailModal";
 import { Package } from "lucide-react";
+import useOrderSocket from "../hooks/useOrderSocket";
 
 const RentalOrdersPage = () => {
   const { t } = useI18n();
@@ -34,6 +35,26 @@ const RentalOrdersPage = () => {
   const [showExtendRentalModal, setShowExtendRentalModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
   const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
+
+  // Initialize WebSocket connection with callbacks to reload
+  const { isConnected } = useOrderSocket({
+    onOrderCreated: () => {
+      loadMyOrders({ status: statusFilter !== "all" ? statusFilter : undefined });
+    },
+    onOrderStatusChanged: () => {
+      loadMyOrders({ status: statusFilter !== "all" ? statusFilter : undefined });
+      loadEarlyReturnRequests();
+    },
+    onContractSigned: () => {
+      loadMyOrders({ status: statusFilter !== "all" ? statusFilter : undefined });
+    },
+    onContractCompleted: () => {
+      loadMyOrders({ status: statusFilter !== "all" ? statusFilter : undefined });
+    },
+    onShipmentUpdate: () => {
+      loadMyOrders({ status: statusFilter !== "all" ? statusFilter : undefined });
+    },
+  });
 
   // Load orders on mount and status change
   useEffect(() => {

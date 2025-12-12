@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -8,19 +8,51 @@ import { reviewService } from '../services/review';
 import recommendationService from '../services/recommendation';
 import { useCart } from '../context/CartContext';
 import { cartApiService } from '../services/cartApi';
-import { useAuth } from '../hooks/useAuth'; // Added for authentication
-import { ROUTES } from '../utils/constants'; // Added for route constants
+import { useAuth } from '../hooks/useAuth';
+import { ROUTES } from '../utils/constants';
 import ReportModal from './ReportModal';
 import rentalOrderService from '../services/rentalOrder';
 import KycWarningModal from '../components/common/KycWarningModal';
 import { checkKYCRequirements } from '../utils/kycVerification';
 
+import {
+  FaHome,
+  FaBox,
+  FaEye,
+  FaMapMarkerAlt,
+  FaClipboardList,
+  FaCog,
+  FaScroll,
+  FaTag,
+  FaHandSparkles,
+  FaClock,
+  FaMoneyBillWave,
+  FaTruck,
+  FaBoxOpen,
+  FaHourglassHalf,
+  FaChartBar,
+  FaHashtag,
+  FaRocket,
+  FaShoppingCart,
+  FaComments,
+  FaUser,
+  FaFire,
+  FaExclamationTriangle,
+  FaCalendarAlt,
+  FaLightbulb,
+  FaHandPointUp,
+  FaSadTear,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaSpinner,
+  FaStar,
+} from 'react-icons/fa';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { addToCart: addToCartContext, loading: cartLoading } = useCart();
   const { user, refreshUser } = useAuth(); // Added to get current user
   const [product, setProduct] = useState(null);
@@ -42,6 +74,7 @@ export default function ProductDetail() {
   const [ratingFilter, setRatingFilter] = useState(null); // null = all, 1-5 = specific rating
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, title: '', comment: '', photos: [] });
+  const [previewImages, setPreviewImages] = useState([]);
   const fileInputRef = useRef(null);
   const [replyBoxOpen, setReplyBoxOpen] = useState({});
   const [menuOpen, setMenuOpen] = useState({});
@@ -60,6 +93,7 @@ export default function ProductDetail() {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loadingCarousels, setLoadingCarousels] = useState(false);
   const hotProductsScrollRef = useRef(null);
+  const reviewsSectionRef = useRef(null);
   const relatedProductsScrollRef = useRef(null);
   
   // Order context for rating (when coming from completed order)
@@ -74,14 +108,26 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  // Load order context if coming from completed order
+  // Load order context if coming from completed order or handle activeTab query param
   useEffect(() => {
     const fromOrder = searchParams.get('fromOrder');
+    const activeTabParam = searchParams.get('activeTab');
+    
     if (fromOrder) {
       setCurrentOrderId(fromOrder);
       loadOrderData(fromOrder);
       // Auto-switch to reviews tab
       setActiveTab('reviews');
+    } else if (activeTabParam === 'reviews') {
+      // Switch to reviews tab when coming from notification
+      setActiveTab('reviews');
+    }
+    
+    // Scroll to reviews section after tab is set
+    if ((fromOrder || activeTabParam === 'reviews') && reviewsSectionRef.current) {
+      setTimeout(() => {
+        reviewsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300); // Wait for tab animation
     }
   }, [searchParams]);
 
@@ -157,14 +203,8 @@ export default function ProductDetail() {
       }
 
       try {
-        console.log('🔍 Starting review eligibility check...');
-        console.log('👤 Current user:', user._id);
-        console.log('📦 Current product:', product._id);
-        
-        // Fetch ALL orders (don't filter by status on backend)
-        const response = await rentalOrderService.getMyOrders({ limit: 100 });
-        console.log('📡 Full API Response:', response);
-        console.log('📡 Response keys:', Object.keys(response));
+        // Fetch user's orders
+        const response = await rentalOrderService.getMyOrders();
         
         // Extract orders from response - try multiple paths
         let allOrders = [];
@@ -177,24 +217,23 @@ export default function ProductDetail() {
         // Path 2: { data: { metadata: { orders: [...] } } }
         else if (response?.data?.metadata?.orders) {
           allOrders = response.data.metadata.orders;
-          console.log('✅ Found orders in data.metadata.orders, count:', allOrders.length);
+         
         }
         // Path 3: { data: [...] }
         else if (response?.data && Array.isArray(response.data)) {
           allOrders = response.data;
-          console.log('✅ Found orders in data (array), count:', allOrders.length);
+         
         }
         // Path 4: Direct array
         else if (Array.isArray(response)) {
           allOrders = response;
-          console.log('✅ Response is direct array, count:', allOrders.length);
+        
         }
         
         console.log('📋 Total orders found:', allOrders.length);
         
         // Filter to COMPLETED orders only
         const orders = allOrders.filter(o => o.status === 'COMPLETED');
-        console.log('📋 Completed orders:', orders.length);
         
         if (orders.length === 0) {
           console.log('⚠️  No completed orders found for user');
@@ -207,37 +246,26 @@ export default function ProductDetail() {
         let hasRented = false;
         
         for (const masterOrder of orders) {
-          console.log('🔍 Checking MasterOrder:', masterOrder._id, 'status:', masterOrder.status, 'renter:', masterOrder.renter);
-          
+
           // Iterate through subOrders
           const subOrders = Array.isArray(masterOrder.subOrders) ? masterOrder.subOrders : [];
-          console.log('   SubOrders count:', subOrders.length);
           
           for (let i = 0; i < subOrders.length; i++) {
             const subOrder = subOrders[i];
             // Handle both populated and unpopulated subOrder references
             const subOrderData = typeof subOrder === 'object' ? subOrder : {};
-            console.log('   SubOrder[' + i + ']:', subOrderData._id || subOrder, 'status:', subOrderData.status);
-            
             const products = Array.isArray(subOrderData.products) ? subOrderData.products : [];
-            console.log('   Products in subOrder[' + i + ']:', products.length);
-            
+         
             for (let j = 0; j < products.length; j++) {
               const p = products[j];
               const productData = typeof p === 'object' ? p : {};
               const productRef = productData.product;
               const productId = typeof productRef === 'object' ? productRef?._id : productRef;
               
-              console.log('   Product[' + j + ']:', {
-                productId: String(productId),
-                currentProductId: String(product._id),
-                match: String(productId) === String(product._id)
-              });
-              
+
               // Compare both as strings to handle ObjectId/String conversions
               if (String(productId) === String(product._id)) {
                 hasRented = true;
-                console.log('✅ Product found! User can write review');
                 break;
               }
             }
@@ -322,6 +350,12 @@ export default function ProductDetail() {
     setReviewsTarget(target);
     setReviewsPage(1);
     setRatingFilter(null); // Reset rating filter when changing target
+    
+    // Load shipper info when switching to SHIPPER target
+    if (target === 'SHIPPER' && !shipperInfo && myCompletedOrders.length > 0) {
+      loadShipperInfoFromOrders();
+    }
+    
     // directly fetch first page for new target
     (async () => {
       try {
@@ -380,12 +414,46 @@ export default function ProductDetail() {
   const openWriteModal = () => {
     // initialize new review and set its target type to current reviewsTarget
     setNewReview({ rating: 5, title: '', comment: '', photos: [], type: reviewsTarget });
+    // Clean up any existing preview URLs using functional update to access current state
+    setPreviewImages(prev => {
+      prev.forEach(url => URL.revokeObjectURL(url));
+      return [];
+    });
     if (fileInputRef.current) fileInputRef.current.value = null;
+    
+    // Load shipper info if reviewing shipper and not already loaded
+    if (reviewsTarget === 'SHIPPER' && !shipperInfo && myCompletedOrders.length > 0) {
+      console.log('🔍 Opening shipper review modal, loading shipper info...');
+      loadShipperInfoFromOrders();
+    }
+    
     setShowWriteModal(true);
   };
 
   const handleNewReviewFiles = (files) => {
-    setNewReview((s) => ({ ...s, photos: Array.from(files) }));
+    const filesArray = Array.from(files);
+    setNewReview((s) => ({ ...s, photos: filesArray }));
+    
+    // Create preview URLs
+    const previews = filesArray.map(file => URL.createObjectURL(file));
+    setPreviewImages(previews);
+  };
+  
+  const removePreviewImage = (index) => {
+    const newPhotos = [...newReview.photos];
+    newPhotos.splice(index, 1);
+    
+    const newPreviews = [...previewImages];
+    URL.revokeObjectURL(newPreviews[index]); // Clean up URL
+    newPreviews.splice(index, 1);
+    
+    setNewReview((s) => ({ ...s, photos: newPhotos }));
+    setPreviewImages(newPreviews);
+    
+    // Reset file input if no files left
+    if (newPhotos.length === 0 && fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
   };
 
   const submitNewReview = async () => {
@@ -429,6 +497,11 @@ export default function ProductDetail() {
 
   const response = await reviewService.create(fd);
   console.log('Review created successfully:', response.data);
+  
+  // Clean up preview URLs
+  previewImages.forEach(url => URL.revokeObjectURL(url));
+  setPreviewImages([]);
+  
   setShowWriteModal(false);
   // refresh first page for current target
   console.log('📝 About to refresh reviews, target:', reviewsTarget);
@@ -438,8 +511,18 @@ export default function ProductDetail() {
   toast.success(t("productDetail.reviewSubmitSuccess"));
     } catch (err) {
       console.error('Error creating review', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
       // Check for duplicate review error - differentiate by type
       const errorMessage = err.response?.data?.message || '';
+      const errorStatus = err.response?.status;
+      
+      // Handle 403 Forbidden - could be permission issue
+      if (errorStatus === 403) {
+        toast.error(t("productDetail.needCompletedOrder"));
+        return;
+      }
       
       // Check if it's a duplicate review based on the target type
       if (errorMessage.toLowerCase().includes('bình luận 1 lần cho sản phẩm')) {
@@ -458,7 +541,7 @@ export default function ProductDetail() {
       } else if (errorMessage.toLowerCase().includes('hoàn thành một đơn hàng')) {
         toast.error(t("productDetail.needCompletedOrder"));
       } else {
-        toast.error(t("productDetail.reviewError"));
+        toast.error(t("productDetail.errorSubmittingReview") + ': ' + (errorMessage || err.message));
       }
     }
   };
@@ -669,7 +752,6 @@ export default function ProductDetail() {
   };
 
 
-
   // Keyboard navigation for lightbox
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -729,6 +811,82 @@ export default function ProductDetail() {
   };
 
   // Load order data when rating from completed order
+  const loadShipperInfoFromOrders = async () => {
+    try {
+      console.log('🔍 Loading shipper info from completed orders...');
+      console.log('📦 My completed orders:', myCompletedOrders);
+      console.log('📦 Current product ID:', product._id);
+      
+      // Try to find shipper info from any completed order that contains this product
+      for (const masterOrder of myCompletedOrders) {
+        console.log('🔍 Checking master order:', masterOrder._id);
+        const subOrders = Array.isArray(masterOrder.subOrders) ? masterOrder.subOrders : [];
+        console.log('   SubOrders count:', subOrders.length);
+        
+        for (const subOrder of subOrders) {
+          const subOrderData = typeof subOrder === 'object' ? subOrder : {};
+          const products = Array.isArray(subOrderData.products) ? subOrderData.products : [];
+          
+          // Check if this subOrder contains the current product
+          const hasCurrentProduct = products.some(p => {
+            const productRef = typeof p === 'object' ? p.product : p;
+            const productId = typeof productRef === 'object' ? productRef?._id : productRef;
+            return String(productId) === String(product._id);
+          });
+          
+          if (hasCurrentProduct) {
+            console.log('✅ Found subOrder with current product!');
+            // Found a subOrder with this product, now get full order details with shipper info
+            try {
+              const response = await rentalOrderService.getOrderDetail(masterOrder._id);
+              const orderData = response.masterOrder || response.data?.masterOrder || response;
+              console.log('📋 Order detail response:', orderData);
+              
+              if (orderData?.subOrders && orderData.subOrders.length > 0) {
+                // Find the subOrder that contains this product
+                for (const fullSubOrder of orderData.subOrders) {
+                  const fullProducts = Array.isArray(fullSubOrder.products) ? fullSubOrder.products : [];
+                  const hasProduct = fullProducts.some(p => {
+                    const productRef = typeof p === 'object' ? p.product : p;
+                    const productId = typeof productRef === 'object' ? productRef?._id : productRef;
+                    return String(productId) === String(product._id);
+                  });
+                  
+                  console.log('   SubOrder has product:', hasProduct);
+                  console.log('   SubOrder shipments:', fullSubOrder.shipments);
+                  
+                  if (hasProduct && fullSubOrder.shipments && fullSubOrder.shipments.length > 0) {
+                    console.log('   Shipments found:', fullSubOrder.shipments.length);
+                    for (const shipment of fullSubOrder.shipments) {
+                      console.log('   Shipment type:', shipment.type, 'Shipper:', shipment.shipper);
+                    }
+                    
+                    const deliveryShipment = fullSubOrder.shipments.find(s => s.type === 'DELIVERY');
+                    console.log('   Delivery shipment:', deliveryShipment);
+                    
+                    if (deliveryShipment?.shipper) {
+                      setShipperInfo(deliveryShipment.shipper);
+                      console.log('✅ Shipper info loaded from completed order:', deliveryShipment.shipper);
+                      return; // Found shipper, exit
+                    } else {
+                      console.warn('⚠️ Delivery shipment found but no shipper populated');
+                    }
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('Error loading order detail:', err);
+              continue; // Try next order
+            }
+          }
+        }
+      }
+      console.log('⚠️ No shipper found in completed orders');
+    } catch (error) {
+      console.error('❌ Error loading shipper info:', error);
+    }
+  };
+
   const loadOrderData = async (orderId) => {
     try {
       const response = await rentalOrderService.getOrderDetail(orderId);
@@ -906,7 +1064,7 @@ export default function ProductDetail() {
 
     // Validation
     if (quantity < 1) {
-      alert('⚠️ Số lượng phải lớn hơn 0');
+      alert('Số lượng phải lớn hơn 0');
       return;
     }
 
@@ -972,18 +1130,18 @@ export default function ProductDetail() {
           return;
         }
         
-        // Real-time check passed: ${currentAvailable} available, requesting ${quantity}
+        // Real-time check passed
       }
     } catch (error) {
       console.error('Error checking real-time availability:', error);
-      alert('⚠️ Không thể kiểm tra tình trạng sản phẩm. Vui lòng thử lại sau.');
+      alert('Không thể kiểm tra tình trạng sản phẩm. Vui lòng thử lại sau.');
       return;
     }
 
     // Fallback check with total stock
     const maxStock = product.availability?.quantity || 0;
     if (quantity > maxStock) {
-      alert(`⚠️ Số lượng không được vượt quá ${maxStock} cái`);
+      alert(`Số lượng không được vượt quá ${maxStock} cái`);
       return;
     }
 
@@ -1006,14 +1164,14 @@ export default function ProductDetail() {
         alert(result.error);
         navigate('/auth/login', { state: { from: `/products/${id}` } });
       } else {
-        alert(`❌ ${result.error || t("productDetail.addCartError")}`);
+        alert(` ${result.error || t("productDetail.addCartError")}`);
       }
     }
   };
 
   const handleRentNow = async () => {
     if (!user) {
-      alert('⚠️ Vui lòng đăng nhập để thuê sản phẩm');
+      alert('Vui lòng đăng nhập để thuê sản phẩm');
       navigate('/auth/login', { state: { from: `/products/${id}` } });
       return;
     }
@@ -1045,12 +1203,12 @@ export default function ProductDetail() {
     // Validation
     const maxStock = product.availability?.quantity || 0;
     if (quantity < 1) {
-      alert('⚠️ Số lượng phải lớn hơn 0');
+      alert('Số lượng phải lớn hơn 0');
       return;
     }
     
     if (quantity > maxStock) {
-      alert(`⚠️ Số lượng không được vượt quá ${maxStock} cái`);
+      alert(`Số lượng không được vượt quá ${maxStock} cái`);
       return;
     }
 
@@ -1068,11 +1226,11 @@ export default function ProductDetail() {
         // Navigate to cart page without opening drawer
         navigate('/cart');
       } else {
-        alert(`❌ ${result.error || t("productDetail.addCartError")}`);
+        alert(` ${result.error || t("productDetail.addCartError")}`);
       }
     } catch (error) {
       const errorMsg = error.message || t("productDetail.addCartError");
-      alert(`❌ ${errorMsg}`);
+      alert(`${errorMsg}`);
     }
   };
 
@@ -1096,7 +1254,7 @@ export default function ProductDetail() {
       navigate('/chat');
     }
   };
-
+  
 
 
   if (loading) {
@@ -1124,7 +1282,7 @@ export default function ProductDetail() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="text-8xl mb-6">😕</div>
+          <FaSadTear className="text-8xl text-gray-400 mb-6" />
           <h2 className="text-3xl font-bold text-gray-800 mb-4">Không tìm thấy sản phẩm</h2>
           <p className="text-gray-600 mb-8 text-lg">{error}</p>
           <button
@@ -1149,11 +1307,11 @@ export default function ProductDetail() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center space-x-3 text-sm">
             <Link to="/" className="text-gray-500 hover:text-green-600 transition-colors font-medium">
-              🏠 Trang chủ
+              <FaHome className="inline mr-1" />Trang chủ
             </Link>
             <span className="text-gray-400">›</span>
             <Link to="/products" className="text-gray-500 hover:text-green-600 transition-colors font-medium">
-              📦 Sản phẩm
+              <FaBox className="inline mr-1" />Sản phẩm
             </Link>
             <span className="text-gray-400">›</span>
             <span className="text-gray-900 font-semibold">{product.title}</span>
@@ -1176,16 +1334,17 @@ export default function ProductDetail() {
               </h1>
               <div className="flex flex-wrap items-center gap-6 text-gray-600">
                 <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">⭐</span>
+                  <FaStar className="text-yellow-500" />
                   <span className="font-semibold">{product.metrics?.averageRating || 4.8}</span>
                   <span>{t("productDetail.reviewCount").replace('{count}', product.metrics?.reviewCount || 0)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span>👁️</span>
+
+                  <FaEye className="text-gray-500" />
                   <span>{product.metrics?.viewCount || 0} {t('productDetail.views')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span>📍</span>
+                  <FaMapMarkerAlt className="text-gray-500" />
                   <span>{product.location?.address?.city || 'Đà Nẵng'}</span>
                 </div>
               </div>
@@ -1396,10 +1555,10 @@ export default function ProductDetail() {
               <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
                 <nav className="flex">
                   {[
-                    { id: 'description', label: t("productDetail.tab_description"), icon: '📋' },
-                    { id: 'specifications', label: t("productDetail.tab_specifications"), icon: '⚙️' },
-                    { id: 'rules', label: t("productDetail.tab_rules"), icon: '📜' },
-                    { id: 'reviews', label: t("productDetail.tab_reviews"), icon: '⭐' }
+                    { id: 'description', label: <><FaClipboardList className="inline mr-1" />{t("productDetail.tab_description")}</>, icon: FaClipboardList },
+                    { id: 'specifications', label: <><FaCog className="inline mr-1" />{t("productDetail.tab_specifications")}</>, icon: FaCog },
+                    { id: 'rules', label: <><FaScroll className="inline mr-1" />{t("productDetail.tab_rules")}</>, icon: FaScroll },
+                    { id: 'reviews', label: <><FaStar className="inline mr-1" />{t("productDetail.tab_reviews")}</>, icon: FaStar }
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -1450,16 +1609,18 @@ export default function ProductDetail() {
                           {product.brand?.name && (
                             <div className="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-xl">
                               <div className="flex justify-between items-center">
-                                <span className="text-gray-600 font-medium">🏷️ Thương hiệu:</span>
+                                <FaTag className="text-gray-600 mr-2" />
+                                <span className="text-gray-600 font-medium">Thương hiệu:</span>
                                 <span className="font-bold text-gray-900">{product.brand.name}</span>
                               </div>
                             </div>
                           )}
                           <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-xl">
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-600 font-medium">✨ Tình trạng:</span>
+                              <FaHandSparkles  className="text-gray-600 mr-2" />
+                              <span className="text-gray-600 font-medium">Tình trạng:</span>
                               <span className="font-bold text-gray-900">
-                                {product.condition === 'NEW' ? '🆕 Mới' : '👍 Tốt'}
+                                {product.condition === 'NEW' ? 'Mới' : 'Tốt'}
                               </span>
                             </div>
                           </div>
@@ -1468,12 +1629,14 @@ export default function ProductDetail() {
                         <div className="space-y-4">
                           <div className="bg-gradient-to-r from-green-50 to-teal-50 p-4 rounded-xl">
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-600 font-medium">📦 Số lượng:</span>
+                              <FaBox className="text-gray-600 mr-2" />
+                              <span className="text-gray-600 font-medium">Số lượng:</span>
                               <span className="font-bold text-gray-900">{product.availability?.quantity || 1} cái</span>
                             </div>
                           </div>
                           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl">
                             <div className="flex justify-between items-center">
+                              <FaStar className="text-yellow-400 mr-2" />
                               <span className="text-gray-600 font-medium">{t("productDetail.selectedRating")}</span>
                               <div className="flex items-center">
                                 <span className="text-yellow-400 text-lg">★</span>
@@ -1494,10 +1657,13 @@ export default function ProductDetail() {
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <h3 className="text-2xl font-bold text-gray-900 mb-6">📜 Quy định thuê</h3>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-6">Quy định thuê</h3>
                       <div className="space-y-6">
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                          <h4 className="font-bold text-blue-900 mb-3 text-lg">🕒 Thời gian thuê</h4>
+                          <h4 className="font-bold text-blue-900 mb-3 text-lg flex items-center">
+                            <FaClock className="mr-2" />
+                            Thời gian thuê
+                          </h4>
                           <ul className="space-y-2 text-blue-800">
                             <li>{t('productDetail.minimumHourlyRental')}</li>
                             <li>{t('productDetail.minimumDailyRental')}</li>
@@ -1506,7 +1672,10 @@ export default function ProductDetail() {
                         </div>
 
                         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                          <h4 className="font-bold text-green-900 mb-3 text-lg">{t('productDetail.paymentDepositTitle2')}</h4>
+                          <h4 className="font-bold text-green-900 mb-3 text-lg flex items-center">
+                            <FaMoneyBillWave className="mr-2" />
+                            {t('productDetail.paymentDepositTitle2')}
+                          </h4>
                           <ul className="space-y-2 text-green-800">
                             <li>• {t('productDetail.depositAmount', { amount: formatPrice(product.pricing?.deposit?.amount || 500000) })}</li>
                             <li>• {t('productDetail.paymentBeforeDelivery')}</li>
@@ -1518,6 +1687,7 @@ export default function ProductDetail() {
 
                   {activeTab === 'reviews' && (
                     <motion.div
+                      ref={reviewsSectionRef}
                       key="reviews"
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -1583,7 +1753,7 @@ export default function ProductDetail() {
                               <button onClick={() => changeReviewsTarget('SHIPPER')} className={`w-full py-2 rounded-md text-sm ${reviewsTarget === 'SHIPPER' ? 'bg-indigo-500 text-white' : 'bg-white text-indigo-700 border border-indigo-100'}`}>{t('productDetail.reviewTargets.SHIPPER')}</button>
                             </div>
                             {canWriteReview && (
-                              <button onClick={openWriteModal} className="mt-2 w-full py-3 bg-violet-600 text-white rounded-xl shadow-lg">{t("productDetail.writeReview").replace('{target}', targetLabel(reviewsTarget))}</button>
+                              <button onClick={openWriteModal} className="mt-2 w-full py-3 bg-violet-600 text-white rounded-xl shadow-lg">{t("productDetail.writeReview", { target: targetLabel(reviewsTarget) })}</button>
                             )}
                             {!canWriteReview && user && (
                               <div className="mt-2 w-full py-3 bg-gray-300 text-gray-600 text-center rounded-xl text-sm">{t('productDetail.viewOnlyReviews')}</div>
@@ -1781,7 +1951,9 @@ export default function ProductDetail() {
                 {/* Delivery Date */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    {t("productDetail.deliveryDate")}
+                    
+                    <FaTruck className="inline mr-1" />
+                   {t("productDetail.deliveryDate")}
                   </label>
                   <input
                     type="date"
@@ -1810,6 +1982,8 @@ export default function ProductDetail() {
                 {/* Return Date */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    
+                    <FaBoxOpen className="inline mr-1" />
                     {t("productDetail.returnDate")}
                   </label>
                   <input
@@ -1840,7 +2014,10 @@ export default function ProductDetail() {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="text-center">
-                      <div className="text-sm text-gray-700 mb-1">⏱️ {t("productDetail.rentalDuration")}</div>
+                      <div className="text-sm text-gray-700 mb-1">
+                        <FaHourglassHalf className="inline mr-1" />
+                        {t("productDetail.rentalDuration")}
+                      </div>
                       <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
                         {getRentalDays()} {t("productDetail.rentalDays")}
                       </div>
@@ -1854,8 +2031,11 @@ export default function ProductDetail() {
                 {/* Time Selection Hints */}
                 <div className="mt-4 p-3 bg-gray-50 rounded-xl">
                   <div className="text-xs text-gray-600 text-center">
-                    <div className="font-semibold mb-1">{t("productDetail.deliveryTime")}</div>
-                    <div>{t("productDetail.deliveryHours")}</div>
+                    <div className="font-semibold mb-1">
+                      <FaClock className="inline mr-1" />
+                      {t("productDetail.deliveryTime")}
+                    </div>
+                    <div>8:00 - 20:00 hàng ngày</div>
                     <div className="text-gray-500 mt-1">{t("productDetail.minimumRental")}</div>
                   </div>
                 </div>
@@ -1864,27 +2044,33 @@ export default function ProductDetail() {
                 {deliveryDate && returnDate && (
                   <div className="mt-6">
                     <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h5 className="font-semibold text-blue-800 mb-2">{t("productDetail.productStatus")}</h5>
+                      <h5 className="font-semibold text-blue-800 mb-2">
+                        <FaChartBar className="inline mr-1" />
+                        {t("productDetail.productStatus")}
+                      </h5>
                       {checkingAvailability ? (
                         <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          <FaSpinner className="animate-spin text-blue-600" />
                           <span className="text-blue-600">{t("productDetail.checkingAvailability")}</span>
                         </div>
                       ) : availableQuantity !== null ? (
                         <div className="text-lg font-semibold">
                           {availableQuantity > 0 ? (
                             <span className="text-green-600">
-                              {t("productDetail.inStock").replace('{count}', availableQuantity)}
+                              <FaCheckCircle className="inline mr-1" />
+                              {t("productDetail.inStock", { count: availableQuantity })}
                             </span>
                           ) : (
                             <span className="text-red-600">
+                              
+                              <FaTimesCircle className="inline mr-1" />
                               {t("productDetail.outOfStock")}
                             </span>
                           )}
                         </div>
                       ) : null}
                       <div className="text-sm text-blue-600 mt-1">
-                        {t("productDetail.from")} {new Date(deliveryDate).toLocaleDateString('vi-VN')} {t("productDetail.to")} {new Date(returnDate).toLocaleDateString('vi-VN')}
+                        {t("productDetail.from")} {new Date(deliveryDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')} {t("productDetail.to")} {new Date(returnDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
                       </div>
                     </div>
                   </div>
@@ -1893,7 +2079,10 @@ export default function ProductDetail() {
 
               {/* Quantity Selector */}
               <div className="mb-8">
-                <h4 className="font-bold text-gray-900 mb-4 text-lg">{t("productDetail.quantity")}</h4>
+                <h4 className="font-bold text-gray-900 mb-4 text-lg">
+                  <FaHashtag className="inline mr-1" />
+                  {t("productDetail.quantity")}
+                </h4>
                 <div className="flex items-center bg-gray-50 rounded-xl p-2">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -1931,6 +2120,8 @@ export default function ProductDetail() {
                       {t("productDetail.availableInRange").replace('{count}', availableQuantity)}
                       {quantity >= availableQuantity && (
                         <div className="text-orange-600 text-xs mt-1">
+                          
+                          <FaExclamationTriangle className="inline mr-1" />
                           {t("productDetail.reachedMaxQuantity")}
                         </div>
                       )}
@@ -1940,6 +2131,8 @@ export default function ProductDetail() {
                       {t("productDetail.available").replace('{count}', product.availability?.quantity || 0)}
                       {quantity >= (product.availability?.quantity || 0) && (
                         <div className="text-orange-600 text-xs mt-1">
+                          
+                          <FaExclamationTriangle className="inline mr-1" />
                           {t("productDetail.reachedMaxQuantityTotal")}
                         </div>
                       )}
@@ -1957,7 +2150,10 @@ export default function ProductDetail() {
                   transition={{ duration: 0.3 }}
                 >
                   <div className="text-center">
-                    <div className="text-lg text-gray-700 mb-2">{t("productDetail.totalCost")}</div>
+                    <div className="text-lg text-gray-700 mb-2">
+                      <FaMoneyBillWave className="inline mr-1" />
+                      {t("productDetail.totalCost")}
+                    </div>
                     <div className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
                       {formatPrice(getTotalPrice())}đ
                     </div>
@@ -1980,6 +2176,8 @@ export default function ProductDetail() {
                   whileTap={{ scale: 0.98 }}
                   disabled={cartLoading || !deliveryDate || !returnDate || getRentalDays() <= 0}
                 >
+                  
+                  <FaRocket className="inline mr-2" />
                   {t("productDetail.rentNow")}
                 </motion.button>
 
@@ -1990,7 +2188,7 @@ export default function ProductDetail() {
                   whileTap={{ scale: 0.98 }}
                   disabled={cartLoading || !deliveryDate || !returnDate || getRentalDays() <= 0}
                 >
-                  {cartLoading ? t("productDetail.adding") : t("productDetail.addToCart")}
+                  {cartLoading ? <><FaSpinner className="animate-spin inline mr-2" />{t("productDetail.adding")}</> : <><FaShoppingCart className="inline mr-2" />{t("productDetail.addToCart")}</>}
                 </motion.button>
 
                 {!isOwner && (
@@ -2000,6 +2198,8 @@ export default function ProductDetail() {
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.98 }}
                   >
+                    
+                    <FaComments className="inline mr-2" />
                     {t("productDetail.messageOwner")}
                   </motion.button>
                 )}
@@ -2009,7 +2209,10 @@ export default function ProductDetail() {
               {/* Owner Info */}
               {product.owner && (
                 <div className="mt-8 pt-8 border-t border-gray-200">
-                  <h4 className="font-bold text-gray-900 mb-4 text-lg">👤 {t('productDetail.ownerLabel')}</h4>
+                  <h4 className="font-bold text-gray-900 mb-4 text-lg">
+                    <FaUser className="inline mr-1" />
+                    {t('productDetail.ownerLabel')}
+                  </h4>
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
                       <span className="text-white font-bold text-xl">
@@ -2021,11 +2224,12 @@ export default function ProductDetail() {
                         {product.owner.profile?.firstName} {product.owner.profile?.lastName}
                       </div>
                       <div className="text-sm text-gray-600 mb-2">
-                        📊 {t('productDetail.trustScoreLabel')}: <span className="font-semibold text-green-600">{product.owner.trustScore || 95}%</span>
+                        <FaChartBar className="inline mr-1" />
+                        {t('productDetail.trustScoreLabel')}: <span className="font-semibold text-green-600">{product.owner.trustScore || 95}%</span>
                       </div>
                       <div className="flex items-center text-sm text-yellow-600">
-                        <span>⭐</span>
-                        <span className="ml-1 font-medium">4.9 (128 {t('productDetail.reviewCount').replace('({count} ', '').replace(')', '')})</span>
+                        <FaStar className="mr-1" />
+                        <span className="font-medium">4.9 (128 {t('productDetail.reviewCount').replace('({count} ', '').replace(')', '')})</span>
                       </div>
                     </div>
                   </div>
@@ -2048,17 +2252,20 @@ export default function ProductDetail() {
               {/* Location Info */}
               {product.location?.address && (
                 <div className="mt-8 pt-8 border-t border-gray-200">
-                  <h4 className="font-bold text-gray-900 mb-4 text-lg">{t('productDetail.locationAndDeliveryLabel')}</h4>
+                  <h4 className="font-bold text-gray-900 mb-4 text-lg">
+                    <FaMapMarkerAlt className="inline mr-1" />
+                    {t('productDetail.locationAndDeliveryLabel')}
+                  </h4>
                   <div className="space-y-3">
                     <div className="flex items-center text-gray-700">
-                      <span className="text-lg mr-2">🏠</span>
+                      <FaHome className="text-lg mr-2" />
                       <span>{product.location.address.district}, {product.location.address.city}</span>
                     </div>
 
                     {product.location.deliveryOptions?.delivery && (
                       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                         <div className="flex items-center text-green-700">
-                          <span className="text-lg mr-2">🚚</span>
+                          <FaTruck className="text-lg mr-2" />
                           <span>{t('productDetail.deliveryOptionLabel')}</span>
                         </div>
                         <span className="font-semibold text-green-600">
@@ -2069,7 +2276,8 @@ export default function ProductDetail() {
 
                     {product.location.deliveryOptions?.pickup && (
                       <div className="flex items-center p-3 bg-blue-50 rounded-lg">
-                        <span className="text-lg mr-2">🏪</span>
+
+                        <FaBox className="text-lg mr-2" />
                         <span className="text-blue-700">{t('productDetail.pickupOptionLabel')}</span>
                       </div>
                     )}
@@ -2104,26 +2312,65 @@ export default function ProductDetail() {
           >
             <motion.div className="bg-white rounded-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto" initial={{ y: 20 }} animate={{ y: 0 }} exit={{ y: 20 }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold">{t("productDetail.createReviewModal").replace("{target}", targetLabel(reviewsTarget))}</h3>
+                <h3 className="text-lg font-bold">{t("productDetail.createReviewModal", { target: targetLabel(reviewsTarget) })}</h3>
                 <button onClick={() => setShowWriteModal(false)} className="text-gray-500">{t("productDetail.closeButton")}</button>
               </div>
 
               {/* Display Shipper Info when reviewing shipper */}
-              {reviewsTarget === 'SHIPPER' && shipperInfo && (
-                <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-blue-900 mb-3">{t("productDetail.shipperInfoLabel")}</h4>
-                  <div className="space-y-2 text-sm">
-                    {shipperInfo.profile?.firstName && (
-                      <p><span className="font-medium text-gray-600">{t("productDetail.shipperName")}:</span> {shipperInfo.profile.firstName} {shipperInfo.profile?.lastName || ''}</p>
+              {reviewsTarget === 'SHIPPER' && (
+                shipperInfo ? (
+                <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-300 shadow-sm">
+                  <h4 className="font-bold text-blue-900 mb-3 flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                    </svg>
+                    {t("productDetail.shipperInfoLabel")}
+                  </h4>
+                  <div className="space-y-3">
+                    {(shipperInfo.profile?.firstName || shipperInfo.profile?.lastName) && (
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold mr-3">
+                          {(shipperInfo.profile?.firstName?.[0] || shipperInfo.email?.[0] || 'S').toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800 text-base">
+                            {shipperInfo.profile.firstName} {shipperInfo.profile?.lastName || ''}
+                          </p>
+                          <p className="text-xs text-gray-500">{t("productDetail.shipperName")}</p>
+                        </div>
+                      </div>
                     )}
                     {shipperInfo.email && (
-                      <p><span className="font-medium text-gray-600">{t("productDetail.shipperEmail")}:</span> {shipperInfo.email}</p>
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <div>
+                          <p className="font-medium text-gray-800">{shipperInfo.email}</p>
+                          <p className="text-xs text-gray-500">{t("productDetail.shipperEmail")}</p>
+                        </div>
+                      </div>
                     )}
-                    {shipperInfo.phone && (
-                      <p><span className="font-medium text-gray-600">{t("productDetail.shipperPhone")}:</span> {shipperInfo.phone}</p>
+                    {(shipperInfo.phone || shipperInfo.profile?.phoneNumber) && (
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <div>
+                          <p className="font-medium text-gray-800">{shipperInfo.phone || shipperInfo.profile?.phoneNumber}</p>
+                          <p className="text-xs text-gray-500">{t("productDetail.shipperPhone")}</p>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
+                ) : (
+                  <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-300">
+                    <p className="text-yellow-800 text-sm">
+                      ⚠️ Đang tải thông tin shipper...
+                    </p>
+                  </div>
+                )
               )}
 
               <div className="space-y-3">
@@ -2157,16 +2404,44 @@ export default function ProductDetail() {
 
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">{t("productDetail.photosOptional")}</label>
-                  <div className="flex items-center gap-4">
-                    <input ref={fileInputRef} type="file" multiple onChange={(e) => handleNewReviewFiles(e.target.files)} className="" />
-                    <div className="text-sm text-gray-500">
-                      {(newReview.photos || []).length === 0 ? 'No file chosen' : (newReview.photos || []).map((f, i) => <div key={i}>{f.name}</div>)}
-                    </div>
+                  <div className="flex flex-col gap-3">
+                    <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={(e) => handleNewReviewFiles(e.target.files)} className="text-sm" />
+                    
+                    {previewImages.length === 0 ? (
+                      <div className="text-sm text-gray-500">{t("productDetail.noFilesSelected")}</div>
+                    ) : (
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 mb-2">{t("productDetail.filesSelected", { count: newReview.photos.length })}</div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {previewImages.map((preview, i) => (
+                            <div key={i} className="relative group">
+                              <img src={preview} alt={`Preview ${i + 1}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                              <button
+                                type="button"
+                                onClick={() => removePreviewImage(i)}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Remove"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                              <div className="text-xs text-gray-500 mt-1 truncate">{newReview.photos[i]?.name}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2">
-                  <button onClick={() => { setShowWriteModal(false); if (fileInputRef.current) fileInputRef.current.value = null; }} className="px-4 py-2 bg-gray-200 rounded">{t("productDetail.cancelButton")}</button>
+                  <button onClick={() => { 
+                    previewImages.forEach(url => URL.revokeObjectURL(url));
+                    setPreviewImages([]);
+                    setShowWriteModal(false); 
+                    if (fileInputRef.current) fileInputRef.current.value = null; 
+                  }} className="px-4 py-2 bg-gray-200 rounded">{t("productDetail.cancelButton")}</button>
                   <button onClick={async () => { await submitNewReview(); if (fileInputRef.current) fileInputRef.current.value = null; }} className="px-4 py-2 bg-green-500 text-white rounded">{t("productDetail.submitButton")}</button>
                 </div>
               </div>
@@ -2560,8 +2835,8 @@ export default function ProductDetail() {
                         </span>
                       </div>
                       <p className="text-green-600 font-bold text-lg">
-                        {new Intl.NumberFormat('vi-VN').format(item.pricing?.dailyRate || 0)}đ
-                        <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                        {new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US').format(item.pricing?.dailyRate || 0)}đ
+                        <span className="text-sm text-gray-500 font-normal">{t('productDetail.perDay')}</span>
                       </p>
                     </div>
                   </Link>
@@ -2665,11 +2940,11 @@ export default function ProductDetail() {
                         </span>
                       </div>
                       <p className="text-green-600 font-bold text-lg">
-                        {new Intl.NumberFormat('vi-VN').format(item.pricing?.dailyRate || 0)}đ
-                        <span className="text-sm text-gray-500 font-normal">/ngày</span>
+                        {new Intl.NumberFormat(language === 'vi' ? 'vi-VN' : 'en-US').format(item.pricing?.dailyRate || 0)}đ
+                        <span className="text-sm text-gray-500 font-normal">{t('productDetail.perDay')}</span>
                       </p>
                       <div className="mt-2 text-xs text-gray-500">
-                        Từ: {item.owner?.profile?.fullName || item.owner?.email?.split('@')[0]}
+                        {t('productDetail.from')}: {item.owner?.profile?.fullName || item.owner?.email?.split('@')[0]}
                       </div>
                     </div>
                   </Link>

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { useAuth } from '../../hooks/useAuth';
+import icons from "../../utils/icons";
+
+const { BiClipboard, BiCheckCircle, FaHourglassHalf , FiRefreshCcw , FiCreditCard, FiSearch, FiTrash2, FiUser, FiPackage, FiDollarSign, FiBell, FiCalendar, FiSettings, FiEye, FiTruck, MdOutlineRefresh, FiX } = icons;
 import { useI18n } from '../../hooks/useI18n';
 import { translateCategory } from '../../utils/categoryTranslation';
 
@@ -186,47 +189,47 @@ const OrderManagement = () => {
       'PENDING': { 
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
         text: 'Chờ xử lý',
-        icon: '⏳'
+        icon: <FaHourglassHalf  className="text-sm" />
       },
       'CONFIRMED': { 
         color: 'bg-purple-100 text-purple-800 border-purple-200', 
         text: 'Đã xác nhận',
-        icon: '✅'
+        icon: <BiCheckCircle className="text-sm" />
       },
       'PAID': { 
         color: 'bg-indigo-100 text-indigo-800 border-indigo-200', 
         text: 'Đã thanh toán',
-        icon: '💳'
+        icon: <FiCreditCard className="text-sm" />
       },
       'SHIPPED': { 
         color: 'bg-blue-100 text-blue-800 border-blue-200', 
         text: 'Đã gửi hàng',
-        icon: '🚚'
+        icon: <FiTruck className="text-sm" />
       },
       'DELIVERED': { 
         color: 'bg-cyan-100 text-cyan-800 border-cyan-200', 
         text: 'Đã giao hàng',
-        icon: '📦'
+        icon: <FiPackage className="text-sm" />
       },
       'ACTIVE': { 
         color: 'bg-green-100 text-green-800 border-green-200', 
         text: 'Đang thuê',
-        icon: '🟢'
+        icon: <BiCheckCircle className="text-sm" />
       },
       'RETURNED': { 
         color: 'bg-orange-100 text-orange-800 border-orange-200', 
         text: 'Đã trả',
-        icon: '↩️'
+        icon: <MdOutlineRefresh  className="text-sm" />
       },
       'COMPLETED': { 
         color: 'bg-emerald-100 text-emerald-800 border-emerald-200', 
         text: 'Hoàn thành',
-        icon: '🎉'
+        icon: <BiCheckCircle className="text-sm" />
       },
       'CANCELLED': { 
         color: 'bg-red-100 text-red-800 border-red-200', 
         text: 'Đã hủy',
-        icon: '❌'
+        icon: <FiX className="text-sm" />
       }
     };
 
@@ -234,7 +237,7 @@ const OrderManagement = () => {
     
     return (
       <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full border ${config.color}`}>
-        <span>{config.icon}</span>
+        {config.icon}
         <span>{config.text}</span>
       </span>
     );
@@ -245,27 +248,27 @@ const OrderManagement = () => {
       'PENDING': { 
         color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
         text: 'Chờ thanh toán',
-        icon: '⏳'
+        icon: <FaHourglassHalf  className="text-sm" />
       },
       'PAID': { 
         color: 'bg-green-100 text-green-800 border-green-200', 
         text: 'Đã thanh toán',
-        icon: '✅'
+        icon: <BiCheckCircle className="text-sm" />
       },
       'PARTIALLY_PAID': { 
         color: 'bg-blue-100 text-blue-800 border-blue-200', 
         text: 'Thanh toán một phần',
-        icon: '🔄'
+        icon: <FiRefreshCcw  className="text-sm" />
       },
       'FAILED': { 
         color: 'bg-red-100 text-red-800 border-red-200', 
         text: 'Thất bại',
-        icon: '❌'
+        icon: <FiX className="text-sm" />
       },
       'REFUNDED': { 
         color: 'bg-gray-100 text-gray-800 border-gray-200', 
         text: 'Đã hoàn tiền',
-        icon: '💸'
+        icon: <FiDollarSign className="text-sm" />
       }
     };
 
@@ -273,7 +276,7 @@ const OrderManagement = () => {
     
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full border ${config.color}`}>
-        <span>{config.icon}</span>
+        {config.icon}
         <span>{config.text}</span>
       </span>
     );
@@ -294,13 +297,12 @@ const OrderManagement = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold flex items-center gap-3 mb-2">
-              <span className="text-5xl">📋</span>
+              <BiClipboard className="text-5xl" />
               Quản lý Đơn hàng
             </h1>
             <p className="text-blue-100 text-lg">Quản lý và theo dõi toàn bộ đơn hàng thuê trong hệ thống</p>
           </div>
           <button className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-2">
-            <span>📥</span>
             Export CSV
           </button>
         </div>
@@ -315,7 +317,7 @@ const OrderManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(stats?.total || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-blue-100 p-4 rounded-full">
-              <span className="text-3xl">📋</span>
+              <BiClipboard className="text-3xl" />
             </div>
           </div>
         </div>
@@ -327,7 +329,7 @@ const OrderManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(stats?.active || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-green-100 p-4 rounded-full">
-              <span className="text-3xl">🟢</span>
+              <BiCheckCircle className="text-3xl" />
             </div>
           </div>
         </div>
@@ -339,7 +341,7 @@ const OrderManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(stats?.pending || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-yellow-100 p-4 rounded-full">
-              <span className="text-3xl">⏳</span>
+              <FaHourglassHalf  className="text-3xl" />
             </div>
           </div>
         </div>
@@ -351,7 +353,7 @@ const OrderManagement = () => {
               <p className="text-3xl font-bold text-gray-900">{(stats?.completed || 0).toLocaleString('vi-VN')}</p>
             </div>
             <div className="bg-purple-100 p-4 rounded-full">
-              <span className="text-3xl">✅</span>
+              <BiCheckCircle className="text-3xl" />
             </div>
           </div>
         </div>
@@ -361,7 +363,7 @@ const OrderManagement = () => {
       <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span className="text-2xl">🔍</span>
+            <FiSearch className="text-2xl" />
             Bộ lọc & Tìm kiếm
           </h2>
           <button
@@ -375,7 +377,7 @@ const OrderManagement = () => {
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
-            <span>🗑️</span>
+            <FiTrash2 />
             Xóa bộ lọc
           </button>
         </div>
@@ -384,7 +386,7 @@ const OrderManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>🔍</span>
+                <FiSearch />
                 Tìm kiếm
               </span>
             </label>
@@ -408,7 +410,7 @@ const OrderManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>📋</span>
+                <BiClipboard />
                 Trạng thái đơn hàng
               </span>
             </label>
@@ -418,15 +420,15 @@ const OrderManagement = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="PENDING">⏳ Chờ xử lý</option>
-              <option value="CONFIRMED">✅ Đã xác nhận</option>
-              <option value="PAID">💳 Đã thanh toán</option>
-              <option value="SHIPPED">🚚 Đã gửi hàng</option>
-              <option value="DELIVERED">📦 Đã giao hàng</option>
-              <option value="ACTIVE">🟢 Đang thuê</option>
-              <option value="RETURNED">↩️ Đã trả</option>
-              <option value="COMPLETED">🎉 Hoàn thành</option>
-              <option value="CANCELLED">❌ Đã hủy</option>
+              <option value="PENDING">Chờ xử lý</option>
+              <option value="CONFIRMED">Đã xác nhận</option>
+              <option value="PAID">Đã thanh toán</option>
+              <option value="SHIPPED">Đã gửi hàng</option>
+              <option value="DELIVERED">Đã giao hàng</option>
+              <option value="ACTIVE">Đang thuê</option>
+              <option value="RETURNED">Đã trả</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="CANCELLED">Đã hủy</option>
             </select>
           </div>
 
@@ -434,7 +436,7 @@ const OrderManagement = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="flex items-center gap-2">
-                <span>💳</span>
+                <FiCreditCard />
                 Trạng thái thanh toán
               </span>
             </label>
@@ -444,11 +446,11 @@ const OrderManagement = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Tất cả thanh toán</option>
-              <option value="PENDING">⏳ Chờ thanh toán</option>
-              <option value="PAID">✅ Đã thanh toán</option>
-              <option value="PARTIALLY_PAID">🔄 Thanh toán một phần</option>
-              <option value="FAILED">❌ Thất bại</option>
-              <option value="REFUNDED">💸 Đã hoàn tiền</option>
+              <option value="PENDING">Chờ thanh toán</option>
+              <option value="PAID">Đã thanh toán</option>
+              <option value="PARTIALLY_PAID">Thanh toán một phần</option>
+              <option value="FAILED">Thất bại</option>
+              <option value="REFUNDED">Đã hoàn tiền</option>
             </select>
           </div>
         </div>
@@ -476,7 +478,7 @@ const OrderManagement = () => {
         <div className="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-              <span className="text-2xl">📋</span>
+              <BiClipboard className="text-2xl" />
               Danh sách đơn hàng
               <span className="ml-2 px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-full">
                 {orders.length}
@@ -493,25 +495,25 @@ const OrderManagement = () => {
             <thead className="bg-gradient-to-r from-gray-100 to-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📋 Đơn hàng
+                  <BiClipboard className="inline mr-1" /> Đơn hàng
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  👤 Khách hàng
+                  <FiUser className="inline mr-1" /> Khách hàng
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📦 Sản phẩm
+                  <FiPackage className="inline mr-1" /> Sản phẩm
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  💰 Giá trị
+                  <FiDollarSign className="inline mr-1" /> Giá trị
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  🔔 Trạng thái
+                  <FiBell className="inline mr-1" /> Trạng thái
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  📅 Thời gian thuê
+                  <FiCalendar className="inline mr-1" /> Thời gian thuê
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  ⚙️ Thao tác
+                  <FiSettings className="inline mr-1" /> Thao tác
                 </th>
               </tr>
             </thead>
@@ -573,7 +575,7 @@ const OrderManagement = () => {
                     <td className="px-6 py-4">
                       <div className="space-y-1">
                         <div className="text-sm font-bold text-green-700">
-                          💰 {formatCurrency(order.pricing?.total)}
+                          <FiDollarSign className="inline mr-1" /> {formatCurrency(order.pricing?.total)}
                         </div>
                         {order.pricing?.deposit && (
                           <div className="text-xs text-orange-600">
@@ -616,7 +618,7 @@ const OrderManagement = () => {
                         onClick={() => navigate(`/admin/orders/${order._id}`)}
                         className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                       >
-                        <span>👁️</span> Xem chi tiết
+                        <FiEye className="text-sm" /> Xem chi tiết
                       </button>
                     </td>
                   </tr>

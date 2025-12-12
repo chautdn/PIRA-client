@@ -1,13 +1,18 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useTheme } from "../../context/ThemeContext";
 import { ROUTES } from "../../utils/constants";
+import icons from "../../utils/icons";
+
+const { IoBarChart, FiUser, FiPackage, BiCreditCard, FiGift, BsCart4, FiAlertTriangle, FaBalanceScale, BsBuildings, FiDollarSign, FiSettings } = icons;
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
 
   // Check if user is admin
   React.useEffect(() => {
@@ -20,52 +25,52 @@ const AdminLayout = () => {
     {
       name: "Dashboard",
       path: "/admin",
-      icon: "📊",
+      icon: <IoBarChart />,
     },
     {
       name: "Quản lý User",
       path: "/admin/users",
-      icon: "👥",
+      icon: <FiUser />,
     },
     {
       name: "Quản lý Sản phẩm",
       path: "/admin/products",
-      icon: "📦",
+      icon: <FiPackage />,
     },
     {
       name: "Quản lý Giao dịch",
       path: "/admin/transactions",
-      icon: "💳",
+      icon: <BiCreditCard />,
     },
     {
       name: "Khuyến mãi Hệ thống",
       path: "/admin/promotions",
-      icon: "🎁",
+      icon: <FiGift />,
     },
     {
       name: "Quản lý Đơn hàng",
       path: "/admin/orders",
-      icon: "🛒",
+      icon: <BsCart4 />,
     },
     {
       name: "Quản lý Báo cáo",
       path: "/admin/reports",
-      icon: "🚨",
+      icon: <FiAlertTriangle />,
     },
     {
       name: "Quản lý Tranh chấp",
       path: "/admin/disputes",
-      icon: "⚖️",
+      icon: <FaBalanceScale />,
     },
     {
       name: "Xác minh Ngân hàng",
       path: "/admin/bank-accounts",
-      icon: "🏦",
+      icon: <BsBuildings />,
     },
     {
       name: "Quản lý Rút tiền",
       path: "/admin/withdrawals",
-      icon: "💰",
+      icon: <FiDollarSign />,
     },
     {
       name: "Quản lí Vận chuyển",
@@ -75,7 +80,7 @@ const AdminLayout = () => {
     {
       name: "Cài đặt",
       path: "/admin/settings",
-      icon: "⚙️",
+      icon: <FiSettings />,
     },
   ];
 
@@ -96,24 +101,23 @@ const AdminLayout = () => {
   if (!user || user.role !== "ADMIN") {
     return null;
   }
-
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex transition-colors">
       {/* Sidebar */}
       <div
         className={`${
           sidebarOpen ? "w-64" : "w-20"
-        } transition-all duration-300 bg-white shadow-lg flex flex-col relative`}
+        } transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg flex flex-col relative`}
       >
-        <div className="p-4 border-b">
+        <div className="p-4 border-b dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded flex items-center justify-center text-white font-bold">
               P
             </div>
             {sidebarOpen && (
               <div>
-                <h1 className="font-bold text-lg text-gray-800">PIRA Admin</h1>
-                <p className="text-sm text-gray-500">Quản trị hệ thống</p>
+                <h1 className="font-bold text-lg text-gray-800 dark:text-white">PIRA Admin</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Quản trị hệ thống</p>
               </div>
             )}
           </div>
@@ -132,8 +136,8 @@ const AdminLayout = () => {
                 to={item.path}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 transition-colors ${
                   isActive
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-blue-600 dark:bg-blue-500 text-white"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >
                 <span className="text-lg">{item.icon}</span>
@@ -145,18 +149,18 @@ const AdminLayout = () => {
           })}
         </nav>
 
-        <div className="mt-auto p-4 border-t">
+        <div className="mt-auto p-4 border-t dark:border-gray-700">
           {sidebarOpen ? (
-            <div className="bg-gray-100 rounded-lg p-3">
+            <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm">
                   {user?.firstName?.charAt(0) || "A"}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">
+                  <p className="text-sm font-medium text-gray-800 dark:text-white">
                     {user?.firstName} {user?.lastName}
                   </p>
-                  <p className="text-xs text-gray-500">Administrator</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
                 </div>
               </div>
             </div>
@@ -173,12 +177,12 @@ const AdminLayout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b px-6 py-4">
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 px-6 py-4 transition-colors">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-800 dark:text-white"
               >
                 <svg
                   className="w-5 h-5"
@@ -194,7 +198,7 @@ const AdminLayout = () => {
                   />
                 </svg>
               </button>
-              <h2 className="text-xl font-semibold text-gray-800">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
                 {menuItems.find(
                   (item) =>
                     location.pathname === item.path ||
@@ -206,7 +210,7 @@ const AdminLayout = () => {
 
             <div className="flex items-center gap-4">
               {/* Notifications */}
-              <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <button className="relative p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-800 dark:text-white">
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -225,8 +229,8 @@ const AdminLayout = () => {
 
               {/* User Menu */}
               <div className="relative group">
-                <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm">
+                <button className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-800 dark:text-white">
+                  <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
                     {user?.firstName?.charAt(0) || "A"}
                   </div>
                   <svg
@@ -245,30 +249,30 @@ const AdminLayout = () => {
                 </button>
 
                 {/* Dropdown Menu */}
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                  <div className="p-4 border-b">
-                    <p className="font-medium text-gray-800">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                  <div className="p-4 border-b dark:border-gray-700">
+                    <p className="font-medium text-gray-800 dark:text-white">
                       {user?.firstName} {user?.lastName}
                     </p>
-                    <p className="text-sm text-gray-500">{user?.email}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
                   </div>
                   <div className="py-2">
                     <Link
                       to={ROUTES.ADMIN.PROFILE}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       Thông tin cá nhân
                     </Link>
                     <Link
                       to={ROUTES.ADMIN.SETTINGS}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       Cài đặt
                     </Link>
-                    <hr className="my-2" />
+                    <hr className="my-2 dark:border-gray-700" />
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       Đăng xuất
                     </button>
@@ -280,12 +284,13 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-auto bg-gray-50 dark:bg-gray-900 transition-colors">
           <Outlet />
         </main>
       </div>
     </div>
   );
+
 };
 
 export default AdminLayout;

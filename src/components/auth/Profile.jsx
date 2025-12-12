@@ -9,6 +9,50 @@ import { motion } from "framer-motion";
 import KycModal from "../common/KycModal";
 import BankAccountSection from "../wallet/BankAccountSection";
 import MapSelector from "../common/MapSelector";
+import icons from "../../utils/icons";
+
+const {
+  FiUser,
+  FiMapPin,
+  BiCreditCard,
+  FiLock,
+  BsBuildings,
+  FiMail,
+  FiPhone,
+  MdOutlineStarPurple500,
+  FiCamera,
+  FiCheck,
+  FiX,
+  FiKey,
+  FiRefreshCcw,
+  FiShield,
+  FiInfo,
+  FiUnlock,
+  FiImage,
+  FiFile,
+  FiCalendar,
+  FiDollarSign,
+  FiAward,
+  FiEye,
+  FiEdit3,
+  FiSave,
+  FiTrash2,
+  FaBell,
+  FaClipboardList,
+  FaTicketAlt,
+  FaMale,
+  FaFemale,
+  FaUserFriends,
+  FaStar,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaClock,
+  FaLock,
+  FaMapMarkerAlt,
+  FaLightbulb,
+  FaRedo,
+  FaExclamationTriangle,
+} = icons;
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
@@ -101,8 +145,8 @@ const Profile = () => {
 
     // Show notification if coming from product creation
     if (location.state?.fromProductCreate) {
-      toast("📍 " + t('profilePage.updateAddress'), {
-        icon: "💡",
+      toast(t('profilePage.updateAddressToContinueCreatingProduct'), {
+        icon: <FaMapMarkerAlt className="text-blue-500" />,
         duration: 4000,
         style: {
           background: "#3B82F6",
@@ -235,7 +279,10 @@ const Profile = () => {
 
       // Check if came from product creation page
       if (location.state?.fromProductCreate) {
-        toast.success("🔄 " + t('profilePage.backToProductCreate'), { duration: 2000 });
+        toast.success(t('profilePage.returningToProductCreate'), { 
+          icon: <FaRedo className="text-green-500" />,
+          duration: 2000 
+        });
         setTimeout(() => {
           navigate("/owner/products/create", {
             state: { fromProfile: true },
@@ -515,7 +562,7 @@ const Profile = () => {
         text: t('profilePage.kycVerifiedStatus'),
         color: "text-green-600",
         bgColor: "bg-green-100",
-        icon: "✅",
+        icon: <FaCheckCircle className="text-green-500" />,
       };
     }
 
@@ -524,7 +571,7 @@ const Profile = () => {
         text: t('profilePage.kycPendingStatus'),
         color: "text-yellow-600",
         bgColor: "bg-yellow-100",
-        icon: "⏳",
+        icon: <FaClock className="text-yellow-500" />,
       };
     }
 
@@ -532,16 +579,17 @@ const Profile = () => {
       text: t('profilePage.kycNotVerifiedStatus'),
       color: "text-red-500",
       bgColor: "bg-red-100",
-      icon: "❌",
+      icon: <FaTimesCircle className="text-red-500" />,
     };
   };
 
   // Sidebar menu items
   const menuItems = [
-    { id: "notifications", icon: "🔔", label: t('profilePage.menuNotifications') },
+    { id: "notifications", icon: <FaBell className="text-xl" />, label: t('profilePage.menuNotifications') },
     {
       id: "profile",
-      icon: "👤",
+
+      icon: <FiUser className="text-xl" />,
       label: t('profilePage.menuMyAccount'),
       submenu: [
         { id: "profile", label: t('profilePage.menuProfile') },
@@ -551,8 +599,9 @@ const Profile = () => {
         { id: "banking", label: t('profilePage.menuBanking') },
       ],
     },
-    { id: "orders", icon: "📋", label: t('profilePage.menuOrders') },
-    { id: "vouchers", icon: "🎫", label: t('profilePage.menuVouchers') },
+
+    { id: "orders", icon: <FaClipboardList className="text-xl" />, label: t('profilePage.menuOrders') },
+    { id: "vouchers", icon: <FaTicketAlt className="text-xl" />, label: t('profilePage.menuVouchers') },
   ];
 
   if (loading) {
@@ -609,7 +658,8 @@ const Profile = () => {
                       : user?.email?.split("@")[0] || "User"}
                   </p>
                   <p className="text-blue-100 text-sm flex items-center mt-1">
-                    <span className="mr-1">✏️</span>
+
+                    <FiEdit3 className="mr-1" />
                     {t('profilePage.editProfile')}
                   </p>
                 </div>
@@ -664,11 +714,11 @@ const Profile = () => {
                   <div>
                     <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                       <span className="text-4xl">
-                        {activeSection === "profile" && "👤"}
-                        {activeSection === "address" && "📍"}
-                        {activeSection === "verification" && "🆔"}
-                        {activeSection === "password" && "🔐"}
-                        {activeSection === "banking" && "🏦"}
+                        {activeSection === "profile" && <FiUser />}
+                        {activeSection === "address" && <FiMapPin />}
+                        {activeSection === "verification" && <BiCreditCard />}
+                        {activeSection === "password" && <FiLock />}
+                        {activeSection === "banking" && <BsBuildings />}
                       </span>
                       {activeSection === "profile" && t('profilePage.sectionProfile')}
                       {activeSection === "address" && t('profilePage.sectionAddress')}
@@ -696,7 +746,7 @@ const Profile = () => {
                       <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
                         <div className="flex items-center">
                           <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mr-5 shadow-lg">
-                            <span className="text-3xl">📧</span>
+                            <FiMail className="text-3xl text-white" />
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 text-lg">
@@ -716,8 +766,9 @@ const Profile = () => {
                             }`}
                           >
                             {user?.verification?.emailVerified
-                              ? "✅ " + t('profilePage.emailVerified')
-                              : "❌ " + t('profilePage.emailNotVerified')}
+
+                              ? <><FaCheckCircle className="inline mr-1" />{t('profilePage.emailVerified')}</>
+                              : <><FaTimesCircle className="inline mr-1" />{t('profilePage.emailNotVerified')}</>}
                           </span>
                           {!user?.verification?.emailVerified && (
                             <button className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
@@ -731,7 +782,7 @@ const Profile = () => {
                       <div className="flex items-center justify-between p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-2 border-purple-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
                         <div className="flex items-center">
                           <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mr-5 shadow-lg">
-                            <span className="text-3xl">🆔</span>
+                            <BiCreditCard className="text-3xl text-white" />
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 text-lg">
@@ -746,12 +797,10 @@ const Profile = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <span
-                            className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
-                              getKycStatusDisplay().bgColor
-                            } ${getKycStatusDisplay().color}`}
+                            className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${getKycStatusDisplay().bgColor} ${getKycStatusDisplay().color}`}
                           >
-                            {getKycStatusDisplay().icon}{" "}
-                            {getKycStatusDisplay().text}
+                            {getKycStatusDisplay().icon}
+                            <span className="ml-1">{getKycStatusDisplay().text}</span>
                           </span>
                           <button
                             onClick={() => user?.cccd?.isVerified ? handleViewCCCDInfo() : setShowKycModal(true)}
@@ -762,8 +811,9 @@ const Profile = () => {
                             }`}
                           >
                             {user?.cccd?.isVerified
-                              ? "👁️ " + t('profilePage.viewInfo')
-                              : "🔐 " + t('profilePage.verifyIdentity')}
+
+                              ? <><FiEye className="inline mr-1" />{t('profilePage.viewInfo')}</>
+                              : <><FaLock className="inline mr-1" />{t('profilePage.verifyIdentity')}</>}
                           </button>
                         </div>
                       </div>
@@ -771,7 +821,8 @@ const Profile = () => {
                       {/* Security Level */}
                       <div className="mt-8 p-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 rounded-2xl border-2 border-indigo-200 shadow-xl">
                         <h3 className="font-bold text-gray-900 mb-6 flex items-center text-xl">
-                          <span className="text-3xl mr-3">🛡️</span>
+
+                          <FiShield className="text-3xl mr-3" />
                           {t('profilePage.securityLevel')}
                         </h3>
 
@@ -803,7 +854,8 @@ const Profile = () => {
                           2 && (
                           <div className="mt-6 p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl shadow-lg">
                             <p className="text-base text-white font-semibold flex items-center">
-                              <span className="text-2xl mr-3">🎉</span>
+
+                              <FiAward className="text-2xl mr-3" />
                               {t('profilePage.congratulations')}
                             </p>
                           </div>
@@ -821,7 +873,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">👤</span>
+
+                            <FiUser className="text-xl" />
                             {t('profilePage.firstName')}:
                           </label>
                           <div className="flex-1">
@@ -842,7 +895,7 @@ const Profile = () => {
                                 />
                                 {errors.firstName && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                    <span>⚠️</span>
+                                    <FaExclamationTriangle className="text-red-500" />
                                     <span>{errors.firstName}</span>
                                   </div>
                                 )}
@@ -856,7 +909,8 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ {t('profilePage.change')}
+                                  <FiEdit3 className="inline mr-1" />
+                                  {t('profilePage.change')}
                                 </button>
                               </div>
                             )}
@@ -868,7 +922,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">🏷️</span>
+
+                            <FiUser className="text-xl" />
                             {t('profilePage.lastName')}:
                           </label>
                           <div className="flex-1">
@@ -889,7 +944,7 @@ const Profile = () => {
                                 />
                                 {errors.lastName && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                    <span>⚠️</span>
+                                    <FaExclamationTriangle className="text-red-500" />
                                     <span>{errors.lastName}</span>
                                   </div>
                                 )}
@@ -903,7 +958,8 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ {t('profilePage.change')}
+                                  <FiEdit3 className="inline mr-1" />
+                                  {t('profilePage.change')}
                                 </button>
                               </div>
                             )}
@@ -915,7 +971,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">📧</span>
+  
+                            <FiMail className="text-xl" />
                             {t('profilePage.email')}:
                           </label>
                           <div className="flex-1">
@@ -926,7 +983,8 @@ const Profile = () => {
                                   : "N/A"}
                               </span>
                               <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 shadow-md transform hover:-translate-y-0.5 transition-all duration-200">
-                                ✏️ Thay Đổi
+                                <FiEdit3 className="inline mr-1" />
+                                Thay Đổi
                               </button>
                             </div>
                           </div>
@@ -937,7 +995,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">📱</span>
+
+                            <FiPhone className="text-xl" />
                             {t('profilePage.phone')}:
                           </label>
                           <div className="flex-1">
@@ -954,7 +1013,7 @@ const Profile = () => {
                                 />
                                 {errors.phone && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                    <span>⚠️</span>
+                                    <FaExclamationTriangle className="text-red-500" />
                                     <span>{errors.phone}</span>
                                   </div>
                                 )}
@@ -970,7 +1029,8 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ {t('profilePage.change')}
+                                  <FiEdit3 className="inline mr-1" />
+                                  {t('profilePage.change')}
                                 </button>
                               </div>
                             )}
@@ -982,7 +1042,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-5 rounded-xl border-2 border-orange-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">♀️♂️</span>
+
+                            <FiUser className="text-xl" />
                             {t('profilePage.gender')}:
                           </label>
                           <div className="flex-1">
@@ -1003,7 +1064,7 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-blue-600"
                                   />
-                                  <span className="font-medium">👨 {t('profilePage.male')}</span>
+                                  <span className="font-medium"><FaMale className="inline mr-1" />{t('profilePage.male')}</span>
                                 </label>
                                 <label className="flex items-center px-4 py-3 bg-white border-2 border-pink-200 rounded-lg cursor-pointer hover:bg-pink-50 transition-colors duration-200 has-[:checked]:bg-pink-100 has-[:checked]:border-pink-500">
                                   <input
@@ -1020,7 +1081,7 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-pink-600"
                                   />
-                                  <span className="font-medium">👩 {t('profilePage.female')}</span>
+                                  <span className="font-medium"><FaFemale className="inline mr-1" />{t('profilePage.female')}</span>
                                 </label>
                                 <label className="flex items-center px-4 py-3 bg-white border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors duration-200 has-[:checked]:bg-purple-100 has-[:checked]:border-purple-500">
                                   <input
@@ -1037,25 +1098,26 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-purple-600"
                                   />
-                                  <span className="font-medium">🧑 {t('profilePage.other')}</span>
+                                  <span className="font-medium"><FaUserFriends className="inline mr-1" />{t('profilePage.other')}</span>
                                 </label>
                               </div>
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
                                   {user?.profile?.gender === "MALE"
-                                    ? "👨 " + t('profilePage.male')
+                                    ? <><FaMale className="inline mr-1" />t('profilePage.male')</>
                                     : user?.profile?.gender === "FEMALE"
-                                    ? "👩 " + t('profilePage.female')
+                                    ? <><FaFemale className="inline mr-1" />t('profilePage.female')</>
                                     : user?.profile?.gender === "OTHER"
-                                    ? "🧑 " + t('profilePage.other')
+                                    ? <><FaUserFriends className="inline mr-1" />{t('profilePage.other')}</>
                                     : t('profilePage.notUpdated')}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ {t('profilePage.change')}
+                                  <FiEdit3 className="inline mr-1" />
+                                  {t('profilePage.change')}
                                 </button>
                               </div>
                             )}
@@ -1067,7 +1129,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-rose-50 to-red-50 p-5 rounded-xl border-2 border-rose-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">🎂</span>
+                            <FiCalendar className="text-xl" />
                             {t('profilePage.dateOfBirth')}:
                           </label>
                           <div className="flex-1">
@@ -1087,7 +1149,7 @@ const Profile = () => {
                                 />
                                 {errors.dateOfBirth && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                                    <span>⚠️</span>
+                                    <FaExclamationTriangle className="text-red-500" />
                                     <span>{errors.dateOfBirth}</span>
                                   </div>
                                 )}
@@ -1105,7 +1167,8 @@ const Profile = () => {
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
-                                  ✏️ Thay Đổi
+                                  <FiEdit3 className="inline mr-1" />
+                                  Thay Đổi
                                 </button>
                               </div>
                             )}
@@ -1117,7 +1180,7 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-xl border-2 border-yellow-200 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-                            <span className="text-xl">⭐</span>
+                            <MdOutlineStarPurple500 className="text-xl" />
                             Điểm tín dụng:
                           </label>
                           <div className="flex-1">
@@ -1129,16 +1192,10 @@ const Profile = () => {
                                 <div className="flex items-center gap-1">
                                   {/* Credit Score Stars */}
                                   {[...Array(5)].map((_, i) => (
-                                    <span 
+                                    <FaStar 
                                       key={i}
-                                      className={`text-lg ${
-                                        i < Math.floor((user?.creditScore || 100) / 20) 
-                                          ? 'text-yellow-400' 
-                                          : 'text-gray-300'
-                                      }`}
-                                    >
-                                      ⭐
-                                    </span>
+                                      className={`text-lg ${i < Math.floor((user?.creditScore || 100) / 20) ? 'text-yellow-400' : 'text-gray-300'}`}
+                                    />
                                   ))}
                                 </div>
                                 <span 
@@ -1180,7 +1237,8 @@ const Profile = () => {
                               ></div>
                             </div>
                             <p className="text-xs text-gray-500 mt-2">
-                              💡 Điểm tín dụng được tính dựa trên lịch sử thuê và trả đồ của bạn
+                              <FiInfo className="inline mr-1" />
+                              Điểm tín dụng được tính dựa trên lịch sử thuê và trả đồ của bạn
                             </p>
                           </div>
                         </div>
@@ -1196,13 +1254,15 @@ const Profile = () => {
                               disabled={saving}
                               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
                             >
-                              {saving ? "⏳ " + t('profilePage.saving') : "💾 " + t('profilePage.save')}
+                              <FiSave className="inline mr-2" />
+                              {saving ? t('profilePage.saving') :  t('profilePage.save')}
                             </button>
                             <button
                               onClick={handleCancel}
                               className="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 shadow-md transition-all duration-200"
                             >
-                              ❌ {t('profilePage.cancel')}
+                              <FiX className="inline mr-2" />
+                             {t('profilePage.cancel')}
                             </button>
                           </div>
                         </div>
@@ -1210,7 +1270,6 @@ const Profile = () => {
                     </div>
 
                     {/* Avatar Section */}
-                    <div className="w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent"></div>
                     <div className="w-64 flex flex-col items-center py-8">
                       <div className="relative group">
                         <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 p-1 mb-6 overflow-hidden shadow-2xl transform group-hover:scale-105 transition-transform duration-300">
@@ -1227,7 +1286,7 @@ const Profile = () => {
                           </div>
                         </div>
                         <div className="absolute bottom-4 right-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:scale-110 transition-transform duration-200">
-                          <span className="text-white text-lg">📷</span>
+                          <FiCamera className="text-white text-lg" />
                         </div>
                       </div>
 
@@ -1238,12 +1297,20 @@ const Profile = () => {
                           onChange={handleAvatarUpload}
                           className="hidden"
                         />
-                        📸 {t('profilePage.chooseNewPhoto')}
+                        <FiCamera className="inline mr-2" />
+                        {t('profilePage.chooseNewPhoto')}
                       </label>
 
                       <div className="text-xs text-gray-500 mt-4 text-center bg-gray-50 p-3 rounded-lg">
-                        <p className="font-medium">💾 {t('profilePage.capacityMax')}</p>
-                        <p className="mt-1">🖼️ {t('profilePage.formatSupported')}</p>
+
+                        <p className="font-medium">
+                          <FiFile className="inline mr-1" />
+                          {t('profilePage.capacityMax')}
+                        </p>
+                        <p className="mt-1">
+                          <FiImage className="inline mr-1" />
+                          {t('profilePage.formatSupported')}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1269,7 +1336,8 @@ const Profile = () => {
                         {formData.address.coordinates?.latitude &&
                           formData.address.coordinates?.longitude && (
                             <div className="text-sm text-green-600 bg-green-50 p-2 rounded mb-2">
-                              ✅ Đã có tọa độ:{" "}
+                              <FaCheckCircle className="inline mr-1 text-green-500" />
+                              Đã có tọa độ:{" "}
                               {formData.address.coordinates.latitude.toFixed(6)},{" "}
                               {formData.address.coordinates.longitude.toFixed(6)}
                             </div>
@@ -1314,7 +1382,7 @@ const Profile = () => {
 
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
                         <div className="flex items-start gap-3">
-                          <span className="text-2xl">ℹ️</span>
+                          <FiInfo className="text-2xl text-blue-600" />
                           <div>
                             <p className="text-sm font-medium text-blue-900">{t('profilePage.locationNote')}</p>
                             <p className="text-sm text-blue-700 mt-1">
@@ -1330,7 +1398,8 @@ const Profile = () => {
                           disabled={saving}
                           className="px-6 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50"
                         >
-                          {saving ? t('profilePage.saving') : t('profilePage.saveAddress')}
+                          {saving ? 
+                          t('profilePage.saving') : t('profilePage.saveAddress')}
                         </button>
                       </div>
                     </div>
@@ -1343,7 +1412,8 @@ const Profile = () => {
                       {/* Current Password */}
                       <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border-2 border-red-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                          <span className="text-2xl">🔑</span>
+
+                          <FiKey className="text-2xl" />
                           {t('profilePage.currentPassword')}
                         </label>
                         <div className="relative">
@@ -1359,11 +1429,11 @@ const Profile = () => {
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.currentPassword ? 'border-red-300' : 'border-red-200'} rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder={t('profilePage.placeholderCurrentPassword')}
                           />
-                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔐</span>
+                          <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-red-500" />
                         </div>
                         {passwordErrors.currentPassword && (
                           <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                            <span>⚠️</span>
+                            <FaExclamationTriangle className="text-red-500" />
                             <span>{passwordErrors.currentPassword}</span>
                           </div>
                         )}
@@ -1372,7 +1442,8 @@ const Profile = () => {
                       {/* New Password */}
                       <div className="bg-gradient-to-r from-primary-50 to-green-50 p-6 rounded-xl border-2 border-primary-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                          <span className="text-2xl">🆕</span>
+
+                          <FiRefreshCcw className="text-2xl" />
                           {t('profilePage.newPassword')}
                         </label>
                         <div className="relative">
@@ -1388,11 +1459,11 @@ const Profile = () => {
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.newPassword ? 'border-red-300' : 'border-primary-200'} rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder={t('profilePage.placeholderNewPassword')}
                           />
-                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔑</span>
+                          <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-primary-500" />
                         </div>
                         {passwordErrors.newPassword && (
                           <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                            <span>⚠️</span>
+                            <FaExclamationTriangle className="text-red-500" />
                             <span>{passwordErrors.newPassword}</span>
                           </div>
                         )}
@@ -1401,7 +1472,8 @@ const Profile = () => {
                       {/* Confirm Password */}
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-                          <span className="text-2xl">✅</span>
+
+                          <FiCheck className="text-2xl" />
                           {t('profilePage.confirmPassword')}
                         </label>
                         <div className="relative">
@@ -1417,11 +1489,11 @@ const Profile = () => {
                             className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-green-200'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
                             placeholder={t('profilePage.placeholderConfirmPassword')}
                           />
-                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl">🔓</span>
+                          <FiUnlock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-green-500" />
                         </div>
                         {passwordErrors.confirmPassword && (
                           <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                            <span>⚠️</span>
+                            <FaExclamationTriangle className="text-red-500" />
                             <span>{passwordErrors.confirmPassword}</span>
                           </div>
                         )}
@@ -1430,20 +1502,23 @@ const Profile = () => {
                       {/* Security Tips */}
                       <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-xl border-2 border-yellow-200">
                         <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
-                          <span className="text-xl">💡</span>
+
+                          <FiShield className="text-xl" />
                           {t('profilePage.passwordTips')}
                         </h4>
                         <ul className="space-y-2 text-sm text-gray-700">
                           <li className="flex items-center gap-2">
-                            <span>✅</span>
+
+                            <FiCheck className="text-green-500" />
                             <span>{t('profilePage.passwordTip1')}</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <span>✅</span>
+
+                            <FiCheck className="text-green-500" />
                             <span>{t('profilePage.passwordTip2')}</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <span>✅</span>
+                            <FiCheck className="text-green-500" />
                             <span>{t('profilePage.passwordTip3')}</span>
                           </li>
                         </ul>
@@ -1456,7 +1531,8 @@ const Profile = () => {
                           disabled={changingPassword}
                           className="px-10 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none"
                         >
-                          {changingPassword ? '⏳ ' + t('profilePage.updating') : '🔒 ' + t('profilePage.updatePassword')}
+                          <FiLock className="inline mr-2" />
+                          {t('profilePage.updatePassword')}
                         </button>
                       </div>
                     </div>
@@ -1489,8 +1565,9 @@ const Profile = () => {
             className="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl"
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <span className="text-3xl">🔒</span>
-              {t('profilePage.enterPasswordToView')}
+
+              <FiUnlock className="text-3xl" />
+              {t('profilePage.verifyToViewCCCD')}
             </h3>
             <p className="text-gray-600 mb-6">
               {user?.authProvider === 'google' 
@@ -1539,6 +1616,7 @@ const Profile = () => {
                     onClick={handleClosePasswordPrompt}
                     className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
                   >
+                    <FiX className="inline mr-2" />
                     {t('profilePage.cancel')}
                   </button>
                   {(!user?.authProvider || user.authProvider === 'local') && (
@@ -1547,7 +1625,7 @@ const Profile = () => {
                       disabled={!passwordForCCCD || loadingCCCD}
                       className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 shadow-lg"
                     >
-                      {loadingCCCD ? t('profilePage.verifying') : t('profilePage.verify')}
+                      {loadingCCCD ? t('profilePage.verifying') : t('profilePage.confirm')}
                     </button>
                   )}
                 </div>
@@ -1585,11 +1663,13 @@ const Profile = () => {
                   {cccdData.verifiedAt && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
-                        <span className="font-semibold">✅ Đã xác thực:</span>{' '}
+                        <FiCheck className="inline mr-1" />
+                        <span className="font-semibold">Đã xác thực:</span>{' '}
                         {new Date(cccdData.verifiedAt).toLocaleString('vi-VN')}
                       </p>
                       {cccdData.verificationSource && (
                         <p className="text-sm text-blue-700 mt-1">
+                          <FiInfo className="inline mr-1" />
                           <span className="font-semibold">Nguồn:</span> {cccdData.verificationSource}
                         </p>
                       )}
@@ -1600,13 +1680,17 @@ const Profile = () => {
                   {cccdImages && (
                     <div className="space-y-3">
                       <h4 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <span>🖼️</span> Ảnh CCCD
+                        <FiImage className="text-xl" />
+                        Ảnh CCCD
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {cccdImages.frontImage && (
                           <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow">
                             <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2">
-                              <p className="text-white font-semibold text-sm">📄 Mặt trước</p>
+                              <p className="text-white font-semibold text-sm">
+                                <FiFile className="inline mr-1" />
+                                Mặt trước
+                              </p>
                             </div>
                             <div className="p-2">
                               <img 
@@ -1624,7 +1708,10 @@ const Profile = () => {
                         {cccdImages.backImage && (
                           <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow">
                             <div className="bg-gradient-to-r from-green-500 to-green-600 px-4 py-2">
-                              <p className="text-white font-semibold text-sm">📄 Mặt sau</p>
+                              <p className="text-white font-semibold text-sm">
+                                <FiFile className="inline mr-1" />
+                                Mặt sau
+                              </p>
                             </div>
                             <div className="p-2">
                               <img 
@@ -1633,7 +1720,7 @@ const Profile = () => {
                                 className="w-full h-auto rounded-lg"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%23f3f4f6" width="400" height="250"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
                                 }}
                               />
                             </div>
@@ -1649,6 +1736,7 @@ const Profile = () => {
                     onClick={handleClosePasswordPrompt}
                     className="px-8 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold rounded-lg hover:from-gray-700 hover:to-gray-800 shadow-lg"
                   >
+                    <FiX className="inline mr-2" />
                     Đóng
                   </button>
                 </div>

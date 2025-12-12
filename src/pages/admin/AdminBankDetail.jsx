@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { motion } from 'framer-motion';
+import icons from "../../utils/icons";
+
+const { BsBuildings, FiUser, FiMail, FiPhone, FiCreditCard, FiCalendar, IoBarChart, FiClock, FiPlus, BiCheckCircle, FiX, BiLoaderAlt, FiAlertTriangle, FiZap } = icons;
 
 const AdminBankDetail = () => {
   const { userId } = useParams();
@@ -79,7 +82,7 @@ const AdminBankDetail = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: '⏳ Chờ xác minh', border: 'border-yellow-300' },
+      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: ' Chờ xác minh', border: 'border-yellow-300' },
       VERIFIED: { bg: 'bg-green-100', text: 'text-green-800', label: '✅ Đã xác minh', border: 'border-green-300' },
       REJECTED: { bg: 'bg-red-100', text: 'text-red-800', label: '❌ Đã từ chối', border: 'border-red-300' }
     };
@@ -124,7 +127,9 @@ const AdminBankDetail = () => {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <div className="text-6xl mb-4">❌</div>
+        <div className="text-6xl mb-4">
+          <FiX className="text-6xl" />
+        </div>
         <p className="text-gray-500 text-lg">Không tìm thấy thông tin tài khoản ngân hàng</p>
         <button
           onClick={() => navigate('/admin/bank-accounts')}
@@ -165,7 +170,7 @@ const AdminBankDetail = () => {
               ← Quay lại danh sách
             </button>
             <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-              <span className="text-5xl">🏦</span>
+              <BsBuildings className="text-5xl" />
               Chi tiết Tài khoản Ngân hàng
             </h1>
             <p className="text-blue-100 text-lg">Thông tin chi tiết và xác minh tài khoản</p>
@@ -180,7 +185,7 @@ const AdminBankDetail = () => {
           {/* User Profile Card */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="text-2xl">👤</span>
+              <FiUser className="text-2xl" />
               Thông tin người dùng
             </h2>
             <div className="space-y-4">
@@ -222,24 +227,30 @@ const AdminBankDetail = () => {
           {/* Verification Status Card */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="text-2xl">✅</span>
+              <BiCheckCircle className="text-2xl" />
               Trạng thái xác thực
             </h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">📧 Email</span>
+                <span className="text-gray-700">
+                  <FiMail className="inline mr-1" /> Email
+                </span>
                 <span className={user.verification?.emailVerified ? 'text-green-600 font-semibold' : 'text-red-600'}>
                   {user.verification?.emailVerified ? '✅ Đã xác thực' : '❌ Chưa xác thực'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">📱 Số điện thoại</span>
+                <span className="text-gray-700">
+                  <FiPhone className="inline mr-1" /> Số điện thoại
+                </span>
                 <span className={user.verification?.phoneVerified ? 'text-green-600 font-semibold' : 'text-red-600'}>
                   {user.verification?.phoneVerified ? '✅ Đã xác thực' : '❌ Chưa xác thực'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-700">🪪 CCCD/CMND</span>
+                <span className="text-gray-700">
+                  <FiCreditCard className="inline mr-1" /> CCCD/CMND
+                </span>
                 <span className={user.cccd?.isVerified ? 'text-green-600 font-semibold' : 'text-red-600'}>
                   {user.cccd?.isVerified ? '✅ Đã xác thực' : '❌ Chưa xác thực'}
                 </span>
@@ -251,12 +262,12 @@ const AdminBankDetail = () => {
           {user.cccd && (
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="text-2xl">🪪</span>
+                <FiCreditCard className="text-2xl" />
                 Thông tin CCCD
               </h2>
               <div className="space-y-2">
                 <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-lg">👤</span>
+                  <FiUser className="text-lg" />
                   <div className="flex-1">
                     <span className="text-xs text-gray-500">Họ tên</span>
                     <p className="text-sm font-semibold text-gray-800">{user.cccd.fullName || 'Chưa có thông tin'}</p>
@@ -264,7 +275,7 @@ const AdminBankDetail = () => {
                 </div>
                 
                 <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-lg">🎂</span>
+                  <FiCalendar className="text-lg" />
                   <div className="flex-1">
                     <span className="text-xs text-gray-500">Ngày sinh</span>
                     <p className="text-sm font-semibold text-gray-800">
@@ -276,7 +287,9 @@ const AdminBankDetail = () => {
                 </div>
 
                 <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-lg">⚧️</span>
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
                   <div className="flex-1">
                     <span className="text-xs text-gray-500">Giới tính</span>
                     <p className="text-sm font-semibold text-gray-800">
@@ -288,7 +301,10 @@ const AdminBankDetail = () => {
                 </div>
 
                 <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                  <span className="text-lg">📍</span>
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                   <div className="flex-1">
                     <span className="text-xs text-gray-500">Địa chỉ</span>
                     <p className="text-sm font-semibold text-gray-800">{user.cccd.address || 'Chưa có thông tin'}</p>
@@ -297,7 +313,7 @@ const AdminBankDetail = () => {
 
                 {user.phone && (
                   <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                    <span className="text-lg">📞</span>
+                    <FiPhone className="text-lg" />
                     <div className="flex-1">
                       <span className="text-xs text-gray-500">Số điện thoại</span>
                       <p className="text-sm font-mono font-semibold text-gray-800">{user.phone}</p>
@@ -308,7 +324,7 @@ const AdminBankDetail = () => {
                 <div className="mt-3 pt-3 border-t border-gray-200">
                   <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <span className="text-lg">📊</span>
+                      <IoBarChart className="text-lg" />
                       <span className="text-xs text-gray-600">Trạng thái xác minh</span>
                     </div>
                     <span className={`text-sm font-bold ${user.cccd.isVerified ? 'text-green-600' : 'text-yellow-600'}`}>
@@ -319,7 +335,7 @@ const AdminBankDetail = () => {
 
                 {user.cccd.verifiedAt && (
                   <div className="flex items-center gap-3 p-2 bg-green-50 rounded-lg">
-                    <span className="text-lg">🕐</span>
+                    <FiClock className="text-lg" />
                     <div className="flex-1">
                       <span className="text-xs text-gray-500">Ngày xác minh</span>
                       <p className="text-sm font-semibold text-gray-800">
@@ -338,14 +354,16 @@ const AdminBankDetail = () => {
           {/* Bank Account Info */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-              <span className="text-3xl">🏦</span>
+              <BsBuildings className="text-3xl" />
               Thông tin tài khoản ngân hàng
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Bank Name */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-200">
-                <label className="text-sm font-semibold text-gray-600 mb-1 block">🏦 Ngân hàng</label>
+                <label className="text-sm font-semibold text-gray-600 mb-1 block">
+                  <BsBuildings className="inline mr-1" /> Ngân hàng
+                </label>
                 <p className="text-xl font-bold text-gray-800">
                   {getBankName(bankAccount?.bankCode)} ({bankAccount?.bankCode})
                 </p>
@@ -353,19 +371,25 @@ const AdminBankDetail = () => {
 
               {/* Account Number */}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border-2 border-purple-200">
-                <label className="text-sm font-semibold text-gray-600 mb-1 block">💳 Số tài khoản</label>
+                <label className="text-sm font-semibold text-gray-600 mb-1 block">
+                  <FiCreditCard className="inline mr-1" /> Số tài khoản
+                </label>
                 <p className="text-xl font-mono font-bold text-gray-800">{bankAccount?.accountNumber}</p>
               </div>
 
               {/* Account Holder Name */}
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border-2 border-green-200 md:col-span-2">
-                <label className="text-sm font-semibold text-gray-600 mb-1 block">👤 Tên chủ tài khoản</label>
+                <label className="text-sm font-semibold text-gray-600 mb-1 block">
+                  <FiUser className="inline mr-1" /> Tên chủ tài khoản
+                </label>
                 <p className="text-xl font-bold text-gray-800">{bankAccount?.accountHolderName}</p>
               </div>
 
               {/* Added Date */}
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-xl border-2 border-orange-200">
-                <label className="text-sm font-semibold text-gray-600 mb-1 block">📅 Ngày thêm</label>
+                <label className="text-sm font-semibold text-gray-600 mb-1 block">
+                  <FiCalendar className="inline mr-1" /> Ngày thêm
+                </label>
                 <p className="text-lg font-semibold text-gray-800">
                   {bankAccount?.addedAt
                     ? new Date(bankAccount.addedAt).toLocaleDateString('vi-VN', {
@@ -379,7 +403,9 @@ const AdminBankDetail = () => {
 
               {/* Status */}
               <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl border-2 border-gray-200">
-                <label className="text-sm font-semibold text-gray-600 mb-1 block">📊 Trạng thái</label>
+                <label className="text-sm font-semibold text-gray-600 mb-1 block">
+                  <IoBarChart className="inline mr-1" /> Trạng thái
+                </label>
                 <div className="mt-1">
                   {getStatusBadge(bankAccount?.status)}
                 </div>
@@ -390,13 +416,15 @@ const AdminBankDetail = () => {
           {/* Verification Timeline */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="text-2xl">📋</span>
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
               Lịch sử xác minh
             </h2>
             <div className="space-y-3">
               {/* Added Event */}
               <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                <div className="text-2xl">➕</div>
+                <FiPlus className="text-2xl" />
                 <div className="flex-1">
                   <p className="font-bold text-blue-800">Tài khoản được thêm</p>
                   <p className="text-sm text-blue-600 mt-1">
@@ -417,7 +445,7 @@ const AdminBankDetail = () => {
               {/* Verified Event */}
               {bankAccount?.verifiedAt && (
                 <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                  <div className="text-2xl">✅</div>
+                  <BiCheckCircle className="text-2xl" />
                   <div className="flex-1">
                     <p className="font-bold text-green-800">Đã xác minh</p>
                     <p className="text-sm text-green-600 mt-1">
@@ -431,7 +459,9 @@ const AdminBankDetail = () => {
                     </p>
                     {bankAccount?.adminNote && (
                       <div className="mt-2 p-3 bg-white rounded border border-green-200">
-                        <p className="text-xs font-semibold text-gray-600 mb-1">💬 Ghi chú của Admin:</p>
+                        <p className="text-xs font-semibold text-gray-600 mb-1">
+                          💬 Ghi chú của Admin:
+                        </p>
                         <p className="text-sm text-gray-700">{bankAccount.adminNote}</p>
                       </div>
                     )}
@@ -442,7 +472,7 @@ const AdminBankDetail = () => {
               {/* Rejected Event */}
               {bankAccount?.rejectedAt && (
                 <div className="flex items-start gap-4 p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
-                  <div className="text-2xl">❌</div>
+                  <FiX className="text-2xl" />
                   <div className="flex-1">
                     <p className="font-bold text-red-800">Đã từ chối</p>
                     <p className="text-sm text-red-600 mt-1">
@@ -456,7 +486,9 @@ const AdminBankDetail = () => {
                     </p>
                     {bankAccount?.rejectionReason && (
                       <div className="mt-2 p-3 bg-white rounded border border-red-200">
-                        <p className="text-xs font-semibold text-gray-600 mb-1">⚠️ Lý do từ chối:</p>
+                        <p className="text-xs font-semibold text-gray-600 mb-1">
+                          ⚠️ Lý do từ chối:
+                        </p>
                         <p className="text-sm text-gray-700">{bankAccount.rejectionReason}</p>
                       </div>
                     )}
@@ -467,7 +499,7 @@ const AdminBankDetail = () => {
               {/* Pending Status */}
               {bankAccount?.status === 'PENDING' && !bankAccount?.verifiedAt && !bankAccount?.rejectedAt && (
                 <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
-                  <div className="text-2xl">⏳</div>
+                  <BiLoaderAlt className="text-2xl" />
                   <div className="flex-1">
                     <p className="font-bold text-yellow-800">Đang chờ xác minh</p>
                     <p className="text-sm text-yellow-600 mt-1">
@@ -483,7 +515,7 @@ const AdminBankDetail = () => {
           {bankAccount?.status === 'PENDING' && (
             <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg">
               <div className="flex items-start gap-3">
-                <div className="text-2xl">⚠️</div>
+                <FiAlertTriangle className="text-2xl" />
                 <div>
                   <h3 className="font-bold text-yellow-800 mb-2">Lưu ý khi xác minh</h3>
                   <ul className="space-y-1 text-sm text-yellow-700">
@@ -501,7 +533,7 @@ const AdminBankDetail = () => {
           {bankAccount?.status === 'PENDING' && (
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="text-2xl">⚡</span>
+                <FiZap className="text-2xl" />
                 Thao tác xác minh
               </h2>
               <div className="flex gap-4">
@@ -509,13 +541,13 @@ const AdminBankDetail = () => {
                   onClick={() => setShowVerifyModal(true)}
                   className="flex-1 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-lg font-bold rounded-xl hover:from-green-600 hover:to-emerald-600 shadow-lg transform hover:-translate-y-1 transition-all duration-200"
                 >
-                  ✅ Xác minh tài khoản
+                  <BiCheckCircle className="inline mr-2" /> Xác minh tài khoản
                 </button>
                 <button
                   onClick={() => setShowRejectModal(true)}
                   className="flex-1 px-6 py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white text-lg font-bold rounded-xl hover:from-red-600 hover:to-rose-600 shadow-lg transform hover:-translate-y-1 transition-all duration-200"
                 >
-                  ❌ Từ chối xác minh
+                  <FiX className="inline mr-2" /> Từ chối xác minh
                 </button>
               </div>
             </div>
@@ -532,7 +564,7 @@ const AdminBankDetail = () => {
             className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4"
           >
             <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="text-3xl">✅</span>
+              <BiCheckCircle className="text-3xl" />
               Xác minh tài khoản ngân hàng
             </h3>
             <p className="text-gray-600 mb-6">
@@ -565,7 +597,7 @@ const AdminBankDetail = () => {
                 disabled={actionLoading}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-lg hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 shadow-lg"
               >
-                {actionLoading ? '⏳ Đang xử lý...' : '✅ Xác minh'}
+                {actionLoading ? '⏳ Đang xử lý...' : <><BiCheckCircle className="inline mr-2" /> Xác minh</>}
               </button>
             </div>
           </motion.div>
@@ -581,7 +613,7 @@ const AdminBankDetail = () => {
             className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4"
           >
             <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span className="text-3xl">❌</span>
+              <FiX className="text-3xl" />
               Từ chối xác minh
             </h3>
             <p className="text-gray-600 mb-6">
@@ -618,7 +650,7 @@ const AdminBankDetail = () => {
                 disabled={actionLoading || !rejectionReason.trim()}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white font-bold rounded-lg hover:from-red-600 hover:to-rose-600 disabled:opacity-50 shadow-lg"
               >
-                {actionLoading ? '⏳ Đang xử lý...' : '❌ Từ chối'}
+                {actionLoading ? '⏳ Đang xử lý...' : <><FiX className="inline mr-2" /> Từ chối</>}
               </button>
             </div>
           </motion.div>

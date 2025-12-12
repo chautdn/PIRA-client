@@ -8,6 +8,7 @@ import { Package, Calendar, User, CreditCard, ChevronRight, Filter } from 'lucid
 import ManageExtensionRequestsModal from '../../components/owner/ManageExtensionRequestsModal';
 import OwnerShipmentModal from '../../components/owner/OwnerShipmentModal';
 import { useI18n } from '../../hooks/useI18n';
+import useOrderSocket from '../../hooks/useOrderSocket';
 
 const OwnerRentalRequests = () => {
   const { user } = useAuth();
@@ -20,6 +21,28 @@ const OwnerRentalRequests = () => {
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Initialize WebSocket with callbacks to reload orders
+  const { isConnected } = useOrderSocket({
+    onOrderCreated: () => {
+      fetchSubOrders();
+    },
+    onOrderStatusChanged: () => {
+      fetchSubOrders();
+    },
+    onContractSigned: () => {
+      fetchSubOrders();
+    },
+    onContractCompleted: () => {
+      fetchSubOrders();
+    },
+    onEarlyReturnRequest: () => {
+      fetchSubOrders();
+    },
+    onExtensionRequest: () => {
+      fetchSubOrders();
+    },
+  });
 
   const filterOptions = [
     { value: 'all', label: t('ownerRentalRequests.filterAll') },
@@ -243,7 +266,7 @@ const OwnerRentalRequests = () => {
                         <div className="flex items-center">
                           <CreditCard size={16} className="text-gray-400 mr-2" />
                           <span className="text-sm font-medium text-green-600">
-                            {formatCurrency(subOrder.pricing?.totalAmount)}
+                            {formatCurrency(subOrder.pricing?.subtotalRental + subOrder.pricing?.subtotalDeposit)}
                           </span>
                         </div>
                       </td>
