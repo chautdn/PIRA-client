@@ -7,7 +7,9 @@ export const ownerProductApi = {
       const response = await api.get("/owner-products", { params });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      console.error("Error in getOwnerProducts:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to load products";
+      throw new Error(errorMessage);
     }
   },
 

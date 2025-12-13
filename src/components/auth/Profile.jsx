@@ -985,7 +985,8 @@ const Profile = () => {
                               </span>
                               <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 shadow-md transform hover:-translate-y-0.5 transition-all duration-200">
                                 <FiEdit3 className="inline mr-1" />
-                                Thay Đổi
+                                                                  {t('profilePage.change')}
+
                               </button>
                             </div>
                           </div>
@@ -1169,7 +1170,8 @@ const Profile = () => {
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                   <FiEdit3 className="inline mr-1" />
-                                  Thay Đổi
+                                                                    {t('profilePage.change')}
+
                                 </button>
                               </div>
                             )}

@@ -125,6 +125,32 @@ export default function ShipmentsPage() {
     return new Date(date).toLocaleDateString('vi-VN');
   };
 
+  // Helper: get the scheduled/departure Date (ms) for a shipment
+  const getScheduledDate = (s) => {
+    if (!s) return Number.POSITIVE_INFINITY;
+    // Prefer explicit scheduledAt
+    if (s.scheduledAt) {
+      const d = new Date(s.scheduledAt);
+      if (!isNaN(d)) return d.getTime();
+    }
+
+    // Fallback to rental period
+    const rentalPeriod = s.subOrder?.rentalPeriod || s.subOrder?.masterOrder?.rentalPeriod;
+    if (rentalPeriod) {
+      if (s.type === 'DELIVERY' && rentalPeriod.startDate) {
+        const d = new Date(rentalPeriod.startDate);
+        if (!isNaN(d)) return d.getTime();
+      }
+      if (s.type === 'RETURN' && rentalPeriod.endDate) {
+        const d = new Date(rentalPeriod.endDate);
+        if (!isNaN(d)) return d.getTime();
+      }
+    }
+
+    // Unknown date -> put at the end
+    return Number.POSITIVE_INFINITY;
+  };
+
   // Get all unique scheduled dates from shipments - group by date only (all types together)
   const getAllRentalDatesByDate = () => {
     const datesMap = {}; // { 'DD/MM/YYYY': [...all shipments for this date...] }
@@ -186,14 +212,18 @@ export default function ShipmentsPage() {
         const [day, month, year] = str.split('/').map(Number);
         return new Date(year, month - 1, day);
       };
-      return parseDate(b) - parseDate(a); // Newest first
+      // Earliest date first (chronological ascending)
+      return parseDate(a) - parseDate(b);
     });
   };
 
   const uniqueDates = getUniqueDates();
   
   // Get shipments for selected date
-  const shipmentsForSelectedDate = selectedDate ? datesMap[selectedDate] : [];
+  // Shipments for selected date, sorted by scheduled/departure datetime (earliest first)
+  const shipmentsForSelectedDate = selectedDate ? ((datesMap[selectedDate] || []).slice().sort((x, y) => {
+    return getScheduledDate(x) - getScheduledDate(y) || (x.shipmentId || '').localeCompare(y.shipmentId || '');
+  })) : [];
   
   // Count by type for the selected date
   const deliveryCount = shipmentsForSelectedDate.filter(s => s.type === 'DELIVERY').length;
@@ -202,7 +232,7 @@ export default function ShipmentsPage() {
   // Check if shipment can be accepted (must be on or after scheduled date)
   const canAcceptShipment = (shipment) => {
     // 🔧 TESTING MODE: Temporarily disable date validation
-    return true;
+     return true;
     
     if (!shipment) return false;
     

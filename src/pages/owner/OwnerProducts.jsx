@@ -163,6 +163,7 @@ export default function OwnerProducts() {
   const loadProducts = async () => {
     try {
       setLoading(true);
+      setError(null); // Clear previous errors
       const res = await ownerProductApi.getOwnerProducts(filters);
 
       if (res.success) {
@@ -171,10 +172,11 @@ export default function OwnerProducts() {
       } else {
         setProducts([]);
         setPagination({});
+        setError(res.message || t("ownerProducts.errorMessage"));
       }
     } catch (e) {
       console.error("Error loading owner products:", e);
-      setError(t("ownerProducts.errorMessage"));
+      setError(e.message || t("ownerProducts.errorMessage"));
       setProducts([]);
     } finally {
       setLoading(false);
