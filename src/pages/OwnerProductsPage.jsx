@@ -92,7 +92,7 @@ const CategoryFilter = ({
 export default function OwnerProductsPage() {
   const { ownerId } = useParams();
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   
   // Tab state
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'hot', 'recommended'
@@ -382,7 +382,7 @@ export default function OwnerProductsPage() {
                     setSubCategories([]);
                   }}
                   t={t}
-                  language={i18n.language}
+                  language={language}
                 />
               </div>
             </aside>
