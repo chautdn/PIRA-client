@@ -2158,10 +2158,11 @@ export default function ProductDetail() {
                       {formatPrice(getTotalPrice())}đ
                     </div>
                     <div className="text-sm text-gray-600 mt-2">
-                      {t("productDetail.costCalculation")
-                        .replace('{price}', formatPrice(getRentalPrice()))
-                        .replace('{days}', getRentalDays())
-                        .replace('{quantity}', quantity)}
+                      {t("productDetail.costCalculation", {
+                        price: formatPrice(getRentalPrice()),
+                        days: getRentalDays(),
+                        quantity: quantity
+                      })}
                     </div>
                   </div>
                 </motion.div>
