@@ -919,7 +919,10 @@
       "SYSTEM": "System",
       "REMINDER": "Reminder",
       "WITHDRAWAL": "Withdrawal",
-      "VOUCHER": "Voucher"
+      "VOUCHER": "Voucher",
+      "EXTENSION_REQUEST": "Extension Request",
+      "EXTENSION_APPROVED": "Extension Approved",
+      "EXTENSION_REJECTED": "Extension Rejected"
     }
   },
   "errors": {
@@ -2263,6 +2266,7 @@
     "PARTIALLY_CONFIRMED": "Partially Confirmed",
     "READY_FOR_CONTRACT": "Ready for Contract",
     "CONTRACT_SIGNED": "Contract Signed",
+    "ACTIVE": "Active",
     "COMPLETED": "Completed",
     "CANCELLED": "Cancelled"
   }

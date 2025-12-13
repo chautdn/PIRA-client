@@ -941,7 +941,10 @@
       "SYSTEM": "Hệ thống",
       "REMINDER": "Nhắc nhở",
       "WITHDRAWAL": "Rút tiền",
-      "VOUCHER": "Phiếu giảm giá"
+      "VOUCHER": "Phiếu giảm giá",
+      "EXTENSION_REQUEST": "Yêu cầu gia hạn thuê",
+      "EXTENSION_APPROVED": "Gia hạn được chấp nhận",
+      "EXTENSION_REJECTED": "Gia hạn bị từ chối"
     }
   },
   "errors": {
@@ -2300,6 +2303,7 @@
     "PARTIALLY_CONFIRMED": "Xác nhận 1 phần",
     "READY_FOR_CONTRACT": "Sẵn sàng hợp đồng",
     "CONTRACT_SIGNED": "Đã ký hợp đồng",
+    "ACTIVE": "Đang thuê",
     "COMPLETED": "Hoàn thành",
     "CANCELLED": "Đã hủy"
   }
