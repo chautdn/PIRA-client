@@ -19,22 +19,38 @@ const AdminShipperDetail = () => {
   });
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterDateRange, setFilterDateRange] = useState('ALL');
+  const [filteredShipments, setFilteredShipments] = useState([]);
+  const [selectedImages, setSelectedImages] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   useEffect(() => {
     loadShipperData();
   }, [shipperId]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [shipments, filterStatus, filterDateRange]);
 
   const loadShipperData = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      console.log('📦 Loading shipper data for ID:', shipperId);
+
       // Get shipper details from API
       const shipperData = await adminService.getShipperById(shipperId);
+      console.log('✅ Shipper data received:', shipperData);
       
       if (shipperData) {
         setShipper(shipperData);
         setShipments(shipperData.recentShipments || []);
+        
+        console.log('📊 Recent shipments:', shipperData.recentShipments?.length || 0);
+        if (shipperData.recentShipments?.[0]) {
+          console.log('📦 First shipment sample:', shipperData.recentShipments[0]);
+          console.log('🛍️ Products in first shipment:', shipperData.recentShipments[0].products);
+        }
         
         // Calculate stats from recent shipments
         const today = new Date();
@@ -44,22 +60,75 @@ const AdminShipperDetail = () => {
 
         const recentShipments = shipperData.recentShipments || [];
         
-        setStats({
+        const calculatedStats = {
           today: recentShipments.filter(s => new Date(s.createdAt) >= today).length,
           thisWeek: recentShipments.filter(s => new Date(s.createdAt) >= weekAgo).length,
           thisMonth: recentShipments.filter(s => new Date(s.createdAt) >= monthAgo).length,
           totalCompleted: shipperData.completedShipments || 0,
           totalFailed: shipperData.failedShipments || 0
-        });
+        };
+        
+        console.log('📈 Calculated stats:', calculatedStats);
+        setStats(calculatedStats);
       } else {
+        console.error('❌ No shipper data received');
         setError('Không tìm thấy shipper');
       }
     } catch (err) {
+      console.error('❌ Error loading shipper data:', err);
       setError(err.message || 'Lỗi tải dữ liệu');
-      console.error('Error loading shipper data:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = () => {
+    let result = shipments;
+
+    // Filter by status
+    if (filterStatus !== 'ALL') {
+      result = result.filter(s => {
+        if (filterStatus === 'COMPLETED') return s.status === 'DELIVERED';
+        if (filterStatus === 'PENDING') return ['PENDING', 'SHIPPER_CONFIRMED', 'IN_TRANSIT'].includes(s.status);
+        if (filterStatus === 'FAILED') return ['CANCELLED', 'DELIVERY_FAILED'].includes(s.status);
+        return true;
+      });
+    }
+
+    // Filter by date range
+    if (filterDateRange !== 'ALL') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      result = result.filter(s => {
+        const shipmentDate = new Date(s.createdAt);
+        
+        if (filterDateRange === 'TODAY') {
+          return shipmentDate >= today;
+        }
+        if (filterDateRange === 'WEEK') {
+          const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return shipmentDate >= weekAgo;
+        }
+        if (filterDateRange === 'MONTH') {
+          const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+          return shipmentDate >= monthAgo;
+        }
+        return true;
+      });
+    }
+
+    setFilteredShipments(result);
+  };
+
+  const openImageModal = (proofImages) => {
+    setSelectedImages(proofImages);
+    setShowImageModal(true);
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    setSelectedImages(null);
   };
 
   const getStatusBadge = (status) => {
@@ -259,7 +328,7 @@ const AdminShipperDetail = () => {
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="bg-gray-100 border-b px-6 py-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              📦 Danh sách đơn vận chuyển ({shipments.length})
+              📦 Danh sách đơn vận chuyển ({filteredShipments.length})
             </h3>
           </div>
           
@@ -269,23 +338,24 @@ const AdminShipperDetail = () => {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Mã Đơn</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Khách Hàng</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Loại</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Sản Phẩm</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Giá</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Trạng Thái</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Thanh Toán</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Thời Gian</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">Thao Tác</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase">📸 Ảnh Chứng Minh</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {shipments.length === 0 ? (
+                {filteredShipments.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
-                      Chưa có đơn vận chuyển nào
+                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
+                      Không tìm thấy đơn vận chuyển nào
                     </td>
                   </tr>
                 ) : (
-                  shipments.map((shipment, idx) => {
+                  filteredShipments.map((shipment, idx) => {
                     const statusDisplay = {
                       'PENDING': 'CHỜ XỬ LÝ',
                       'SHIPPER_CONFIRMED': 'ĐÃ XÁC NHẬN',
@@ -301,24 +371,46 @@ const AdminShipperDetail = () => {
                         <td className="px-6 py-4">
                           <div>
                             <span className="font-semibold text-blue-600">
-                              {shipment.masterOrder?.orderNumber || 'N/A'}
+                              {shipment.masterOrderNumber || 'N/A'}
                             </span>
                             <p className="text-xs text-gray-500">
-                              {shipment.subOrder?.subOrderNumber || ''}
+                              {shipment.subOrderNumber || ''}
                             </p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-medium text-gray-900">N/A</p>
-                            <p className="text-xs text-gray-500">-</p>
+                            <p className="font-medium text-gray-900">{shipment.customer?.name || 'N/A'}</p>
+                            <p className="text-xs text-gray-500">{shipment.customer?.phone || '-'}</p>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {shipment.type === 'PICKUP_FROM_OWNER' ? 'Lấy hàng' : 
-                           shipment.type === 'DELIVER_TO_RENTER' ? 'Giao hàng' :
-                           shipment.type === 'PICKUP_FROM_RENTER' ? 'Lấy về' :
-                           shipment.type === 'RETURN_TO_OWNER' ? 'Trả về' : shipment.type}
+                        <td className="px-6 py-4">
+                          {shipment.type === 'DELIVERY' ? (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                              Giao hàng
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
+                              Trả về
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {shipment.products && shipment.products.length > 0 ? (
+                            <div className="flex items-center gap-2">
+                              {shipment.products[0].image && (
+                                <img src={shipment.products[0].image} alt="Product" className="w-10 h-10 object-cover rounded" />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{shipment.products[0].name}</p>
+                                {shipment.products.length > 1 && (
+                                  <p className="text-xs text-gray-500">+{shipment.products.length - 1} sản phẩm</p>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 font-medium text-gray-900">
                           {formatCurrency(shipment.fee || 0)}
@@ -337,9 +429,18 @@ const AdminShipperDetail = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <button className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                            Xem chi tiết
-                          </button>
+                          {shipment.proofImages && 
+                           ((shipment.proofImages.before && shipment.proofImages.before.length > 0) || 
+                            (shipment.proofImages.after && shipment.proofImages.after.length > 0)) ? (
+                            <button
+                              onClick={() => openImageModal(shipment.proofImages)}
+                              className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              Xem
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Chưa có ảnh</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -349,6 +450,82 @@ const AdminShipperDetail = () => {
             </table>
           </div>
         </div>
+
+        {/* Image Modal */}
+        {showImageModal && selectedImages && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4" onClick={closeImageModal}>
+            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
+                <h3 className="text-xl font-bold text-gray-900">📸 Ảnh Chứng Minh Giao Hàng</h3>
+                <button 
+                  onClick={closeImageModal}
+                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {/* Before Images */}
+                {selectedImages.before && selectedImages.before.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                      <span className="bg-blue-100 px-3 py-1 rounded-full">📦 Trước Giao Hàng ({selectedImages.before.length})</span>
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {selectedImages.before.map((img, idx) => (
+                        <div key={idx} className="relative group">
+                          <img 
+                            src={img} 
+                            alt={`Before ${idx + 1}`}
+                            className="w-full h-64 object-cover rounded-lg border-4 border-blue-200 hover:border-blue-400 transition-colors cursor-pointer"
+                            onClick={() => window.open(img, '_blank')}
+                          />
+                          <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-sm font-semibold">
+                            #{idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* After Images */}
+                {selectedImages.after && selectedImages.after.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-green-700 mb-3 flex items-center gap-2">
+                      <span className="bg-green-100 px-3 py-1 rounded-full">✅ Sau Giao Hàng ({selectedImages.after.length})</span>
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {selectedImages.after.map((img, idx) => (
+                        <div key={idx} className="relative group">
+                          <img 
+                            src={img} 
+                            alt={`After ${idx + 1}`}
+                            className="w-full h-64 object-cover rounded-lg border-4 border-green-200 hover:border-green-400 transition-colors cursor-pointer"
+                            onClick={() => window.open(img, '_blank')}
+                          />
+                          <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-sm font-semibold">
+                            #{idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end">
+                <button 
+                  onClick={closeImageModal}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

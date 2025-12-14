@@ -494,6 +494,7 @@ export default function App() {
                     <Route path="disputes/:disputeId" element={<AdminDisputeDetail />} />
                     <Route path="shipments" element={<AdminShipmentManagement />} />
                     <Route path="shipments/:shipperId" element={<AdminShipperDetail />} />
+                    <Route path="shippers/:shipperId" element={<AdminShipperDetail />} />
                     <Route path="bank-accounts" element={<BankManagement />} />
                     <Route
                       path="bank-accounts/:userId"

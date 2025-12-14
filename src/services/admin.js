@@ -761,7 +761,7 @@ class AdminService {
   async getShipperById(shipperId) {
     try {
       const response = await api.get(`/admin/shippers/${shipperId}`);
-      console.log('getShipperById raw response:', response);
+      console.log('📦 getShipperById raw response:', response);
       
       // Handle responseUtils format: { status: 'success', data: {...} }
       if (response.data?.status === 'success' && response.data?.data) {
@@ -773,7 +773,7 @@ class AdminService {
       }
       return response.data;
     } catch (error) {
-      console.error("Error fetching shipper details:", error);
+      console.error("❌ Error fetching shipper details:", error);
       throw error;
     }
   }
