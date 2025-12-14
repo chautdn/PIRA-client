@@ -1106,6 +1106,8 @@
     "tabs": {
       "overview": "Tổng quan",
       "revenue": "Doanh thu",
+      "profit": "Lợi nhuận",
+      "products": "Sản phẩm",
       "rented": "Đang cho thuê"
     },
     "cards": {

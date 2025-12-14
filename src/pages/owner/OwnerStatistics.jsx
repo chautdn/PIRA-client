@@ -5,14 +5,22 @@ import {
   RefreshCw, 
   Download,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Package,
+  DollarSign,
+  ShoppingCart,
+  PieChart,
+  TrendingDown
 } from 'lucide-react';
 import { useI18n } from '../../hooks/useI18n';
 import ownerStatisticsApi from '../../services/ownerStatistics.Api';
 import StatisticsCards from '../../components/owner/statistics/StatisticsCards';
 import RevenueChart from '../../components/owner/statistics/RevenueChart';
 import TopProductsTable from '../../components/owner/statistics/TopProductsTable';
-import CurrentlyRentedTable from '../../components/owner/statistics/CurrentlyRentedTable';
+import ExportButtons from '../../components/admin/charts/ExportButtons';
+import RevenuePieChart from '../../components/admin/charts/RevenuePieChart';
+import ComparisonChart from '../../components/admin/charts/ComparisonChart';
+import ProfitChart from '../../components/admin/charts/ProfitChart';
 
 const OwnerStatistics = () => {
   const { t } = useI18n();
@@ -20,7 +28,6 @@ const OwnerStatistics = () => {
   const [overview, setOverview] = useState(null);
   const [revenueData, setRevenueData] = useState(null);
   const [topProducts, setTopProducts] = useState([]);
-  const [rentedProducts, setRentedProducts] = useState([]);
   
   const [filters, setFilters] = useState({
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0],
@@ -47,7 +54,6 @@ const OwnerStatistics = () => {
         fetchOverviewStatistics(),
         fetchRevenueStatistics(),
         fetchTopProducts(),
-        fetchRentedProducts(),
       ]);
     } catch (error) {
       console.error('Error fetching statistics:', error);
@@ -89,17 +95,6 @@ const OwnerStatistics = () => {
     }
   };
 
-  const fetchRentedProducts = async () => {
-    try {
-      const response = await ownerStatisticsApi.getCurrentlyRentedProducts();
-      if (response.success) {
-        setRentedProducts(response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching rented products:', error);
-    }
-  };
-
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({
       ...prev,
@@ -114,7 +109,8 @@ const OwnerStatistics = () => {
   const tabs = [
     { id: 'overview', label: t("ownerStatistics.tabs.overview"), icon: BarChart3 },
     { id: 'revenue', label: t("ownerStatistics.tabs.revenue"), icon: TrendingUp },
-    { id: 'rented', label: t("ownerStatistics.tabs.rented"), icon: Calendar },
+    { id: 'profit', label: t("ownerStatistics.tabs.profit") || "Lợi nhuận", icon: DollarSign },
+    { id: 'products', label: t("ownerStatistics.tabs.products") || "Sản phẩm", icon: Package },
   ];
 
   return (
@@ -184,6 +180,17 @@ const OwnerStatistics = () => {
         {/* Revenue Tab */}
         {activeTab === 'revenue' && (
           <div className="space-y-6">
+            {/* Export Buttons */}
+            {revenueData && (
+              <div className="flex justify-end">
+                <ExportButtons 
+                  data={revenueData} 
+                  filename="owner-revenue-statistics" 
+                  title="Thống kê doanh thu chủ cho thuê" 
+                />
+              </div>
+            )}
+
             {/* Filters */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -231,22 +238,174 @@ const OwnerStatistics = () => {
               </div>
             </div>
 
-            {/* Revenue Chart */}
-            <RevenueChart
-              revenueData={revenueData}
-              loading={loading}
-              groupBy={filters.groupBy}
-            />
+            {/* Revenue Summary Cards */}
+            {revenueData && revenueData.summary && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign size={20} className="text-blue-600" />
+                    <p className="text-sm text-blue-800 font-medium">Doanh thu (100%)</p>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {(revenueData.summary.totalRevenue || 0).toLocaleString('vi-VN')} ₫
+                  </p>
+                  {revenueData.summary.growthRate !== undefined && (
+                    <p className={`text-sm mt-1 ${revenueData.summary.growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {revenueData.summary.growthRate >= 0 ? '+' : ''}{revenueData.summary.growthRate}% so với kỳ trước
+                    </p>
+                  )}
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShoppingCart size={20} className="text-green-600" />
+                    <p className="text-sm text-green-800 font-medium">Tiền nhận về (90%)</p>
+                  </div>
+                  <p className="text-2xl font-bold text-green-900">
+                    {(revenueData.summary.receivedAmount || 0).toLocaleString('vi-VN')} ₫
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">Sau khi trừ phí nền tảng</p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingDown size={20} className="text-purple-600" />
+                    <p className="text-sm text-purple-800 font-medium">Phí nền tảng (10%)</p>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {(revenueData.summary.platformFee || 0).toLocaleString('vi-VN')} ₫
+                  </p>
+                  <p className="text-xs text-purple-600 mt-1">Chi phí sử dụng nền tảng</p>
+                </div>
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <PieChart size={20} className="text-orange-600" />
+                    <p className="text-sm text-orange-800 font-medium">Phí quảng cáo</p>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-900">
+                    {(revenueData.summary.promotionFees || 0).toLocaleString('vi-VN')} ₫
+                  </p>
+                  <p className="text-xs text-orange-600 mt-1">Chi phí đăng sản phẩm</p>
+                </div>
+                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg p-4 border border-indigo-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <BarChart3 size={20} className="text-indigo-600" />
+                    <p className="text-sm text-indigo-800 font-medium">Số đơn hàng</p>
+                  </div>
+                  <p className="text-2xl font-bold text-indigo-900">
+                    {revenueData.summary.orderCount || 0}
+                  </p>
+                  <p className="text-xs text-indigo-600 mt-1">Đơn thuê thành công</p>
+                </div>
+              </div>
+            )}
+
+            {/* Charts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RevenueChart
+                revenueData={revenueData}
+                loading={loading}
+                groupBy={filters.groupBy}
+              />
+              {revenueData && revenueData.breakdown && revenueData.breakdown.bySource && (
+                <RevenuePieChart data={revenueData.breakdown.bySource} />
+              )}
+            </div>
+
+            {/* Comparison Chart */}
+            {revenueData && revenueData.timeSeries && (
+              <ComparisonChart 
+                data={revenueData.timeSeries} 
+                title="Biểu đồ so sánh doanh thu & đơn hàng"
+              />
+            )}
           </div>
         )}
 
-        {/* Currently Rented Tab */}
-        {activeTab === 'rented' && (
+        {/* Profit Tab */}
+        {activeTab === 'profit' && (
           <div className="space-y-6">
-            <CurrentlyRentedTable
-              rentedProducts={rentedProducts}
-              loading={loading}
-            />
+            {/* Export Buttons */}
+            {revenueData && (
+              <div className="flex justify-end">
+                <ExportButtons 
+                  data={{
+                    summary: revenueData.profit || {},
+                    timeSeries: revenueData.timeSeries || [],
+                    breakdown: revenueData.breakdown || {}
+                  }} 
+                  filename="owner-profit-statistics" 
+                  title="Thống kê lợi nhuận chủ cho thuê" 
+                />
+              </div>
+            )}
+
+            {/* Profit Analysis Section */}
+            {revenueData && revenueData.profit && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Phân tích lợi nhuận</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Lợi nhuận = Tiền nhận về (90%) - Phí quảng cáo
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                  <div>
+                    <p className="text-sm text-gray-600">Doanh thu (100%)</p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {(revenueData.profit.revenue || 0).toLocaleString('vi-VN')} ₫
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Tổng giá trị đơn thuê</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Tiền nhận về</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {(revenueData.profit.receivedAmount || 0).toLocaleString('vi-VN')} ₫
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">90% sau trừ phí nền tảng</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Phí nền tảng</p>
+                    <p className="text-xl font-bold text-purple-600">
+                      {(revenueData.profit.platformFee || 0).toLocaleString('vi-VN')} ₫
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">10% phí sử dụng</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Phí quảng cáo</p>
+                    <p className="text-xl font-bold text-orange-600">
+                      {(revenueData.profit.promotionFees || 0).toLocaleString('vi-VN')} ₫
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Chi phí đăng sản phẩm</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Lợi nhuận thuần</p>
+                    <p className={`text-xl font-bold ${(revenueData.profit.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {(revenueData.profit.profit || 0).toLocaleString('vi-VN')} ₫
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Biên: {revenueData.profit.profitMargin || 0}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Profit Chart */}
+                {revenueData.timeSeries && (
+                  <ProfitChart data={revenueData.timeSeries} />
+                )}
+              </div>
+            )}
+
+            {/* Revenue Breakdown Pie Chart */}
+            {revenueData && revenueData.breakdown && revenueData.breakdown.bySource && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Cơ cấu doanh thu</h3>
+                <RevenuePieChart data={revenueData.breakdown.bySource} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Products Tab */}
+        {activeTab === 'products' && (
+          <div className="space-y-6">
+            <TopProductsTable products={topProducts} loading={loading} />
           </div>
         )}
       </div>

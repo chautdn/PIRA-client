@@ -27,7 +27,7 @@ const StatisticsCards = ({ statistics, loading }) => {
 
   if (!statistics) return null;
 
-  const { products, orders, revenue } = statistics;
+  const { products, orders, revenue, profit } = statistics;
 
   const cards = [
     {
@@ -53,23 +53,28 @@ const StatisticsCards = ({ statistics, loading }) => {
       ]
     },
     {
-      title: t("ownerStatistics.cards.totalRevenue"),
+      title: "Doanh thu (100%)",
       value: revenue?.totalRevenue || 0,
       icon: DollarSign,
       color: 'yellow',
       format: 'currency',
       details: [
-        { label: t("ownerStatistics.cards.totalDeposit"), value: revenue?.totalDeposit || 0, format: 'currency' },
-        { label: t("ownerStatistics.cards.totalShipping"), value: revenue?.totalShippingFee || 0, format: 'currency' }
+        { label: "Tiền nhận về (90%)", value: revenue?.receivedAmount || 0, format: 'currency' },
+        { label: "Phí nền tảng (10%)", value: revenue?.platformFee || 0, format: 'currency' },
+        { label: "Phí quảng cáo", value: revenue?.promotionFees || 0, format: 'currency' }
       ]
     },
     {
-      title: "Doanh thu ròng",
-      value: revenue?.netRevenue || 0,
+      title: "Lợi nhuận thuần",
+      value: profit?.profit || 0,
       icon: TrendingUp,
       color: 'purple',
       format: 'currency',
-      subtitle: 'Sau khi trừ phí ship'
+      subtitle: `Biên lợi nhuận: ${profit?.profitMargin || 0}%`,
+      details: [
+        { label: "Tiền nhận về", value: profit?.receivedAmount || 0, format: 'currency' },
+        { label: "Chi phí", value: profit?.costs || 0, format: 'currency' }
+      ]
     }
   ];
 
