@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { Building2, CheckCircle, Edit2, Trash2 } from "lucide-react";
 import BankAccountForm from "./BankAccountForm";
 import userService from "../../services/user.Api";
+import { useI18n } from "../../hooks/useI18n";
 import toast from "react-hot-toast";
 
 const BankAccountSection = memo(({ user, onUpdate }) => {
+  const { t } = useI18n();
   const [bankAccount, setBankAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -29,7 +31,7 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
     } catch (error) {
       console.error("Failed to fetch bank account:", error);
       if (error.response?.status !== 404) {
-        toast.error("Không thể tải thông tin tài khoản ngân hàng");
+        toast.error(t('profilePage.cannotLoadBankAccount'));
       }
       setBankAccount(null);
       bankAccountRef.current = null;
@@ -46,8 +48,8 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
     if (onUpdate) onUpdate(); // Refresh parent user data
     toast.success(
       wasEditing
-        ? "Cập nhật tài khoản ngân hàng thành công"
-        : "Thêm tài khoản ngân hàng thành công"
+        ? t('profilePage.bankAccountUpdateSuccess')
+        : t('profilePage.bankAccountAddSuccess')
     );
   }, [onUpdate]);
 
@@ -57,11 +59,11 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
       setBankAccount(null);
       setShowDeleteConfirm(false);
       if (onUpdate) onUpdate(); // Refresh parent user data
-      toast.success("Đã xóa tài khoản ngân hàng");
+      toast.success(t('profilePage.bankAccountDeleteSuccess'));
     } catch (error) {
       console.error("Failed to delete bank account:", error);
       toast.error(
-        error.response?.data?.message || "Không thể xóa tài khoản ngân hàng"
+        error.response?.data?.message || t('profilePage.cannotDeleteBankAccount')
       );
     }
   }, [onUpdate]);
@@ -109,7 +111,7 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
     switch (status) {
       case 'VERIFIED':
         return {
-          text: 'Đã xác minh',
+          text: t('profilePage.verified'),
           color: 'text-green-700',
           bgColor: 'bg-green-100',
           borderColor: 'border-green-300',
@@ -125,7 +127,7 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
         };
       default:
         return {
-          text: 'Chờ xác minh',
+          text: t('profilePage.waitingVerification'),
           color: 'text-yellow-700',
           bgColor: 'bg-yellow-100',
           borderColor: 'border-yellow-300',
@@ -162,7 +164,7 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
         <div className="p-6 space-y-4">
           {/* Status Badge */}
           <div className="flex items-center justify-between pb-4 border-b-2 border-gray-100">
-            <span className="text-sm font-medium text-gray-600">Trạng thái</span>
+            <span className="text-sm font-medium text-gray-600">{t('profilePage.status')}</span>
             <div className={`flex items-center gap-2 px-4 py-2 ${statusDisplay.bgColor} ${statusDisplay.borderColor} border-2 rounded-lg`}>
               <span className="text-lg">{statusDisplay.icon}</span>
               <span className={`font-bold text-sm ${statusDisplay.color}`}>
@@ -173,7 +175,7 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
 
           {/* Account Number */}
           <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-xl border border-gray-200">
-            <p className="text-xs text-gray-600 mb-1 font-medium">Số tài khoản</p>
+            <p className="text-xs text-gray-600 mb-1 font-medium">{t('profilePage.accountNumber')}</p>
             <p className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
               {bankAccount.accountNumber}
             </p>
@@ -181,7 +183,7 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
 
           {/* Account Holder */}
           <div className="bg-gradient-to-r from-gray-50 to-purple-50 p-4 rounded-xl border border-gray-200">
-            <p className="text-xs text-gray-600 mb-1 font-medium">Chủ tài khoản</p>
+            <p className="text-xs text-gray-600 mb-1 font-medium">{t('profilePage.accountHolder')}</p>
             <p className="text-lg font-bold text-gray-900">
               {bankAccount.accountHolderName}
             </p>
@@ -191,7 +193,7 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
           <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
             <div className="flex items-center gap-1">
               <span>📅</span>
-              <span>Đã thêm: {new Date(bankAccount.addedAt).toLocaleDateString("vi-VN")}</span>
+              <span>{t('profilePage.addedDate')}: {new Date(bankAccount.addedAt).toLocaleDateString("vi-VN")}</span>
             </div>
             {bankAccount.verifiedAt && (
               <div className="flex items-center gap-1 text-green-600">
@@ -225,14 +227,14 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
           >
             <Edit2 className="w-4 h-4" />
-            <span>Chỉnh sửa</span>
+            <span>{t('profilePage.editButton')}</span>
           </button>
           <button
             onClick={() => setShowDeleteConfirm(true)}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-red-600 border-2 border-red-300 font-semibold rounded-xl hover:bg-red-50 shadow-md transition-all duration-200"
           >
             <Trash2 className="w-4 h-4" />
-            <span>Xóa</span>
+            <span>{t('profilePage.deleteButton')}</span>
           </button>
         </div>
       </div>
@@ -242,9 +244,9 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
         <div className="flex items-start gap-3">
           <span className="text-2xl">⚠️</span>
           <div>
-            <p className="font-bold text-yellow-900 mb-1">Lưu ý quan trọng</p>
+            <p className="font-bold text-yellow-900 mb-1">{t('profilePage.importantNote')}</p>
             <p className="text-sm text-yellow-800">
-              Tài khoản ngân hàng này sẽ được sử dụng để rút tiền. Vui lòng đảm bảo thông tin chính xác để tránh trì hoãn trong quá trình xử lý.
+              {t('profilePage.bankAccountNote')}
             </p>
           </div>
         </div>
@@ -259,11 +261,10 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
                 <Trash2 className="w-8 h-8 text-red-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Xác nhận xóa tài khoản ngân hàng
+                {t('profilePage.confirmDeleteBankAccount')}
               </h3>
               <p className="text-gray-600">
-                Bạn có chắc chắn muốn xóa tài khoản ngân hàng này không? Bạn sẽ
-                không thể rút tiền cho đến khi thêm tài khoản mới.
+                {t('profilePage.confirmDeleteBankAccountDesc')}
               </p>
             </div>
 
@@ -272,13 +273,13 @@ const BankAccountSection = memo(({ user, onUpdate }) => {
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
-                Hủy
+                {t('profilePage.cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
-                Xóa
+                {t('profilePage.deleteButton')}
               </button>
             </div>
           </div>

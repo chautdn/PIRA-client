@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import "./i18n";
 
 // Global error handler for React internal errors
 window.addEventListener("error", (event) => {

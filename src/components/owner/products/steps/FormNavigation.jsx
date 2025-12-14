@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import icons from "../../../../utils/icons";
 import promotionService from "../../../../services/promotion";
+import { useI18n } from "../../../../hooks/useI18n";
 
 const FormNavigation = ({
   currentStep,
@@ -13,6 +14,8 @@ const FormNavigation = ({
   onNext,
   onSubmit,
 }) => {
+  const { t } = useI18n();
+  
   const calculatePromotionCost = () => {
     if (!formData.promotion?.enabled || !formData.promotion?.tier) {
       return 0;
@@ -49,12 +52,10 @@ const FormNavigation = ({
             <icons.BiInfoCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
             <div className="flex-1">
               <h4 className="font-bold text-orange-900 mb-2">
-                📋 Cần đồng ý Điều Khoản và Điều Kiện
+                {t('productForm.needTermsWarning')}
               </h4>
               <p className="text-sm text-orange-800">
-                Vui lòng tick vào ô đồng ý{" "}
-                <span className="font-bold">"Điều Khoản và Điều Kiện"</span> để
-                hoàn thành việc đăng sản phẩm.
+                {t('productForm.needTermsDesc')}
               </p>
             </div>
           </div>
@@ -72,16 +73,10 @@ const FormNavigation = ({
             <icons.BiError className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
             <div className="flex-1">
               <h4 className="font-bold text-red-900 mb-2">
-                ⚠️ Số dư ví không đủ
+                {t('productForm.insufficientBalance')}
               </h4>
               <p className="text-sm text-red-800">
-                Bạn cần thêm{" "}
-                <span className="font-bold">
-                  {promotionService.formatCurrency(
-                    promotionCost - walletBalance
-                  )}
-                </span>{" "}
-                vào ví hoặc chọn phương thức thanh toán PayOS để tiếp tục.
+                {t('productForm.insufficientBalanceDesc').replace('{{amount}}', promotionService.formatCurrency(promotionCost - walletBalance))}
               </p>
             </div>
           </div>
@@ -101,7 +96,7 @@ const FormNavigation = ({
             whileTap={{ scale: 0.98 }}
           >
             <icons.FiArrowLeft className="w-5 h-5" />
-            Quay Lại
+            {t('productForm.backButton')}
           </motion.button>
         )}
 
@@ -125,16 +120,16 @@ const FormNavigation = ({
           {isSubmitting ? (
             <>
               <icons.BiLoaderAlt className="w-5 h-5 animate-spin" />
-              Đang xử lý...
+              {t('productForm.processing')}
             </>
           ) : isLastStep ? (
             <>
               <icons.FiCheck className="w-5 h-5" />
-              Hoàn Tất & Đăng Sản Phẩm
+              {t('productForm.submitButton')}
             </>
           ) : (
             <>
-              Tiếp Theo
+              {t('productForm.nextButton')}
               <icons.FiArrowRight className="w-5 h-5" />
             </>
           )}
@@ -145,8 +140,8 @@ const FormNavigation = ({
       {isLastStep && !hasInsufficientBalance && !hasNotAgreedToTerms && (
         <p className="text-center text-sm text-gray-500">
           {formData.promotion?.enabled
-            ? "Sản phẩm sẽ được đăng và quảng cáo ngay sau khi thanh toán thành công"
-            : "Sản phẩm sẽ được đăng ngay lập tức"}
+            ? t('productForm.postAfterPayment')
+            : t('productForm.postNow')}
         </p>
       )}
     </div>

@@ -3,8 +3,10 @@ import { X, Truck, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ShipmentService from '../../services/shipment';
 import rentalOrderService from '../../services/rentalOrder';
+import { useI18n } from '../../hooks/useI18n';
 
 export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, masterOrder, onConfirmReceived }) {
+  const { t } = useI18n();
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -30,7 +32,7 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
       }
     } catch (err) {
       console.error('Error loading shipments:', err.message);
-      toast.error('Không thể tải thông tin vận chuyển');
+      toast.error(t('renterShipmentModal.loadError'));
     } finally {
       setLoading(false);
     }
@@ -38,7 +40,7 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
 
   const handleConfirmReceived = async () => {
     if (!masterOrder?.subOrders?.[0]?._id) {
-      toast.error('Không tìm thấy thông tin đơn hàng');
+      toast.error(t('renterShipmentModal.orderNotFound'));
       return;
     }
 
@@ -49,7 +51,7 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
       
       console.log('✅ Renter confirmed delivery response:', response);
       
-      toast.success('✅ Bạn đã xác nhận đã nhận hàng');
+      toast.success(t('renterShipmentModal.confirmSuccess'));
       
       // Gọi callback để cập nhật trạng thái
       if (onConfirmReceived) {
@@ -62,7 +64,7 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
       }, 500);
     } catch (err) {
       console.error('Error confirming shipment:', err.message);
-      toast.error(err.response?.data?.message || 'Không thể xác nhận đã nhận hàng');
+      toast.error(err.response?.data?.message || t('renterShipmentModal.confirmError'));
     } finally {
       setConfirming(false);
     }
@@ -82,7 +84,7 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <Truck className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">Quản lí vận chuyển</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t('renterShipmentModal.title')}</h2>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="w-5 h-5" />
@@ -94,12 +96,12 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Đang tải thông tin vận chuyển...</p>
+              <p className="text-gray-600">{t('renterShipmentModal.loading')}</p>
             </div>
           ) : shipments.length === 0 ? (
             <div className="text-center py-8">
               <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-              <p className="text-gray-600">Chưa có thông tin vận chuyển</p>
+              <p className="text-gray-600">{t('renterShipmentModal.noShipmentInfo')}</p>
             </div>
           ) : (
             <>
@@ -112,21 +114,21 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
                     isDelivered ? 'bg-green-500' : 'bg-gray-500'
                   }`}></div>
                   <span className="font-semibold text-gray-900">
-                    {isPending ? '⏳ Chờ xác nhận' :
-                     isPickedUp ? '🚚 Đang vận chuyển' :
-                     isDelivered ? '✅ Đã giao hàng' : '❓ Không xác định'}
+                    {isPending ? t('renterShipmentModal.pending') :
+                     isPickedUp ? t('renterShipmentModal.inTransit') :
+                     isDelivered ? t('renterShipmentModal.delivered') : t('renterShipmentModal.unknown')}
                   </span>
                 </div>
 
                 {/* Shipment Info */}
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Mã shipment:</span>
+                    <span className="text-gray-600">{t('renterShipmentModal.shipmentCode')}</span>
                     <span className="font-medium text-gray-900">{deliveryShipment?.shipmentId}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Loại:</span>
-                    <span className="font-medium text-blue-600">Giao hàng (DELIVERY)</span>
+                    <span className="text-gray-600">{t('renterShipmentModal.type')}</span>
+                    <span className="font-medium text-blue-600">{t('renterShipmentModal.deliveryType')}</span>
                   </div>
                   {deliveryShipment?.shipper && (
                     (() => {
@@ -135,12 +137,12 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
                       return (
                         <>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Shipper:</span>
+                            <span className="text-gray-600">{t('renterShipmentModal.shipper')}</span>
                             <span className="font-medium text-gray-900">{displayName}</span>
                           </div>
                           {sh.phone && (
                             <div className="flex justify-between">
-                              <span className="text-gray-600">Liên hệ:</span>
+                              <span className="text-gray-600">{t('renterShipmentModal.contact')}</span>
                               <span className="font-medium text-gray-900">{sh.phone}</span>
                             </div>
                           )}
@@ -156,19 +158,19 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
                     {isPending && (
                       <div className="flex items-center space-x-2 text-yellow-700 text-sm">
                         <Clock className="w-4 h-4" />
-                        <span>Chờ shipper xác nhận</span>
+                        <span>{t('renterShipmentModal.waitingShipperConfirm')}</span>
                       </div>
                     )}
                     {isPickedUp && (
                       <div className="flex items-center space-x-2 text-blue-700 text-sm">
                         <Truck className="w-4 h-4" />
-                        <span>Shipper đang vận chuyển</span>
+                        <span>{t('renterShipmentModal.shipperDelivering')}</span>
                       </div>
                     )}
                     {isDelivered && (
                       <div className="flex items-center space-x-2 text-green-700 text-sm">
                         <CheckCircle className="w-4 h-4" />
-                        <span>Hàng đã được giao đến bạn</span>
+                        <span>{t('renterShipmentModal.itemDelivered')}</span>
                       </div>
                     )}
                   </div>
@@ -178,7 +180,7 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
               {/* Note */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
                 <p className="text-xs text-blue-700">
-                  💡 <strong>Lưu ý:</strong> Shipper sẽ xác nhận khi hàng được giao. Đơn thuê sẽ kích hoạt sau khi shipper xác nhận.
+                  💡 <strong>{t('renterShipmentModal.noteTitle')}</strong> {t('renterShipmentModal.noteMessage')}
                 </p>
               </div>
             </>
@@ -191,7 +193,7 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
           >
-            Đóng
+            {t('renterShipmentModal.close')}
           </button>
         </div>
       </div>

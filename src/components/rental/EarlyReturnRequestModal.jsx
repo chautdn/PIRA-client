@@ -16,6 +16,7 @@ import MapSelector from "../common/MapSelector";
 import toast from "react-hot-toast";
 import earlyReturnApi from "../../services/earlyReturn.Api";
 import { useWallet } from "../../context/WalletContext";
+import { useI18n } from "../../hooks/useI18n";
 
 /**
  * Early Return Request Modal - Multi-step flow
@@ -30,6 +31,7 @@ const EarlyReturnRequestModal = ({
   userAddresses,
   onSuccess,
 }) => {
+  const { t, language } = useI18n();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // 1: form, 2: review & confirm, 3: payment
   const [calculatingFee, setCalculatingFee] = useState(false);
@@ -208,7 +210,7 @@ const EarlyReturnRequestModal = ({
 
       const createResponse = await earlyReturnApi.create(requestPayload);
 
-      toast.success("✅ Yêu cầu trả hàng sớm đã được gửi!");
+      toast.success(t('earlyReturnRequest.successMessage'));
       onSuccess && onSuccess();
       onClose();
     } catch (error) {
@@ -225,7 +227,7 @@ const EarlyReturnRequestModal = ({
       }
 
       toast.error(
-        error.response?.data?.message || "Có lỗi xảy ra khi tạo yêu cầu"
+        error.response?.data?.message || t('earlyReturnRequest.createError')
       );
     } finally {
       setLoading(false);
@@ -236,20 +238,20 @@ const EarlyReturnRequestModal = ({
     e.preventDefault();
 
     if (!formData.requestedReturnDate) {
-      toast.error("Vui lòng chọn ngày muốn trả");
+      toast.error(t('earlyReturnRequest.selectDateError'));
       return;
     }
 
     if (!formData.useOriginalAddress) {
       if (!formData.returnAddress?.streetAddress) {
-        toast.error("Vui lòng chọn địa chỉ trên bản đồ");
+        toast.error(t('earlyReturnRequest.selectAddressError'));
         return;
       }
       if (
         !formData.returnAddress?.coordinates?.latitude ||
         !formData.returnAddress?.coordinates?.longitude
       ) {
-        toast.error("Địa chỉ chưa có tọa độ. Vui lòng chọn lại trên bản đồ");
+        toast.error(t('earlyReturnRequest.missingCoordinatesError'));
         return;
       }
 
@@ -280,7 +282,7 @@ const EarlyReturnRequestModal = ({
       });
 
       if (paymentMethod === "wallet") {
-        toast.success("✅ Thanh toán phí ship thành công!");
+        toast.success(t('earlyReturnRequest.paymentSuccess'));
         // After successful wallet payment, create the request
         await createEarlyReturnRequest();
       } else if (paymentMethod === "payos") {
@@ -295,7 +297,7 @@ const EarlyReturnRequestModal = ({
           })
         );
 
-        toast.loading("🔄 Chuyển đến trang thanh toán...", { duration: 2000 });
+        toast.loading(t('earlyReturnRequest.redirectingPayment'), { duration: 2000 });
         setTimeout(() => {
           window.location.href = response.metadata.checkoutUrl;
         }, 2000);
@@ -303,7 +305,7 @@ const EarlyReturnRequestModal = ({
     } catch (error) {
       console.error("Payment error:", error);
       toast.error(
-        error.response?.data?.message || "Có lỗi xảy ra khi thanh toán"
+        error.response?.data?.message || t('earlyReturnRequest.paymentError')
       );
     } finally {
       setLoading(false);
@@ -334,15 +336,15 @@ const EarlyReturnRequestModal = ({
       {/* Review Information */}
       <div className="space-y-4">
         <h3 className="font-semibold text-gray-900 text-lg">
-          Xác nhận thông tin
+          {t('earlyReturnRequest.reviewTitle')}
         </h3>
 
         {/* Return Date */}
         <div className="bg-gray-50 rounded-xl p-4">
-          <p className="text-sm text-gray-600 mb-1">Ngày trả hàng</p>
+          <p className="text-sm text-gray-600 mb-1">{t('earlyReturnRequest.returnDateLabel')}</p>
           <p className="font-medium text-gray-900">
             {new Date(formData.requestedReturnDate).toLocaleDateString(
-              "vi-VN",
+              language === 'vi' ? 'vi-VN' : 'en-US',
               {
                 weekday: "long",
                 year: "numeric",
@@ -355,10 +357,10 @@ const EarlyReturnRequestModal = ({
 
         {/* Return Address */}
         <div className="bg-gray-50 rounded-xl p-4">
-          <p className="text-sm text-gray-600 mb-1">Địa chỉ trả hàng</p>
+          <p className="text-sm text-gray-600 mb-1">{t('earlyReturnRequest.returnAddress')}</p>
           {formData.useOriginalAddress ? (
             <div>
-              <p className="font-medium text-gray-900 mb-1">Địa chỉ gốc</p>
+              <p className="font-medium text-gray-900 mb-1">{t('earlyReturnRequest.originalAddress')}</p>
               <p className="text-sm text-gray-700">
                 {defaultAddress?.streetAddress}, {defaultAddress?.ward},{" "}
                 {defaultAddress?.district}, {defaultAddress?.city}
@@ -366,7 +368,7 @@ const EarlyReturnRequestModal = ({
             </div>
           ) : (
             <div>
-              <p className="font-medium text-gray-900 mb-1">Địa chỉ mới</p>
+              <p className="font-medium text-gray-900 mb-1">{t('earlyReturnRequest.newAddress')}</p>
               <p className="text-sm text-gray-700">
                 {formData.returnAddress?.streetAddress},{" "}
                 {formData.returnAddress?.ward},{" "}
@@ -387,23 +389,23 @@ const EarlyReturnRequestModal = ({
               <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div className="flex-1">
                 <p className="font-semibold text-yellow-900 mb-2">
-                  ⚠️ Địa chỉ mới xa hơn - Cần thanh toán phí thêm
+                  {t('earlyReturnRequest.additionalFeeWarning')}
                 </p>
                 <div className="text-sm text-yellow-800 space-y-1">
                   <p>
-                    Khoảng cách gốc:{" "}
-                    {feeCalculationResult?.originalDistance?.toFixed(1)} km
+                    {t('earlyReturnRequest.originalDistance')}{" "}
+                    {feeCalculationResult?.originalDistance?.toFixed(1)} {t('earlyReturnRequest.km')}
                   </p>
                   <p>
-                    Khoảng cách mới:{" "}
-                    {feeCalculationResult?.newDistance?.toFixed(1)} km
+                    {t('earlyReturnRequest.newDistance')}{" "}
+                    {feeCalculationResult?.newDistance?.toFixed(1)} {t('earlyReturnRequest.km')}
                   </p>
                   <p>
-                    Chênh lệch: +
-                    {feeCalculationResult?.distanceDiff?.toFixed(1)} km
+                    {t('earlyReturnRequest.distanceDiff')} +
+                    {feeCalculationResult?.distanceDiff?.toFixed(1)} {t('earlyReturnRequest.km')}
                   </p>
                   <p className="font-bold text-yellow-900 mt-2 text-base">
-                    💰 Phí ship thêm:{" "}
+                    {t('earlyReturnRequest.additionalShippingFee')}{" "}
                     {feeCalculationResult?.additionalFee?.toLocaleString()}đ
                   </p>
                 </div>
@@ -416,11 +418,11 @@ const EarlyReturnRequestModal = ({
               <Check className="w-5 h-5 text-green-600 mt-0.5" />
               <div className="flex-1">
                 <p className="font-semibold text-green-900">
-                  ✅ Không có phí ship thêm
+                  {t('earlyReturnRequest.noAdditionalFee')}
                 </p>
                 {feeCalculationResult?.originalDistance && (
                   <p className="text-sm text-green-800 mt-1">
-                    Địa chỉ mới gần hơn hoặc bằng địa chỉ gốc
+                    {t('earlyReturnRequest.closerAddress')}
                   </p>
                 )}
               </div>
@@ -438,7 +440,7 @@ const EarlyReturnRequestModal = ({
           className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 flex items-center space-x-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại</span>
+          <span>{t('earlyReturnRequest.back')}</span>
         </button>
 
         <div className="flex gap-3">
@@ -448,7 +450,7 @@ const EarlyReturnRequestModal = ({
             disabled={loading}
             className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
-            Hủy
+            {t('earlyReturnRequest.cancel')}
           </button>
 
           {feeCalculationResult?.requiresPayment ? (
@@ -458,7 +460,7 @@ const EarlyReturnRequestModal = ({
               disabled={loading}
               className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
             >
-              <span>Tiếp tục thanh toán</span>
+              <span>{t('earlyReturnRequest.continuePayment')}</span>
             </button>
           ) : (
             <button
@@ -470,12 +472,12 @@ const EarlyReturnRequestModal = ({
               {loading ? (
                 <>
                   <Loader className="w-5 h-5 animate-spin" />
-                  <span>Đang tạo...</span>
+                  <span>{t('earlyReturnRequest.creating')}</span>
                 </>
               ) : (
                 <>
                   <Check className="w-5 h-5" />
-                  <span>Xác nhận tạo yêu cầu</span>
+                  <span>{t('earlyReturnRequest.confirmCreate')}</span>
                 </>
               )}
             </button>
@@ -494,29 +496,28 @@ const EarlyReturnRequestModal = ({
           <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
           <div className="flex-1">
             <p className="font-medium text-yellow-900 mb-2">
-              Địa chỉ mới xa hơn địa chỉ gốc
+              {t('earlyReturnRequest.farAddressNote')}
             </p>
             <div className="text-sm text-yellow-800 space-y-1">
               <p>
-                Khoảng cách gốc:{" "}
-                {feeCalculationResult?.originalDistance?.toFixed(1)} km
+                {t('earlyReturnRequest.originalDistance')}{" "}
+                {feeCalculationResult?.originalDistance?.toFixed(1)} {t('earlyReturnRequest.km')}
               </p>
               <p>
-                Khoảng cách mới: {feeCalculationResult?.newDistance?.toFixed(1)}{" "}
-                km
+                {t('earlyReturnRequest.newDistance')} {feeCalculationResult?.newDistance?.toFixed(1)}{" "}
+                {t('earlyReturnRequest.km')}
               </p>
               <p>
-                Chênh lệch: +{feeCalculationResult?.distanceDiff?.toFixed(1)} km
+                {t('earlyReturnRequest.distanceDiff')} +{feeCalculationResult?.distanceDiff?.toFixed(1)} {t('earlyReturnRequest.km')}
               </p>
               <p className="font-semibold text-yellow-900 mt-2">
-                Phí ship thêm:{" "}
+                {t('earlyReturnRequest.additionalShippingFee')}{" "}
                 {feeCalculationResult?.additionalFee?.toLocaleString()}đ
               </p>
             </div>
             <div className="mt-3 bg-white border border-yellow-300 rounded-lg p-3">
               <p className="text-xs text-yellow-900 font-medium">
-                ⚠️ Bạn cần thanh toán phí ship thêm trước khi tạo yêu cầu trả
-                hàng sớm
+                {t('earlyReturnRequest.paymentRequired')}
               </p>
             </div>
           </div>
@@ -526,7 +527,7 @@ const EarlyReturnRequestModal = ({
       {/* Payment Methods */}
       <div>
         <h3 className="font-medium text-gray-900 mb-3">
-          Chọn phương thức thanh toán
+          {t('paymentMethodSelector.title')}
         </h3>
 
         {/* Wallet Payment */}
@@ -541,16 +542,16 @@ const EarlyReturnRequestModal = ({
                 <Wallet className="w-6 h-6 text-blue-600" />
               </div>
               <div className="text-left">
-                <p className="font-medium text-gray-900">Ví PIRA</p>
+                <p className="font-medium text-gray-900">{t('paymentMethodSelector.wallet')}</p>
                 <p className="text-sm text-gray-600">
-                  Số dư: {balance?.toLocaleString()}đ
+                  {t('earlyReturnRequest.walletBalance')} {balance?.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ
                 </p>
               </div>
             </div>
             {balance >= feeCalculationResult?.additionalFee ? (
               <Check className="w-5 h-5 text-green-600" />
             ) : (
-              <span className="text-xs text-red-600">Không đủ số dư</span>
+              <span className="text-xs text-red-600">{t('earlyReturnRequest.insufficientBalance')}</span>
             )}
           </div>
         </button>
@@ -566,9 +567,9 @@ const EarlyReturnRequestModal = ({
               <CreditCard className="w-6 h-6 text-purple-600" />
             </div>
             <div className="text-left">
-              <p className="font-medium text-gray-900">PayOS</p>
+              <p className="font-medium text-gray-900">{t('paymentMethodSelector.payos')}</p>
               <p className="text-sm text-gray-600">
-                Thanh toán qua ngân hàng, QR Code
+                {t('earlyReturnRequest.payWithBank')}
               </p>
             </div>
           </div>
@@ -583,14 +584,14 @@ const EarlyReturnRequestModal = ({
           className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 flex items-center space-x-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại</span>
+          <span>{t('earlyReturnRequest.back')}</span>
         </button>
         <button
           onClick={onClose}
           disabled={loading}
           className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
-          Hủy
+          {t('earlyReturnRequest.cancel')}
         </button>
       </div>
     </div>
@@ -623,12 +624,12 @@ const EarlyReturnRequestModal = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    {currentStep === 1 && "Yêu cầu trả hàng sớm"}
-                    {currentStep === 2 && "Xác nhận thông tin"}
-                    {currentStep === 3 && "Thanh toán phí ship thêm"}
+                    {currentStep === 1 && t('earlyReturnRequest.title')}
+                    {currentStep === 2 && t('earlyReturnRequest.reviewTitle')}
+                    {currentStep === 3 && t('earlyReturnRequest.paymentTitle')}
                   </h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    SubOrder: #{subOrder?.subOrderNumber} • Bước {currentStep}/3
+                    SubOrder: #{subOrder?.subOrderNumber} • {t('earlyReturnRequest.stepInfo', { step: currentStep })}
                   </p>
                 </div>
                 <button
@@ -648,19 +649,19 @@ const EarlyReturnRequestModal = ({
                   <div className="flex items-start space-x-3">
                     <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                     <div className="flex-1 text-sm text-blue-900">
-                      <p className="font-medium mb-1">Thời gian thuê gốc:</p>
+                      <p className="font-medium mb-1">{t('earlyReturnRequest.originalRentalPeriod')}</p>
                       <p>
-                        Từ{" "}
+                        {t('earlyReturnRequest.from')}{" "}
                         {new Date(rentalPeriod?.startDate).toLocaleDateString(
-                          "vi-VN"
+                          language === 'vi' ? 'vi-VN' : 'en-US'
                         )}{" "}
-                        đến{" "}
+                        {t('earlyReturnRequest.to')}{" "}
                         {new Date(rentalPeriod?.endDate).toLocaleDateString(
-                          "vi-VN"
+                          language === 'vi' ? 'vi-VN' : 'en-US'
                         )}
                       </p>
                       <p className="text-blue-700 mt-2">
-                        💡 Ngày trả phải trước ngày kết thúc ít nhất 1 ngày
+                        {t('earlyReturnRequest.returnDateNote')}
                       </p>
                     </div>
                   </div>
@@ -670,7 +671,7 @@ const EarlyReturnRequestModal = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Calendar className="w-4 h-4 inline mr-2" />
-                    Ngày muốn trả hàng <span className="text-red-500">*</span>
+                    {t('earlyReturnRequest.desiredReturnDate')} <span className="text-red-500">{t('earlyReturnRequest.required')}</span>
                   </label>
                   <input
                     type="date"
@@ -687,8 +688,7 @@ const EarlyReturnRequestModal = ({
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Chọn từ {new Date(minDate).toLocaleDateString("vi-VN")} đến{" "}
-                    {new Date(maxDate).toLocaleDateString("vi-VN")}
+                    {t('earlyReturnRequest.dateRangeInfo', { minDate: new Date(minDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US'), maxDate: new Date(maxDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US') })}
                   </p>
                 </div>
 
@@ -696,7 +696,7 @@ const EarlyReturnRequestModal = ({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     <MapPin className="w-4 h-4 inline mr-2" />
-                    Địa chỉ trả hàng <span className="text-red-500">*</span>
+                    {t('earlyReturnRequest.returnAddress')} <span className="text-red-500">{t('earlyReturnRequest.required')}</span>
                   </label>
 
                   {/* Radio Options */}
@@ -714,7 +714,7 @@ const EarlyReturnRequestModal = ({
                         className="mt-1"
                       />
                       <div className="flex-1">
-                        <p className="font-medium">Dùng địa chỉ gốc</p>
+                        <p className="font-medium">{t('earlyReturnRequest.useOriginalAddress')}</p>
                         {defaultAddress && (
                           <p className="text-sm text-gray-600 mt-1">
                             {defaultAddress.streetAddress},{" "}
@@ -738,9 +738,9 @@ const EarlyReturnRequestModal = ({
                         className="mt-1"
                       />
                       <div className="flex-1">
-                        <p className="font-medium">Chọn địa chỉ mới</p>
+                        <p className="font-medium">{t('earlyReturnRequest.chooseNewAddress')}</p>
                         <p className="text-sm text-gray-600 mt-1">
-                          Chọn địa chỉ khác trên bản đồ VietMap
+                          {t('earlyReturnRequest.chooseOnMap')}
                         </p>
                       </div>
                     </label>
@@ -752,7 +752,7 @@ const EarlyReturnRequestModal = ({
                       <MapSelector
                         onLocationSelect={handleAddressSelect}
                         initialAddress={formData.returnAddress?.streetAddress}
-                        placeholder="Nhấn để chọn địa chỉ trên bản đồ VietMap..."
+                        placeholder={t('earlyReturnRequest.mapPlaceholder')}
                         className="mb-3"
                       />
 
@@ -764,7 +764,7 @@ const EarlyReturnRequestModal = ({
                               <Check className="w-5 h-5 text-green-600 mt-0.5" />
                               <div className="flex-1">
                                 <p className="font-medium text-green-900 mb-1">
-                                  ✅ Địa chỉ đã chọn:
+                                  {t('earlyReturnRequest.addressSelected')}
                                 </p>
                                 <p className="text-sm text-green-800">
                                   {formData.returnAddress.streetAddress}
@@ -776,7 +776,7 @@ const EarlyReturnRequestModal = ({
                                     `, ${formData.returnAddress.city}`}
                                 </p>
                                 <p className="text-xs text-green-700 mt-1">
-                                  Tọa độ:{" "}
+                                  {t('earlyReturnRequest.coordinates')}{" "}
                                   {formData.returnAddress.coordinates.latitude.toFixed(
                                     6
                                   )}
@@ -801,7 +801,7 @@ const EarlyReturnRequestModal = ({
                     disabled={loading || calculatingFee}
                     className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
-                    Hủy
+                    {t('earlyReturnRequest.cancel')}
                   </button>
                   <button
                     type="submit"
@@ -813,10 +813,10 @@ const EarlyReturnRequestModal = ({
                     )}
                     <span>
                       {calculatingFee
-                        ? "Đang tính phí..."
+                        ? t('earlyReturnRequest.calculating')
                         : loading
-                        ? "Đang xử lý..."
-                        : "Tiếp tục"}
+                        ? t('earlyReturnRequest.processing')
+                        : t('earlyReturnRequest.continue')}
                     </span>
                   </button>
                 </div>

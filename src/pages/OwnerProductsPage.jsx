@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useI18n } from '../hooks/useI18n';
 import recommendationService from '../services/recommendation';
 import { categoryApi } from '../services/category.Api';
+import { translateCategory, translateSubCategory } from '../utils/categoryTranslation';
 import ProductCard from '../components/common/ProductCard';
 import { GoTriangleDown, GoTriangleRight } from 'react-icons/go';
 import { FiPackage, FiTrendingUp, FiStar } from 'react-icons/fi';
@@ -17,6 +19,8 @@ const CategoryFilter = ({
   onParentClick,
   onSubClick,
   onAllClick,
+  t,
+  language,
 }) => {
   const isSubcategorySelected = (subcategoryId) => selectedCategory === subcategoryId;
   
@@ -35,7 +39,7 @@ const CategoryFilter = ({
             : 'text-gray-600 hover:bg-gray-50'
         }`}
       >
-        Tất cả danh mục
+        {t("ownerProductsPage.allCategories")}
       </button>
 
       {parentCategories.map((cat) => (
@@ -53,7 +57,7 @@ const CategoryFilter = ({
             ) : (
               <GoTriangleRight className="w-3.5 h-3.5" />
             )}
-            {cat.name}
+            {translateCategory(cat.name, language)}
             {isParentCategoryActive(cat._id) && (
               <span className="ml-auto text-green-600 text-xs">●</span>
             )}
@@ -71,7 +75,7 @@ const CategoryFilter = ({
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  • {sub.name}
+                  • {translateCategory(sub.name, language)}
                   {isSubcategorySelected(sub._id) && (
                     <span className="ml-auto text-green-600 text-xs">✓</span>
                   )}
@@ -88,6 +92,7 @@ const CategoryFilter = ({
 export default function OwnerProductsPage() {
   const { ownerId } = useParams();
   const navigate = useNavigate();
+  const { t, language } = useI18n();
   
   // Tab state
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'hot', 'recommended'
@@ -286,7 +291,7 @@ export default function OwnerProductsPage() {
               }`}
             >
               <FiPackage className="w-5 h-5" />
-              Tất cả sản phẩm
+              {t("ownerProductsPage.allProducts")}
             </button>
             <button
               onClick={() => setActiveTab('hot')}
@@ -297,7 +302,7 @@ export default function OwnerProductsPage() {
               }`}
             >
               <FiTrendingUp className="w-5 h-5" />
-              Sản Phẩm Hot
+              {t("ownerProductsPage.hotProducts")}
             </button>
             <button
               onClick={() => setActiveTab('recommended')}
@@ -308,7 +313,7 @@ export default function OwnerProductsPage() {
               }`}
             >
               <FiStar className="w-5 h-5" />
-              Đề xuất cho bạn
+              {t("ownerProductsPage.recommendedProducts")}
             </button>
           </div>
         </div>
@@ -320,7 +325,7 @@ export default function OwnerProductsPage() {
               <div className="flex-1 relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm sản phẩm..."
+                  placeholder={t("ownerProductsPage.search")}
                   className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
                   value={filters.search}
                   onChange={(e) => updateFilters({ search: e.target.value })}
@@ -361,7 +366,7 @@ export default function OwnerProductsPage() {
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
-                  Danh Mục
+                  {t("ownerProductsPage.category")}
                 </h3>
 
                 <CategoryFilter
@@ -376,6 +381,8 @@ export default function OwnerProductsPage() {
                     setExpandedCategory(null);
                     setSubCategories([]);
                   }}
+                  t={t}
+                  language={language}
                 />
               </div>
             </aside>
@@ -386,7 +393,7 @@ export default function OwnerProductsPage() {
             {loading && (
               <div className="text-center py-20">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-                <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
+                <p className="mt-4 text-gray-600">{t("ownerProductsPage.loading")}</p>
               </div>
             )}
 
@@ -396,12 +403,12 @@ export default function OwnerProductsPage() {
                   <FiPackage className="w-24 h-24 mx-auto text-gray-300" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  Không tìm thấy sản phẩm
+                  {t("ownerProductsPage.noProducts")}
                 </h3>
                 <p className="text-gray-600 max-w-md mx-auto">
                   {activeTab === 'all' 
-                    ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
-                    : 'Chủ sở hữu chưa có sản phẩm nào'}
+                    ? t("ownerProductsPage.tryChangeFilter")
+                    : t("ownerProductsPage.ownerNoProducts")}
                 </p>
               </div>
             )}

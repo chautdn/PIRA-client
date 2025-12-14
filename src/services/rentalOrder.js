@@ -627,6 +627,72 @@ class RentalOrderService {
       );
     }
   }
+
+  /**
+   * Owner cancels partial order (when owner confirmed only some products, owner can cancel all)
+   * @param {string} subOrderId - SubOrder ID
+   * @param {string} reason - Cancellation reason
+   */
+  async ownerCancelPartialOrder(subOrderId, reason) {
+    try {
+      console.log("📤 Owner cancelling partial order:", subOrderId);
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/owner-cancel-partial`,
+        { reason }
+      );
+      console.log("✅ Owner cancelled partial order:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Error owner cancelling partial order:", error);
+      throw new Error(
+        error.response?.data?.message || "Không thể hủy đơn hàng"
+      );
+    }
+  }
+
+  /**
+   * Owner rejects all products in SubOrder (does not confirm any product)
+   * @param {string} subOrderId - SubOrder ID
+   * @param {string} reason - Rejection reason
+   */
+  async ownerRejectAllProducts(subOrderId, reason) {
+    try {
+      console.log("📤 Owner rejecting all products:", subOrderId);
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/owner-reject-all`,
+        { reason }
+      );
+      console.log("✅ Owner rejected all products:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Error owner rejecting all products:", error);
+      throw new Error(
+        error.response?.data?.message || "Không thể từ chối đơn hàng"
+      );
+    }
+  }
+
+  /**
+   * Renter cancels order when it's PENDING_CONFIRMATION (before owner confirms)
+   * @param {string} subOrderId - SubOrder ID
+   * @param {string} reason - Cancellation reason
+   */
+  async renterCancelPendingOrder(subOrderId, reason) {
+    try {
+      console.log("📤 Renter cancelling pending order:", subOrderId);
+      const response = await api.post(
+        `/rental-orders/suborders/${subOrderId}/renter-cancel-pending`,
+        { reason }
+      );
+      console.log("✅ Renter cancelled pending order:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Error renter cancelling pending order:", error);
+      throw new Error(
+        error.response?.data?.message || "Không thể hủy đơn hàng"
+      );
+    }
+  }
 }
 
 export default new RentalOrderService();

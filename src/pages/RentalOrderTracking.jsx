@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useRentalOrder } from '../context/RentalOrderContext';
+import { useI18n } from '../hooks/useI18n';
 import { Clock, CheckCircle, XCircle, FileText, CreditCard, Package, User } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const RentalOrderTracking = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { loadOrderDetail, orderDetail, isLoadingDetail } = useRentalOrder();
   
   useEffect(() => {
@@ -33,15 +35,15 @@ const RentalOrderTracking = () => {
   const getStatusMessage = (status) => {
     switch (status) {
       case 'PENDING_CONFIRMATION':
-        return 'Đơn hàng đã được tạo và thanh toán thành công. Đang chờ chủ sản phẩm xác nhận.';
+        return t('rentalOrderTracking.statusPendingConfirmation');
       case 'OWNER_CONFIRMED':
-        return 'Chủ sản phẩm đã xác nhận. Hợp đồng điện tử đã được tạo và đang chờ ký.';
+        return t('rentalOrderTracking.statusOwnerConfirmed');
       case 'OWNER_REJECTED':
-        return 'Chủ sản phẩm đã từ chối yêu cầu thuê. Tiền sẽ được hoàn lại vào ví của bạn.';
+        return t('rentalOrderTracking.statusOwnerRejected');
       case 'CONTRACT_SIGNED':
-        return 'Hợp đồng đã được ký thành công. Đơn thuê đã hoàn tất.';
+        return t('rentalOrderTracking.statusContractSigned');
       case 'REFUNDED':
-        return 'Đơn hàng đã bị hủy và tiền đã được hoàn lại.';
+        return t('rentalOrderTracking.statusRefunded');
       default:
         return 'Trạng thái đơn hàng: ' + status;
     }
@@ -61,12 +63,12 @@ const RentalOrderTracking = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Không tìm thấy đơn hàng</h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">{t('rentalOrderTracking.notFound')}</h2>
           <button
             onClick={() => navigate('/orders')}
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
           >
-            Quay lại danh sách đơn hàng
+            {t('rentalOrderTracking.backToOrders')}
           </button>
         </div>
       </div>
@@ -80,11 +82,11 @@ const RentalOrderTracking = () => {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-900">
-              Theo dõi đơn thuê #{orderDetail.masterOrderNumber}
+              {t('rentalOrderTracking.title')} {t('rentalOrderTracking.orderNumber')}{orderDetail.masterOrderNumber}
             </h1>
             <div className="flex items-center space-x-2">
               <CreditCard className="w-5 h-5 text-green-500" />
-              <span className="text-green-600 font-medium">Đã thanh toán</span>
+              <span className="text-green-600 font-medium">{t('rentalOrderTracking.paid')}</span>
             </div>
           </div>
           
@@ -95,7 +97,7 @@ const RentalOrderTracking = () => {
               <div>
                 <h3 className="font-semibold text-gray-900">{getStatusMessage(orderDetail.status)}</h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  Cập nhật lúc: {new Date(orderDetail.updatedAt).toLocaleString('vi-VN')}
+                  {t('rentalOrderTracking.updatedAt')} {new Date(orderDetail.updatedAt).toLocaleString('vi-VN')}
                 </p>
               </div>
             </div>
@@ -104,26 +106,26 @@ const RentalOrderTracking = () => {
 
         {/* Payment Info */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Thông tin thanh toán</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('rentalOrderTracking.paymentInfo')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-600">Phương thức thanh toán</p>
+              <p className="text-sm text-gray-600">{t('rentalOrderTracking.paymentMethod')}</p>
               <p className="font-medium">{orderDetail.paymentMethod || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Tổng tiền đã thanh toán</p>
+              <p className="text-sm text-gray-600">{t('rentalOrderTracking.totalPaid')}</p>
               <p className="font-medium text-green-600">
                 {orderDetail.totalAmount?.toLocaleString('vi-VN')}đ
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Mã giao dịch</p>
+              <p className="text-sm text-gray-600">{t('rentalOrderTracking.transactionId')}</p>
               <p className="font-medium">{orderDetail.paymentInfo?.transactionId || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Trạng thái thanh toán</p>
+              <p className="text-sm text-gray-600">{t('rentalOrderTracking.paymentStatus')}</p>
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                {orderDetail.paymentStatus === 'PAID' ? 'Đã thanh toán' : orderDetail.paymentStatus}
+                {orderDetail.paymentStatus === 'PAID' ? t('rentalOrderTracking.paid') : orderDetail.paymentStatus}
               </span>
             </div>
           </div>
@@ -135,14 +137,14 @@ const RentalOrderTracking = () => {
             <div key={subOrder._id} className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">
-                  Đơn hàng phụ #{index + 1} - {subOrder.owner?.profile?.fullName || 'Chủ sản phẩm'}
+                  {t('rentalOrderTracking.subOrder')} #{index + 1} - {subOrder.owner?.profile?.fullName || t('rentalOrderTracking.owner')}
                 </h3>
                 <div className="flex items-center space-x-2">
                   {getStatusIcon(subOrder.status)}
                   <span className="text-sm font-medium">
-                    {subOrder.status === 'PENDING_CONFIRMATION' ? 'Chờ xác nhận' :
-                     subOrder.status === 'OWNER_CONFIRMED' ? 'Đã xác nhận' :
-                     subOrder.status === 'OWNER_REJECTED' ? 'Đã từ chối' :
+                    {subOrder.status === 'PENDING_CONFIRMATION' ? t('rentalOrderTracking.pendingConfirmation') :
+                     subOrder.status === 'OWNER_CONFIRMED' ? t('rentalOrderTracking.confirmed') :
+                     subOrder.status === 'OWNER_REJECTED' ? t('rentalOrderTracking.rejected') :
                      subOrder.status}
                   </span>
                 </div>
@@ -159,7 +161,7 @@ const RentalOrderTracking = () => {
                     />
                     <div className="flex-1">
                       <h4 className="font-medium">{item.product?.name}</h4>
-                      <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
+                      <p className="text-sm text-gray-600">{t('rentalOrderTracking.quantity')} {item.quantity}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">{(item.subtotal || 0).toLocaleString('vi-VN')}đ</p>
@@ -172,7 +174,7 @@ const RentalOrderTracking = () => {
               {subOrder.status === 'OWNER_REJECTED' && subOrder.ownerConfirmation?.rejectionReason && (
                 <div className="mt-4 p-3 bg-red-50 rounded-lg">
                   <p className="text-sm text-red-700">
-                    <strong>Lý do từ chối:</strong> {subOrder.ownerConfirmation.rejectionReason}
+                    <strong>{t('rentalOrderTracking.rejectionReason')}</strong> {subOrder.ownerConfirmation.rejectionReason}
                   </p>
                 </div>
               )}
@@ -186,7 +188,7 @@ const RentalOrderTracking = () => {
             onClick={() => navigate('/orders')}
             className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
           >
-            Quay lại đơn hàng
+            {t('rentalOrderTracking.backToOrders2')}
           </button>
           
           {orderDetail.status === 'CONTRACT_SIGNED' && (
@@ -194,7 +196,7 @@ const RentalOrderTracking = () => {
               onClick={() => navigate(`/contracts/${orderDetail._id}`)}
               className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors"
             >
-              Xem hợp đồng
+              {t('rentalOrderTracking.viewContract')}
             </button>
           )}
         </div>

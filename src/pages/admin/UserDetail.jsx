@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { adminService } from '../../services/admin';
+import { useI18n } from '../../hooks/useI18n';
+import { translateCategory } from '../../utils/categoryTranslation';
 
 const UserDetail = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { i18n } = useI18n();
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
@@ -1014,7 +1017,7 @@ const UserDetail = () => {
                                 {product.category && (
                                   <span className="flex items-center gap-1">
                                     {product.category.icon && <span>{product.category.icon}</span>}
-                                    <span>{product.category.name}</span>
+                                    <span>{translateCategory(product.category.name, i18n.language)}</span>
                                   </span>
                                 )}
                                 {product.condition && (

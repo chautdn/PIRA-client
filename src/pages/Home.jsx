@@ -6,6 +6,9 @@ import { productService } from "../services/product";
 import Loading from "../components/common/Loading";
 import ChatbotAI from "../components/common/ChatbotAI";
 import { useWallet } from "../context/WalletContext";
+import { useTranslationHelper } from "../hooks/useTranslationHelper";
+import { useI18n } from "../hooks/useI18n";
+import { translateCategory } from "../utils/categoryTranslation";
 import {
   BiCamera,
   BiCheckCircle,
@@ -44,6 +47,8 @@ import {
 export default function Home() {
   const navigate = useNavigate();
   const { fetchBalance } = useWallet();
+  const { t, formatPrice } = useTranslationHelper();
+  const { i18n } = useI18n();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -140,22 +145,15 @@ export default function Home() {
   }, [featuredProducts]);
 
   // Helper functions
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(price);
-  };
-
   const getPromotionTierName = (tier) => {
-    const tierNames = {
-      1: "Được Chọn Nhiều",
-      2: "Chủ Uy Tín",
-      3: "Đánh Giá Tốt",
-      4: "Đề Xuất",
-      5: "Mới Cập Nhật",
+    const tierMap = {
+      1: "pages.home.promotion_tiers.tier_1",
+      2: "pages.home.promotion_tiers.tier_2",
+      3: "pages.home.promotion_tiers.tier_3",
+      4: "pages.home.promotion_tiers.tier_4",
+      5: "pages.home.promotion_tiers.tier_5",
     };
-    return tierNames[tier] || "Đề Xuất";
+    return t(tierMap[tier] || "pages.home.promotion_tiers.tier_4");
   };
 
   const getPromotionTierColor = (tier) => {
@@ -319,7 +317,7 @@ export default function Home() {
                 animate={{ scale: [1, 1.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              Được tin tưởng bởi 10,000+ du khách
+              {t("pages.home.hero.badge")}
             </motion.div>
 
             {/* Main heading */}
@@ -327,7 +325,7 @@ export default function Home() {
               className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight pb-4"
               variants={fadeInUp}
             >
-              Cuộc Phiêu Lưu Đang Chờ.
+              {t("pages.home.hero.main_title")}
               <br />
               <motion.span
                 className="inline-block mt-2 pb-2"
@@ -348,7 +346,7 @@ export default function Home() {
                   lineHeight: "1.3",
                 }}
               >
-                Thuê Thiết Bị Du Lịch Ngay!
+                {t("pages.home.hero.main_subtitle")}
               </motion.span>
             </motion.h1>
 
@@ -357,9 +355,8 @@ export default function Home() {
               className="mt-8 text-lg sm:text-xl text-primary-50 leading-8 max-w-3xl mx-auto"
               variants={fadeInUpStagger}
             >
-              🏔️ Khám phá. 📸 Ghi lại. 🌍 Chia sẻ. <br className="sm:hidden" />
-              Truy cập thiết bị du lịch cao cấp từ những người địa phương đáng
-              tin cậy.
+              {t("pages.home.hero.tagline")} <br className="sm:hidden" />
+              {t("pages.home.hero.description")}
             </motion.p>
 
             {/* Equipment categories quick preview */}
@@ -368,12 +365,12 @@ export default function Home() {
               variants={fadeInUpStagger}
             >
               {[
-                { Icon: MdCameraAlt, label: "Camera" },
-                { Icon: MdBackpack, label: "Balo" },
-                { Icon: FaCampground, label: "Lều Trại" },
-                { Icon: MdLuggage, label: "Vali" },
-                { Icon: MdFlightTakeoff, label: "Flycam" },
-                { Icon: MdGpsFixed, label: "GPS" },
+                { Icon: MdCameraAlt, label: t("pages.home.categories_list.camera") },
+                { Icon: MdBackpack, label: t("pages.home.categories_list.balo") },
+                { Icon: FaCampground, label: t("pages.home.categories_list.tent") },
+                { Icon: MdLuggage, label: t("pages.home.categories_list.luggage") },
+                { Icon: MdFlightTakeoff, label: t("pages.home.categories_list.flycam") },
+                { Icon: MdGpsFixed, label: t("pages.home.categories_list.gps") },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -406,7 +403,7 @@ export default function Home() {
                   className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-semibold text-lg shadow-2xl transition-all"
                 >
                   <FaSearch className="mr-2 text-xl" />
-                  Tìm Thiết Bị Ngay
+                  {t("pages.home.cta_primary")}
                 </Link>
               </motion.div>
               <motion.div
@@ -418,7 +415,7 @@ export default function Home() {
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-semibold text-lg backdrop-blur-sm transition-all"
                 >
                   <MdAirplanemodeActive className="mr-2 text-xl" />
-                  Cho Thuê Đồ
+                  {t("pages.home.cta_secondary")}
                 </Link>
               </motion.div>
             </motion.div>
@@ -434,7 +431,7 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiStar className="text-2xl text-yellow-300" />
-                <span className="font-semibold">4.9/5 đánh giá</span>
+                <span className="font-semibold">{t("pages.home.trust_rating")}</span>
               </motion.div>
               <motion.div
                 className="flex items-center gap-2 py-2"
@@ -442,7 +439,7 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiShieldCheck className="text-2xl text-green-300" />
-                <span className="font-semibold">Thanh toán an toàn</span>
+                <span className="font-semibold">{t("pages.home.trust_secure")}</span>
               </motion.div>
               <motion.div
                 className="flex items-center gap-2 py-2"
@@ -450,7 +447,7 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiClock className="text-2xl text-blue-300" />
-                <span className="font-semibold">Hỗ trợ 24/7</span>
+                <span className="font-semibold">{t("pages.home.trust_support")}</span>
               </motion.div>
             </motion.div>
           </motion.div>
@@ -484,10 +481,10 @@ export default function Home() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Khám Phá Theo Danh Mục
+              {t("pages.home.categories")}
             </h2>
             <p className="text-gray-600 text-lg">
-              Tìm thiết bị phù hợp cho chuyến phiêu lưu của bạn
+              {t("pages.home.categories_subtitle")}
             </p>
           </motion.div>
 
@@ -501,32 +498,32 @@ export default function Home() {
             {[
               {
                 icon: MdCameraAlt,
-                name: "Camera",
+                name: t("pages.home.featured_categories.camera"),
                 color: "from-blue-500 to-blue-600",
               },
               {
                 icon: MdBackpack,
-                name: "Balo",
+                name: t("pages.home.featured_categories.balo"),
                 color: "from-green-500 to-green-600",
               },
               {
                 icon: FaCampground,
-                name: "Lều",
+                name: t("pages.home.featured_categories.tent"),
                 color: "from-orange-500 to-orange-600",
               },
               {
                 icon: MdLuggage,
-                name: "Vali",
+                name: t("pages.home.featured_categories.luggage"),
                 color: "from-purple-500 to-purple-600",
               },
               {
                 icon: MdFlightTakeoff,
-                name: "Flycam",
+                name: t("pages.home.featured_categories.flycam"),
                 color: "from-red-500 to-red-600",
               },
               {
                 icon: MdGpsFixed,
-                name: "GPS",
+                name: t("pages.home.featured_categories.gps"),
                 color: "from-teal-500 to-teal-600",
               },
             ].map((category, idx) => (
@@ -561,7 +558,7 @@ export default function Home() {
                   </motion.div>
 
                   <div className="text-white font-bold text-lg relative z-10 drop-shadow-md">
-                    {category.name}
+                    {translateCategory(category.name, i18n.language)}
                   </div>
 
                   {/* Shine effect on hover */}
@@ -593,51 +590,51 @@ export default function Home() {
               <span>
                 {featuredProducts.some((p) => p.isPromoted)
                   ? "TOP PROMOTED"
-                  : "SẢN PHẨM MỚI"}
+                  : t("pages.home.featured.label")}
               </span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Thiết Bị Nổi Bật
+              {t("pages.home.featured.title")}
             </h2>
             <p className="text-gray-600 text-lg">
               {featuredProducts.some((p) => p.isPromoted)
-                ? "Top 10 thiết bị được quảng bá cao nhất - Chất lượng đã được xác nhận"
-                : "Khám phá các thiết bị du lịch mới nhất"}
+                ? t("pages.home.featured.promoted_desc")
+                : t("pages.home.featured.description")}
             </p>
           </motion.div>
 
           {loading ? (
             <div className="mt-8 flex flex-col items-center justify-center py-12">
               <Loading />
-              <p className="mt-4 text-gray-500">Đang tải sản phẩm...</p>
+              <p className="mt-4 text-gray-500">{t("pages.home.featured.loading")}</p>
             </div>
           ) : error ? (
             <div className="mt-8 text-center py-12">
               <div className="text-red-500 font-semibold mb-2">
-                Không thể tải sản phẩm nổi bật
+                {t("pages.home.featured.error")}
               </div>
               <div className="text-gray-500 text-sm mb-4">{error}</div>
               <button
                 onClick={() => window.location.reload()}
                 className="mt-4 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-all"
               >
-                Thử lại
+                {t("common.try_again")}
               </button>
             </div>
           ) : !loading && featuredProducts.length === 0 ? (
             <div className="mt-8 text-center py-16">
               <div className="text-6xl mb-4">📦</div>
               <div className="text-gray-900 font-semibold text-xl mb-2">
-                Chưa có sản phẩm
+                {t("pages.home.featured.empty_title")}
               </div>
               <p className="text-gray-600 mb-6">
-                Hiện tại chưa có sản phẩm nào. Hãy quay lại sau nhé!
+                {t("pages.home.featured.empty_desc")}
               </p>
               <Link
                 to={ROUTES.PRODUCTS}
                 className="inline-flex items-center bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-semibold transition-all"
               >
-                Xem Tất Cả Sản Phẩm
+                {t("pages.home.featured.view_all")}
               </Link>
             </div>
           ) : featuredProducts.length > 0 ? (
@@ -832,11 +829,10 @@ export default function Home() {
             className="text-center mb-12"
           >
             <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Tại Sao Chọn PIRA?
+              {t("pages.home.why_pira.title")}
             </h3>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Tham gia cùng hàng nghìn du khách tin tưởng PIRA cho nhu cầu thuê
-              thiết bị
+              {t("pages.home.why_pira.subtitle")}
             </p>
           </motion.div>
 
@@ -850,20 +846,20 @@ export default function Home() {
             {[
               {
                 Icon: FiSearch,
-                title: "Lựa Chọn Đa Dạng",
-                desc: "Từ máy ảnh, đồ cắm trại đến thiết bị chuyên dụng, tất cả đều sẵn trong khu vực của bạn.",
+                title: t("pages.home.why_pira.benefit1_title"),
+                desc: t("pages.home.why_pira.benefit1_desc"),
                 color: "from-blue-500 to-blue-600",
               },
               {
                 Icon: FaShieldAlt,
-                title: "Giao Dịch An Toàn",
-                desc: "Thanh toán bảo mật, xác minh và bảo hiểm toàn diện đảm bảo sự yên tâm.",
+                title: t("pages.home.why_pira.benefit2_title"),
+                desc: t("pages.home.why_pira.benefit2_desc"),
                 color: "from-green-500 to-green-600",
               },
               {
                 Icon: FaUsers,
-                title: "Cộng Đồng Tin Cậy",
-                desc: "Đánh giá đã xác minh, xếp hạng người dùng và cộng đồng hỗ trợ.",
+                title: t("pages.home.why_pira.benefit3_title"),
+                desc: t("pages.home.why_pira.benefit3_desc"),
                 color: "from-purple-500 to-purple-600",
               },
             ].map((item, idx) => (
@@ -928,10 +924,10 @@ export default function Home() {
               <span>REVIEWS</span>
             </div>
             <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-              Được Tin Tưởng Bởi Du Khách Toàn Cầu
+              {t("pages.home.testimonials.title")}
             </h3>
             <p className="text-gray-600 text-lg">
-              Xem cộng đồng của chúng tôi nói gì về trải nghiệm PIRA
+              {t("pages.home.testimonials.subtitle")}
             </p>
           </motion.div>
 
@@ -944,19 +940,19 @@ export default function Home() {
           >
             {[
               {
-                name: "Mai Hoàng",
-                location: "Hồ Chí Minh",
-                text: "PIRA đã làm cho chuyến du lịch của tôi trở nên tuyệt vời! Thuê dễ, chủ sở hữu hỗ trợ.",
+                name: t("pages.home.testimonials.reviewer_1_name"),
+                location: t("pages.home.testimonials.reviewer_1_location"),
+                text: t("pages.home.testimonials.review_1"),
               },
               {
-                name: "Nguyễn Văn A",
-                location: "Hà Nội",
-                text: "Dịch vụ tuyệt vời, thiết bị chất lượng cao. Sẽ quay lại sử dụng PIRA.",
+                name: t("pages.home.testimonials.reviewer_2_name"),
+                location: t("pages.home.testimonials.reviewer_2_location"),
+                text: t("pages.home.testimonials.review_2"),
               },
               {
-                name: "Trần Thị B",
-                location: "Đà Nẵng",
-                text: "Giao diện dễ sử dụng, thanh toán an toàn. Rất hài lòng với trải nghiệm.",
+                name: t("pages.home.testimonials.reviewer_3_name"),
+                location: t("pages.home.testimonials.reviewer_3_location"),
+                text: t("pages.home.testimonials.review_3"),
               },
             ].map((testimonial, i) => (
               <motion.div
@@ -1088,15 +1084,14 @@ export default function Home() {
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <span className="text-lg">🚀</span>
-                <span>BẮT ĐẦU NGAY HÔM NAY</span>
+                <span>{t("pages.home.cta_bottom.button")}</span>
               </motion.div>
 
               <h3 className="text-3xl sm:text-5xl font-extrabold mb-4">
-                Sẵn Sàng Bắt Đầu Cuộc Phiêu Lưu?
+                {t("pages.home.cta_bottom.heading")}
               </h3>
               <p className="text-lg sm:text-xl text-primary-100 max-w-2xl mx-auto leading-relaxed">
-                Tham gia PIRA ngay hôm nay và khám phá thế giới khả năng du lịch
-                với hàng ngàn thiết bị chất lượng cao.
+                {t("pages.home.cta_bottom.description")}
               </p>
             </motion.div>
 
@@ -1117,7 +1112,7 @@ export default function Home() {
                   className="inline-flex items-center bg-white text-primary-700 hover:bg-primary-50 px-8 py-4 rounded-xl font-bold text-lg shadow-2xl transition-all"
                 >
                   <FaSearch className="mr-2 text-xl" />
-                  Tìm Thiết Bị Ngay
+                  {t("pages.home.cta_primary")}
                   <motion.span
                     className="ml-2"
                     animate={{ x: [0, 3, 0] }}
@@ -1137,7 +1132,7 @@ export default function Home() {
                   className="inline-flex items-center border-2 border-white/80 hover:bg-white/10 backdrop-blur-sm px-8 py-4 rounded-xl font-bold text-lg transition-all"
                 >
                   <MdAirplanemodeActive className="mr-2 text-xl" />
-                  Cho Thuê Đồ
+                  {t("pages.home.cta_secondary")}
                 </Link>
               </motion.div>
             </motion.div>
@@ -1151,9 +1146,9 @@ export default function Home() {
               viewport={{ once: true }}
             >
               {[
-                { number: "10,000+", label: "Du Khách" },
-                { number: "5,000+", label: "Thiết Bị" },
-                { number: "4.9★", label: "Đánh Giá" },
+                { number: "10,000+", label: t("pages.home.statistics.travelers") },
+                { number: "5,000+", label: t("pages.home.statistics.equipment") },
+                { number: "4.9★", label: t("pages.home.statistics.rating") },
               ].map((stat, idx) => (
                 <motion.div
                   key={idx}

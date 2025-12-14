@@ -4,8 +4,10 @@ import { Wallet, Plus, History, RefreshCw, ChevronDown } from "lucide-react";
 import { useWallet } from "../../context/WalletContext";
 import TopUpModal from "./TopUpModal";
 import TransactionHistory from "./TransactionHistory";
+import { useI18n } from "../../hooks/useI18n";
 
 const WalletBalance = () => {
+  const { t } = useI18n();
   const { balance, available, frozen, loading, fetchBalance } = useWallet();
   const [showTopUp, setShowTopUp] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -26,35 +28,35 @@ const WalletBalance = () => {
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         {/* Wallet Balance Display with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100 border border-green-200 rounded-lg transition-all"
+            className="flex items-center gap-0.5 xs:gap-1 sm:gap-2 px-1.5 xs:px-2 sm:px-3 py-1 xs:py-1.5 sm:py-2 bg-gradient-to-r from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100 border border-green-200 rounded-lg transition-all"
           >
-            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
-              <Wallet className="w-4 h-4 text-white" />
+            <div className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
+              <Wallet className="w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 text-white" />
             </div>
 
             <div className="flex flex-col items-start">
-              <span className="text-[10px] text-gray-500 font-medium leading-tight">
-                Balance
+              <span className="hidden sm:block text-[10px] text-gray-500 font-medium leading-tight">
+                {t('walletBalance.balance')}
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1">
                 {loading ? (
-                  <div className="w-16 h-3 bg-gray-200 rounded animate-pulse" />
+                  <div className="w-10 xs:w-12 sm:w-16 h-3 bg-gray-200 rounded animate-pulse" />
                 ) : (
-                  <span className="text-sm font-bold text-gray-900">
+                  <span className="text-[10px] xs:text-xs sm:text-sm font-bold text-gray-900">
                     {(balance || 0).toLocaleString()}
                   </span>
                 )}
-                <span className="text-xs text-gray-600 font-medium">đ</span>
+                <span className="text-[9px] xs:text-[10px] sm:text-xs text-gray-600 font-medium">đ</span>
               </div>
             </div>
 
             <ChevronDown
-              className={`w-3 h-3 text-gray-400 transition-transform ${
+              className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 text-gray-400 transition-transform ${
                 isDropdownOpen ? "rotate-180" : ""
               }`}
             />
@@ -75,7 +77,7 @@ const WalletBalance = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-xs text-gray-600 font-medium mb-1">
-                        Current Balance
+                        {t('walletBalance.currentBalance')}
                       </p>
                       {loading ? (
                         <div className="w-32 h-6 bg-gray-200 rounded animate-pulse" />
@@ -92,7 +94,7 @@ const WalletBalance = () => {
                       }}
                       disabled={loading}
                       className="p-2 hover:bg-white rounded-lg transition-colors disabled:opacity-50"
-                      title="Refresh balance"
+                      title={t('walletBalance.refresh')}
                     >
                       <RefreshCw
                         className={`w-4 h-4 text-gray-600 ${
@@ -110,7 +112,7 @@ const WalletBalance = () => {
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-green-500"></div>
                           <span className="text-xs text-gray-600 font-medium">
-                            Available Balance
+                            {t('walletBalance.availableBalance')}
                           </span>
                         </div>
                         {loading ? (
@@ -130,7 +132,7 @@ const WalletBalance = () => {
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-orange-500"></div>
                             <span className="text-xs text-gray-600 font-medium">
-                              Frozen Balance
+                              {t('walletBalance.frozenBalance')}
                             </span>
                           </div>
                           {loading ? (
@@ -142,7 +144,7 @@ const WalletBalance = () => {
                           )}
                         </div>
                         <p className="text-xs text-gray-500 mt-2 ml-4">
-                          💡 Frozen for 24h after transaction. Will be available soon.
+                          {t('walletBalance.frozenMessage')}
                         </p>
                       </div>
                     )}
@@ -164,10 +166,10 @@ const WalletBalance = () => {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-semibold">
-                        Transaction History
+                        {t('walletBalance.transactionHistory')}
                       </p>
                       <p className="text-xs text-gray-500">
-                        View all transactions
+                        {t('walletBalance.viewAllTransactions')}
                       </p>
                     </div>
                   </button>
@@ -180,12 +182,12 @@ const WalletBalance = () => {
         {/* Top Up Button - Always Visible */}
         <motion.button
           onClick={() => setShowTopUp(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all"
+          className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all"
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}
         >
-          <Plus className="w-4 h-4" />
-          <span className="text-sm">Top Up</span>
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="text-xs sm:text-sm">{t('walletBalance.topUp')}</span>
         </motion.button>
       </div>
 

@@ -70,7 +70,7 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
         <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-4 space-y-4">
           <div>
             <p className="text-green-800 font-semibold mb-2">
-              ✅ Admin đã chia sẻ thông tin để chuẩn bị cho bên thứ 3
+               Admin đã chia sẻ thông tin để chuẩn bị cho bên thứ 3
             </p>
             <p className="text-green-700 text-sm">
               Thời gian chia sẻ: {formatDate(sharedData.sharedAt)}
@@ -80,7 +80,7 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
           {/* Thông tin cá nhân 2 bên */}
           {sharedData.partyInfo && (
             <div className="bg-white p-4 rounded border border-green-300 space-y-3">
-              <h4 className="font-semibold text-green-900">📋 Thông tin các bên liên quan</h4>
+              <h4 className="font-semibold text-green-900">Thông tin các bên liên quan</h4>
               <p className="text-xs text-gray-600">
                 Thông tin này đã được chia sẻ cho cả hai bên để họ có thể liên hệ với nhau và chuẩn bị tài liệu cho bên thứ 3.
               </p>
@@ -115,7 +115,7 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
 
           <div className="bg-yellow-50 p-3 rounded border border-yellow-300">
             <p className="text-yellow-800 text-sm">
-              💡 <strong>Hướng dẫn:</strong> Sử dụng thông tin trên để liên hệ với bên kia nếu cần thiết. 
+               <strong>Hướng dẫn:</strong> Sử dụng thông tin trên để liên hệ với bên kia nếu cần thiết. 
               Sau khi nhận được kết quả từ bên thứ 3, vui lòng upload bằng chứng bên dưới trước hạn <strong>{formatDate(evidenceDeadline)}</strong>.
             </p>
           </div>
@@ -126,7 +126,7 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
       {isEvidenceUploaded && thirdParty?.evidence && (
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 space-y-4">
           <p className="text-purple-800 mb-2">
-            <strong>📋 Đã upload bằng chứng:</strong> {formatDate(thirdParty.evidence.uploadedAt)}
+            <strong> Đã upload bằng chứng:</strong> {formatDate(thirdParty.evidence.uploadedAt)}
           </p>
           <p className="text-purple-700 text-sm">
             <strong>Người upload:</strong> {thirdParty.evidence.uploadedBy?.profile?.fullName || 'N/A'}

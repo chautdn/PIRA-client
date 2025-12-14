@@ -4,8 +4,10 @@ import { X, CreditCard, DollarSign } from "lucide-react";
 import toast from "react-hot-toast";
 import { useWallet } from "../../context/WalletContext";
 import Portal from "../common/Portal";
+import { useI18n } from "../../hooks/useI18n";
 
 const TopUpModal = ({ isOpen, onClose }) => {
+  const { t } = useI18n();
   const { createPayment, loading } = useWallet();
   const [customAmount, setCustomAmount] = useState("");
   const [selectedAmount, setSelectedAmount] = useState(null);
@@ -51,12 +53,12 @@ const TopUpModal = ({ isOpen, onClose }) => {
 
     // Validation
     if (!amount || amount < MIN_AMOUNT) {
-      toast.error(`Amount must be at least ${MIN_AMOUNT.toLocaleString()} VND`);
+      toast.error(`${t('walletBalance.minAmountError')} ${MIN_AMOUNT.toLocaleString()} VND`);
       return;
     }
 
     if (amount > MAX_AMOUNT) {
-      toast.error(`Amount cannot exceed ${MAX_AMOUNT.toLocaleString()} VND`);
+      toast.error(`${t('walletBalance.maxAmountError')} ${MAX_AMOUNT.toLocaleString()} VND`);
       return;
     }
 
@@ -110,10 +112,10 @@ const TopUpModal = ({ isOpen, onClose }) => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">
-                      Top Up Wallet
+                      {t('walletBalance.topUpWallet')}
                     </h3>
                     <p className="text-xs text-gray-600">
-                      Add funds to your account
+                      {t('walletBalance.addFunds')}
                     </p>
                   </div>
                 </div>
@@ -141,7 +143,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
-                    💰 Quick Amounts
+                    {t('walletBalance.quickAmounts')}
                   </button>
                   <button
                     onClick={() => setActiveTab("custom")}
@@ -151,7 +153,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
-                    ✏️ Custom Amount
+                    {t('walletBalance.customAmount')}
                   </button>
                 </div>
 
@@ -161,7 +163,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                     <div className="space-y-4">
                       <p className="text-gray-600 text-sm flex items-center gap-2">
                         <span className="text-lg">🚀</span>
-                        Choose a quick amount to get started:
+                        {t('walletBalance.chooseAmount')}
                       </p>
                       <div className="grid grid-cols-2 gap-3">
                         {predefinedAmounts.map((amount) => (
@@ -186,7 +188,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                         <div className="text-center py-2">
                           <div className="inline-flex items-center gap-2 text-sm text-blue-600">
                             <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                            Redirecting to payment...
+                            {t('walletBalance.redirectingPayment')}
                           </div>
                         </div>
                       )}
@@ -197,7 +199,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                           <span className="text-lg">💵</span>
-                          Enter Amount (VND)
+                          {t('walletBalance.enterAmount')}
                         </label>
                         <div className="relative">
                           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
@@ -236,7 +238,7 @@ const TopUpModal = ({ isOpen, onClose }) => {
                         ) : (
                           <div className="flex items-center justify-center gap-2">
                             <span>⚡</span>
-                            Top Up Now
+                            {t('walletBalance.topUpNow')}
                             <span>⚡</span>
                           </div>
                         )}
@@ -251,9 +253,9 @@ const TopUpModal = ({ isOpen, onClose }) => {
                     <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-sm">
                       <span className="text-white text-xs font-bold">✓</span>
                     </div>
-                    <span className="font-medium">Secured by PayOS</span>
+                    <span className="font-medium">{t('walletBalance.securedByPayOS')}</span>
                     <span className="text-gray-400">•</span>
-                    <span className="font-medium">⚡ Instant processing</span>
+                    <span className="font-medium">{t('walletBalance.instantProcessing')}</span>
                   </div>
                 </div>
               </div>

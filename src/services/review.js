@@ -3,9 +3,26 @@ import { api } from "./api";
 const base = "/ratings";
 
 export const reviewService = {
-  create: (formData, config = {}) => api.post(base, formData, config),
-  update: (id, formData, config = {}) =>
-    api.put(`${base}/${id}`, formData, config),
+  create: (formData, config = {}) => {
+    const finalConfig = {
+      ...config,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...config.headers,
+      },
+    };
+    return api.post(base, formData, finalConfig);
+  },
+  update: (id, formData, config = {}) => {
+    const finalConfig = {
+      ...config,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...config.headers,
+      },
+    };
+    return api.put(`${base}/${id}`, formData, finalConfig);
+  },
   remove: (id) => api.delete(`${base}/${id}`),
   reply: (id, body, config = {}) =>
     api.post(`${base}/${id}/reply`, body, config),

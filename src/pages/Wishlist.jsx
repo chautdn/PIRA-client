@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useI18n } from '../hooks/useI18n';
 import { wishlistService } from '../services/wishlist';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 
 export default function Wishlist() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -24,17 +26,17 @@ export default function Wishlist() {
       await wishlistService.remove(user._id, productId);
       setWishlist(wishlist.filter(p => p.product?._id !== productId));
     } catch (e) {
-      alert('Có lỗi khi xóa sản phẩm khỏi wishlist!');
+      alert(t("common.error"));
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <h2 className="text-2xl font-bold mb-6">Danh sách yêu thích</h2>
+      <h2 className="text-2xl font-bold mb-6">{t("wishlist.title")}</h2>
       {loading ? (
-        <div>Đang tải...</div>
+        <div>{t("common.loading")}</div>
       ) : wishlist.length === 0 ? (
-        <div>Bạn chưa thêm sản phẩm nào vào wishlist.</div>
+        <div>{t("wishlist.empty")}</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {wishlist.map((item) => (
@@ -45,8 +47,8 @@ export default function Wishlist() {
               <div className="mt-2 font-semibold text-primary-700">{(item.product?.pricing?.dailyRate || 0).toLocaleString('vi-VN')}đ/ngày</div>
               <div className="flex-1" />
               <div className="mt-4 flex gap-2">
-                <Link to={`/product/${item.product?._id}`} className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">Xem chi tiết</Link>
-                <button onClick={() => handleRemove(item.product?._id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Xóa</button>
+                <Link to={`/product/${item.product?._id}`} className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">{t("wishlist.viewDetails")}</Link>
+                <button onClick={() => handleRemove(item.product?._id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{t("wishlist.remove")}</button>
               </div>
             </div>
           ))}

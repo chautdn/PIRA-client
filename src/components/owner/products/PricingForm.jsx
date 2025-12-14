@@ -1,6 +1,9 @@
 import React from "react";
+import { useI18n } from "../../../hooks/useI18n";
 
 const PricingForm = ({ pricing = {}, onChange, errors = {} }) => {
+  const { t } = useI18n();
+  
   // Ensure pricing has correct structure
   const safePricing = {
     dailyRate: pricing?.dailyRate || "",
@@ -22,7 +25,7 @@ const PricingForm = ({ pricing = {}, onChange, errors = {} }) => {
       {/* Daily Rate */}
       <div>
         <label className="block text-sm font-semibold text-gray-800 mb-2">
-          💰 Giá Thuê Hàng Ngày (VND) *
+          {t('productForm.dailyRentPrice')}
         </label>
         <div className="relative">
           <input
@@ -61,7 +64,7 @@ const PricingForm = ({ pricing = {}, onChange, errors = {} }) => {
         )}
         {safePricing.dailyRate && !errors.dailyRate && (
           <p className="text-gray-500 text-xs mt-1">
-            ≈ {formatCurrency(safePricing.dailyRate)} mỗi ngày
+            ≈ {formatCurrency(safePricing.dailyRate)} {t('productForm.perDay')}
           </p>
         )}
       </div>
@@ -69,7 +72,7 @@ const PricingForm = ({ pricing = {}, onChange, errors = {} }) => {
       {/* Deposit Amount */}
       <div>
         <label className="block text-sm font-semibold text-gray-800 mb-2">
-          🔒 Tiền Đặt Cọc (VND) *
+          {t('productForm.depositAmount')}
         </label>
         <div className="space-y-3">
           <div className="relative">
@@ -99,8 +102,8 @@ const PricingForm = ({ pricing = {}, onChange, errors = {} }) => {
             onChange={onChange}
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 hover:border-primary-400 transition-all duration-200 appearance-none bg-white"
           >
-            <option value="FIXED">Số tiền cố định</option>
-            <option value="PERCENTAGE">Phần trăm giá thuê</option>
+            <option value="FIXED">{t('productForm.depositType')}</option>
+            <option value="PERCENTAGE">% {t('productForm.dailyRentPrice')}</option>
           </select>
         </div>
 

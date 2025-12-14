@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { useI18n } from "../hooks/useI18n";
 import LogoutModal from "../components/common/LogoutModal";
 import { ROUTES } from "../utils/constants";
 
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -36,17 +38,17 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900">
-                      Dashboard
+                      {t('dashboard.title')}
                     </h1>
                     <p className="text-gray-600 mt-1">
-                      Welcome back to PIRA System
+                      {t('dashboard.welcomeBack')}
                     </p>
                   </div>
                   <button
                     onClick={() => setShowLogoutModal(true)}
                     className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
                   >
-                    Logout
+                    {t('dashboard.logout')}
                   </button>
                 </div>
               </div>
@@ -54,18 +56,18 @@ export default function Dashboard() {
               {/* User Info Card */}
               <div className="bg-white shadow rounded-lg p-6 mb-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Account Information
+                  {t('dashboard.accountInfo')}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
-                      Email
+                      {t('dashboard.email')}
                     </label>
                     <p className="mt-1 text-sm text-gray-900">{user.email}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
-                      Role
+                      {t('dashboard.role')}
                     </label>
                     <span className="mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                       {user.role}
@@ -73,7 +75,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
-                      Status
+                      {t('dashboard.status')}
                     </label>
                     <span
                       className={`mt-1 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -84,13 +86,17 @@ export default function Dashboard() {
                           : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {user.status}
+                      {user.status === "ACTIVE"
+                        ? t('dashboard.statusActive')
+                        : user.status === "PENDING"
+                        ? t('dashboard.statusPending')
+                        : t('dashboard.statusInactive')}
                     </span>
                   </div>
                   {user.profile?.firstName && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Name
+                        {t('dashboard.name')}
                       </label>
                       <p className="mt-1 text-sm text-gray-900">
                         {user.profile.firstName} {user.profile.lastName}
@@ -99,7 +105,7 @@ export default function Dashboard() {
                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
-                      Email Verified
+                      {t('dashboard.emailVerified')}
                     </label>
                     <span
                       className={`mt-1 inline-flex items-center text-sm ${
@@ -121,7 +127,7 @@ export default function Dashboard() {
                               clipRule="evenodd"
                             />
                           </svg>
-                          Verified
+                          {t('dashboard.verified')}
                         </>
                       ) : (
                         <>
@@ -136,7 +142,7 @@ export default function Dashboard() {
                               clipRule="evenodd"
                             />
                           </svg>
-                          Not Verified
+                          {t('dashboard.notVerified')}
                         </>
                       )}
                     </span>
@@ -144,7 +150,7 @@ export default function Dashboard() {
                   {user.lastLoginAt && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Last Login
+                        {t('dashboard.lastLogin')}
                       </label>
                       <p className="mt-1 text-sm text-gray-900">
                         {new Date(user.lastLoginAt).toLocaleString()}
@@ -157,31 +163,31 @@ export default function Dashboard() {
               {/* Quick Actions */}
               <div className="bg-white shadow rounded-lg p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Quick Actions
+                  {t('dashboard.quickActions')}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left">
                     <h3 className="font-medium text-gray-900">
-                      Update Profile
+                      {t('dashboard.updateProfile')}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      Edit your personal information
+                      {t('dashboard.updateProfileDesc')}
                     </p>
                   </button>
                   <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left">
                     <h3 className="font-medium text-gray-900">
-                      Change Password
+                      {t('dashboard.changePassword')}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      Update your account password
+                      {t('dashboard.changePasswordDesc')}
                     </p>
                   </button>
                   <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left">
                     <h3 className="font-medium text-gray-900">
-                      Account Settings
+                      {t('dashboard.accountSettings')}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      Manage your account preferences
+                      {t('dashboard.accountSettingsDesc')}
                     </p>
                   </button>
                 </div>
@@ -191,23 +197,23 @@ export default function Dashboard() {
             /* Public Landing */
             <div className="text-center py-16">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                Welcome to PIRA System
+                {t('dashboard.welcomePublic')}
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Please login to access your dashboard
+                {t('dashboard.pleaseLogin')}
               </p>
               <div className="space-x-4">
                 <button
                   onClick={() => navigate(ROUTES.LOGIN)}
                   className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  Login
+                  {t('dashboard.login')}
                 </button>
                 <button
                   onClick={() => navigate(ROUTES.REGISTER)}
                   className="border border-blue-600 text-blue-600 px-6 py-3 rounded-md hover:bg-blue-50 transition-colors"
                 >
-                  Register
+                  {t('dashboard.register')}
                 </button>
               </div>
             </div>

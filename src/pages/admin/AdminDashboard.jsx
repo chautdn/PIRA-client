@@ -401,30 +401,34 @@ const AdminDashboard = () => {
         {!statsLoading && revenueStats && profitStats && (
           <div className="space-y-6">
             {/* Revenue Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                <p className="text-sm text-blue-800 font-medium mb-1">Tổng doanh thu</p>
+                <p className="text-sm text-blue-800 font-medium mb-1">Tổng doanh thu nền tảng</p>
                 <p className="text-2xl font-bold text-blue-900">
                   {revenueStats.summary.total.toLocaleString('vi-VN')} ₫
                 </p>
+                <p className="text-xs text-blue-600 mt-1">Hoa hồng + Phí ship + Quảng cáo</p>
               </div>
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                <p className="text-sm text-green-800 font-medium mb-1">Từ đơn hàng</p>
+                <p className="text-sm text-green-800 font-medium mb-1">Phí nền tảng (10%)</p>
                 <p className="text-2xl font-bold text-green-900">
                   {revenueStats.summary.orderRevenue.toLocaleString('vi-VN')} ₫
                 </p>
+                <p className="text-xs text-green-600 mt-1">10% từ đơn thuê thành công</p>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                <p className="text-sm text-purple-800 font-medium mb-1">Phí vận chuyển</p>
+                <p className="text-sm text-purple-800 font-medium mb-1">Phí vận chuyển thu được</p>
                 <p className="text-2xl font-bold text-purple-900">
                   {revenueStats.summary.shippingRevenue.toLocaleString('vi-VN')} ₫
                 </p>
+                <p className="text-xs text-purple-600 mt-1">Phí ship thu từ người thuê</p>
               </div>
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-                <p className="text-sm text-orange-800 font-medium mb-1">Phí quảng cáo</p>
+                <p className="text-sm text-orange-800 font-medium mb-1">Phí quảng cáo sản phẩm</p>
                 <p className="text-2xl font-bold text-orange-900">
                   {revenueStats.summary.promotionRevenue.toLocaleString('vi-VN')} ₫
                 </p>
+                <p className="text-xs text-orange-600 mt-1">Phí đăng sản phẩm từ chủ</p>
               </div>
             </div>
 
@@ -436,31 +440,36 @@ const AdminDashboard = () => {
 
             {/* Profit Section */}
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Phân tích lợi nhuận</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Phân tích lợi nhuận</h3>
+              <p className="text-sm text-gray-600 mb-4">Lợi nhuận = Tổng doanh thu - Chi phí shipper</p>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div>
-                  <p className="text-sm text-gray-600">Tổng doanh thu</p>
+                  <p className="text-sm text-gray-600">Tổng doanh thu nền tảng</p>
                   <p className="text-xl font-bold text-gray-900">
                     {profitStats.summary.totalRevenue.toLocaleString('vi-VN')} ₫
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">Hoa hồng + Ship + Quảng cáo</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Chi phí</p>
+                  <p className="text-sm text-gray-600">Chi phí shipper</p>
                   <p className="text-xl font-bold text-red-600">
                     {profitStats.summary.totalCosts.toLocaleString('vi-VN')} ₫
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">Phí ship trả cho shipper</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Lợi nhuận</p>
-                  <p className="text-xl font-bold text-green-600">
+                  <p className="text-sm text-gray-600">Lợi nhuận thuần</p>
+                  <p className={`text-xl font-bold ${profitStats.summary.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {profitStats.summary.profit.toLocaleString('vi-VN')} ₫
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">Doanh thu - Chi phí</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Biên lợi nhuận</p>
-                  <p className="text-xl font-bold text-blue-600">
+                  <p className={`text-xl font-bold ${profitStats.summary.profitMargin >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                     {profitStats.summary.profitMargin}%
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">Tỷ lệ lợi nhuận/doanh thu</p>
                 </div>
               </div>
               <ProfitChart data={profitStats.timeSeries} />

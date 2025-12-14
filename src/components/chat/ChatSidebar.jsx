@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useI18n } from "../../hooks/useI18n";
 import useChat from "../../hooks/useChat";
 import useChatSocket from "../../hooks/useChatSocket";
 import { useAuth } from "../../hooks/useAuth";
@@ -11,6 +12,7 @@ const ChatSidebar = () => {
   const navigate = useNavigate();
   const { conversationId } = useParams();
   const { user } = useAuth();
+  const { t } = useI18n();
   const {
     conversations,
     conversationsLoading,
@@ -96,7 +98,7 @@ const ChatSidebar = () => {
   };
 
   const getLastMessagePreview = (conversation) => {
-    if (!conversation.lastMessage) return "No messages yet";
+    if (!conversation.lastMessage) return t('chat.noMessagesYet');
 
     const lastMessage = conversation.lastMessage;
 
@@ -125,10 +127,12 @@ const ChatSidebar = () => {
     <div className="h-full bg-white border-r border-gray-200 flex flex-col">
       {/* Header - Fixed */}
       <div className="p-4 border-b border-gray-200 flex-shrink-0 bg-white">
-        <h2 className="text-xl font-semibold text-gray-800">Messages</h2>
+        <h2 className="text-xl font-semibold text-gray-800">{t('chat.messagesTitle')}</h2>
         <p className="text-sm text-gray-600">
-          {conversations.length} conversation
-          {conversations.length !== 1 ? "s" : ""}
+          {conversations.length !== 1 
+            ? t('chat.conversationCountPlural').replace('{count}', conversations.length)
+            : t('chat.conversationCount').replace('{count}', conversations.length)
+          }
         </p>
       </div>
 
@@ -136,9 +140,9 @@ const ChatSidebar = () => {
       <div className="flex-1 overflow-y-auto min-h-0">
         {conversations.length === 0 ? (
           <div className="p-6 text-center">
-            <div className="text-gray-500 mb-2">No conversations yet</div>
+            <div className="text-gray-500 mb-2">{t('chat.noConversations')}</div>
             <div className="text-sm text-gray-400">
-              Start chatting by messaging other users
+              {t('chat.startNewChat')}
             </div>
           </div>
         ) : (

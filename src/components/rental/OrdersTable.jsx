@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../hooks/useI18n";
 import {
   Eye,
   FileText,
@@ -23,42 +24,42 @@ import {
 } from "../../utils/orderHelpers";
 
 // Sub-components for better organization
-const TableHeader = () => (
+const TableHeader = ({ t }) => (
   <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
     <tr>
       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
         <div className="flex items-center space-x-2">
           <Hash className="w-4 h-4" />
-          <span>Mã đơn</span>
+          <span>{t('rentalOrders.table.orderNumber')}</span>
         </div>
       </th>
       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
         <div className="flex items-center space-x-2">
           <Calendar className="w-4 h-4" />
-          <span>Ngày tạo</span>
+          <span>{t('rentalOrders.table.createdDate')}</span>
         </div>
       </th>
       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">
         <div className="flex items-center space-x-2">
           <Package className="w-4 h-4" />
-          <span>Số sản phẩm</span>
+          <span>{t('rentalOrders.table.numberOfItems')}</span>
         </div>
       </th>
       
       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden xl:table-cell">
         <div className="flex items-center space-x-2">
           <Package className="w-4 h-4" />
-          <span>Giao hàng</span>
+          <span>{t('rentalOrders.table.delivery')}</span>
         </div>
       </th>
       <th className="px-4 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
         <div className="flex items-center justify-end space-x-2">
           <DollarSign className="w-4 h-4" />
-          <span>Tổng tiền</span>
+          <span>{t('rentalOrders.table.totalPrice')}</span>
         </div>
       </th>
       <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-        <span>Trạng thái</span>
+        <span>{t('rentalOrders.table.status')}</span>
       </th>
     </tr>
   </thead>
@@ -126,7 +127,8 @@ const OrderRow = ({
   onEarlyReturn,
   onSelectOrder,
   earlyReturnRequest,
-  navigate
+  navigate,
+  t
 }) => {
   // Check if subOrder has any products with ACTIVE status
   const hasActiveProducts = useMemo(() => {
@@ -166,9 +168,9 @@ const OrderRow = ({
         onClick={() => onViewDetail(order)}
         variant="primary"
         icon={Eye}  
-        title="Xem chi tiết đơn hàng đã tạo"
+        title={t('rentalOrders.table.details')}
       >
-        Chi tiết
+        {t('rentalOrders.table.details')}
       </ActionButton>
     );
   };
@@ -195,9 +197,9 @@ const OrderRow = ({
           onClick={() => navigate(`/rental-orders/${order._id}/confirmation-summary`)}
           variant="secondary"
           icon={FileText}
-          title="Xem chi tiết xác nhận của chủ"
+          title={t('rentalOrders.table.details')}
         >
-           chi tiết xác nhận
+          {t('rentalOrders.table.details')}
         </ActionButton>
       );
     }
@@ -220,9 +222,9 @@ const OrderRow = ({
           }}
           variant="success"
           icon={PenTool}
-          title="Ký hợp đồng"
+          title={t('rentalOrders.table.contract')}
         >
-          Ký HĐ
+          {t('rentalOrders.table.contract')}
         </ActionButton>
       );
     }
@@ -242,9 +244,9 @@ const OrderRow = ({
             onClick={() => onEarlyReturn(order.subOrders[0])}
             variant="warning"
             icon={RotateCcw}
-            title="Trả hàng sớm"
+            title={t('rentalOrders.earlyReturn.title')}
           >
-            Trả sớm
+            {t('rentalOrders.table.earlyReturn')}
           </ActionButton>
         );
       }
@@ -277,7 +279,7 @@ const OrderRow = ({
       {/* Item Count - Hidden on mobile/tablet */}
       <td className="px-4 py-4 whitespace-nowrap hidden md:table-cell">
         <div className="text-sm text-gray-700 font-medium">
-          {itemCount} sản phẩm
+          {itemCount} {t('rentalOrders.itemsCount')}
         </div>
       </td>
 
@@ -286,7 +288,7 @@ const OrderRow = ({
       {/* Delivery Method - Hidden on mobile */}
       <td className="px-4 py-4 whitespace-nowrap hidden xl:table-cell">
         <div className="text-sm text-gray-700">
-          {order.deliveryMethod === "PICKUP" ? "Nhận trực tiếp" : "Giao tận nơi"}
+          {order.deliveryMethod === "PICKUP" ? t('rentalOrders.deliveryMethods.pickup') : t('rentalOrders.deliveryMethods.shipment')}
         </div>
       </td>
 
@@ -315,6 +317,7 @@ const OrdersTable = ({
   onRenterConfirm,
   onSelectOrder,
 }) => {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   // Memoized early return requests lookup for performance
@@ -338,7 +341,7 @@ const OrdersTable = ({
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <div className="text-red-600 font-medium mb-2">Có lỗi xảy ra</div>
+        <div className="text-red-600 font-medium mb-2">{t('rentalOrders.messages.error')}</div>
         <div className="text-red-500 text-sm">{error}</div>
       </div>
     );
@@ -348,7 +351,7 @@ const OrdersTable = ({
     return (
       <div className="bg-white rounded-lg shadow-md p-8 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <div className="text-gray-600">Đang tải danh sách đơn hàng...</div>
+        <div className="text-gray-600">{t('rentalOrders.loading')}</div>
       </div>
     );
   }
@@ -357,9 +360,9 @@ const OrdersTable = ({
     return (
       <div className="bg-white rounded-lg shadow-md p-12 text-center">
         <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <div className="text-gray-500 font-medium mb-2">Không có đơn hàng nào</div>
+        <div className="text-gray-500 font-medium mb-2">{t('rentalOrders.noRentals')}</div>
         <div className="text-gray-400 text-sm">
-          Bạn chưa có đơn hàng thuê nào. Hãy bắt đầu thuê sản phẩm!
+          {t('rentalOrders.noRentalsDesc')}
         </div>
       </div>
     );
@@ -370,13 +373,13 @@ const OrdersTable = ({
       {/* Mobile Header - Show on small screens */}
       <div className="sm:hidden bg-gray-50 px-4 py-3 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900">
-          Danh sách đơn hàng ({orders.length})
+          {t('rentalOrders.table.actions')} ({orders.length})
         </h3>
       </div>
 
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <TableHeader />
+          <TableHeader t={t} />
           <tbody className="bg-white divide-y divide-gray-100">
             {orders.map((order) => (
               <OrderRow
@@ -387,6 +390,7 @@ const OrdersTable = ({
                 onSelectOrder={onSelectOrder}
                 earlyReturnRequest={getOrderEarlyReturnRequest(order)}
                 navigate={navigate}
+                t={t}
               />
             ))}
           </tbody>
@@ -397,10 +401,10 @@ const OrdersTable = ({
       <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
         <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600">
           <div className="mb-2 sm:mb-0">
-            Hiển thị {orders.length} đơn hàng
+            {t('rentalOrders.loading').replace('...', '')} {orders.length} {t('rentalOrders.ordersFound')}
           </div>
           <div className="text-xs text-gray-500">
-            Cuộn ngang để xem thêm thông tin trên thiết bị nhỏ
+            {t('rentalOrders.horizontalScroll')}
           </div>
         </div>
       </div>

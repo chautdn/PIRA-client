@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../../context/CartContext";
 import { ROUTES } from "../../utils/constants";
 import CartItem from "./CartItem";
+import { useI18n } from "../../hooks/useI18n";
 
 const CartDrawer = () => {
   const { cart, cartCount, cartTotal, isCartOpen, closeCart } = useCart();
+  const { t } = useI18n();
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -41,8 +43,8 @@ const CartDrawer = () => {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🛒</span>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Giỏ Hàng</h2>
-                  <p className="text-sm text-gray-500">{cartCount} sản phẩm</p>
+                  <h2 className="text-xl font-bold text-gray-900">{t('cart.title')}</h2>
+                  <p className="text-sm text-gray-500">{cartCount} {t('cart.products')}</p>
                 </div>
               </div>
               <button
@@ -71,17 +73,17 @@ const CartDrawer = () => {
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <div className="text-6xl mb-4">🛒</div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Giỏ hàng trống
+                    {t('cart.emptyCart')}
                   </h3>
                   <p className="text-gray-600 mb-6">
-                    Thêm sản phẩm vào giỏ để thuê
+                    {t('cart.emptyCartMessage')}
                   </p>
                   <Link
                     to={ROUTES.PRODUCTS}
                     onClick={closeCart}
                     className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
                   >
-                    Khám Phá Sản Phẩm
+                    {t('cart.exploreProducts')}
                   </Link>
                 </div>
               ) : (
@@ -93,7 +95,7 @@ const CartDrawer = () => {
                       if (!item?.product) return groups;
                       
                       const ownerId = item.product.owner?._id || 'unknown';
-                      const ownerName = item.product.owner?.profile?.firstName || 'Chủ không rõ';
+                      const ownerName = item.product.owner?.profile?.firstName || t('common.unknown');
                       
                       if (!groups[ownerId]) {
                         groups[ownerId] = {
@@ -110,10 +112,10 @@ const CartDrawer = () => {
                       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-300">
                         <span className="text-blue-600">🏪</span>
                         <h3 className="font-medium text-gray-900">
-                          Cửa hàng của {group.ownerName}
+                          {t('cart.ownerStore')} {group.ownerName}
                         </h3>
                         <span className="text-sm text-gray-500">
-                          ({group.items.length} sản phẩm)
+                          ({group.items.length} {t('cart.products')})
                         </span>
                       </div>
                       
@@ -129,25 +131,25 @@ const CartDrawer = () => {
               )}
             </div>
 
-            {/* Footer với Total và Checkout */}
+            {/* Footer with Total and Checkout */}
             {cart.length > 0 && (
               <div className="border-t border-gray-200 p-6 space-y-4">
                 {/* Subtotal */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-gray-600">
-                    <span>Tạm tính</span>
+                    <span>{t('cart.subtotal')}</span>
                     <span>{formatPrice(cartTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-500">
-                    <span>Phí dịch vụ</span>
-                    <span>Tính khi thanh toán</span>
+                    <span>{t('cart.serviceFee')}</span>
+                    <span>{t('cart.calculatedAtCheckout')}</span>
                   </div>
                 </div>
 
                 {/* Total */}
                 <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                   <span className="text-lg font-semibold text-gray-900">
-                    Tổng cộng
+                    {t('cart.total')}
                   </span>
                   <span className="text-2xl font-bold text-primary-600">
                     {formatPrice(cartTotal)}
@@ -161,13 +163,13 @@ const CartDrawer = () => {
                     onClick={closeCart}
                     className="block w-full bg-primary-600 hover:bg-primary-700 text-white text-center py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl"
                   >
-                    Xem Giỏ Hàng & Thanh Toán
+                    {t('cart.viewCartAndCheckout')}
                   </Link>
                   <button
                     onClick={closeCart}
                     className="block w-full border-2 border-gray-300 hover:border-gray-400 text-gray-700 text-center py-3 rounded-xl font-semibold transition-all"
                   >
-                    Tiếp Tục Mua Sắm
+                    {t('cart.continueShopping')}
                   </button>
                 </div>
               </div>

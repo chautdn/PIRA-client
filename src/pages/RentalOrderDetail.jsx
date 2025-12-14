@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useRentalOrder } from "../context/RentalOrderContext";
 import { useAuth } from "../hooks/useAuth";
+import { useI18n } from "../hooks/useI18n";
 import { useEarlyReturn } from "../hooks/useEarlyReturn";
 import toast from "react-hot-toast";
 import api from "../services/api";
@@ -31,6 +32,7 @@ import {
   MessageCircle,
   RotateCcw,
   Plus,
+  Loader2,
 } from "lucide-react";
 
 const RentalOrderDetailPage = () => {
@@ -38,6 +40,7 @@ const RentalOrderDetailPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { t, language } = useI18n();
   const {
     currentOrder,
     isLoadingOrderDetail, // Changed from isLoading
@@ -59,6 +62,9 @@ const RentalOrderDetailPage = () => {
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [earlyReturnRequests, setEarlyReturnRequests] = useState([]);
   const { getRenterRequests, deleteRequest } = useEarlyReturn();
+  const [showCancelPendingModal, setShowCancelPendingModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Check if this is a payment return
   const payment = searchParams.get("payment");
@@ -80,12 +86,12 @@ const RentalOrderDetailPage = () => {
       });
       setShowDisputeModal(false);
       setSelectedProduct(null);
-      toast.success("Tạo tranh chấp thành công!");
+      toast.success(t("rentalOrderDetail.createDisputeSuccess"));
       // Reload order detail
       loadOrderDetail(id);
     } catch (error) {
       console.error("Error creating dispute:", error);
-      toast.error(error.response?.data?.message || "Tạo tranh chấp thất bại");
+      toast.error(error.response?.data?.message || t("rentalOrderDetail.createDisputeFailed"));
     }
   };
 
@@ -307,7 +313,7 @@ const RentalOrderDetailPage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          <span className="ml-3">Đang tải chi tiết đơn hàng...</span>
+          <span className="ml-3">{t("rentalOrderDetail.loading")}</span>
         </div>
       </div>
     );
@@ -325,7 +331,7 @@ const RentalOrderDetailPage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-4">Không tìm thấy đơn hàng</h2>
+          <h2 className="text-2xl font-bold mb-4">{t("rentalOrderDetail.notFound")}</h2>
           <p className="text-gray-600 mb-4">Order ID: {id}</p>
           <p className="text-sm text-gray-500 mb-4">
             {payment && `Payment: ${payment}, OrderCode: ${orderCode}`}
@@ -334,7 +340,7 @@ const RentalOrderDetailPage = () => {
             onClick={() => navigate("/rental-orders")}
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
           >
-            Quay lại danh sách
+            {t("rentalOrderDetail.backToList")}
           </button>
         </div>
       </div>
@@ -361,6 +367,8 @@ const RentalOrderDetailPage = () => {
       ACTIVE: "bg-green-100 text-green-800",
       COMPLETED: "bg-gray-100 text-gray-800",
       CANCELLED: "bg-red-100 text-red-800",
+      PENDING_RENTER_DECISION: "bg-yellow-100 text-yellow-800",
+      RETURN_FAILED: "bg-red-100 text-red-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
   };
@@ -379,6 +387,8 @@ const RentalOrderDetailPage = () => {
       ACTIVE: "Đang thuê",
       COMPLETED: "Hoàn thành",
       CANCELLED: "Đã hủy",
+      PENDING_RENTER_DECISION: "Chờ quyết định người thuê",
+      RETURN_FAILED: "Trả hàng thất bại",
     };
     return texts[status] || status;
   };
@@ -420,14 +430,14 @@ const RentalOrderDetailPage = () => {
       await loadOrderDetail(id);
     } catch (error) {
       console.error("Error handling owner action:", error);
-      alert("Có lỗi xảy ra khi thực hiện hành động");
+      alert(t("rentalOrderDetail.actionError"));
     }
   };
 
 
   const handleRenterConfirm = async (subOrderId) => {
     try {
-      toast.loading("Đang gửi xác nhận...");
+      toast.loading(t("rentalOrderDetail.confirmingSending"));
       const response = await rentalOrderService.renterConfirmDelivered(
         subOrderId
       );
@@ -435,7 +445,7 @@ const RentalOrderDetailPage = () => {
       console.log("✅ Renter confirmation response:", response);
 
       toast.dismiss();
-      toast.success("Cảm ơn — bạn đã xác nhận đã nhận hàng.");
+      toast.success(t("rentalOrderDetail.confirmReceivedSuccess"));
 
       // Add small delay to ensure backend processing is complete
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -447,8 +457,39 @@ const RentalOrderDetailPage = () => {
       toast.error(
         error.response?.data?.message ||
           error.message ||
-          "Không thể xác nhận đã nhận hàng"
+          t("rentalOrderDetail.confirmReceivedFailed")
       );
+    }
+  };
+
+  const handleCancelPendingOrder = async () => {
+    if (!cancelReason.trim()) {
+      toast.error('Vui lòng nhập lý do hủy đơn');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Cancel all suborders in this master order
+      const cancelPromises = currentOrder.subOrders
+        .filter(sub => sub.status === 'PENDING_CONFIRMATION')
+        .map(sub => 
+          rentalOrderService.renterCancelPendingOrder(sub._id, cancelReason)
+        );
+      
+      await Promise.all(cancelPromises);
+      
+      toast.success('Đã hủy đơn hàng thành công! Tiền sẽ được hoàn lại 100%.');
+      setShowCancelPendingModal(false);
+      setCancelReason('');
+      
+      // Reload order
+      await loadOrderDetail(currentOrder._id);
+    } catch (error) {
+      console.error('Error canceling pending order:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi hủy đơn hàng');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -468,10 +509,10 @@ const RentalOrderDetailPage = () => {
                 <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-bold text-orange-900 text-lg mb-1">
-                    ⚠️ Cần quyết định của bạn!
+                    ⚠️ {t("rentalOrderDetail.needDecision")}
                   </h3>
                   <p className="text-orange-800 mb-2">
-                    Chủ đã xác nhận một phần sản phẩm trong đơn hàng. Vui lòng chọn hủy toàn bộ hoặc tiếp tục với phần được xác nhận.
+                    {t("rentalOrderDetail.partialConfirmMessage")}
                   </p>
                   <button
                     onClick={() => {
@@ -486,7 +527,7 @@ const RentalOrderDetailPage = () => {
                     className="mt-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-semibold flex items-center gap-2 transition-colors"
                   >
                     <AlertCircle className="w-4 h-4" />
-                    Xem chi tiết và quyết định
+                    {t("rentalOrderDetail.viewAndDecide")}
                   </button>
                 </div>
               </div>
@@ -510,10 +551,10 @@ const RentalOrderDetailPage = () => {
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="w-5 h-5" />
-              <span>Quay lại</span>
+              <span>{t("rentalOrderDetail.backToList")}</span>
             </button>
             <div>
-              <h1 className="text-3xl font-bold">Chi tiết đơn hàng</h1>
+              <h1 className="text-3xl font-bold">{t("rentalOrderDetail.title")}</h1>
               <p className="text-gray-600">#{currentOrder.masterOrderNumber}</p>
             </div>
           </div>
@@ -526,6 +567,17 @@ const RentalOrderDetailPage = () => {
             >
               {getStatusText(currentOrder.status)}
             </span>
+
+            {/* Cancel Pending Order Button for Renter */}
+            {isRenter && currentOrder.status === "PENDING_CONFIRMATION" && (
+              <button
+                onClick={() => setShowCancelPendingModal(true)}
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 flex items-center space-x-2"
+              >
+                <XCircle className="w-5 h-5" />
+                <span>Hủy đơn hàng</span>
+              </button>
+            )}
 
             {/* ✅ MODIFIED: Hiển thị "Chi tiết xác nhận" khi có SubOrder OWNER_CONFIRMED (không cần tất cả) */}
             {(currentOrder.status === "CONFIRMED" ||
@@ -542,7 +594,7 @@ const RentalOrderDetailPage = () => {
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
               >
                 <FileText className="w-5 h-5" />
-                <span>Chi tiết xác nhận</span>
+                <span>{t("rentalOrderDetail.confirmationDetails")}</span>
               </button>
             )}
 
@@ -563,7 +615,7 @@ const RentalOrderDetailPage = () => {
                 className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
               >
                 <FileText className="w-5 h-5" />
-                <span>Ký hợp đồng</span>
+                <span>{t("rentalOrderDetail.signContract")}</span>
               </button>
             )}
 
@@ -575,21 +627,21 @@ const RentalOrderDetailPage = () => {
                     className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
                   >
                     <Plus className="w-5 h-5" />
-                    <span>Gia hạn</span>
+                    <span>{t("rentalOrderDetail.extend")}</span>
                   </button>
                   <button
                     onClick={() => setShowEarlyReturnModal(true)}
                     className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
                   >
                     <RotateCcw className="w-5 h-5" />
-                    <span>Trả hàng sớm</span>
+                    <span>{t("rentalOrderDetail.earlyReturn")}</span>
                   </button>
                   <button
                     onClick={() => setShowShipmentModal(true)}
                     className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 flex items-center space-x-2"
                   >
                     <Package className="w-5 h-5" />
-                    <span>Quản lí vận chuyển</span>
+                    <span>{t("rentalOrderDetail.manageShipment")}</span>
                   </button>
                 </>
               )}
@@ -602,7 +654,7 @@ const RentalOrderDetailPage = () => {
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
                 >
                   <Package className="w-5 h-5" />
-                  <span>Quản lí vận chuyển</span>
+                  <span>{t("rentalOrderDetail.manageShipment")}</span>
                 </button>
               )}
 
@@ -613,7 +665,25 @@ const RentalOrderDetailPage = () => {
                 className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
               >
                 <FileText className="w-5 h-5" />
-                <span>Quản lí vận chuyển</span>
+                <span>{t("rentalOrderDetail.manageShipment")}</span>
+              </button>
+            )}
+
+            {/* Rating button - shown when order is completed */}
+            {isRenter && currentOrder.status === "COMPLETED" && (
+              <button
+                onClick={() => {
+                  // Navigate to first product detail with order info
+                  const firstProduct = currentOrder.subOrders?.[0]?.products?.[0];
+                  const productId = firstProduct?.product?._id;
+                  if (productId) {
+                    navigate(`/product/${productId}?activeTab=reviews&fromOrder=${currentOrder._id}`);
+                  }
+                }}
+                className="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 flex items-center space-x-2"
+              >
+                <Star className="w-5 h-5" />
+                <span>{t("rentalOrderDetail.rate")}</span>
               </button>
             )}
           </div>
@@ -631,7 +701,7 @@ const RentalOrderDetailPage = () => {
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Tổng quan
+                {t("rentalOrderDetail.overview")}
               </button>
               <button
                 onClick={() => setActiveTab("products")}
@@ -641,7 +711,7 @@ const RentalOrderDetailPage = () => {
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Sản phẩm (
+                {t("rentalOrderDetail.products")} (
                 {currentOrder.subOrders?.reduce(
                   (sum, sub) => sum + (sub.products?.length || 0),
                   0
@@ -656,7 +726,7 @@ const RentalOrderDetailPage = () => {
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Yêu Cầu Trả Sớm
+                {t("rentalOrderDetail.earlyReturnRequests")}
               </button>
               <button
                 onClick={() => setActiveTab("timeline")}
@@ -666,7 +736,7 @@ const RentalOrderDetailPage = () => {
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Lịch sử
+                {t("rentalOrderDetail.history")}
               </button>
               {currentOrder.contracts && currentOrder.contracts.length > 0 && (
                 <button
@@ -677,7 +747,7 @@ const RentalOrderDetailPage = () => {
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  Hợp đồng
+                  {t("rentalOrderDetail.contract")}
                 </button>
               )}
             </nav>
@@ -692,7 +762,7 @@ const RentalOrderDetailPage = () => {
                     <div className="flex items-center space-x-3">
                       <Calendar className="w-8 h-8 text-blue-600" />
                       <div>
-                        <p className="text-sm text-gray-600">Thời gian thuê</p>
+                        <p className="text-sm text-gray-600">{t("rentalOrderDetail.rentalPeriod")}</p>
                         {(() => {
                           // Lấy tất cả rental periods từ các products
                           const allPeriods =
@@ -706,7 +776,7 @@ const RentalOrderDetailPage = () => {
                           if (allPeriods.length === 0) {
                             return (
                               <p className="text-sm text-gray-500">
-                                Chưa xác định
+                                {t("rentalOrderDetail.notDetermined")}
                               </p>
                             );
                           }
@@ -730,15 +800,15 @@ const RentalOrderDetailPage = () => {
                                     period.startDate,
                                     period.endDate
                                   )}{" "}
-                                  ngày
+                                  {t("rentalOrderDetail.days")}
                                 </p>
                                 <p className="text-sm text-gray-600">
                                   {new Date(
                                     period.startDate
-                                  ).toLocaleDateString("vi-VN")}{" "}
+                                  ).toLocaleDateString(language === 'vi' ? "vi-VN" : "en-US")}{" "}
                                   -{" "}
                                   {new Date(period.endDate).toLocaleDateString(
-                                    "vi-VN"
+                                    language === 'vi' ? "vi-VN" : "en-US"
                                   )}
                                 </p>
                               </>
@@ -748,10 +818,10 @@ const RentalOrderDetailPage = () => {
                             return (
                               <>
                                 <p className="font-bold text-lg text-orange-600">
-                                  Nhiều mốc
+                                  {t("rentalOrderDetail.multiplePeriods")}
                                 </p>
                                 <p className="text-xs text-gray-600">
-                                  Xem chi tiết ở tab Sản phẩm
+                                  {t("rentalOrderDetail.seeProductsTab")}
                                 </p>
                               </>
                             );
@@ -765,7 +835,7 @@ const RentalOrderDetailPage = () => {
                     <div className="flex items-center space-x-3">
                       <Package className="w-8 h-8 text-green-600" />
                       <div>
-                        <p className="text-sm text-gray-600">Tổng sản phẩm</p>
+                        <p className="text-sm text-gray-600">{t("rentalOrderDetail.totalProducts")}</p>
                         <p className="font-bold text-lg">
                           {currentOrder.subOrders?.reduce(
                             (sum, sub) => sum + (sub.products?.length || 0),
@@ -773,7 +843,7 @@ const RentalOrderDetailPage = () => {
                           ) || 0}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {currentOrder.subOrders?.length || 0} chủ cho thuê
+                          {currentOrder.subOrders?.length || 0} {t("rentalOrderDetail.owners")}
                         </p>
                       </div>
                     </div>
@@ -783,11 +853,11 @@ const RentalOrderDetailPage = () => {
                     <div className="flex items-center space-x-3">
                       <MapPin className="w-8 h-8 text-orange-600" />
                       <div>
-                        <p className="text-sm text-gray-600">Giao hàng</p>
+                        <p className="text-sm text-gray-600">{t("rentalOrderDetail.delivery")}</p>
                         <p className="font-bold text-lg">
                           {currentOrder.deliveryMethod === "PICKUP"
-                            ? "Nhận trực tiếp"
-                            : "Giao tận nơi"}
+                            ? t("rentalOrderDetail.pickupInStore")
+                            : t("rentalOrderDetail.homeDelivery")}
                         </p>
                         {currentOrder.deliveryAddress && (
                           <p className="text-sm text-gray-600 truncate">
@@ -802,31 +872,31 @@ const RentalOrderDetailPage = () => {
                     <div className="flex items-center space-x-3">
                       <DollarSign className="w-8 h-8 text-purple-600" />
                       <div>
-                        <p className="text-sm text-gray-600">Tổng thanh toán</p>
+                        <p className="text-sm text-gray-600">{t("rentalOrderDetail.totalPayment")}</p>
                         <p className="font-bold text-lg text-purple-600">
                           {(
                             currentOrder.totalAmount +
                             currentOrder.totalDepositAmount +
                             currentOrder.totalShippingFee
-                          ).toLocaleString("vi-VN")}
+                          ).toLocaleString(language === 'vi' ? "vi-VN" : "en-US")}
                           đ
                         </p>
                         <div className="text-xs text-gray-600">
                           <div>
-                            Thuê:{" "}
-                            {currentOrder.totalAmount?.toLocaleString("vi-VN")}đ
+                            {t("rentalOrderDetail.rental")}:{" "}
+                            {currentOrder.totalAmount?.toLocaleString(language === 'vi' ? "vi-VN" : "en-US")}đ
                           </div>
                           <div>
-                            Cọc:{" "}
+                            {t("rentalOrderDetail.deposit")}:{" "}
                             {currentOrder.totalDepositAmount?.toLocaleString(
-                              "vi-VN"
+                              language === 'vi' ? "vi-VN" : "en-US"
                             )}
                             đ
                           </div>
                           <div>
-                            Ship:{" "}
+                            {t("rentalOrderDetail.shipping")}:{" "}
                             {currentOrder.totalShippingFee?.toLocaleString(
-                              "vi-VN"
+                              language === 'vi' ? "vi-VN" : "en-US"
                             )}
                             đ
                           </div>
@@ -842,25 +912,25 @@ const RentalOrderDetailPage = () => {
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
                     <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
                       <User className="w-5 h-5 text-blue-600" />
-                      <span>Người thuê</span>
+                      <span>{t("rentalOrderDetail.renter")}</span>
                     </h3>
                     <div className="space-y-3">
                       <div>
                         <p className="font-medium">
-                          {currentOrder.renter?.profile?.fullName || "Không rõ"}
+                          {currentOrder.renter?.profile?.fullName || t("rentalOrderDetail.unknown")}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <Phone className="w-4 h-4" />
                         <span>
                           {currentOrder.renter?.profile?.phoneNumber ||
-                            "Chưa cập nhật"}
+                            t("rentalOrderDetail.notUpdated")}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <Mail className="w-4 h-4" />
                         <span>
-                          {currentOrder.renter?.email || "Chưa cập nhật"}
+                          {currentOrder.renter?.email || t("rentalOrderDetail.notUpdated")}
                         </span>
                       </div>
                     </div>
@@ -870,7 +940,7 @@ const RentalOrderDetailPage = () => {
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
                     <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
                       <MapPin className="w-5 h-5 text-green-600" />
-                      <span>Địa chỉ giao hàng</span>
+                      <span>{t("rentalOrderDetail.deliveryAddress")}</span>
                     </h3>
                     {currentOrder.deliveryAddress ? (
                       <div className="space-y-2">
@@ -892,7 +962,7 @@ const RentalOrderDetailPage = () => {
                       </div>
                     ) : (
                       <p className="text-gray-500">
-                        Nhận trực tiếp tại cửa hàng
+                        {t("rentalOrderDetail.pickupInStore")}
                       </p>
                     )}
                   </div>
@@ -901,25 +971,25 @@ const RentalOrderDetailPage = () => {
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
                     <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
                       <DollarSign className="w-5 h-5 text-purple-600" />
-                      <span>Thông tin thanh toán</span>
+                      <span>{t("rentalOrderDetail.paymentInfo")}</span>
                     </h3>
                     <div className="space-y-3">
                       <div>
-                        <p className="text-sm text-gray-600">Phương thức:</p>
+                        <p className="text-sm text-gray-600">{t("rentalOrderDetail.paymentMethod")}</p>
                         <p className="font-medium">
                           {currentOrder.paymentMethod === "WALLET"
-                            ? "Ví điện tử"
+                            ? t("rentalOrderDetail.eWallet")
                             : currentOrder.paymentMethod === "PAYOS"
-                            ? "PayOS"
+                            ? t("rentalOrderDetail.payos")
                             : currentOrder.paymentMethod === "BANK_TRANSFER"
-                            ? "Chuyển khoản ngân hàng"
+                            ? t("rentalOrderDetail.bankTransfer")
                             : currentOrder.paymentMethod === "COD"
-                            ? "Thanh toán khi nhận hàng"
-                            : currentOrder.paymentMethod || "PayOS"}
+                            ? t("rentalOrderDetail.cod")
+                            : currentOrder.paymentMethod || t("rentalOrderDetail.payos")}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Trạng thái:</p>
+                        <p className="text-sm text-gray-600">{t("rentalOrderDetail.status")}</p>
                         <span
                           className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
                             currentOrder.paymentStatus === "PAID"
@@ -930,10 +1000,10 @@ const RentalOrderDetailPage = () => {
                           }`}
                         >
                           {currentOrder.paymentStatus === "PAID"
-                            ? "Đã thanh toán"
+                            ? t("rentalOrderDetail.paid")
                             : currentOrder.paymentStatus === "PARTIALLY_PAID"
-                            ? "Thanh toán một phần"
-                            : "Chưa thanh toán"}
+                            ? t("rentalOrderDetail.partiallyPaid")
+                            : t("rentalOrderDetail.unpaid")}
                         </span>
                       </div>
                       {(currentOrder.paymentInfo?.transactionId ||
@@ -941,8 +1011,8 @@ const RentalOrderDetailPage = () => {
                         <div>
                           <p className="text-sm text-gray-600">
                             {currentOrder.paymentInfo?.transactionId
-                              ? "Mã giao dịch:"
-                              : "Ngày cập nhật:"}
+                              ? t("rentalOrderDetail.transactionCode")
+                              : t("rentalOrderDetail.updateDate")}
                           </p>
                           <p className="font-medium">
                             {currentOrder.paymentInfo?.transactionId ||
@@ -952,7 +1022,7 @@ const RentalOrderDetailPage = () => {
                       )}
                       {currentOrder.paymentInfo?.paymentDetails?.message && (
                         <div>
-                          <p className="text-sm text-gray-600">Chi tiết:</p>
+                          <p className="text-sm text-gray-600">{t("rentalOrderDetail.details")}</p>
                           <p className="font-medium text-sm text-green-600">
                             {currentOrder.paymentInfo.paymentDetails.message}
                           </p>
@@ -965,7 +1035,7 @@ const RentalOrderDetailPage = () => {
                 {/* Sub Orders Status */}
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold mb-4">
-                    Trạng thái từ các chủ cho thuê
+                    {t("rentalOrderDetail.ownerStatuses")}
                   </h3>
                   <div className="space-y-4">
                     {currentOrder.subOrders?.map((subOrder) => (
@@ -979,11 +1049,11 @@ const RentalOrderDetailPage = () => {
                             <div>
                               <p className="font-medium">
                                 {subOrder.owner?.profile?.fullName ||
-                                  "Không rõ"}
+                                  t("rentalOrderDetail.unknown")}
                               </p>
                               <p className="text-sm text-gray-600">
                                 {subOrder.owner?.profile?.phoneNumber ||
-                                  "Chưa cập nhật"}
+                                  t("rentalOrderDetail.notUpdated")}
                               </p>
                               <p className="text-xs text-gray-500">
                                 SubOrder: #
@@ -1016,7 +1086,7 @@ const RentalOrderDetailPage = () => {
                                     className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 flex items-center space-x-1"
                                   >
                                     <CheckCircle className="w-4 h-4" />
-                                    <span>Xác nhận</span>
+                                    <span>{t("rentalOrderDetail.confirm")}</span>
                                   </button>
                                   <button
                                     onClick={() =>
@@ -1025,7 +1095,7 @@ const RentalOrderDetailPage = () => {
                                     className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 flex items-center space-x-1"
                                   >
                                     <XCircle className="w-4 h-4" />
-                                    <span>Từ chối</span>
+                                    <span>{t("rentalOrderDetail.reject")}</span>
                                   </button>
                                 </div>
                               )}
@@ -1040,7 +1110,7 @@ const RentalOrderDetailPage = () => {
                                   className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 flex items-center space-x-1"
                                 >
                                   <CheckCircle className="w-4 h-4" />
-                                  <span>Xác nhận đã nhận hàng</span>
+                                  <span>{t("rentalOrderDetail.confirmReceived")}</span>
                                 </button>
                               </div>
                             )}
@@ -1050,25 +1120,25 @@ const RentalOrderDetailPage = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div>
-                            <p className="text-gray-600">Sản phẩm:</p>
+                            <p className="text-gray-600">{t("rentalOrderDetail.products")}</p>
                             <p className="font-medium">
-                              {subOrder.products?.length || 0} sản phẩm
+                              {subOrder.products?.length || 0} {t("rentalOrderDetail.productCount")}
                             </p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Tổng tiền:</p>
+                            <p className="text-gray-600">{t("rentalOrderDetail.totalAmount")}</p>
                             <p className="font-medium">
                               {subOrder.pricing?.totalAmount?.toLocaleString(
-                                "vi-VN"
+                                language === 'vi' ? "vi-VN" : "en-US"
                               )}
                               đ
                             </p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Cập nhật:</p>
+                            <p className="text-gray-600">{t("rentalOrderDetail.updated")}</p>
                             <p className="font-medium">
                               {new Date(subOrder.updatedAt).toLocaleDateString(
-                                "vi-VN"
+                                language === 'vi' ? "vi-VN" : "en-US"
                               )}
                             </p>
                           </div>
@@ -1077,7 +1147,7 @@ const RentalOrderDetailPage = () => {
                         {subOrder.rejectionReason && (
                           <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
                             <p className="text-sm font-medium text-red-800">
-                              Lý do từ chối:
+                              {t("rentalOrderDetail.rejectionReason")}
                             </p>
                             <p className="text-sm text-red-600">
                               {subOrder.rejectionReason}
@@ -1097,7 +1167,7 @@ const RentalOrderDetailPage = () => {
                   <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
                     <Package className="w-5 h-5 text-blue-600" />
                     <span>
-                      Danh sách sản phẩm (
+                      {t("rentalOrderDetail.productList")} (
                       {currentOrder.subOrders?.reduce(
                         (sum, sub) => sum + (sub.products?.length || 0),
                         0
@@ -1128,9 +1198,9 @@ const RentalOrderDetailPage = () => {
                                   {productItem.product?.name}
                                 </h4>
                                 <p className="text-sm text-gray-600 mt-1">
-                                  Chủ cho thuê:{" "}
+                                  {t("rentalOrderDetail.owner")}{" "}
                                   {subOrder.owner?.profile?.fullName ||
-                                    "Không rõ"}
+                                    t("rentalOrderDetail.unknown")}
                                 </p>
                               </div>
                               <span
@@ -1147,7 +1217,7 @@ const RentalOrderDetailPage = () => {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
                               <div>
                                 <p className="text-xs text-gray-500">
-                                  Số lượng
+                                  {t("rentalOrderDetail.quantity")}
                                 </p>
                                 <p className="font-semibold">
                                   {productItem.quantity}
@@ -1155,22 +1225,22 @@ const RentalOrderDetailPage = () => {
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500">
-                                  Giá thuê
+                                  {t("rentalOrderDetail.rentalPrice")}
                                 </p>
                                 <p className="font-semibold">
                                   {productItem.rentalRate?.toLocaleString(
-                                    "vi-VN"
+                                    language === 'vi' ? "vi-VN" : "en-US"
                                   )}
                                   đ
                                 </p>
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500">
-                                  Tiền cọc
+                                  {t("rentalOrderDetail.depositAmount")}
                                 </p>
                                 <p className="font-semibold">
                                   {productItem.depositRate?.toLocaleString(
-                                    "vi-VN"
+                                    language === 'vi' ? "vi-VN" : "en-US"
                                   )}
                                   đ
                                 </p>
@@ -1869,6 +1939,127 @@ const RentalOrderDetailPage = () => {
         />
       )}
 
+      {/* Cancel Pending Order Modal */}
+      {showCancelPendingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full mx-4 shadow-2xl">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 rounded-t-xl">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <XCircle size={24} />
+                Hủy đơn hàng
+              </h3>
+            </div>
+            
+            <div className="p-6">
+              <div className="bg-orange-50 border-l-4 border-orange-400 rounded-lg p-4 mb-5">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-orange-800 font-semibold mb-1">
+                      Cảnh báo: Hành động này không thể hoàn tác!
+                    </p>
+                    <p className="text-xs text-orange-700 mb-1">
+                      Đơn hàng: <strong>#{currentOrder.masterOrderNumber}</strong>
+                    </p>
+                    <p className="text-xs text-orange-700">
+                      Bạn sẽ được hoàn 100% tiền (bao gồm cọc, phí thuê và phí vận chuyển).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-800 font-semibold mb-1">
+                      💰 Số tiền hoàn trả
+                    </p>
+                    <p className="text-3xl font-bold text-green-600">
+                      {(
+                        (currentOrder.totalAmount || 0) + 
+                        (currentOrder.totalDepositAmount || 0) + 
+                        (currentOrder.totalShippingFee || 0)
+                      ).toLocaleString('vi-VN')} ₫
+                    </p>
+                  </div>
+                  <div className="text-right text-xs text-green-700">
+                    <div>Phí thuê: {(currentOrder.totalAmount || 0).toLocaleString('vi-VN')}₫</div>
+                    <div>Tiền cọc: {(currentOrder.totalDepositAmount || 0).toLocaleString('vi-VN')}₫</div>
+                    <div>Phí ship: {(currentOrder.totalShippingFee || 0).toLocaleString('vi-VN')}₫</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Lý do hủy đơn <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
+                  disabled={loading}
+                >
+                  <option value="">-- Chọn lý do hủy đơn --</option>
+                  <option value="Tìm được sản phẩm tốt hơn">Tìm được sản phẩm tốt hơn</option>
+                  <option value="Đổi ý, không cần thuê nữa">Đổi ý, không cần thuê nữa</option>
+                  <option value="Thời gian thuê không phù hợp">Thời gian thuê không phù hợp</option>
+                  <option value="Giá thuê quá cao">Giá thuê quá cao</option>
+                  <option value="Sản phẩm không đúng mong đợi">Sản phẩm không đúng mong đợi</option>
+                  <option value="Không liên hệ được với chủ">Không liên hệ được với chủ</option>
+                  <option value="Thay đổi kế hoạch">Thay đổi kế hoạch</option>
+                  <option value="other">Lý do khác...</option>
+                </select>
+              </div>
+
+              {cancelReason === 'other' && (
+                <div className="mb-5">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Nhập lý do cụ thể <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={cancelReason === 'other' ? '' : cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    placeholder="Vui lòng nhập lý do hủy đơn hàng..."
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    disabled={loading}
+                  />
+                </div>
+              )}
+              
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowCancelPendingModal(false);
+                    setCancelReason('');
+                  }}
+                  disabled={loading}
+                  className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-200 transition-all font-semibold disabled:opacity-50 border border-gray-300"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={handleCancelPendingOrder}
+                  disabled={loading || !cancelReason.trim() || cancelReason === 'other'}
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-3 rounded-lg hover:from-red-700 hover:to-red-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-2 shadow-lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Đang hủy...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle size={18} />
+                      Xác nhận hủy đơn
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
