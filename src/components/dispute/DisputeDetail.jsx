@@ -9,10 +9,13 @@ import DisputeActions from './DisputeActions';
 import NegotiationRoom from './NegotiationRoom';
 import ThirdPartySection from './ThirdPartySection';
 import WalletDepositWarning from './WalletDepositWarning';
+import RescheduleSection from './RescheduleSection';
+import { useAuth } from '../../hooks/useAuth';
 
 const DisputeDetail = () => {
   const { disputeId } = useParams();
   const { currentDispute, isLoading, loadDisputeDetail } = useDispute();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (disputeId) {
@@ -100,6 +103,11 @@ const DisputeDetail = () => {
                   />
                 )}
               </div>
+            )}
+
+            {/* Reschedule Section - Only for RENTER_NO_RETURN */}
+            {currentDispute.type === 'RENTER_NO_RETURN' && (
+              <RescheduleSection dispute={currentDispute} currentUser={user} />
             )}
 
             {/* Admin Decision */}

@@ -57,6 +57,7 @@ export const getDisputeTypeColor = (type) => {
     DAMAGED_ON_RETURN: 'bg-red-100 text-red-800',
     LATE_RETURN: 'bg-yellow-100 text-yellow-800',
     RETURN_FAILED_OWNER: 'bg-yellow-100 text-yellow-800',
+    RENTER_NO_RETURN: 'bg-red-100 text-red-800',
     OTHER: 'bg-gray-100 text-gray-800'
   };
   return colors[type] || 'bg-gray-100 text-gray-800';
@@ -73,6 +74,7 @@ export const getDisputeTypeText = (type) => {
     DAMAGED_ON_RETURN: 'Hư hỏng khi trả',
     LATE_RETURN: 'Trả hàng trễ',
     RETURN_FAILED_OWNER: 'Owner không nhận hàng',
+    RENTER_NO_RETURN: 'Renter không trả hàng',
     OTHER: 'Khác'
   };
   return texts[type] || type;
@@ -241,7 +243,8 @@ export const getDisputeTypesForShipment = (shipmentType) => {
     ];
   } else if (shipmentType === 'RETURN') {
     return [
-      { value: 'DAMAGED_ON_RETURN', label: 'Sản phẩm hư hỏng khi trả' }
+      { value: 'DAMAGED_ON_RETURN', label: 'Sản phẩm hư hỏng khi trả' },
+      { value: 'RENTER_NO_RETURN', label: 'Renter không trả hàng' }
     ];
   }
   return [];

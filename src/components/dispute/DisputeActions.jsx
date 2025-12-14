@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useDispute } from '../../context/DisputeContext';
 import RespondDisputeModal from './RespondDisputeModal';
+import RespondRenterNoReturnModal from './RespondRenterNoReturnModal';
 import UserRespondAdminDecisionModal from './UserRespondAdminDecisionModal';
 import AgreementResponseModal from './AgreementResponseModal';
 import ThirdPartyEvidenceModal from './ThirdPartyEvidenceModal';
@@ -18,10 +19,12 @@ const DisputeActions = ({ dispute }) => {
     respondToDispute, 
     respondToAdminDecision, 
     respondToAgreement,
-    uploadThirdPartyEvidence 
+    uploadThirdPartyEvidence,
+    proposeReschedule
   } = useDispute();
 
   const [showRespondModal, setShowRespondModal] = useState(false);
+  const [showRenterNoReturnModal, setShowRenterNoReturnModal] = useState(false);
   const [showAdminResponseModal, setShowAdminResponseModal] = useState(false);
   const [showAgreementResponseModal, setShowAgreementResponseModal] = useState(false);
   const [showEvidenceModal, setShowEvidenceModal] = useState(false);
@@ -78,10 +81,17 @@ const DisputeActions = ({ dispute }) => {
       <div className="space-y-3">
         {userCanRespond && (
           <button
-            onClick={() => setShowRespondModal(true)}
+            onClick={() => {
+              // Dùng modal chuyên biệt cho RENTER_NO_RETURN
+              if (dispute.type === 'RENTER_NO_RETURN') {
+                setShowRenterNoReturnModal(true);
+              } else {
+                setShowRespondModal(true);
+              }
+            }}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
           >
-            Phản hồi tranh chấp
+            {dispute.type === 'RENTER_NO_RETURN' ? 'Phản hồi / Đề xuất lịch mới' : 'Phản hồi tranh chấp'}
           </button>
         )}
 
@@ -119,11 +129,19 @@ const DisputeActions = ({ dispute }) => {
         )}
       </div>
 
-      {/* Respond to Dispute Modal */}
+      {/* Respond to Dispute Modal - Normal disputes */}
       <RespondDisputeModal
         isOpen={showRespondModal}
         onClose={() => setShowRespondModal(false)}
         onSubmit={handleRespondToDispute}
+      />
+
+      {/* Respond Renter No Return Modal - Special for RENTER_NO_RETURN */}
+      <RespondRenterNoReturnModal
+        isOpen={showRenterNoReturnModal}
+        onClose={() => setShowRenterNoReturnModal(false)}
+        dispute={dispute}
+        onProposeReschedule={proposeReschedule}
       />
 
       {/* User Respond Admin Decision Modal */}

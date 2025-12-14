@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/constants';
 import ContractSigningInline from '../../components/owner/ContractSigningInline';
 import CreateDisputeModal from '../../components/dispute/CreateDisputeModal';
+import CreateRenterNoReturnDisputeModal from '../../components/dispute/CreateRenterNoReturnDisputeModal';
 import { useDispute } from '../../context/DisputeContext';
 import { ArrowLeft, Package, Calendar, MapPin, User, CreditCard, FileText, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import useOrderSocket from '../../hooks/useOrderSocket';
@@ -24,6 +25,7 @@ const OwnerRentalRequestDetail = () => {
   const [loadingContract, setLoadingContract] = useState(false);
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [showRenterNoReturnModal, setShowRenterNoReturnModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showCancelOrderModal, setShowCancelOrderModal] = useState(false);
   const [cancelOrderReason, setCancelOrderReason] = useState('');
@@ -231,18 +233,20 @@ const OwnerRentalRequestDetail = () => {
 
   const handleCreateDispute = (product, productIndex) => {
     setSelectedProduct({ product, subOrder, productIndex });
-    setShowDisputeModal(true);
+    
+    // Nếu là RETURN_FAILED, dùng modal chuyên biệt cho RENTER_NO_RETURN
+    if (product.productStatus === 'RETURN_FAILED') {
+      setShowRenterNoReturnModal(true);
+    } else {
+      setShowDisputeModal(true);
+    }
   };
 
   const handleDisputeSubmit = async (disputeData) => {
     try {
-      await createDispute({
-        ...disputeData,
-        subOrderId: subOrder._id,
-        productId: selectedProduct.product.product._id,
-        productIndex: selectedProduct.productIndex
-      });
+      await createDispute(disputeData);
       setShowDisputeModal(false);
+      setShowRenterNoReturnModal(false);
       setSelectedProduct(null);
       toast.success('Tạo tranh chấp thành công!');
       await fetchSubOrderDetail();
@@ -529,18 +533,26 @@ const OwnerRentalRequestDetail = () => {
                           </div>
                         )}
 
-                        {/* Dispute Button for RETURNED products */}
-                        {item.productStatus === 'RETURNED' && (
+                        {/* Dispute Button for RETURNED or RETURN_FAILED products */}
+                        {(item.productStatus === 'RETURNED' || item.productStatus === 'RETURN_FAILED') && (
                           <div className="mt-3">
                             <button
                               onClick={() => handleCreateDispute(item, index)}
-                              className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                              className={`w-full px-4 py-2 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 ${
+                                item.productStatus === 'RETURN_FAILED' 
+                                  ? 'bg-red-600 hover:bg-red-700' 
+                                  : 'bg-orange-600 hover:bg-orange-700'
+                              }`}
                             >
                               <AlertCircle size={16} />
-                              Tạo tranh chấp (Hàng có vấn đề)
+                              {item.productStatus === 'RETURN_FAILED' 
+                                ? 'Tạo tranh chấp (Renter không trả hàng)' 
+                                : 'Tạo tranh chấp (Hàng có vấn đề)'}
                             </button>
                             <p className="text-xs text-gray-500 mt-2 text-center">
-                              Hàng đã được trả về. Nếu có vấn đề, hãy tạo tranh chấp.
+                              {item.productStatus === 'RETURN_FAILED'
+                                ? 'Shipper không thể lấy hàng từ renter. Tạo tranh chấp để xử lý.'
+                                : 'Hàng đã được trả về. Nếu có vấn đề, hãy tạo tranh chấp.'}
                             </p>
                           </div>
                         )}
@@ -916,7 +928,7 @@ const OwnerRentalRequestDetail = () => {
           </div>
         )}
 
-        {/* Dispute Modal */}
+        {/* Dispute Modal - For normal disputes */}
         {showDisputeModal && selectedProduct && (
           <CreateDisputeModal
             isOpen={showDisputeModal}
@@ -926,6 +938,22 @@ const OwnerRentalRequestDetail = () => {
             }}
             onSubmit={handleDisputeSubmit}
             rentalOrder={{ _id: subOrder.masterOrder?._id, ...subOrder }}
+          />
+        )}
+
+        {/* Renter No Return Dispute Modal - For RETURN_FAILED */}
+        {showRenterNoReturnModal && selectedProduct && (
+          <CreateRenterNoReturnDisputeModal
+            isOpen={showRenterNoReturnModal}
+            onClose={() => {
+              setShowRenterNoReturnModal(false);
+              setSelectedProduct(null);
+            }}
+            onSubmit={handleDisputeSubmit}
+            subOrder={subOrder}
+            product={selectedProduct.product}
+            productIndex={selectedProduct.productIndex}
+            shipment={selectedProduct.product.returnShipment || null}
           />
         )}
 
