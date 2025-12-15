@@ -10,7 +10,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   const [pickupImages, setPickupImages] = useState([]);
   const [deliveryImages, setDeliveryImages] = useState([]);
   const [proofData, setProofData] = useState(null);
-  const [error, setError] = useState('');
   const [currentStatus, setCurrentStatus] = useState(shipment?.status || 'PENDING');
   
   // State for renter rejection
@@ -44,18 +43,16 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     const files = Array.from(e.target.files || []);
     // Chỉ thêm vào list để preview, chưa upload
     setPickupImages(prev => [...prev, ...files]);
-    setError('');
   };
 
   const handleConfirmPickup = async () => {
     try {
       if (pickupImages.length === 0) {
-        setError('Vui lòng tải lên ít nhất 1 ảnh pickup');
+        toast.error('Vui lòng tải lên ít nhất 1 ảnh pickup');
         return;
       }
 
       setLoading(true);
-      setError('');
 
       const formData = new FormData();
       pickupImages.forEach(file => {
@@ -81,8 +78,9 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       // Reload proof data
       await loadProofDataFn(shipment._id);
       onSuccess?.();
+      toast.success('✅ Đã xác nhận pickup thành công!');
     } catch (err) {
-      setError(err.message || 'Lỗi khi upload pickup');
+      toast.error(err.message || 'Lỗi khi upload pickup');
     } finally {
       setLoading(false);
     }
@@ -92,18 +90,16 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     const files = Array.from(e.target.files || []);
     // Chỉ thêm vào list để preview, chưa upload
     setDeliveryImages(prev => [...prev, ...files]);
-    setError('');
   };
 
   const handleConfirmDelivery = async () => {
     try {
       if (deliveryImages.length === 0) {
-        setError('Vui lòng tải lên ít nhất 1 ảnh delivery');
+        toast.error('Vui lòng tải lên ít nhất 1 ảnh delivery');
         return;
       }
 
       setLoading(true);
-      setError('');
 
       const formData = new FormData();
       deliveryImages.forEach(file => {
@@ -129,8 +125,9 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       // Reload proof data
       await loadProofDataFn(shipment._id);
       onSuccess?.();
+      toast.success('✅ Đã hoàn tất vận chuyển!');
     } catch (err) {
-      setError(err.message || 'Lỗi khi upload delivery');
+      toast.error(err.message || 'Lỗi khi upload delivery');
     } finally {
       setLoading(false);
     }
@@ -143,7 +140,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
     try {
       setLoading(true);
-      setError('');
 
       // Call API to report owner no-show
       await ShipmentService.ownerNoShow(shipment._id, { notes: '' });
@@ -163,7 +159,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
         onSuccess?.();
       }, 1500);
     } catch (err) {
-      setError(err.message || 'Lỗi khi ghi nhận owner no-show');
       toast.error(err.message || 'Lỗi khi ghi nhận owner no-show');
     } finally {
       setLoading(false);
@@ -197,7 +192,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
         onSuccess?.();
       }, 1500);
     } catch (err) {
-      setError(err.message || 'Lỗi khi ghi nhận không liên lạc được renter');
       toast.error(err.message || 'Lỗi khi ghi nhận không liên lạc được renter');
     } finally {
       setLoading(false);
@@ -206,14 +200,12 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
   const handleRenterReject = async () => {
     if (!rejectNotes.trim()) {
-      setError('Vui lòng nhập lý do renter không nhận hàng');
       toast.error('Vui lòng nhập lý do renter không nhận hàng');
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
 
       const reason = rejectReason === 'PRODUCT_DAMAGED' ? 'Sản phẩm có lỗi' : 'Không liên lạc được với renter';
 
@@ -245,7 +237,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
         onSuccess?.();
       }, 1500);
     } catch (err) {
-      setError(err.message || 'Lỗi khi ghi nhận renter không nhận hàng');
       toast.error(err.message || 'Lỗi khi ghi nhận renter không nhận hàng');
     } finally {
       setLoading(false);
@@ -258,6 +249,29 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
   const removeDeliveryImage = (index) => {
     setDeliveryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAcceptShipment = async () => {
+    try {
+      setLoading(true);
+      
+      await ShipmentService.acceptShipment(shipment._id);
+      
+      toast.success('✅ Đã nhận đơn hàng thành công!');
+      
+      // Update status immediately
+      setCurrentStatus('SHIPPER_CONFIRMED');
+      
+      // Refresh data
+      setTimeout(() => {
+        onSuccess?.();
+      }, 1000);
+    } catch (err) {
+      const errorMsg = err.message || 'Lỗi khi nhận đơn hàng';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Check if pickup already uploaded (status is IN_TRANSIT or DELIVERED)
@@ -322,15 +336,28 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 xs:p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {/* Warning if not applicable status */}
-            {shipment?.status !== 'SHIPPER_CONFIRMED' && shipment?.status !== 'IN_TRANSIT' && (
+            {/* Info banner based on status */}
+            {currentStatus === 'PENDING' && (
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-3 sm:p-4 rounded-lg text-xs sm:text-sm">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">ℹ️</span>
+                  <div>
+                    <h3 className="font-bold text-blue-900 mb-1">Đơn hàng chờ xác nhận</h3>
+                    <p className="text-sm text-blue-800">
+                      Nhấn nút <strong>"Xác nhận nhận đơn"</strong> trong phần Thông tin đơn hàng bên dưới để bắt đầu vận chuyển.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {currentStatus !== 'PENDING' && currentStatus !== 'SHIPPER_CONFIRMED' && currentStatus !== 'IN_TRANSIT' && currentStatus !== 'DELIVERED' && (
               <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 rounded-lg text-xs sm:text-sm">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">⚠️</span>
                   <div>
                     <h3 className="font-bold text-yellow-900 mb-1">Chú ý</h3>
                     <p className="text-sm text-yellow-800">
-                      Shipment này đang ở trạng thái <strong>{shipment?.status}</strong>. 
+                      Shipment này đang ở trạng thái <strong>{currentStatus}</strong>. 
                       Bạn chỉ có thể quản lí vận chuyển khi shipment ở trạng thái <strong>SHIPPER_CONFIRMED</strong> hoặc <strong>IN_TRANSIT</strong>.
                     </p>
                   </div>
@@ -356,6 +383,36 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                       {shipment.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Nhận trả'}
                     </span>
                   </div>
+                  
+                  {/* Products */}
+                  {shipment?.subOrder?.products && shipment.subOrder.products.length > 0 && (
+                    <div>
+                      <span className="text-gray-600 block mb-2">Sản phẩm:</span>
+                      <div className="space-y-2">
+                        {shipment.subOrder.products.map((item, idx) => {
+                          return (
+                          <div key={idx} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-gray-200">
+                            {item.product?.images?.[0]?.url && (
+                              <img
+                                src={item.product.images[0].url}
+                                alt={item.product?.title || 'Product'}
+                                className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-md flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 text-xs sm:text-sm line-clamp-2">
+                                {item.product?.title || 'Sản phẩm'}
+                              </p>
+                              <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5">
+                                Số lượng: <span className="font-semibold text-gray-700">{item.quantity}</span>
+                              </p>
+                            </div>
+                          </div>
+                        )})}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div>
                     <span className="text-gray-600 block">Phí vận chuyển:</span>
                     <span className="font-semibold text-green-600">{formatCurrency(shipment.fee || 0)}</span>
@@ -363,14 +420,37 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   <div>
                     <span className="text-gray-600 block mb-1">Trạng thái:</span>
                     <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${
-                      shipment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                      shipment.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-100 text-blue-800' :
-                      shipment.status === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-800' :
+                      currentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                      currentStatus === 'SHIPPER_CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                      currentStatus === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-800' :
                       'bg-green-100 text-green-800'
                     }`}>
-                      {shipment.status}
+                      {currentStatus}
                     </span>
                   </div>
+                  
+                  {/* Accept Button for PENDING shipments */}
+                  {currentStatus === 'PENDING' && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={handleAcceptShipment}
+                        disabled={loading}
+                        className="w-full px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:from-green-700 active:to-emerald-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 touch-manipulation"
+                      >
+                        {loading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Đang xử lý...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={16} />
+                            <span>✅ Xác nhận nhận đơn</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -449,13 +529,13 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
 
                 <div className="bg-white rounded-lg border-2 border-dashed border-blue-300 p-6">
-                  {pickupImages.length < 3 && !pickupUploaded && canStillDocument && (
+                  {pickupImages.length === 0 && !pickupUploaded && canStillDocument && (
                     <label className="block cursor-pointer">
                       <div className="flex flex-col items-center justify-center py-6">
                         <Upload className="text-blue-500 mb-2" size={32} />
                         <p className="text-sm font-semibold text-gray-700">Nhấn để tải ảnh lên</p>
                         <p className="text-xs text-gray-500 mt-1">hoặc kéo thả ảnh vào đây</p>
-                        <p className="text-xs text-gray-400 mt-2">Tối đa 3 ảnh ({pickupImages.length}/3)</p>
+                        <p className="text-xs text-gray-400 mt-2">Tối thiểu 1 ảnh</p>
                       </div>
                       <input
                         type="file"
@@ -471,16 +551,16 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   {pickupImages.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                       {pickupImages.map((file, idx) => (
-                        <div key={idx} className="relative group">
+                        <div key={idx} className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-[4/3]">
                           <img
                             src={typeof file === 'string' ? file : URL.createObjectURL(file)}
                             alt={`pickup-${idx}`}
-                            className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm"
+                            className="w-full h-full object-contain rounded-lg shadow-sm"
                           />
                           {!pickupUploaded && !deliveryUploaded && canStillDocument && (
                             <button
                               onClick={() => removePickupImage(idx)}
-                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                             >
                               ✕
                             </button>
@@ -490,8 +570,8 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           </div>
                         </div>
                       ))}
-                      {pickupImages.length < 3 && !pickupUploaded && !deliveryUploaded && canStillDocument && (
-                        <label className="border-2 border-dashed border-blue-300 rounded-lg h-20 sm:h-24 flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors">
+                      {!pickupUploaded && !deliveryUploaded && canStillDocument && (
+                        <label className="border-2 border-dashed border-blue-300 rounded-lg aspect-[4/3] flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors">
                           <div className="text-center">
                             <Upload className="text-blue-400 mx-auto mb-0.5 sm:mb-1" size={18} />
                             <span className="text-[10px] xs:text-xs text-blue-600 font-semibold">Thêm</span>
@@ -611,13 +691,13 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
 
                 <div className="bg-white rounded-lg border-2 border-dashed border-green-300 p-3 sm:p-4">
-                  {deliveryImages.length < 4 && !deliveryUploaded && (pickupUploaded || isFailedState) && (
+                  {deliveryImages.length === 0 && !deliveryUploaded && (pickupUploaded || isFailedState) && (
                     <label className="block cursor-pointer">
                       <div className="flex flex-col items-center justify-center py-4 sm:py-6">
                         <Upload className="text-green-500 mb-1.5 sm:mb-2" size={28} />
                         <p className="text-xs sm:text-sm font-semibold text-gray-700">Nhấn để tải ảnh lên</p>
                         <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5 sm:mt-1">hoặc kéo thả ảnh vào đây</p>
-                        <p className="text-[10px] xs:text-xs text-gray-400 mt-1.5 sm:mt-2">Tối đa 4 ảnh ({deliveryImages.length}/4)</p>
+                        <p className="text-[10px] xs:text-xs text-gray-400 mt-1.5 sm:mt-2">Tối thiểu 1 ảnh</p>
                       </div>
                       <input
                         type="file"
@@ -639,16 +719,16 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   {deliveryImages.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                       {deliveryImages.map((file, idx) => (
-                        <div key={idx} className="relative group">
+                        <div key={idx} className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-[4/3]">
                           <img
                             src={typeof file === 'string' ? file : URL.createObjectURL(file)}
                             alt={`delivery-${idx}`}
-                            className="w-full h-20 sm:h-24 object-cover rounded-lg shadow-sm"
+                            className="w-full h-full object-contain rounded-lg shadow-sm"
                           />
                           {!deliveryUploaded && canStillDocument && (
                             <button
                               onClick={() => removeDeliveryImage(idx)}
-                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs sm:text-sm"
+                              className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs sm:text-sm z-10"
                             >
                               ✕
                             </button>
@@ -658,8 +738,8 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           </div>
                         </div>
                       ))}
-                      {deliveryImages.length < 4 && !deliveryUploaded && (pickupUploaded || isFailedState) && canStillDocument && (
-                        <label className="border-2 border-dashed border-green-300 rounded-lg h-20 sm:h-24 flex items-center justify-center cursor-pointer hover:bg-green-50 transition-colors">
+                      {!deliveryUploaded && (pickupUploaded || isFailedState) && canStillDocument && (
+                        <label className="border-2 border-dashed border-green-300 rounded-lg aspect-[4/3] flex items-center justify-center cursor-pointer hover:bg-green-50 transition-colors">
                           <div className="text-center">
                             <Upload className="text-green-400 mx-auto mb-0.5 sm:mb-1" size={18} />
                             <span className="text-[10px] xs:text-xs text-green-600 font-semibold">Thêm</span>
@@ -738,14 +818,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                 </div>
               </div>
             </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-300 rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-                <AlertCircle className="text-red-500 flex-shrink-0" size={18} />
-                <span className="text-red-700 font-medium text-xs sm:text-sm">{error}</span>
-              </div>
-            )}
 
             {/* Dialog: Renter Rejection */}
             <AnimatePresence>

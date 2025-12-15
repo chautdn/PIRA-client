@@ -33,7 +33,7 @@ import OwnerRentalRequests from "./pages/owner/OwnerRentalRequests";
 import OwnerRentalRequestDetail from "./pages/owner/OwnerRentalRequestDetail";
 import ActiveRentals from "./pages/owner/ActiveRentals";
 import OwnerStatistics from "./pages/owner/OwnerStatistics";
-import ShipmentsPage from "./pages/shipper/Shipments";
+import ShipmentsPage from "./pages/shipper/ShipmentsCalendar";
 
 // Wallet pages
 import TopUpSuccess from "./pages/wallet/TopUpSuccess";
