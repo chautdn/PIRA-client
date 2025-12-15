@@ -55,7 +55,7 @@ const {
 } = icons;
 
 const Profile = () => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUser } = useAuth();
   const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
@@ -446,6 +446,9 @@ const Profile = () => {
     // Reload cả KYC status và profile
     await loadKycStatus();
     await fetchProfile();
+    
+    // Update global user state in AuthContext to refresh navbar
+    await refreshUser();
 
     // Đóng modal
     setShowKycModal(false);
