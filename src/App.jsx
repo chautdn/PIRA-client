@@ -40,6 +40,7 @@ import TopUpSuccess from "./pages/wallet/TopUpSuccess";
 import TopUpCancel from "./pages/wallet/TopUpCancel";
 import Withdrawals from "./pages/Withdrawals";
 import AllNotifications from "./pages/AllNotifications";
+import TermsAndConditions from "./pages/TermsAndConditions";
 
 // Payment result pages
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
@@ -59,7 +60,7 @@ const ChatEmptyState = () => {
     <div className="flex-1 flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <div className="text-gray-500 text-lg">
-          {t('chat.selectConversation')}
+          {t("chat.selectConversation")}
         </div>
       </div>
     </div>
@@ -188,336 +189,365 @@ export default function App() {
         <WishlistProvider>
           <RentalOrderProvider>
             <BrowserRouter>
-            <ScrollToTop />
-            <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden max-w-full">
-              <ConditionalPromotionBanner />
-              <ConditionalNavigation />
-              <CartDrawer />
-              <main className="flex-1 overflow-x-hidden max-w-full">
-                <Routes>
-                  {/* Public routes */}
-                  <Route path={ROUTES.LOGIN} element={<Login />} />
-                  <Route path={ROUTES.REGISTER} element={<Register />} />
-                  <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
-                  <Route
-                    path={ROUTES.FORGOT_PASSWORD}
-                    element={<ForgotPassword />}
-                  />
-                  <Route
-                    path={ROUTES.RESET_PASSWORD}
-                    element={<ResetPassword />}
-                  />
-                  <Route path={ROUTES.HOME} element={<Home />} />
-                  <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
-                  <Route
-                    path={ROUTES.PRODUCT_DETAIL}
-                    element={<ProductDetail />}
-                  />
-                  <Route
-                    path="/owner/:ownerId/products"
-                    element={<OwnerProductsPage />}
-                  />
-                  <Route path={ROUTES.CART} element={<Cart />} />
-                  <Route path={ROUTES.PROFILE} element={<Profile />} />
-
-                  {/* Owner routes - accessible through navigation menu */}
-                  <Route
-                    path={ROUTES.OWNER_PRODUCTS}
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <OwnerProducts />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path={ROUTES.OWNER_CREATE_PRODUCT}
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <OwnerCreateProduct />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/owner/products/edit/:productId"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <OwnerProductEdit />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/owner/promotion-success"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <PromotionSuccess />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/owner/rental-requests"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <OwnerRentalRequests />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/owner/rental-requests/:subOrderId"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <OwnerRentalRequestDetail />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path={ROUTES.OWNER_ACTIVE_RENTALS}
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <ActiveRentals />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path={ROUTES.OWNER_STATISTICS}
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <OwnerStatistics />
-                      </RoleProtectedRoute>
-                    }
-                  />
-
-                  {/* Chat routes */}
-                  <Route path={ROUTES.CHAT} element={<Chat />}>
-                    {/* Default chat route */}
+              <ScrollToTop />
+              <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden max-w-full">
+                <ConditionalPromotionBanner />
+                <ConditionalNavigation />
+                <CartDrawer />
+                <main className="flex-1 overflow-x-hidden max-w-full">
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path={ROUTES.LOGIN} element={<Login />} />
+                    <Route path={ROUTES.REGISTER} element={<Register />} />
                     <Route
-                      index
+                      path={ROUTES.VERIFY_EMAIL}
+                      element={<VerifyEmail />}
+                    />
+                    <Route
+                      path={ROUTES.FORGOT_PASSWORD}
+                      element={<ForgotPassword />}
+                    />
+                    <Route
+                      path={ROUTES.RESET_PASSWORD}
+                      element={<ResetPassword />}
+                    />
+                    <Route path={ROUTES.HOME} element={<Home />} />
+                    <Route path={ROUTES.PRODUCTS} element={<ProductList />} />
+                    <Route
+                      path={ROUTES.PRODUCT_DETAIL}
+                      element={<ProductDetail />}
+                    />
+                    <Route
+                      path="/owner/:ownerId/products"
+                      element={<OwnerProductsPage />}
+                    />
+                    <Route path={ROUTES.CART} element={<Cart />} />
+                    <Route path={ROUTES.PROFILE} element={<Profile />} />
+
+                    {/* Owner routes - accessible through navigation menu */}
+                    <Route
+                      path={ROUTES.OWNER_PRODUCTS}
                       element={
-                        <ChatEmptyState />
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <OwnerProducts />
+                        </RoleProtectedRoute>
                       }
                     />
-                    {/* Specific conversation */}
-                    <Route path=":conversationId" element={<ChatContainer />} />
-                    {/* Product-specific conversation */}
                     <Route
-                      path="product/:productId/:ownerId"
-                      element={<ProductChatContainer />}
+                      path={ROUTES.OWNER_CREATE_PRODUCT}
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <OwnerCreateProduct />
+                        </RoleProtectedRoute>
+                      }
                     />
-                  </Route>
+                    <Route
+                      path="/owner/products/edit/:productId"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <OwnerProductEdit />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/owner/promotion-success"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <PromotionSuccess />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/owner/rental-requests"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <OwnerRentalRequests />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/owner/rental-requests/:subOrderId"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <OwnerRentalRequestDetail />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.OWNER_ACTIVE_RENTALS}
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <ActiveRentals />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path={ROUTES.OWNER_STATISTICS}
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <OwnerStatistics />
+                        </RoleProtectedRoute>
+                      }
+                    />
 
-                  {/* My Reports */}
-                  <Route
-                    path={ROUTES.MY_REPORTS}
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <MyReports />
-                      </RoleProtectedRoute>
-                    }
-                  />
+                    {/* Chat routes */}
+                    <Route path={ROUTES.CHAT} element={<Chat />}>
+                      {/* Default chat route */}
+                      <Route index element={<ChatEmptyState />} />
+                      {/* Specific conversation */}
+                      <Route
+                        path=":conversationId"
+                        element={<ChatContainer />}
+                      />
+                      {/* Product-specific conversation */}
+                      <Route
+                        path="product/:productId/:ownerId"
+                        element={<ProductChatContainer />}
+                      />
+                    </Route>
 
-                  {/* Wallet routes */}
-                  <Route
-                    path="/wallet/topup-success"
-                    element={<TopUpSuccess />}
-                  />
-                  <Route
-                    path="/wallet/topup-cancel"
-                    element={<TopUpCancel />}
-                  />
-                  <Route path="/withdrawals" element={<Withdrawals />} />
-                  <Route path="/notifications" element={<AllNotifications />} />
+                    {/* My Reports */}
+                    <Route
+                      path={ROUTES.MY_REPORTS}
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <MyReports />
+                        </RoleProtectedRoute>
+                      }
+                    />
 
-                  {/* Transaction History */}
-                  <Route
-                    path="/transactions"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <TransactionHistory />
-                      </RoleProtectedRoute>
-                    }
-                  />
+                    {/* Wallet routes */}
+                    <Route
+                      path="/wallet/topup-success"
+                      element={<TopUpSuccess />}
+                    />
+                    <Route
+                      path="/wallet/topup-cancel"
+                      element={<TopUpCancel />}
+                    />
+                    <Route path="/withdrawals" element={<Withdrawals />} />
+                    <Route
+                      path="/notifications"
+                      element={<AllNotifications />}
+                    />
+                    <Route
+                      path="/terms-and-conditions"
+                      element={<TermsAndConditions />}
+                    />
 
-                  {/* Payment result routes */}
-                  <Route path="/payment/success" element={<PaymentSuccess />} />
-                  <Route
-                    path="/payment/cancelled"
-                    element={<PaymentCancelled />}
-                  />
-                  <Route path="/payment/pending" element={<PaymentPending />} />
-                  <Route path="/payment/error" element={<PaymentError />} />
+                    {/* Transaction History */}
+                    <Route
+                      path="/transactions"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <TransactionHistory />
+                        </RoleProtectedRoute>
+                      }
+                    />
 
-                  {/* Rental Order routes */}
-                  <Route
-                    path="/rental-orders"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <RentalOrdersPage />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/:masterOrderId/confirmation-summary"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
-                        <RenterConfirmationSummary />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/create"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
-                        <ErrorBoundary>
-                          <RentalOrderForm />
-                        </ErrorBoundary>
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/confirmation/:id"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <OrderConfirmation />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/contracts"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <ContractSigning />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/:id"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <RentalOrderDetailPage />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/shipping-payment-success"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
-                        <RentalOrderShippingPaymentSuccess />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/rental-orders/shipping-payment-cancel"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
-                        <RentalOrderShippingPaymentCancel />
-                      </RoleProtectedRoute>
-                    }
-                  />
+                    {/* Payment result routes */}
+                    <Route
+                      path="/payment/success"
+                      element={<PaymentSuccess />}
+                    />
+                    <Route
+                      path="/payment/cancelled"
+                      element={<PaymentCancelled />}
+                    />
+                    <Route
+                      path="/payment/pending"
+                      element={<PaymentPending />}
+                    />
+                    <Route path="/payment/error" element={<PaymentError />} />
 
-                  {/* Voucher routes */}
-                  <Route
-                    path="/vouchers"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <VoucherRedeem />
-                      </RoleProtectedRoute>
-                    }
-                  />
+                    {/* Rental Order routes */}
+                    <Route
+                      path="/rental-orders"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <RentalOrdersPage />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/rental-orders/:masterOrderId/confirmation-summary"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                          <RenterConfirmationSummary />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/rental-orders/create"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                          <ErrorBoundary>
+                            <RentalOrderForm />
+                          </ErrorBoundary>
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/rental-orders/confirmation/:id"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <OrderConfirmation />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/rental-orders/contracts"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <ContractSigning />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/rental-orders/:id"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <RentalOrderDetailPage />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/rental-orders/shipping-payment-success"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                          <RentalOrderShippingPaymentSuccess />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/rental-orders/shipping-payment-cancel"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["RENTER", "OWNER"]}>
+                          <RentalOrderShippingPaymentCancel />
+                        </RoleProtectedRoute>
+                      }
+                    />
 
-                  {/* Dispute routes */}
-                  <Route
-                    path="/disputes"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <DisputesPage />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/disputes/:disputeId"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
-                        <DisputeDetail />
-                      </RoleProtectedRoute>
-                    }
-                  />
+                    {/* Voucher routes */}
+                    <Route
+                      path="/vouchers"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <VoucherRedeem />
+                        </RoleProtectedRoute>
+                      }
+                    />
 
-                  {/* Shipper shipments */}
-                  <Route
-                    path="/shipments"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["SHIPPER"]}>
-                        <ShipmentsPage />
-                      </RoleProtectedRoute>
-                    }
-                  />
+                    {/* Dispute routes */}
+                    <Route
+                      path="/disputes"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <DisputesPage />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/disputes/:disputeId"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                          <DisputeDetail />
+                        </RoleProtectedRoute>
+                      }
+                    />
 
-                  {/* Admin routes - chỉ ADMIN được vào */}
-                  <Route
-                    path="/admin"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["ADMIN"]}>
-                        <AdminLayout />
-                      </RoleProtectedRoute>
-                    }
-                  >
-                    <Route index element={<AdminDashboard />} />
-                    <Route path="users" element={<UserManagement />} />
-                    <Route path="users/:userId" element={<UserDetail />} />
-                    <Route path="products" element={<ProductManagement />} />
+                    {/* Shipper shipments */}
                     <Route
-                      path="products/:productId"
-                      element={<AdminProductDetail />}
+                      path="/shipments"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["SHIPPER"]}>
+                          <ShipmentsPage />
+                        </RoleProtectedRoute>
+                      }
                     />
+
+                    {/* Admin routes - chỉ ADMIN được vào */}
                     <Route
-                      path="transactions"
-                      element={<TransactionManagement />}
-                    />
-                    <Route
-                      path="transactions/:transactionId"
-                      element={<TransactionDetail />}
-                    />
-                    <Route
-                      path="promotions"
-                      element={<SystemPromotionManagement />}
-                    />
-                    <Route path="orders" element={<OrderManagement />} />
-                    <Route
-                      path="orders/:orderId"
-                      element={<AdminOrderDetail />}
-                    />
-                    <Route path="reports" element={<ReportManagement />} />
-                    <Route
-                      path="reports/:reportId"
-                      element={<AdminReportDetail />}
-                    />
-                    <Route path="disputes" element={<AdminDisputeManagement />} />
-                    <Route path="disputes/:disputeId" element={<AdminDisputeDetail />} />
-                    <Route path="shipments" element={<AdminShipmentManagement />} />
-                    <Route path="shipments/:shipperId" element={<AdminShipperDetail />} />
-                    <Route path="shippers/:shipperId" element={<AdminShipperDetail />} />
-                    <Route path="bank-accounts" element={<BankManagement />} />
-                    <Route
-                      path="bank-accounts/:userId"
-                      element={<AdminBankDetail />}
-                    />
-                    <Route
-                      path="withdrawals"
-                      element={<WithdrawalManagement />}
-                    />
-                    <Route
-                      path="withdrawals/:withdrawalId/analysis"
-                      element={<WithdrawalDetailAnalysis />}
-                    />
-                    <Route
-                      path="settings"
-                      element={<AdminSettings />}
-                    />
-                    <Route path="profile" element={<Profile />} />
-                  </Route>
-                </Routes>
-              </main>
-              <ConditionalFooter />
-            </div>
+                      path="/admin"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["ADMIN"]}>
+                          <AdminLayout />
+                        </RoleProtectedRoute>
+                      }
+                    >
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="users" element={<UserManagement />} />
+                      <Route path="users/:userId" element={<UserDetail />} />
+                      <Route path="products" element={<ProductManagement />} />
+                      <Route
+                        path="products/:productId"
+                        element={<AdminProductDetail />}
+                      />
+                      <Route
+                        path="transactions"
+                        element={<TransactionManagement />}
+                      />
+                      <Route
+                        path="transactions/:transactionId"
+                        element={<TransactionDetail />}
+                      />
+                      <Route
+                        path="promotions"
+                        element={<SystemPromotionManagement />}
+                      />
+                      <Route path="orders" element={<OrderManagement />} />
+                      <Route
+                        path="orders/:orderId"
+                        element={<AdminOrderDetail />}
+                      />
+                      <Route path="reports" element={<ReportManagement />} />
+                      <Route
+                        path="reports/:reportId"
+                        element={<AdminReportDetail />}
+                      />
+                      <Route
+                        path="disputes"
+                        element={<AdminDisputeManagement />}
+                      />
+                      <Route
+                        path="disputes/:disputeId"
+                        element={<AdminDisputeDetail />}
+                      />
+                      <Route
+                        path="shipments"
+                        element={<AdminShipmentManagement />}
+                      />
+                      <Route
+                        path="shipments/:shipperId"
+                        element={<AdminShipperDetail />}
+                      />
+                      <Route
+                        path="shippers/:shipperId"
+                        element={<AdminShipperDetail />}
+                      />
+                      <Route
+                        path="bank-accounts"
+                        element={<BankManagement />}
+                      />
+                      <Route
+                        path="bank-accounts/:userId"
+                        element={<AdminBankDetail />}
+                      />
+                      <Route
+                        path="withdrawals"
+                        element={<WithdrawalManagement />}
+                      />
+                      <Route
+                        path="withdrawals/:withdrawalId/analysis"
+                        element={<WithdrawalDetailAnalysis />}
+                      />
+                      <Route path="settings" element={<AdminSettings />} />
+                      <Route path="profile" element={<Profile />} />
+                    </Route>
+                  </Routes>
+                </main>
+                <ConditionalFooter />
+              </div>
             </BrowserRouter>
           </RentalOrderProvider>
         </WishlistProvider>

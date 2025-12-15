@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { toast } from "react-hot-toast";
 import { useI18n } from "../../../hooks/useI18n";
+import icons from "../../../utils/icons";
 
 const ImageUploader = ({ images, onChange, error }) => {
   const { t } = useI18n();
@@ -117,12 +118,15 @@ const ImageUploader = ({ images, onChange, error }) => {
                 error ? "text-red-600" : "text-gray-500"
               }`}
             >
-              <span className="font-semibold">{t('productForm.clickToUpload')}</span> {t('productForm.orDragDrop')}
+              <span className="font-semibold">
+                {t("productForm.clickToUpload")}
+              </span>{" "}
+              {t("productForm.orDragDrop")}
             </p>
             <p
               className={`text-xs ${error ? "text-red-500" : "text-gray-500"}`}
             >
-              {t('productForm.imageFormat')}
+              {t("productForm.imageFormat")}
             </p>
           </div>
           <input
@@ -167,7 +171,7 @@ const ImageUploader = ({ images, onChange, error }) => {
               {/* Main Badge */}
               {image.isMain && (
                 <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded z-10">
-                  {t('productForm.mainBadge')}
+                  {t("productForm.mainBadge")}
                 </div>
               )}
 
@@ -185,9 +189,9 @@ const ImageUploader = ({ images, onChange, error }) => {
                     type="button"
                     onClick={() => setMainImage(image.id)}
                     className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                    title={t('productForm.setAsMain')}
+                    title={t("productForm.setAsMain")}
                   >
-                    {t('productForm.mainBadge')}
+                    {t("productForm.mainBadge")}
                   </button>
                 )}
 
@@ -195,9 +199,9 @@ const ImageUploader = ({ images, onChange, error }) => {
                   type="button"
                   onClick={() => removeImage(image.id)}
                   className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
-                  title={t('productForm.removeImage')}
+                  title={t("productForm.removeImage")}
                 >
-                  {t('productForm.removeImage')}
+                  {t("productForm.removeImage")}
                 </button>
               </div>
 
@@ -213,16 +217,31 @@ const ImageUploader = ({ images, onChange, error }) => {
       {/* Image Count Info */}
       {images.length > 0 && (
         <div className="text-sm text-center">
-          <span className={images.length >= 3 ? "text-green-600 font-medium" : "text-orange-600 font-medium"}>
-            {images.length} / 10 {t('productForm.imagesUploaded')}
+          <span
+            className={
+              images.length >= 3
+                ? "text-green-600 font-medium"
+                : "text-orange-600 font-medium"
+            }
+          >
+            {images.length} / 10 {t("productForm.imagesUploaded")}
             {images.length < 3 && (
-              <span className="ml-2">⚠️ {t('productForm.needMore')} {3 - images.length} {t('productForm.moreImages')}</span>
+              <span className="ml-2 flex items-center gap-1">
+                <icons.BiError className="w-4 h-4 text-orange-600" />
+                {t("productForm.needMore")} {3 - images.length}{" "}
+                {t("productForm.moreImages")}
+              </span>
             )}
           </span>
           {images.length > 0 && (
-            <span className="ml-2 text-gray-500">
-              • {images.filter((img) => img.isMain).length > 0 ? "✅" : "⚠️"}{" "}
-              {t('productForm.mainImageSelected')}
+            <span className="ml-2 text-gray-500 flex items-center gap-1">
+              •{" "}
+              {images.filter((img) => img.isMain).length > 0 ? (
+                <icons.BiCheckCircle className="w-4 h-4 text-green-600" />
+              ) : (
+                <icons.BiError className="w-4 h-4 text-orange-600" />
+              )}{" "}
+              {t("productForm.mainImageSelected")}
             </span>
           )}
         </div>
@@ -231,15 +250,13 @@ const ImageUploader = ({ images, onChange, error }) => {
       {/* AI Validation Notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <h4 className="text-sm font-medium text-blue-800 mb-1">
-          {t('productForm.aiImageCheck')}
+          {t("productForm.aiImageCheck")}
         </h4>
-        <p className="text-xs text-blue-700">
-          {t('productForm.aiCheckDesc')}
-        </p>
+        <p className="text-xs text-blue-700">{t("productForm.aiCheckDesc")}</p>
         <ul className="text-xs text-blue-700 mt-1 list-disc list-inside">
-          <li>{t('productForm.aiCheckTip1')}</li>
-          <li>{t('productForm.aiCheckTip2')}</li>
-          <li>{t('productForm.aiCheckTip3')}</li>
+          <li>{t("productForm.aiCheckTip1")}</li>
+          <li>{t("productForm.aiCheckTip2")}</li>
+          <li>{t("productForm.aiCheckTip3")}</li>
         </ul>
       </div>
     </div>
