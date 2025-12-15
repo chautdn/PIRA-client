@@ -273,7 +273,8 @@ const Profile = () => {
     try {
       setSaving(true);
       const response = await userService.updateProfile(formData);
-      setUser(response.data);
+      const userData = response.data.data;
+      setUser(userData);
       setEditing(false);
       setErrors({});
       toast.success(t('profilePage.updateSuccess'));
