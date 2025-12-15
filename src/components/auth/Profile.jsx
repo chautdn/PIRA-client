@@ -68,22 +68,22 @@ const Profile = () => {
   // KYC Modal states
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycStatus, setKycStatus] = useState(null);
-  
+
   // Password prompt states for viewing CCCD
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
-  const [passwordForCCCD, setPasswordForCCCD] = useState('');
+  const [passwordForCCCD, setPasswordForCCCD] = useState("");
   const [loadingCCCD, setLoadingCCCD] = useState(false);
   const [cccdData, setCccdData] = useState(null);
   const [cccdImages, setCccdImages] = useState(null);
-  
+
   // Change password states
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [changingPassword, setChangingPassword] = useState(false);
-  
+
   // Error states
   const [errors, setErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
@@ -135,7 +135,7 @@ const Profile = () => {
         },
       },
     }));
-    toast.success(t('profilePage.updateAddressSuccess'));
+    toast.success(t("profilePage.updateAddressSuccess"));
   };
 
   // Fetch user profile
@@ -145,7 +145,7 @@ const Profile = () => {
 
     // Show notification if coming from product creation
     if (location.state?.fromProductCreate) {
-      toast(t('profilePage.updateAddressToContinueCreatingProduct'), {
+      toast(t("profilePage.updateAddressToContinueCreatingProduct"), {
         icon: <FaMapMarkerAlt className="text-blue-500" />,
         duration: 4000,
         style: {
@@ -190,8 +190,8 @@ const Profile = () => {
       // **SAU KHI LOAD PROFILE, LOAD KYC STATUS**
       await loadKycStatus();
     } catch (error) {
-      console.error('Error loading profile:', error);
-      toast.error(t('profilePage.cannotLoadProfile'));
+      console.error("Error loading profile:", error);
+      toast.error(t("profilePage.cannotLoadProfile"));
     } finally {
       setLoading(false);
     }
@@ -239,12 +239,12 @@ const Profile = () => {
         [field]: value,
       },
     }));
-    
+
     // Clear error for this field when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
   };
@@ -254,22 +254,22 @@ const Profile = () => {
       ...prev,
       [field]: value,
     }));
-    
+
     // Clear error for this field when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: undefined
+        [field]: undefined,
       }));
     }
   };
 
   const handleSave = async () => {
     if (!validateProfile()) {
-      toast.error(t('profilePage.checkInfo'));
+      toast.error(t("profilePage.checkInfo"));
       return;
     }
-    
+
     try {
       setSaving(true);
       const response = await userService.updateProfile(formData);
@@ -277,13 +277,13 @@ const Profile = () => {
       setUser(userData);
       setEditing(false);
       setErrors({});
-      toast.success(t('profilePage.updateSuccess'));
+      toast.success(t("profilePage.updateSuccess"));
 
       // Check if came from product creation page
       if (location.state?.fromProductCreate) {
-        toast.success(t('profilePage.returningToProductCreate'), { 
+        toast.success(t("profilePage.returningToProductCreate"), {
           icon: <FaRedo className="text-green-500" />,
-          duration: 2000 
+          duration: 2000,
         });
         setTimeout(() => {
           navigate("/owner/products/create", {
@@ -292,7 +292,9 @@ const Profile = () => {
         }, 1500);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || t('profilePage.updateError'));
+      toast.error(
+        error.response?.data?.message || t("profilePage.updateError")
+      );
     } finally {
       setSaving(false);
     }
@@ -307,66 +309,69 @@ const Profile = () => {
   // Validation functions
   const validateProfile = () => {
     const newErrors = {};
-    
+
     // Validate firstName
     if (!formData.profile.firstName.trim()) {
-      newErrors.firstName = t('profilePage.errorFirstNameRequired');
+      newErrors.firstName = t("profilePage.errorFirstNameRequired");
     } else if (formData.profile.firstName.trim().length < 2) {
-      newErrors.firstName = t('profilePage.errorFirstNameMin');
+      newErrors.firstName = t("profilePage.errorFirstNameMin");
     } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(formData.profile.firstName)) {
-      newErrors.firstName = t('profilePage.errorFirstNameLetters');
+      newErrors.firstName = t("profilePage.errorFirstNameLetters");
     }
-    
+
     // Validate lastName
     if (!formData.profile.lastName.trim()) {
-      newErrors.lastName = t('profilePage.errorLastNameRequired');
+      newErrors.lastName = t("profilePage.errorLastNameRequired");
     } else if (formData.profile.lastName.trim().length < 1) {
-      newErrors.lastName = t('profilePage.errorLastNameMin');
+      newErrors.lastName = t("profilePage.errorLastNameMin");
     } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(formData.profile.lastName)) {
-      newErrors.lastName = t('profilePage.errorLastNameLetters');
+      newErrors.lastName = t("profilePage.errorLastNameLetters");
     }
-    
+
     // Validate phone
-    if (formData.phone && !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(formData.phone)) {
-      newErrors.phone = t('profilePage.errorPhoneInvalid');
+    if (
+      formData.phone &&
+      !/^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(formData.phone)
+    ) {
+      newErrors.phone = t("profilePage.errorPhoneInvalid");
     }
-    
+
     // Validate date of birth
     if (formData.profile.dateOfBirth) {
       const birthDate = new Date(formData.profile.dateOfBirth);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
-      
+
       if (age < 13) {
-        newErrors.dateOfBirth = t('profilePage.errorAgeMin');
+        newErrors.dateOfBirth = t("profilePage.errorAgeMin");
       } else if (age > 120) {
-        newErrors.dateOfBirth = t('profilePage.errorDateInvalid');
+        newErrors.dateOfBirth = t("profilePage.errorDateInvalid");
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   const validatePassword = () => {
     const newErrors = {};
-    
+
     if (!passwordData.currentPassword) {
-      newErrors.currentPassword = t('profilePage.errorCurrentPasswordRequired');
+      newErrors.currentPassword = t("profilePage.errorCurrentPasswordRequired");
     }
-    
+
     if (!passwordData.newPassword) {
-      newErrors.newPassword = t('profilePage.errorNewPasswordRequired');
+      newErrors.newPassword = t("profilePage.errorNewPasswordRequired");
     } else if (passwordData.newPassword.length < 6) {
-      newErrors.newPassword = t('profilePage.errorNewPasswordMin');
+      newErrors.newPassword = t("profilePage.errorNewPasswordMin");
     }
-    
+
     if (!passwordData.confirmPassword) {
-      newErrors.confirmPassword = t('profilePage.errorPasswordsNotMatch');
+      newErrors.confirmPassword = t("profilePage.errorPasswordsNotMatch");
     } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      newErrors.confirmPassword = t('profilePage.errorPasswordsNotMatch');
+      newErrors.confirmPassword = t("profilePage.errorPasswordsNotMatch");
     }
-    
+
     setPasswordErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -374,26 +379,28 @@ const Profile = () => {
   // Handle change password
   const handleChangePassword = async () => {
     if (!validatePassword()) {
-      toast.error(t('profilePage.checkInfo'));
+      toast.error(t("profilePage.checkInfo"));
       return;
     }
-    
+
     try {
       setChangingPassword(true);
       await userService.changePassword({
         currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
+        newPassword: passwordData.newPassword,
       });
-      
-      toast.success(t('profilePage.passwordUpdated'));
+
+      toast.success(t("profilePage.passwordUpdated"));
       setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
       setPasswordErrors({});
     } catch (error) {
-      toast.error(error.response?.data?.message || t('profilePage.passwordUpdateError'));
+      toast.error(
+        error.response?.data?.message || t("profilePage.passwordUpdateError")
+      );
     } finally {
       setChangingPassword(false);
     }
@@ -409,14 +416,16 @@ const Profile = () => {
       return;
     }
 
-
     try {
       setSaving(true);
       const response = await userService.uploadAvatar(file);
-      console.log('📸 Avatar upload response:', response.data);
-      
+      console.log("📸 Avatar upload response:", response.data);
+
       // Backend trả: { status: 'success', data: { avatarUrl: '...' } }
-      if (response.data?.status === 'success' && response.data?.data?.avatarUrl) {
+      if (
+        response.data?.status === "success" &&
+        response.data?.data?.avatarUrl
+      ) {
         setUser((prev) => ({
           ...prev,
           profile: {
@@ -429,7 +438,7 @@ const Profile = () => {
         toast.error("Không thể upload avatar");
       }
     } catch (error) {
-      console.error('❌ Avatar upload error:', error);
+      console.error("❌ Avatar upload error:", error);
       toast.error(error.response?.data?.message || "Không thể upload avatar");
     } finally {
       setSaving(false);
@@ -447,7 +456,7 @@ const Profile = () => {
     // Reload cả KYC status và profile
     await loadKycStatus();
     await fetchProfile();
-    
+
     // Update global user state in AuthContext to refresh navbar
     await refreshUser();
 
@@ -458,38 +467,38 @@ const Profile = () => {
   // Handle view CCCD info - yêu cầu password
   const handleViewCCCDInfo = () => {
     setShowPasswordPrompt(true);
-    setPasswordForCCCD('');
+    setPasswordForCCCD("");
     setCccdData(null);
   };
 
   const handlePasswordSubmitForCCCD = async () => {
     console.log("user authProvider:", user?.authProvider);
     // Kiểm tra nếu user đăng nhập bằng OAuth (không có password)
-    if (user?.authProvider && user.authProvider !== 'local') {
+    if (user?.authProvider && user.authProvider !== "local") {
       // Người dùng OAuth không cần password, load trực tiếp
       try {
         setLoadingCCCD(true);
-        
+
         const [dataResponse, imagesResponse] = await Promise.all([
           kycService.getUserCCCD(),
-          kycService.getCCCDImages('') // Pass empty string for OAuth users
+          kycService.getCCCDImages(""), // Pass empty string for OAuth users
         ]);
-        
-        console.log('📥 Data Response (OAuth):', dataResponse);
-        console.log('📥 Images Response (OAuth):', imagesResponse);
-        
-        if (dataResponse?.status === 'success' && dataResponse?.data) {
+
+        console.log("📥 Data Response (OAuth):", dataResponse);
+        console.log("📥 Images Response (OAuth):", imagesResponse);
+
+        if (dataResponse?.status === "success" && dataResponse?.data) {
           setCccdData(dataResponse.data);
-          
-          if (imagesResponse?.status === 'success' && imagesResponse?.data) {
+
+          if (imagesResponse?.status === "success" && imagesResponse?.data) {
             setCccdImages(imagesResponse.data);
           }
-          
-          toast.success('Xác thực thành công!');
+
+          toast.success("Xác thực thành công!");
         }
       } catch (error) {
-        console.error('❌ Error (OAuth):', error);
-        toast.error('Không thể tải thông tin CCCD');
+        console.error("❌ Error (OAuth):", error);
+        toast.error("Không thể tải thông tin CCCD");
       } finally {
         setLoadingCCCD(false);
       }
@@ -498,44 +507,44 @@ const Profile = () => {
 
     // User đăng nhập bằng email/password - yêu cầu nhập password
     if (!passwordForCCCD) {
-      toast.error('Vui lòng nhập mật khẩu');
+      toast.error("Vui lòng nhập mật khẩu");
       return;
     }
 
     try {
       setLoadingCCCD(true);
-      
+
       // Verify password và load data + images song song
       await userService.verifyPassword(passwordForCCCD);
-      
+
       const [dataResponse, imagesResponse] = await Promise.all([
         kycService.getUserCCCD(),
-        kycService.getCCCDImages(passwordForCCCD)
+        kycService.getCCCDImages(passwordForCCCD),
       ]);
-      
-      console.log('📥 Data Response:', dataResponse);
-      console.log('📥 Images Response:', imagesResponse);
-      
+
+      console.log("📥 Data Response:", dataResponse);
+      console.log("📥 Images Response:", imagesResponse);
+
       // kycService đã unwrap response.data, nên dataResponse = { status, message, data, metadata }
       // Backend trả data trực tiếp trong field 'data', không nested
-      if (dataResponse?.status === 'success' && dataResponse?.data) {
-        console.log('💾 Setting CCCD Data:', dataResponse.data);
+      if (dataResponse?.status === "success" && dataResponse?.data) {
+        console.log("💾 Setting CCCD Data:", dataResponse.data);
         setCccdData(dataResponse.data);
-        
-        if (imagesResponse?.status === 'success' && imagesResponse?.data) {
-          console.log('🖼️ Setting CCCD Images:', imagesResponse.data);
+
+        if (imagesResponse?.status === "success" && imagesResponse?.data) {
+          console.log("🖼️ Setting CCCD Images:", imagesResponse.data);
           setCccdImages(imagesResponse.data);
         }
-        
-        toast.success(t('profilePage.verifiedSuccess'));
+
+        toast.success(t("profilePage.verifiedSuccess"));
       } else {
-        console.error('❌ Invalid response:', dataResponse);
-        toast.error(t('profilePage.cccdNotFound'));
+        console.error("❌ Invalid response:", dataResponse);
+        toast.error(t("profilePage.cccdNotFound"));
       }
     } catch (error) {
-      console.error('❌ Error:', error);
-      toast.error(error.message || t('profilePage.passwordIncorrect'));
-      setPasswordForCCCD('');
+      console.error("❌ Error:", error);
+      toast.error(error.message || t("profilePage.passwordIncorrect"));
+      setPasswordForCCCD("");
     } finally {
       setLoadingCCCD(false);
     }
@@ -543,15 +552,19 @@ const Profile = () => {
 
   const handleClosePasswordPrompt = () => {
     setShowPasswordPrompt(false);
-    setPasswordForCCCD('');
+    setPasswordForCCCD("");
     setCccdData(null);
     setCccdImages(null);
   };
 
   // Auto-load CCCD data for OAuth users when modal opens
   useEffect(() => {
-    if (showPasswordPrompt && user?.authProvider && user.authProvider !== 'local') {
-      console.log('🔓 OAuth user detected, auto-loading CCCD data...');
+    if (
+      showPasswordPrompt &&
+      user?.authProvider &&
+      user.authProvider !== "local"
+    ) {
+      console.log("🔓 OAuth user detected, auto-loading CCCD data...");
       handlePasswordSubmitForCCCD();
     }
   }, [showPasswordPrompt]);
@@ -564,7 +577,7 @@ const Profile = () => {
 
     if (isVerified) {
       return {
-        text: t('profilePage.kycVerifiedStatus'),
+        text: t("profilePage.kycVerifiedStatus"),
         color: "text-green-600",
         bgColor: "bg-green-100",
         icon: <FaCheckCircle className="text-green-500" />,
@@ -573,7 +586,7 @@ const Profile = () => {
 
     if (hasImages) {
       return {
-        text: t('profilePage.kycPendingStatus'),
+        text: t("profilePage.kycPendingStatus"),
         color: "text-yellow-600",
         bgColor: "bg-yellow-100",
         icon: <FaClock className="text-yellow-500" />,
@@ -581,7 +594,7 @@ const Profile = () => {
     }
 
     return {
-      text: t('profilePage.kycNotVerifiedStatus'),
+      text: t("profilePage.kycNotVerifiedStatus"),
       color: "text-red-500",
       bgColor: "bg-red-100",
       icon: <FaTimesCircle className="text-red-500" />,
@@ -590,23 +603,35 @@ const Profile = () => {
 
   // Sidebar menu items
   const menuItems = [
-    { id: "notifications", icon: <FaBell className="text-xl" />, label: t('profilePage.menuNotifications') },
+    {
+      id: "notifications",
+      icon: <FaBell className="text-xl" />,
+      label: t("profilePage.menuNotifications"),
+    },
     {
       id: "profile",
 
       icon: <FiUser className="text-xl" />,
-      label: t('profilePage.menuMyAccount'),
+      label: t("profilePage.menuMyAccount"),
       submenu: [
-        { id: "profile", label: t('profilePage.menuProfile') },
-        { id: "address", label: t('profilePage.menuAddress') },
-        { id: "password", label: t('profilePage.menuPassword') },
-        { id: "verification", label: t('profilePage.menuVerification') },
-        { id: "banking", label: t('profilePage.menuBanking') },
+        { id: "profile", label: t("profilePage.menuProfile") },
+        { id: "address", label: t("profilePage.menuAddress") },
+        { id: "password", label: t("profilePage.menuPassword") },
+        { id: "verification", label: t("profilePage.menuVerification") },
+        { id: "banking", label: t("profilePage.menuBanking") },
       ],
     },
 
-    { id: "orders", icon: <FaClipboardList className="text-xl" />, label: t('profilePage.menuOrders') },
-    { id: "vouchers", icon: <FaTicketAlt className="text-xl" />, label: t('profilePage.menuVouchers') },
+    {
+      id: "orders",
+      icon: <FaClipboardList className="text-xl" />,
+      label: t("profilePage.menuOrders"),
+    },
+    {
+      id: "vouchers",
+      icon: <FaTicketAlt className="text-xl" />,
+      label: t("profilePage.menuVouchers"),
+    },
   ];
 
   if (loading) {
@@ -618,7 +643,9 @@ const Profile = () => {
           animate={{ opacity: 1 }}
         >
           <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 font-medium">{t('profilePage.loadingInfo')}</p>
+          <p className="text-gray-600 font-medium">
+            {t("profilePage.loadingInfo")}
+          </p>
         </motion.div>
       </div>
     );
@@ -663,14 +690,11 @@ const Profile = () => {
                       : user?.email?.split("@")[0] || "User"}
                   </p>
                   <p className="text-blue-100 text-sm flex items-center mt-1">
-
                     <FiEdit3 className="mr-1" />
-                    {t('profilePage.editProfile')}
+                    {t("profilePage.editProfile")}
                   </p>
                 </div>
               </div>
-              
-              
             </div>
 
             {/* Menu Items */}
@@ -678,8 +702,12 @@ const Profile = () => {
               {menuItems.map((item) => (
                 <div key={item.id}>
                   <button className="w-full flex items-center px-5 py-3 text-left hover:bg-gradient-to-r hover:from-green-50 hover:to-primary-50 transition-all duration-200 group">
-                    <span className="text-2xl mr-3 group-hover:scale-110 transition-transform duration-200">{item.icon}</span>
-                    <span className="text-gray-700 font-medium group-hover:text-gray-900">{item.label}</span>
+                    <span className="text-2xl mr-3 group-hover:scale-110 transition-transform duration-200">
+                      {item.icon}
+                    </span>
+                    <span className="text-gray-700 font-medium group-hover:text-gray-900">
+                      {item.label}
+                    </span>
                   </button>
 
                   {item.submenu && (
@@ -725,18 +753,23 @@ const Profile = () => {
                         {activeSection === "password" && <FiLock />}
                         {activeSection === "banking" && <BsBuildings />}
                       </span>
-                      {activeSection === "profile" && t('profilePage.sectionProfile')}
-                      {activeSection === "address" && t('profilePage.sectionAddress')}
-                      {activeSection === "verification" && t('profilePage.sectionVerification')}
-                      {activeSection === "password" && t('profilePage.sectionPassword')}
-                      {activeSection === "banking" && t('profilePage.sectionBanking')}
+                      {activeSection === "profile" &&
+                        t("profilePage.sectionProfile")}
+                      {activeSection === "address" &&
+                        t("profilePage.sectionAddress")}
+                      {activeSection === "verification" &&
+                        t("profilePage.sectionVerification")}
+                      {activeSection === "password" &&
+                        t("profilePage.sectionPassword")}
+                      {activeSection === "banking" &&
+                        t("profilePage.sectionBanking")}
                     </h1>
                     <p className="text-green-100 mt-2 text-lg">
                       {activeSection === "verification"
-                        ? t('profilePage.manageVerification')
+                        ? t("profilePage.manageVerification")
                         : activeSection === "banking"
-                        ? t('profilePage.manageBanking')
-                        : t('profilePage.manageProfileInfo')}
+                        ? t("profilePage.manageBanking")
+                        : t("profilePage.manageProfileInfo")}
                     </p>
                   </div>
                 </div>
@@ -755,10 +788,10 @@ const Profile = () => {
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 text-lg">
-                              {t('profilePage.emailVerification')}
+                              {t("profilePage.emailVerification")}
                             </h3>
                             <p className="text-sm text-gray-600 mt-1">
-                              {t('profilePage.emailVerificationDesc')}
+                              {t("profilePage.emailVerificationDesc")}
                             </p>
                           </div>
                         </div>
@@ -770,14 +803,21 @@ const Profile = () => {
                                 : "bg-gray-200 text-gray-700"
                             }`}
                           >
-                            {user?.verification?.emailVerified
-
-                              ? <><FaCheckCircle className="inline mr-1" />{t('profilePage.emailVerified')}</>
-                              : <><FaTimesCircle className="inline mr-1" />{t('profilePage.emailNotVerified')}</>}
+                            {user?.verification?.emailVerified ? (
+                              <>
+                                <FaCheckCircle className="inline mr-1" />
+                                {t("profilePage.emailVerified")}
+                              </>
+                            ) : (
+                              <>
+                                <FaTimesCircle className="inline mr-1" />
+                                {t("profilePage.emailNotVerified")}
+                              </>
+                            )}
                           </span>
                           {!user?.verification?.emailVerified && (
                             <button className="px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                              {t('profilePage.verifyNow')}
+                              {t("profilePage.verifyNow")}
                             </button>
                           )}
                         </div>
@@ -791,34 +831,49 @@ const Profile = () => {
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 text-lg">
-                              {t('profilePage.kycVerification')}
+                              {t("profilePage.kycVerification")}
                             </h3>
                             <p className="text-sm text-gray-600 mt-1">
                               {user?.cccd?.isVerified
-                                ? t('profilePage.kycVerified')
-                                : t('profilePage.kycNotVerified')}
+                                ? t("profilePage.kycVerified")
+                                : t("profilePage.kycNotVerified")}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <span
-                            className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${getKycStatusDisplay().bgColor} ${getKycStatusDisplay().color}`}
+                            className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
+                              getKycStatusDisplay().bgColor
+                            } ${getKycStatusDisplay().color}`}
                           >
                             {getKycStatusDisplay().icon}
-                            <span className="ml-1">{getKycStatusDisplay().text}</span>
+                            <span className="ml-1">
+                              {getKycStatusDisplay().text}
+                            </span>
                           </span>
                           <button
-                            onClick={() => user?.cccd?.isVerified ? handleViewCCCDInfo() : setShowKycModal(true)}
+                            onClick={() =>
+                              user?.cccd?.isVerified
+                                ? handleViewCCCDInfo()
+                                : setShowKycModal(true)
+                            }
                             className={`px-5 py-2.5 text-sm font-semibold rounded-lg shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 ${
                               user?.cccd?.isVerified
                                 ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
                                 : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                             }`}
                           >
-                            {user?.cccd?.isVerified
-
-                              ? <><FiEye className="inline mr-1" />{t('profilePage.viewInfo')}</>
-                              : <><FaLock className="inline mr-1" />{t('profilePage.verifyIdentity')}</>}
+                            {user?.cccd?.isVerified ? (
+                              <>
+                                <FiEye className="inline mr-1" />
+                                {t("profilePage.viewInfo")}
+                              </>
+                            ) : (
+                              <>
+                                <FaLock className="inline mr-1" />
+                                {t("profilePage.verifyIdentity")}
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -826,9 +881,8 @@ const Profile = () => {
                       {/* Security Level */}
                       <div className="mt-8 p-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 rounded-2xl border-2 border-indigo-200 shadow-xl">
                         <h3 className="font-bold text-gray-900 mb-6 flex items-center text-xl">
-
                           <FiShield className="text-3xl mr-3" />
-                          {t('profilePage.securityLevel')}
+                          {t("profilePage.securityLevel")}
                         </h3>
 
                         <div className="flex items-center mb-6">
@@ -846,12 +900,12 @@ const Profile = () => {
                           <span className="ml-4 text-base font-bold text-gray-700 bg-white px-4 py-2 rounded-full shadow-md">
                             {(user?.verification?.emailVerified ? 1 : 0) +
                               (user?.cccd?.isVerified ? 1 : 0)}
-                            /2 {t('profilePage.completed')}
+                            /2 {t("profilePage.completed")}
                           </span>
                         </div>
 
                         <p className="text-sm text-gray-700 bg-white/60 p-4 rounded-lg">
-                          {t('profilePage.securityDesc')}
+                          {t("profilePage.securityDesc")}
                         </p>
 
                         {(user?.verification?.emailVerified ? 1 : 0) +
@@ -859,9 +913,8 @@ const Profile = () => {
                           2 && (
                           <div className="mt-6 p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl shadow-lg">
                             <p className="text-base text-white font-semibold flex items-center">
-
                               <FiAward className="text-2xl mr-3" />
-                              {t('profilePage.congratulations')}
+                              {t("profilePage.congratulations")}
                             </p>
                           </div>
                         )}
@@ -878,9 +931,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-
                             <FiUser className="text-xl" />
-                            {t('profilePage.firstName')}:
+                            {t("profilePage.firstName")}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -895,8 +947,14 @@ const Profile = () => {
                                       e.target.value
                                     )
                                   }
-                                  className={`w-full px-4 py-3 border-2 ${errors.firstName ? 'border-red-300' : 'border-blue-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200`}
-                                  placeholder={t('profilePage.placeholderFirstName')}
+                                  className={`w-full px-4 py-3 border-2 ${
+                                    errors.firstName
+                                      ? "border-red-300"
+                                      : "border-blue-300"
+                                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200`}
+                                  placeholder={t(
+                                    "profilePage.placeholderFirstName"
+                                  )}
                                 />
                                 {errors.firstName && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -908,14 +966,15 @@ const Profile = () => {
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
-                                  {user?.profile?.firstName || t('profilePage.notUpdated')}
+                                  {user?.profile?.firstName ||
+                                    t("profilePage.notUpdated")}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                   <FiEdit3 className="inline mr-1" />
-                                  {t('profilePage.change')}
+                                  {t("profilePage.change")}
                                 </button>
                               </div>
                             )}
@@ -927,9 +986,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-
                             <FiUser className="text-xl" />
-                            {t('profilePage.lastName')}:
+                            {t("profilePage.lastName")}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -944,8 +1002,14 @@ const Profile = () => {
                                       e.target.value
                                     )
                                   }
-                                  className={`w-full px-4 py-3 border-2 ${errors.lastName ? 'border-red-300' : 'border-green-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200`}
-                                  placeholder={t('profilePage.placeholderLastName')}
+                                  className={`w-full px-4 py-3 border-2 ${
+                                    errors.lastName
+                                      ? "border-red-300"
+                                      : "border-green-300"
+                                  } rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200`}
+                                  placeholder={t(
+                                    "profilePage.placeholderLastName"
+                                  )}
                                 />
                                 {errors.lastName && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -957,14 +1021,15 @@ const Profile = () => {
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
-                                  {user?.profile?.lastName || t('profilePage.notUpdated')}
+                                  {user?.profile?.lastName ||
+                                    t("profilePage.notUpdated")}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                   <FiEdit3 className="inline mr-1" />
-                                  {t('profilePage.change')}
+                                  {t("profilePage.change")}
                                 </button>
                               </div>
                             )}
@@ -976,21 +1041,22 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-  
                             <FiMail className="text-xl" />
-                            {t('profilePage.email')}:
+                            {t("profilePage.email")}:
                           </label>
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <span className="text-gray-900 font-medium">
                                 {user?.email
-                                  ? `${user.email.slice(0, 3)}*********@gmail.com`
+                                  ? `${user.email.slice(
+                                      0,
+                                      3
+                                    )}*********@gmail.com`
                                   : "N/A"}
                               </span>
                               <button className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 shadow-md transform hover:-translate-y-0.5 transition-all duration-200">
                                 <FiEdit3 className="inline mr-1" />
-                                                                  {t('profilePage.change')}
-
+                                {t("profilePage.change")}
                               </button>
                             </div>
                           </div>
@@ -1001,9 +1067,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-
                             <FiPhone className="text-xl" />
-                            {t('profilePage.phone')}:
+                            {t("profilePage.phone")}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -1014,8 +1079,14 @@ const Profile = () => {
                                   onChange={(e) =>
                                     handleDirectChange("phone", e.target.value)
                                   }
-                                  className={`w-full px-4 py-3 border-2 ${errors.phone ? 'border-red-300' : 'border-green-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200`}
-                                  placeholder={t('profilePage.placeholderPhone')}
+                                  className={`w-full px-4 py-3 border-2 ${
+                                    errors.phone
+                                      ? "border-red-300"
+                                      : "border-green-300"
+                                  } rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200`}
+                                  placeholder={t(
+                                    "profilePage.placeholderPhone"
+                                  )}
                                 />
                                 {errors.phone && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -1036,7 +1107,7 @@ const Profile = () => {
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                   <FiEdit3 className="inline mr-1" />
-                                  {t('profilePage.change')}
+                                  {t("profilePage.change")}
                                 </button>
                               </div>
                             )}
@@ -1048,9 +1119,8 @@ const Profile = () => {
                       <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-5 rounded-xl border-2 border-orange-100 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
-
                             <FiUser className="text-xl" />
-                            {t('profilePage.gender')}:
+                            {t("profilePage.gender")}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -1070,14 +1140,19 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-blue-600"
                                   />
-                                  <span className="font-medium"><FaMale className="inline mr-1" />{t('profilePage.male')}</span>
+                                  <span className="font-medium">
+                                    <FaMale className="inline mr-1" />
+                                    {t("profilePage.male")}
+                                  </span>
                                 </label>
                                 <label className="flex items-center px-4 py-3 bg-white border-2 border-pink-200 rounded-lg cursor-pointer hover:bg-pink-50 transition-colors duration-200 has-[:checked]:bg-pink-100 has-[:checked]:border-pink-500">
                                   <input
                                     type="radio"
                                     name="gender"
                                     value="FEMALE"
-                                    checked={formData.profile.gender === "FEMALE"}
+                                    checked={
+                                      formData.profile.gender === "FEMALE"
+                                    }
                                     onChange={(e) =>
                                       handleInputChange(
                                         "profile",
@@ -1087,14 +1162,19 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-pink-600"
                                   />
-                                  <span className="font-medium"><FaFemale className="inline mr-1" />{t('profilePage.female')}</span>
+                                  <span className="font-medium">
+                                    <FaFemale className="inline mr-1" />
+                                    {t("profilePage.female")}
+                                  </span>
                                 </label>
                                 <label className="flex items-center px-4 py-3 bg-white border-2 border-purple-200 rounded-lg cursor-pointer hover:bg-purple-50 transition-colors duration-200 has-[:checked]:bg-purple-100 has-[:checked]:border-purple-500">
                                   <input
                                     type="radio"
                                     name="gender"
                                     value="OTHER"
-                                    checked={formData.profile.gender === "OTHER"}
+                                    checked={
+                                      formData.profile.gender === "OTHER"
+                                    }
                                     onChange={(e) =>
                                       handleInputChange(
                                         "profile",
@@ -1104,26 +1184,40 @@ const Profile = () => {
                                     }
                                     className="mr-2 w-4 h-4 text-purple-600"
                                   />
-                                  <span className="font-medium"><FaUserFriends className="inline mr-1" />{t('profilePage.other')}</span>
+                                  <span className="font-medium">
+                                    <FaUserFriends className="inline mr-1" />
+                                    {t("profilePage.other")}
+                                  </span>
                                 </label>
                               </div>
                             ) : (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-900 font-medium">
-                                  {user?.profile?.gender === "MALE"
-                                    ? <><FaMale className="inline mr-1" />{t('profilePage.male')}</>
-                                    : user?.profile?.gender === "FEMALE"
-                                    ? <><FaFemale className="inline mr-1" />{t('profilePage.female')}</>
-                                    : user?.profile?.gender === "OTHER"
-                                    ? <><FaUserFriends className="inline mr-1" />{t('profilePage.other')}</>
-                                    : t('profilePage.notUpdated')}
+                                  {user?.profile?.gender === "MALE" ? (
+                                    <>
+                                      <FaMale className="inline mr-1" />
+                                      {t("profilePage.male")}
+                                    </>
+                                  ) : user?.profile?.gender === "FEMALE" ? (
+                                    <>
+                                      <FaFemale className="inline mr-1" />
+                                      {t("profilePage.female")}
+                                    </>
+                                  ) : user?.profile?.gender === "OTHER" ? (
+                                    <>
+                                      <FaUserFriends className="inline mr-1" />
+                                      {t("profilePage.other")}
+                                    </>
+                                  ) : (
+                                    t("profilePage.notUpdated")
+                                  )}
                                 </span>
                                 <button
                                   onClick={() => setEditing(true)}
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                   <FiEdit3 className="inline mr-1" />
-                                  {t('profilePage.change')}
+                                  {t("profilePage.change")}
                                 </button>
                               </div>
                             )}
@@ -1136,7 +1230,7 @@ const Profile = () => {
                         <div className="flex items-center">
                           <label className="flex items-center gap-2 w-32 text-sm font-semibold text-gray-700 mr-4">
                             <FiCalendar className="text-xl" />
-                            {t('profilePage.dateOfBirth')}:
+                            {t("profilePage.dateOfBirth")}:
                           </label>
                           <div className="flex-1">
                             {editing ? (
@@ -1151,7 +1245,11 @@ const Profile = () => {
                                       e.target.value
                                     )
                                   }
-                                  className={`px-4 py-3 border-2 ${errors.dateOfBirth ? 'border-red-300' : 'border-rose-300'} rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white shadow-sm transition-all duration-200`}
+                                  className={`px-4 py-3 border-2 ${
+                                    errors.dateOfBirth
+                                      ? "border-red-300"
+                                      : "border-rose-300"
+                                  } rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white shadow-sm transition-all duration-200`}
                                 />
                                 {errors.dateOfBirth && (
                                   <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
@@ -1174,8 +1272,7 @@ const Profile = () => {
                                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-indigo-600 shadow-md transform hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                   <FiEdit3 className="inline mr-1" />
-                                                                    {t('profilePage.change')}
-
+                                  {t("profilePage.change")}
                                 </button>
                               </div>
                             )}
@@ -1199,53 +1296,63 @@ const Profile = () => {
                                 <div className="flex items-center gap-1">
                                   {/* Credit Score Stars */}
                                   {[...Array(5)].map((_, i) => (
-                                    <FaStar 
+                                    <FaStar
                                       key={i}
-                                      className={`text-lg ${i < Math.floor((user?.creditScore || 100) / 20) ? 'text-yellow-400' : 'text-gray-300'}`}
+                                      className={`text-lg ${
+                                        i <
+                                        Math.floor(
+                                          (user?.creditScore || 100) / 20
+                                        )
+                                          ? "text-yellow-400"
+                                          : "text-gray-300"
+                                      }`}
                                     />
                                   ))}
                                 </div>
-                                <span 
+                                <span
                                   className={`px-3 py-1 text-xs font-bold rounded-full ${
-                                    (user?.creditScore || 100) >= 80 
-                                      ? 'bg-green-100 text-green-800'
+                                    (user?.creditScore || 100) >= 80
+                                      ? "bg-green-100 text-green-800"
                                       : (user?.creditScore || 100) >= 60
-                                      ? 'bg-yellow-100 text-yellow-800' 
+                                      ? "bg-yellow-100 text-yellow-800"
                                       : (user?.creditScore || 100) >= 40
-                                      ? 'bg-orange-100 text-orange-800'
-                                      : 'bg-red-100 text-red-800'
+                                      ? "bg-orange-100 text-orange-800"
+                                      : "bg-red-100 text-red-800"
                                   }`}
                                 >
-                                  {(user?.creditScore || 100) >= 80 
-                                    ? 'Xuất sắc' 
+                                  {(user?.creditScore || 100) >= 80
+                                    ? "Xuất sắc"
                                     : (user?.creditScore || 100) >= 60
-                                    ? 'Tốt'
+                                    ? "Tốt"
                                     : (user?.creditScore || 100) >= 40
-                                    ? 'Khá'
-                                    : 'Cần cải thiện'}
+                                    ? "Khá"
+                                    : "Cần cải thiện"}
                                 </span>
                               </div>
-                              
                             </div>
                             <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className={`h-2 rounded-full transition-all duration-500 ${
-                                  (user?.creditScore || 100) >= 80 
-                                    ? 'bg-gradient-to-r from-green-400 to-green-600'
+                                  (user?.creditScore || 100) >= 80
+                                    ? "bg-gradient-to-r from-green-400 to-green-600"
                                     : (user?.creditScore || 100) >= 60
-                                    ? 'bg-gradient-to-r from-yellow-400 to-yellow-600'
+                                    ? "bg-gradient-to-r from-yellow-400 to-yellow-600"
                                     : (user?.creditScore || 100) >= 40
-                                    ? 'bg-gradient-to-r from-orange-400 to-orange-600'
-                                    : 'bg-gradient-to-r from-red-400 to-red-600'
+                                    ? "bg-gradient-to-r from-orange-400 to-orange-600"
+                                    : "bg-gradient-to-r from-red-400 to-red-600"
                                 }`}
                                 style={{
-                                  width: `${Math.min(user?.creditScore || 100, 100)}%`
+                                  width: `${Math.min(
+                                    user?.creditScore || 100,
+                                    100
+                                  )}%`,
                                 }}
                               ></div>
                             </div>
                             <p className="text-xs text-gray-500 mt-2">
                               <FiInfo className="inline mr-1" />
-                              Điểm tín dụng được tính dựa trên lịch sử thuê và trả đồ của bạn
+                              Điểm tín dụng được tính dựa trên lịch sử thuê và
+                              trả đồ của bạn
                             </p>
                           </div>
                         </div>
@@ -1262,14 +1369,16 @@ const Profile = () => {
                               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
                             >
                               <FiSave className="inline mr-2" />
-                              {saving ? t('profilePage.saving') :  t('profilePage.save')}
+                              {saving
+                                ? t("profilePage.saving")
+                                : t("profilePage.save")}
                             </button>
                             <button
                               onClick={handleCancel}
                               className="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 shadow-md transition-all duration-200"
                             >
                               <FiX className="inline mr-2" />
-                             {t('profilePage.cancel')}
+                              {t("profilePage.cancel")}
                             </button>
                           </div>
                         </div>
@@ -1305,18 +1414,17 @@ const Profile = () => {
                           className="hidden"
                         />
                         <FiCamera className="inline mr-2" />
-                        {t('profilePage.chooseNewPhoto')}
+                        {t("profilePage.chooseNewPhoto")}
                       </label>
 
                       <div className="text-xs text-gray-500 mt-4 text-center bg-gray-50 p-3 rounded-lg">
-
                         <p className="font-medium">
                           <FiFile className="inline mr-1" />
-                          {t('profilePage.capacityMax')}
+                          {t("profilePage.capacityMax")}
                         </p>
                         <p className="mt-1">
                           <FiImage className="inline mr-1" />
-                          {t('profilePage.formatSupported')}
+                          {t("profilePage.formatSupported")}
                         </p>
                       </div>
                     </div>
@@ -1326,18 +1434,18 @@ const Profile = () => {
                 {activeSection === "address" && (
                   <div className="max-w-2xl">
                     <h2 className="text-lg font-medium mb-6">
-                      {t('profilePage.myAddress')}
+                      {t("profilePage.myAddress")}
                     </h2>
 
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {t('profilePage.chooseOnMap')}
+                          {t("profilePage.chooseOnMap")}
                         </label>
                         <MapSelector
                           onLocationSelect={handleLocationSelect}
                           initialAddress={formData.address.streetAddress}
-                          placeholder={t('profilePage.clickToChooseMap')}
+                          placeholder={t("profilePage.clickToChooseMap")}
                           className="mb-4"
                         />
                         {formData.address.coordinates?.latitude &&
@@ -1345,15 +1453,18 @@ const Profile = () => {
                             <div className="text-sm text-green-600 bg-green-50 p-2 rounded mb-2">
                               <FaCheckCircle className="inline mr-1 text-green-500" />
                               Đã có tọa độ:{" "}
-                              {formData.address.coordinates.latitude.toFixed(6)},{" "}
-                              {formData.address.coordinates.longitude.toFixed(6)}
+                              {formData.address.coordinates.latitude.toFixed(6)}
+                              ,{" "}
+                              {formData.address.coordinates.longitude.toFixed(
+                                6
+                              )}
                             </div>
                           )}
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {t('profilePage.addressDetail')}
+                          {t("profilePage.addressDetail")}
                         </label>
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
                           {formData.address.streetAddress || "Chưa cập nhật"}
@@ -1362,7 +1473,7 @@ const Profile = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {t('profilePage.ward')}
+                          {t("profilePage.ward")}
                         </label>
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
                           {formData.address.ward || "Chưa cập nhật"}
@@ -1371,7 +1482,7 @@ const Profile = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {t('profilePage.city')}
+                          {t("profilePage.city")}
                         </label>
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
                           {formData.address.city || "Chưa cập nhật"}
@@ -1380,7 +1491,7 @@ const Profile = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          {t('profilePage.province')}
+                          {t("profilePage.province")}
                         </label>
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
                           {formData.address.province || "Chưa cập nhật"}
@@ -1391,9 +1502,11 @@ const Profile = () => {
                         <div className="flex items-start gap-3">
                           <FiInfo className="text-2xl text-blue-600" />
                           <div>
-                            <p className="text-sm font-medium text-blue-900">{t('profilePage.locationNote')}</p>
+                            <p className="text-sm font-medium text-blue-900">
+                              {t("profilePage.locationNote")}
+                            </p>
                             <p className="text-sm text-blue-700 mt-1">
-                              {t('profilePage.locationNoteDesc')}
+                              {t("profilePage.locationNoteDesc")}
                             </p>
                           </div>
                         </div>
@@ -1405,8 +1518,9 @@ const Profile = () => {
                           disabled={saving}
                           className="px-6 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 disabled:opacity-50"
                         >
-                          {saving ? 
-                          t('profilePage.saving') : t('profilePage.saveAddress')}
+                          {saving
+                            ? t("profilePage.saving")
+                            : t("profilePage.saveAddress")}
                         </button>
                       </div>
                     </div>
@@ -1419,22 +1533,33 @@ const Profile = () => {
                       {/* Current Password */}
                       <div className="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-xl border-2 border-red-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-
                           <FiKey className="text-2xl" />
-                          {t('profilePage.currentPassword')}
+                          {t("profilePage.currentPassword")}
                         </label>
                         <div className="relative">
                           <input
                             type="password"
                             value={passwordData.currentPassword}
                             onChange={(e) => {
-                              setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }));
+                              setPasswordData((prev) => ({
+                                ...prev,
+                                currentPassword: e.target.value,
+                              }));
                               if (passwordErrors.currentPassword) {
-                                setPasswordErrors(prev => ({ ...prev, currentPassword: undefined }));
+                                setPasswordErrors((prev) => ({
+                                  ...prev,
+                                  currentPassword: undefined,
+                                }));
                               }
                             }}
-                            className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.currentPassword ? 'border-red-300' : 'border-red-200'} rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
-                            placeholder={t('profilePage.placeholderCurrentPassword')}
+                            className={`w-full px-4 py-3 pl-12 border-2 ${
+                              passwordErrors.currentPassword
+                                ? "border-red-300"
+                                : "border-red-200"
+                            } rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
+                            placeholder={t(
+                              "profilePage.placeholderCurrentPassword"
+                            )}
                           />
                           <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-red-500" />
                         </div>
@@ -1449,22 +1574,33 @@ const Profile = () => {
                       {/* New Password */}
                       <div className="bg-gradient-to-r from-primary-50 to-green-50 p-6 rounded-xl border-2 border-primary-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-
                           <FiRefreshCcw className="text-2xl" />
-                          {t('profilePage.newPassword')}
+                          {t("profilePage.newPassword")}
                         </label>
                         <div className="relative">
                           <input
                             type="password"
                             value={passwordData.newPassword}
                             onChange={(e) => {
-                              setPasswordData(prev => ({ ...prev, newPassword: e.target.value }));
+                              setPasswordData((prev) => ({
+                                ...prev,
+                                newPassword: e.target.value,
+                              }));
                               if (passwordErrors.newPassword) {
-                                setPasswordErrors(prev => ({ ...prev, newPassword: undefined }));
+                                setPasswordErrors((prev) => ({
+                                  ...prev,
+                                  newPassword: undefined,
+                                }));
                               }
                             }}
-                            className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.newPassword ? 'border-red-300' : 'border-primary-200'} rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
-                            placeholder={t('profilePage.placeholderNewPassword')}
+                            className={`w-full px-4 py-3 pl-12 border-2 ${
+                              passwordErrors.newPassword
+                                ? "border-red-300"
+                                : "border-primary-200"
+                            } rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
+                            placeholder={t(
+                              "profilePage.placeholderNewPassword"
+                            )}
                           />
                           <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-primary-500" />
                         </div>
@@ -1479,22 +1615,33 @@ const Profile = () => {
                       {/* Confirm Password */}
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-100 hover:shadow-xl transition-all duration-300">
                         <label className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
-
                           <FiCheck className="text-2xl" />
-                          {t('profilePage.confirmPassword')}
+                          {t("profilePage.confirmPassword")}
                         </label>
                         <div className="relative">
                           <input
                             type="password"
                             value={passwordData.confirmPassword}
                             onChange={(e) => {
-                              setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }));
+                              setPasswordData((prev) => ({
+                                ...prev,
+                                confirmPassword: e.target.value,
+                              }));
                               if (passwordErrors.confirmPassword) {
-                                setPasswordErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                                setPasswordErrors((prev) => ({
+                                  ...prev,
+                                  confirmPassword: undefined,
+                                }));
                               }
                             }}
-                            className={`w-full px-4 py-3 pl-12 border-2 ${passwordErrors.confirmPassword ? 'border-red-300' : 'border-green-200'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
-                            placeholder={t('profilePage.placeholderConfirmPassword')}
+                            className={`w-full px-4 py-3 pl-12 border-2 ${
+                              passwordErrors.confirmPassword
+                                ? "border-red-300"
+                                : "border-green-200"
+                            } rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white shadow-sm transition-all duration-200 text-gray-800 placeholder-gray-400`}
+                            placeholder={t(
+                              "profilePage.placeholderConfirmPassword"
+                            )}
                           />
                           <FiUnlock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl text-green-500" />
                         </div>
@@ -1509,37 +1656,34 @@ const Profile = () => {
                       {/* Security Tips */}
                       <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-xl border-2 border-yellow-200">
                         <h4 className="flex items-center gap-2 font-bold text-gray-800 mb-3">
-
                           <FiShield className="text-xl" />
-                          {t('profilePage.passwordTips')}
+                          {t("profilePage.passwordTips")}
                         </h4>
                         <ul className="space-y-2 text-sm text-gray-700">
                           <li className="flex items-center gap-2">
-
                             <FiCheck className="text-green-500" />
-                            <span>{t('profilePage.passwordTip1')}</span>
-                          </li>
-                          <li className="flex items-center gap-2">
-
-                            <FiCheck className="text-green-500" />
-                            <span>{t('profilePage.passwordTip2')}</span>
+                            <span>{t("profilePage.passwordTip1")}</span>
                           </li>
                           <li className="flex items-center gap-2">
                             <FiCheck className="text-green-500" />
-                            <span>{t('profilePage.passwordTip3')}</span>
+                            <span>{t("profilePage.passwordTip2")}</span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <FiCheck className="text-green-500" />
+                            <span>{t("profilePage.passwordTip3")}</span>
                           </li>
                         </ul>
                       </div>
 
                       {/* Update Button */}
                       <div className="flex justify-end pt-4">
-                        <button 
+                        <button
                           onClick={handleChangePassword}
                           disabled={changingPassword}
                           className="px-10 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 shadow-2xl transform hover:-translate-y-1 hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:transform-none"
                         >
                           <FiLock className="inline mr-2" />
-                          {t('profilePage.updatePassword')}
+                          {t("profilePage.updatePassword")}
                         </button>
                       </div>
                     </div>
@@ -1572,34 +1716,33 @@ const Profile = () => {
             className="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl"
           >
             <h3 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-
               <FiUnlock className="text-3xl" />
-              {t('profilePage.verifyToViewCCCD')}
+              {t("profilePage.verifyToViewCCCD")}
             </h3>
             <p className="text-gray-600 mb-6">
-              {user?.authProvider === 'google' 
-                ? t('profilePage.googleAutoVerify')
-                : user?.authProvider === 'facebook'
-                ? t('profilePage.facebookAutoVerify') 
-                : t('profilePage.enterPasswordToViewCCCD')}
+              {user?.authProvider === "google"
+                ? t("profilePage.googleAutoVerify")
+                : user?.authProvider === "facebook"
+                ? t("profilePage.facebookAutoVerify")
+                : t("profilePage.enterPasswordToViewCCCD")}
             </p>
 
             {!cccdData ? (
               <>
                 {/* Chỉ hiển thị ô nhập password cho local users */}
-                {(!user?.authProvider || user.authProvider === 'local') && (
+                {(!user?.authProvider || user.authProvider === "local") && (
                   <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('profilePage.password')}
+                      {t("profilePage.password")}
                     </label>
                     <input
                       type="password"
                       value={passwordForCCCD}
                       onChange={(e) => setPasswordForCCCD(e.target.value)}
-                      placeholder={t('profilePage.placeholderPassword')}
+                      placeholder={t("profilePage.placeholderPassword")}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           handlePasswordSubmitForCCCD();
                         }
                       }}
@@ -1607,32 +1750,36 @@ const Profile = () => {
                     />
                   </div>
                 )}
-                
+
                 {/* OAuth users - auto loading */}
-                {user?.authProvider && user.authProvider !== 'local' && (
+                {user?.authProvider && user.authProvider !== "local" && (
                   <div className="mb-6 text-center">
                     <div className="inline-flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-6 py-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                      <span className="text-blue-800 font-medium">{t('profilePage.loadingCCCDInfo')}</span>
+                      <span className="text-blue-800 font-medium">
+                        {t("profilePage.loadingCCCDInfo")}
+                      </span>
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex justify-end space-x-3">
                   <button
                     onClick={handleClosePasswordPrompt}
                     className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
                   >
                     <FiX className="inline mr-2" />
-                    {t('profilePage.cancel')}
+                    {t("profilePage.cancel")}
                   </button>
-                  {(!user?.authProvider || user.authProvider === 'local') && (
+                  {(!user?.authProvider || user.authProvider === "local") && (
                     <button
                       onClick={handlePasswordSubmitForCCCD}
                       disabled={!passwordForCCCD || loadingCCCD}
                       className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 shadow-lg"
                     >
-                      {loadingCCCD ? t('profilePage.verifying') : t('profilePage.confirm')}
+                      {loadingCCCD
+                        ? t("profilePage.verifying")
+                        : t("profilePage.confirm")}
                     </button>
                   )}
                 </div>
@@ -1643,27 +1790,53 @@ const Profile = () => {
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-semibold text-green-700">{t('profilePage.cccdNumber')}:</label>
-                        <p className="text-green-900 font-bold text-lg">{cccdData.cccdNumber || 'N/A'}</p>
+                        <label className="text-sm font-semibold text-green-700">
+                          {t("profilePage.cccdNumber")}:
+                        </label>
+                        <p className="text-green-900 font-bold text-lg">
+                          {cccdData.cccdNumber || "N/A"}
+                        </p>
                       </div>
                       <div>
-                        <label className="text-sm font-semibold text-green-700">{t('profilePage.fullName')}:</label>
-                        <p className="text-green-900 font-bold text-lg">{cccdData.fullName || 'N/A'}</p>
+                        <label className="text-sm font-semibold text-green-700">
+                          {t("profilePage.fullName")}:
+                        </label>
+                        <p className="text-green-900 font-bold text-lg">
+                          {cccdData.fullName || "N/A"}
+                        </p>
                       </div>
                       <div>
-                        <label className="text-sm font-semibold text-green-700">{t('profilePage.cccdDateOfBirth')}:</label>
-                        <p className="text-green-900">{cccdData.dateOfBirth ? new Date(cccdData.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-green-700">{t('profilePage.cccdGender')}:</label>
+                        <label className="text-sm font-semibold text-green-700">
+                          {t("profilePage.cccdDateOfBirth")}:
+                        </label>
                         <p className="text-green-900">
-                          {cccdData.gender === 'MALE' ? t('profilePage.male_display') : cccdData.gender === 'FEMALE' ? t('profilePage.female_display') : t('profilePage.other_display')}
+                          {cccdData.dateOfBirth
+                            ? new Date(cccdData.dateOfBirth).toLocaleDateString(
+                                "vi-VN"
+                              )
+                            : "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-semibold text-green-700">
+                          {t("profilePage.cccdGender")}:
+                        </label>
+                        <p className="text-green-900">
+                          {cccdData.gender === "MALE"
+                            ? t("profilePage.male_display")
+                            : cccdData.gender === "FEMALE"
+                            ? t("profilePage.female_display")
+                            : t("profilePage.other_display")}
                         </p>
                       </div>
                     </div>
                     <div className="mt-4">
-                      <label className="text-sm font-semibold text-green-700">{t('profilePage.cccdAddress')}:</label>
-                      <p className="text-green-900">{cccdData.address || 'N/A'}</p>
+                      <label className="text-sm font-semibold text-green-700">
+                        {t("profilePage.cccdAddress")}:
+                      </label>
+                      <p className="text-green-900">
+                        {cccdData.address || "N/A"}
+                      </p>
                     </div>
                   </div>
 
@@ -1671,13 +1844,18 @@ const Profile = () => {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
                         <FiCheck className="inline mr-1" />
-                        <span className="font-semibold">{t('profilePage.verifiedAt')}:</span>{' '}
-                        {new Date(cccdData.verifiedAt).toLocaleString('vi-VN')}
+                        <span className="font-semibold">
+                          {t("profilePage.verifiedAt")}:
+                        </span>{" "}
+                        {new Date(cccdData.verifiedAt).toLocaleString("vi-VN")}
                       </p>
                       {cccdData.verificationSource && (
                         <p className="text-sm text-blue-700 mt-1">
                           <FiInfo className="inline mr-1" />
-                          <span className="font-semibold">{t('profilePage.verificationSource')}:</span> {cccdData.verificationSource}
+                          <span className="font-semibold">
+                            {t("profilePage.verificationSource")}:
+                          </span>{" "}
+                          {cccdData.verificationSource}
                         </p>
                       )}
                     </div>
@@ -1700,13 +1878,14 @@ const Profile = () => {
                               </p>
                             </div>
                             <div className="p-2">
-                              <img 
-                                src={cccdImages.frontImage} 
-                                alt="CCCD mặt trước" 
+                              <img
+                                src={cccdImages.frontImage}
+                                alt="CCCD mặt trước"
                                 className="w-full h-auto rounded-lg"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%23f3f4f6" width="400" height="250"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
+                                  e.target.src =
+                                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%23f3f4f6" width="400" height="250"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
                                 }}
                               />
                             </div>
@@ -1721,13 +1900,14 @@ const Profile = () => {
                               </p>
                             </div>
                             <div className="p-2">
-                              <img 
-                                src={cccdImages.backImage} 
-                                alt="CCCD mặt sau" 
+                              <img
+                                src={cccdImages.backImage}
+                                alt="CCCD mặt sau"
                                 className="w-full h-auto rounded-lg"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
+                                  e.target.src =
+                                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="250"%3E%3Crect fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%" y="50%" text-anchor="middle" dy=".3em"%3EKhông thể tải ảnh%3C/text%3E%3C/svg%3E';
                                 }}
                               />
                             </div>
