@@ -68,9 +68,9 @@ const promotionService = {
   // Tier configuration for UI
   TIER_CONFIG: {
     1: {
-      name: "Được Chọn Nhiều",
+      name: "Gói 1",
       color: "from-yellow-400 to-yellow-600",
-      badge: "ĐƯỢC CHỌN NHIỀU",
+      badge: "GÓI 1",
       borderColor: "border-yellow-400",
       shadowColor: "shadow-yellow-200",
       features: [
@@ -81,9 +81,9 @@ const promotionService = {
       ],
     },
     2: {
-      name: "Chủ Uy Tín",
+      name: "Gói 2",
       color: "from-gray-300 to-gray-500",
-      badge: "CHỦ UY TÍN",
+      badge: "GÓI 2",
       borderColor: "border-gray-400",
       shadowColor: "shadow-gray-200",
       features: [
@@ -94,9 +94,9 @@ const promotionService = {
       ],
     },
     3: {
-      name: "Đánh Giá Tốt",
+      name: "Gói 3",
       color: "from-orange-400 to-orange-600",
-      badge: "ĐÁNH GIÁ TỐT",
+      badge: "GÓI 3",
       borderColor: "border-orange-400",
       shadowColor: "shadow-orange-100",
       features: [
@@ -107,29 +107,29 @@ const promotionService = {
       ],
     },
     4: {
-      name: "Đề Xuất",
+      name: "Gói 4",
       color: "from-blue-400 to-blue-600",
-      badge: "ĐỀ XUẤT",
+      badge: "GÓI 4",
       borderColor: "border-blue-400",
       shadowColor: "shadow-blue-100",
       features: [
         "Độ ưu tiên tiêu chuẩn",
         "Huy hiệu cơ bản",
         "Làm nổi bật nhẹ",
-        "Tốt hơn miễn phí",
+        "Tùy chọn giá rẻ",
       ],
     },
     5: {
-      name: "Mới Cập Nhật",
+      name: "Gói 5",
       color: "from-green-400 to-green-600",
-      badge: "MỚI CẬP NHẬT",
+      badge: "GÓI 5",
       borderColor: "border-green-400",
       shadowColor: "shadow-green-100",
       features: [
         "Độ ưu tiên cơ bản",
         "Huy hiệu tối thiểu",
         "Nhấn nhẹ",
-        "Tùy chọn giá rẻ",
+        "Tốt hơn miễn phí",
       ],
     },
   },

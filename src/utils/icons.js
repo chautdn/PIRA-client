@@ -21,6 +21,7 @@ import {
   BiMapPin,
   BiLoaderAlt,
   BiClipboard,
+  BiTrendingUp,
 } from "react-icons/bi";
 
 import {
@@ -329,11 +330,25 @@ const icons = {
   LuPackageSearch,
   FaBalanceScale,
   BiCalculator,
+  BiTrendingUp,
 
   // Alias phổ biến
-  BiError: BiErrorCircle, // thường dùng cho lỗi form
   IoCalendarSharp,
   MdLocalShipping,
 };
+
+// Aliases for missing icons - using available alternatives
+icons.BiRocket = FaBolt;
+icons.BiStar = FiStar;
+icons.BiShow = FiEye;
+icons.BiBot = HiSparkles;
+icons.BiX = FiX;
+icons.BiUser = FiUser;
+icons.BiPhone = FiPhone;
+icons.BiEnvelope = FiMail;
+icons.BiBookmark = BsBookmarkStarFill;
+icons.BiShieldCheck = BsShieldCheck;
+icons.BiError = BiErrorCircle;
+icons.BiPackage = FiPackage;
 
 export default icons;
