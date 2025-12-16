@@ -65,6 +65,17 @@ export default function ShipmentsPage() {
         const resp = await ShipmentService.listMyShipments();
         const data = resp.data || resp;
         const shipmentsData = Array.isArray(data) ? data : (data.data || data);
+        
+        // Debug: Check products data
+        console.log('Shipments loaded:', shipmentsData.length);
+        if (shipmentsData.length > 0 && shipmentsData[0].subOrder) {
+          console.log('First shipment subOrder:', {
+            hasProducts: !!shipmentsData[0].subOrder.products,
+            productsLength: shipmentsData[0].subOrder.products?.length,
+            firstProduct: shipmentsData[0].subOrder.products?.[0]
+          });
+        }
+        
         setShipments(shipmentsData);
 
         // Load proofs for all shipments
@@ -232,7 +243,7 @@ export default function ShipmentsPage() {
   // Check if shipment can be accepted (must be on or after scheduled date)
   const canAcceptShipment = (shipment) => {
     // 🔧 TESTING MODE: Temporarily disable date validation
-     return true;
+    // return true;
     
     if (!shipment) return false;
     
@@ -433,16 +444,53 @@ export default function ShipmentsPage() {
               </div>
             ) : (
               <div>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm opacity-90 font-medium mb-1">Tổng đơn hàng</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold">{shipments.length}</p>
+                </div>
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl sm:text-3xl">📦</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm opacity-90 font-medium mb-1">Đơn giao hàng</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold">{shipments.filter(s => s.type === 'DELIVERY').length}</p>
+                </div>
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl sm:text-3xl">🚚</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 text-white sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm opacity-90 font-medium mb-1">Đơn trả hàng</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold">{shipments.filter(s => s.type === 'RETURN').length}</p>
+                </div>
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl sm:text-3xl">🔄</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Date Selection - Show all dates with all types */}
           <div className="mb-4 sm:mb-6">
-            <div className="bg-white rounded-2xl shadow-md p-3 sm:p-4 mb-3 sm:mb-4">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-3 sm:p-4 mb-3 sm:mb-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <span className="text-xl sm:text-2xl">📅</span>
                   <span>Lịch giao hàng</span>
                 </h2>
-                <div className="text-xs sm:text-sm bg-gradient-to-r from-blue-50 to-purple-50 px-2.5 sm:px-3 py-1.5 rounded-full border-2 border-blue-300">
-                  <span className="text-gray-700 font-medium">Tổng:</span> <span className="font-extrabold text-blue-700">{shipments.length}</span>
-                </div>
               </div>
             </div>
             
@@ -453,12 +501,8 @@ export default function ShipmentsPage() {
               </div>
             ) : (
               <>
-                {/* Scroll indicator for mobile */}
-                <div className="md:hidden text-center mb-2">
-                  <p className="text-xs text-gray-500 italic">👈 Vuốt sang để xem thêm 👉</p>
-                </div>
-                
-                <div className="flex md:flex-wrap gap-2 sm:gap-3 overflow-x-auto md:overflow-visible pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-hide">
+                {/* Desktop: Horizontal scroll */}
+                <div className="hidden lg:flex flex-wrap gap-2 sm:gap-3 pb-2">
                   {uniqueDates.map((dateStr) => {
                     const shipmentsOnDate = datesMap[dateStr] || [];
                     const deliveryCountForDate = shipmentsOnDate.filter(s => s.type === 'DELIVERY').length;
@@ -501,16 +545,61 @@ export default function ShipmentsPage() {
                   );
                 })}
               </div>
+
+              {/* Mobile & Tablet: Vertical list */}
+              <div className="lg:hidden space-y-2 sm:space-y-3 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+                {uniqueDates.map((dateStr) => {
+                  const shipmentsOnDate = datesMap[dateStr] || [];
+                  const deliveryCountForDate = shipmentsOnDate.filter(s => s.type === 'DELIVERY').length;
+                  const returnCountForDate = shipmentsOnDate.filter(s => s.type === 'RETURN').length;
+                  const isSelected = selectedDate === dateStr;
+                  
+                  return (
+                    <button
+                      key={dateStr}
+                      onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                      className={`w-full px-4 py-3 sm:py-4 rounded-xl font-bold transition-all duration-200 touch-manipulation text-sm sm:text-base border-2 active:scale-98 ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white border-transparent shadow-xl'
+                          : 'bg-white text-gray-700 border-gray-300 active:border-blue-400 shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold flex items-center gap-2 text-base sm:text-lg">
+                          <span className="text-xl sm:text-2xl">📆</span>
+                          <span>{dateStr}</span>
+                        </span>
+                        <div className="flex items-center gap-2 text-[10px] xs:text-xs font-extrabold">
+                          {deliveryCountForDate > 0 && (
+                            <span className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+                              isSelected ? 'bg-white/30 text-white' : 'bg-blue-100 text-blue-800 border border-blue-300'
+                            }`}>
+                              <span>📦 {deliveryCountForDate}</span>
+                            </span>
+                          )}
+                          {returnCountForDate > 0 && (
+                            <span className={`flex items-center gap-1 px-2 py-1 rounded-full ${
+                              isSelected ? 'bg-white/30 text-white' : 'bg-orange-100 text-orange-800 border border-orange-300'
+                            }`}>
+                              <span>🔄 {returnCountForDate}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
               </>
             )}
           </div>
 
           {/* Shipments Details Section */}
           {selectedDate && shipmentsForSelectedDate.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
               <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <h3 className="text-sm sm:text-base md:text-lg font-bold text-white flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-white flex items-center gap-2">
                     <span className="text-xl sm:text-2xl">📋</span>
                     <span>Đơn hàng {selectedDate}</span>
                   </h3>
@@ -529,6 +618,93 @@ export default function ShipmentsPage() {
                 </div>
               </div>
               
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-gray-200">
+                {shipmentsForSelectedDate.map((s) => (
+                  <motion.div
+                    key={s._id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className={`p-3 sm:p-4 active:bg-blue-50 transition-colors touch-manipulation ${
+                      s.status !== 'PENDING' ? 'cursor-pointer' : ''
+                    }`}
+                    onClick={() => {
+                      if (s.status !== 'PENDING') {
+                        handleOpenManagementModal(s);
+                      }
+                    }}
+                  >
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="text-sm font-bold text-gray-900 mb-1">{s.shipmentId}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            s.type === 'DELIVERY'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-orange-100 text-orange-800'
+                          }`}>
+                            {s.type === 'DELIVERY' ? '📦 Giao' : '🔄 Trả'}
+                          </span>
+                          <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full ${
+                            s.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                            s.status === 'SHIPPER_CONFIRMED' ? 'bg-blue-100 text-blue-800' :
+                            s.status === 'IN_TRANSIT' ? 'bg-purple-100 text-purple-800' :
+                            s.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {s.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-green-600">{formatCurrency(s.fee || 0)}</div>
+                        {s.status === 'DELIVERED' && s.type === 'RETURN' && (
+                          <div className="text-[10px] text-green-500 mt-0.5">✅ Sẽ được chuyển</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* SubOrder ID */}
+                    <div className="text-xs text-gray-500 mb-2">
+                      SubOrder: {s.subOrder?._id || s.subOrder}
+                    </div>
+
+                    {/* Timestamps */}
+                    {(s.tracking?.pickedUpAt || s.tracking?.deliveredAt) && (
+                      <div className="text-[10px] text-gray-500 mb-2 space-y-0.5">
+                        {s.tracking?.pickedUpAt && (
+                          <div>⏰ Pickup: {new Date(s.tracking.pickedUpAt).toLocaleString('vi-VN')}</div>
+                        )}
+                        {s.tracking?.deliveredAt && (
+                          <div>✅ Deliver: {new Date(s.tracking.deliveredAt).toLocaleString('vi-VN')}</div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    {s.status === 'PENDING' && (
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAccept(s);
+                          }}
+                          disabled={!canAcceptShipment(s)}
+                          className={`flex-1 px-3 py-2 rounded-lg font-semibold transition-all text-xs touch-manipulation ${
+                            canAcceptShipment(s)
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md active:shadow-lg'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {canAcceptShipment(s) ? '✅ Nhận đơn' : '⏰ Chưa đến ngày'}
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full divide-y divide-gray-200">
