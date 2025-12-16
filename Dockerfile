@@ -12,8 +12,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Set Node.js memory limit to 2GB and build application
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+# Set Node.js memory limit to 4GB and build application
+# Reduce parallel processing to save memory
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV VITE_BUILD_MINIFY="terser"
 RUN npm run build
 
 # Stage 2: Serve with nginx
