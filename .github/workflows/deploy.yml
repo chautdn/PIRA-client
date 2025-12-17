@@ -1,0 +1,82 @@
+name: Deploy Frontend to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚀 Deploy Frontend
+        run: echo "Deploying PIRA Frontend..."
+
+      - name: 🔐 Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: 📝 Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 🚀 Deploy via SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
+            set -e
+            
+            echo "=========================================="
+            echo "🚀 PIRA Frontend Auto Deployment"
+            echo "=========================================="
+            
+            cd /var/www/pira/PIRA-client
+            
+            echo "📥 Pulling latest code..."
+            git fetch origin
+            git pull origin main
+            
+            cd /var/www/pira
+            
+            echo "🛑 Stopping frontend & nginx..."
+            docker-compose stop frontend nginx
+            docker-compose rm -f frontend nginx
+            
+            echo "🔨 Building frontend..."
+            docker-compose build --no-cache frontend
+            
+            echo "🚀 Starting frontend & nginx..."
+            docker-compose up -d frontend nginx
+            
+            echo "⏳ Waiting 15 seconds..."
+            sleep 15
+            
+            echo "🔍 Health check..."
+            if curl -f http://localhost:80/ > /dev/null 2>&1; then
+              echo "✅ Frontend healthy!"
+            else
+              echo "❌ Frontend unhealthy!"
+              docker-compose logs frontend --tail=50
+              docker-compose logs nginx --tail=50
+              exit 1
+            fi
+            
+            echo "📋 Logs:"
+            docker-compose logs frontend --tail=20
+            docker-compose logs nginx --tail=10
+            
+            echo "=========================================="
+            echo "✅ Frontend deployed successfully!"
+            echo "=========================================="
+          ENDSSH
+
+      - name: ✅ Success
+        run: echo "✅ Frontend deployed! Website → https://pira.asia"
