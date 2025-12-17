@@ -86,10 +86,10 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Complainant */}
+                {/* Complainant - với RETURN dispute: Owner là complainant, với DELIVERY: Renter là complainant */}
                 <div className="bg-blue-50 p-3 rounded">
                   <p className="text-xs text-blue-600 font-medium mb-2">
-                    NGƯỜI THUÊ
+                    {dispute.shipmentType === 'RETURN' ? 'CHỦ HÀNG' : 'NGƯỜI THUÊ'}
                   </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.complainant.name}</p>
@@ -98,10 +98,10 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                   </div>
                 </div>
 
-                {/* Respondent */}
+                {/* Respondent - với RETURN dispute: Renter là respondent, với DELIVERY: Owner là respondent */}
                 <div className="bg-orange-50 p-3 rounded">
                   <p className="text-xs text-orange-600 font-medium mb-2">
-                    CHỦ HÀNG
+                    {dispute.shipmentType === 'RETURN' ? 'NGƯỜI THUÊ' : 'CHỦ HÀNG'}
                   </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.respondent.name}</p>

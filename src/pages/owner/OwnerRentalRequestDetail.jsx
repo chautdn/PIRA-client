@@ -941,7 +941,10 @@ const OwnerRentalRequestDetail = () => {
               setSelectedProduct(null);
             }}
             onSubmit={handleDisputeSubmit}
-            rentalOrder={{ _id: subOrder.masterOrder?._id, ...subOrder }}
+            subOrder={subOrder}
+            product={selectedProduct.product}
+            productIndex={selectedProduct.productIndex}
+            shipment={selectedProduct.product?.returnShipment || selectedProduct.product?.deliveryShipment || null}
           />
         )}
 
