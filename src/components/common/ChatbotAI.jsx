@@ -191,13 +191,6 @@ const ChatbotAI = () => {
               )
             );
             shouldShowProducts = productsToShow.length > 0;
-          } else {
-            // Fallback: show all if AI doesn't mention specific products but talks about them
-            const aiMentionsProducts = /sản phẩm|combo|gợi ý|tìm thấy|có thể thuê/i.test(aiReply);
-            if (aiMentionsProducts) {
-              productsToShow = data.suggestedProducts;
-              shouldShowProducts = true;
-            }
           }
           
           if (shouldShowProducts && productsToShow.length > 0) {
@@ -235,11 +228,18 @@ const ChatbotAI = () => {
       }
     } catch (error) {
       console.error('Chatbot error:', error);
+      
+      // Get error message from backend if available
+      let errorContent = error.response?.data?.data?.reply || 
+                        error.response?.data?.message ||
+                        error.message;
+      
       const errorMessage = {
         role: 'assistant',
-        content: 'Xin lỗi, tôi đang gặp sự cố. Vui lòng thử lại sau hoặc liên hệ support.',
+        content: errorContent,
         timestamp: new Date(),
-        isError: true
+        isError: true,
+        actions: error.response?.data?.data?.suggestedActions || []
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
