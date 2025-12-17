@@ -263,6 +263,14 @@ const disputeApi = {
   },
 
   /**
+   * Finalize reschedule agreement - Xác nhận ngày trả hàng đã thỏa thuận
+   */
+  finalizeRescheduleAgreement: async (disputeId, agreedDate) => {
+    const response = await api.post(`/disputes/${disputeId}/finalize-agreement`, { agreedDate });
+    return response.data;
+  },
+
+  /**
    * Xử lý penalty cho RENTER_NO_RETURN
    */
   processRenterNoReturn: async (disputeId, data) => {

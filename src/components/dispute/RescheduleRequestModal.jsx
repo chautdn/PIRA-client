@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Calendar, FileText, Image, AlertCircle } from 'lucide-react';
 import { useDispute } from '../../context/DisputeContext';
 
@@ -18,6 +18,30 @@ const RescheduleRequestModal = ({ isOpen, onClose, dispute }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Tính ngày tối đa (7 ngày từ ngày trả hàng gốc)
+  const { originalReturnDate, maxAllowedDate, minDate, maxDate, dailyRentalPrice } = useMemo(() => {
+    const productItem = dispute?.subOrder?.products?.[dispute?.productIndex];
+    const origDate = productItem?.rentalPeriod?.endDate 
+      ? new Date(productItem.rentalPeriod.endDate) 
+      : null;
+    const maxDate = origDate 
+      ? new Date(origDate.getTime() + 7 * 24 * 60 * 60 * 1000)
+      : null;
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const dailyPrice = productItem?.product?.rentalPrices?.perDay || 0;
+    
+    return {
+      originalReturnDate: origDate,
+      maxAllowedDate: maxDate,
+      minDate: tomorrow.toISOString().split('T')[0],
+      maxDate: maxDate ? maxDate.toISOString().split('T')[0] : '',
+      dailyRentalPrice: dailyPrice
+    };
+  }, [dispute]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
@@ -32,6 +56,12 @@ const RescheduleRequestModal = ({ isOpen, onClose, dispute }) => {
     const proposedDate = new Date(formData.proposedReturnDate);
     if (proposedDate <= new Date()) {
       alert('Ngày trả hàng đề xuất phải sau ngày hiện tại');
+      return;
+    }
+
+    // Validate date (phải trong vòng 7 ngày từ ngày trả hàng gốc)
+    if (maxAllowedDate && proposedDate > maxAllowedDate) {
+      alert(`Ngày trả hàng phải trong vòng 7 ngày từ ngày trả hàng gốc (Tối đa: ${maxAllowedDate.toLocaleDateString('vi-VN')})`);
       return;
     }
 
@@ -89,8 +119,9 @@ const RescheduleRequestModal = ({ isOpen, onClose, dispute }) => {
                 <li>Bạn chỉ được đề xuất reschedule <strong>1 lần duy nhất</strong></li>
                 <li>Cần có <strong>lý do chính đáng</strong> và bằng chứng minh chứng</li>
                 <li>Owner có quyền chấp nhận hoặc từ chối</li>
-                <li>Nếu được chấp nhận, bạn sẽ bị phạt <strong>10% deposit</strong> và <strong>-5 credit score</strong></li>
-                <li>Nếu bị từ chối, Admin sẽ xem xét và quyết định</li>
+                <li>Bạn chỉ có <strong>tối đa 7 ngày</strong> kể từ ngày trả hàng ban đầu</li>
+                <li>Phạt: <strong>giá thuê 1 ngày × số ngày trễ</strong> (trừ từ cọc)</li>
+                <li>Nếu bị từ chối, vào đàm phán. Nếu đàm phán thất bại sẽ chuyển cơ quan công an</li>
               </ul>
             </div>
           </div>
@@ -108,12 +139,13 @@ const RescheduleRequestModal = ({ isOpen, onClose, dispute }) => {
               type="datetime-local"
               value={formData.proposedReturnDate}
               onChange={(e) => handleChange('proposedReturnDate', e.target.value)}
-              min={new Date().toISOString().slice(0, 16)}
+              min={minDate}
+              max={maxDate}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Chọn ngày và giờ bạn có thể trả hàng
+              Chọn ngày và giờ bạn có thể trả hàng (tối đa 7 ngày từ ngày trả ban đầu: {originalReturnDate?.toLocaleDateString('vi-VN')})
             </p>
           </div>
 

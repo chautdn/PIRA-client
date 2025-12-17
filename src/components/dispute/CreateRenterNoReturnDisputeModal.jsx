@@ -178,9 +178,9 @@ const CreateRenterNoReturnDisputeModal = ({
                 </p>
                 <ul className="text-yellow-700 space-y-1 list-disc list-inside">
                   <li>Renter sẽ có <strong>48 giờ</strong> để giải thích hoặc đề xuất lịch trả hàng mới</li>
-                  <li>Nếu renter có lý do chính đáng → Phạt <strong>10% tiền cọc</strong></li>
-                  <li>Nếu không phản hồi → Phạt <strong>50-100% tiền cọc + blacklist</strong></li>
-                  <li>Quá 7 ngày không trả = Chiếm đoạt → Báo cơ quan chức năng</li>
+                  <li>Nếu renter có lý do chính đáng → Phạt <strong>giá thuê 1 ngày × số ngày trễ</strong> (trừ từ cọc)</li>
+                  <li>Không phản hồi trong 48h → Tự động chuyển cơ quan công an</li>
+                  <li>Quá 7 ngày không trả = Chiếm đoạt → Báo cơ quan công an</li>
                 </ul>
               </div>
             </div>

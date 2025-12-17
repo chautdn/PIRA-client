@@ -19,6 +19,16 @@ const RescheduleSection = ({ dispute, currentUser }) => {
   const isRenter = currentUser?._id === dispute.respondent?._id;
   const isOwner = currentUser?._id === dispute.complainant?._id;
 
+  // Lấy thông tin về ngày trả hàng gốc và tính ngày tối đa
+  const productItem = dispute.subOrder?.products?.[dispute.productIndex];
+  const originalReturnDate = productItem?.rentalPeriod?.endDate 
+    ? new Date(productItem.rentalPeriod.endDate) 
+    : null;
+  const maxAllowedDate = originalReturnDate 
+    ? new Date(originalReturnDate.getTime() + 7 * 24 * 60 * 60 * 1000)
+    : null;
+  const dailyRentalPrice = productItem?.product?.rentalPrices?.perDay || 0;
+
   // Renter chưa đề xuất reschedule
   if (!reschedule && isRenter && dispute.status === 'OPEN') {
     return (
@@ -38,10 +48,18 @@ const RescheduleSection = ({ dispute, currentUser }) => {
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <p className="text-sm font-medium text-yellow-800 mb-2">⚠️ Điều kiện:</p>
                 <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
-                  <li>Chỉ được đề xuất <strong>1 lần duy nhất</strong></li>
+                  <li>Ngày trả mới phải trong vòng <strong>7 ngày</strong> từ ngày trả hàng gốc
+                    {originalReturnDate && maxAllowedDate && (
+                      <span className="text-yellow-600"> (Tối đa: {maxAllowedDate.toLocaleDateString('vi-VN')})</span>
+                    )}
+                  </li>
                   <li>Cần có lý do chính đáng và bằng chứng</li>
-                  <li>Nếu được chấp nhận: Phạt <strong>10% deposit</strong> + <strong>-5 credit</strong></li>
-                  <li>Nếu bị từ chối: Admin xem xét và phạt nặng hơn</li>
+                  <li>Tiền phạt = <strong>Giá thuê/ngày × Số ngày trễ</strong>
+                    {dailyRentalPrice > 0 && (
+                      <span className="text-yellow-600"> ({dailyRentalPrice.toLocaleString('vi-VN')}đ/ngày)</span>
+                    )}
+                  </li>
+                  <li>Phần deposit còn lại sẽ hoàn về ví của bạn</li>
                 </ul>
               </div>
 
@@ -130,7 +148,17 @@ const RescheduleSection = ({ dispute, currentUser }) => {
                 <div className="grid grid-cols-4 gap-2">
                   {reschedule.evidence.photos.map((photo, idx) => (
                     <div key={idx} className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                      <img 
+                        src={photo} 
+                        alt={`Bằng chứng ${idx + 1}`}
+                        className="w-full h-full object-cover cursor-pointer hover:opacity-90"
+                        onClick={() => window.open(photo, '_blank')}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="w-full h-full items-center justify-center text-xs text-gray-500 hidden">
                         Ảnh {idx + 1}
                       </div>
                     </div>
@@ -181,7 +209,7 @@ const RescheduleSection = ({ dispute, currentUser }) => {
                     <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                       <p className="text-sm text-yellow-800">
                         <strong>Kết quả:</strong> Shipment mới đã được tạo. 
-                        Renter bị phạt 10% deposit và -5 credit score.
+                        Renter bị phạt giá thuê 1 ngày × số ngày trễ (trừ từ cọc).
                       </p>
                     </div>
                   )}
@@ -189,7 +217,7 @@ const RescheduleSection = ({ dispute, currentUser }) => {
                   {isRejected && (
                     <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded">
                       <p className="text-sm text-orange-800">
-                        <strong>Tiếp theo:</strong> Admin sẽ xem xét và đưa ra quyết định cuối cùng.
+                        <strong>Tiếp theo:</strong> Chuyển sang đàm phán. 2 bên có 3 ngày để thương lượng ngày trả khác.
                       </p>
                     </div>
                   )}

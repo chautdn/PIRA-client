@@ -84,9 +84,18 @@ const RescheduleResponseModal = ({ isOpen, onClose, dispute }) => {
                 <p className="text-sm font-medium text-gray-700 mb-2">Bằng chứng:</p>
                 <div className="grid grid-cols-3 gap-2">
                   {reschedule.evidence.photos.map((photo, idx) => (
-                    <div key={idx} className="aspect-square bg-gray-200 rounded-lg">
-                      {/* Placeholder for evidence images */}
-                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">
+                    <div key={idx} className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
+                      <img 
+                        src={photo} 
+                        alt={`Bằng chứng ${idx + 1}`}
+                        className="w-full h-full object-cover cursor-pointer hover:opacity-90"
+                        onClick={() => window.open(photo, '_blank')}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div className="w-full h-full items-center justify-center text-xs text-gray-500 hidden">
                         Ảnh {idx + 1}
                       </div>
                     </div>
@@ -117,15 +126,15 @@ const RescheduleResponseModal = ({ isOpen, onClose, dispute }) => {
                   <p className="font-semibold">✅ Nếu CHẤP NHẬN:</p>
                   <ul className="list-disc list-inside ml-4 space-y-1">
                     <li>Shipment mới sẽ được tạo tự động</li>
-                    <li>Renter bị phạt <strong>10% deposit</strong> và <strong>-5 credit</strong></li>
-                    <li>Bạn nhận được tiền phạt</li>
+                    <li>Renter bị phạt <strong>giá thuê 1 ngày × số ngày trễ</strong> (trừ từ cọc)</li>
+                    <li>Bạn nhận được tiền phạt, còn dư trả lại renter</li>
                     <li>Dispute sẽ được đóng</li>
                   </ul>
                 </div>
                 <div>
                   <p className="font-semibold">❌ Nếu TỪ CHỐI:</p>
                   <ul className="list-disc list-inside ml-4 space-y-1">
-                    <li>Admin sẽ xem xét và quyết định</li>
+                    <li>Chuyển sang đàm phán (3 ngày để thương lượng ngày khác)</li>
                     <li>Bạn cần đưa ra lý do từ chối hợp lý</li>
                   </ul>
                 </div>

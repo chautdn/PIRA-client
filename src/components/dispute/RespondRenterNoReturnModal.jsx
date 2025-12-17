@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AlertCircle, X, Calendar, FileText, Camera, Clock } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -20,6 +20,44 @@ const RespondRenterNoReturnModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Tính ngày tối đa (7 ngày từ ngày trả hàng gốc) - PHẢI đặt trước early return
+  const { originalReturnDate, maxAllowedDate, minDateStr, maxDateStr, dailyRentalPrice } = useMemo(() => {
+    const productItem = dispute?.subOrder?.products?.[dispute?.productIndex];
+    const origDate = productItem?.rentalPeriod?.endDate 
+      ? new Date(productItem.rentalPeriod.endDate) 
+      : null;
+    const maxDate = origDate 
+      ? new Date(origDate.getTime() + 7 * 24 * 60 * 60 * 1000)
+      : null;
+    
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    const dailyPrice = productItem?.product?.rentalPrices?.perDay || 0;
+    
+    return {
+      originalReturnDate: origDate,
+      maxAllowedDate: maxDate,
+      minDateStr: tomorrow.toISOString().slice(0, 16),
+      maxDateStr: maxDate ? maxDate.toISOString().slice(0, 16) : '',
+      dailyRentalPrice: dailyPrice
+    };
+  }, [dispute]);
+
+  // Calculate deadline (48h from dispute creation)
+  const deadline = dispute?.createdAt 
+    ? new Date(new Date(dispute.createdAt).getTime() + 48 * 60 * 60 * 1000)
+    : null;
+  
+  const timeRemaining = deadline 
+    ? Math.max(0, deadline.getTime() - Date.now())
+    : 0;
+  
+  const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
+  const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+
+  // Early return PHẢI đặt sau tất cả hooks
   if (!isOpen) return null;
 
   const uploadImages = async (files) => {
@@ -84,6 +122,12 @@ const RespondRenterNoReturnModal = ({
       return;
     }
 
+    // Validate date is within 7 days from original return date
+    if (maxAllowedDate && proposedDate > maxAllowedDate) {
+      toast.error(`Ngày trả phải trong vòng 7 ngày từ ngày trả gốc (Tối đa: ${maxAllowedDate.toLocaleDateString('vi-VN')})`);
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -125,18 +169,6 @@ const RespondRenterNoReturnModal = ({
       setIsUploading(false);
     }
   };
-
-  // Calculate deadline (48h from dispute creation)
-  const deadline = dispute?.createdAt 
-    ? new Date(new Date(dispute.createdAt).getTime() + 48 * 60 * 60 * 1000)
-    : null;
-  
-  const timeRemaining = deadline 
-    ? Math.max(0, deadline.getTime() - Date.now())
-    : 0;
-  
-  const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
-  const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -214,10 +246,10 @@ const RespondRenterNoReturnModal = ({
                   ⚠️ Hình phạt và quy trình:
                 </p>
                 <ul className="text-red-700 space-y-2 list-disc list-inside">
-                  <li><strong>Đề xuất lịch mới + Owner chấp nhận:</strong> Phạt 10% cọc + -5 điểm tín dụng</li>
-                  <li><strong>Owner từ chối lịch bạn đề xuất:</strong> 2 bên sẽ thương lượng ngày khác trong phòng chat</li>
-                  <li><strong>Không phản hồi trong 48h:</strong> Tự động escalate lên công an</li>
-                  <li><strong>Không thương lượng được trong 7 ngày:</strong> Báo công an - Phạt 100% cọc + 100% giá trị sản phẩm + Blacklist vĩnh viễn</li>
+                  <li><strong>Đề xuất lịch mới + Owner chấp nhận:</strong> Phạt <strong>giá thuê 1 ngày × số ngày trễ</strong> (trừ từ cọc, dư trả lại bạn)</li>
+                  <li><strong>Owner từ chối lịch bạn đề xuất:</strong> 2 bên sẽ thương lượng ngày khác trong phòng chat (3 ngày)</li>
+                  <li><strong>Không phản hồi trong 48h:</strong> Tự động chuyển cơ quan công an</li>
+                  <li><strong>Không thương lượng được trong 3 ngày:</strong> Báo công an - Phạt 100% cọc + 100% giá trị sản phẩm + Blacklist vĩnh viễn</li>
                 </ul>
               </div>
             </div>
@@ -251,10 +283,14 @@ const RespondRenterNoReturnModal = ({
                     type="datetime-local"
                     value={formData.proposedReturnDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, proposedReturnDate: e.target.value }))}
-                    min={new Date().toISOString().slice(0, 16)}
+                    min={minDateStr}
+                    max={maxDateStr}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
+                  <p className="text-xs text-green-700 mt-1">
+                    Tối đa 7 ngày từ ngày trả gốc ({originalReturnDate?.toLocaleDateString('vi-VN') || 'N/A'}) → Hạn cuối: {maxAllowedDate?.toLocaleDateString('vi-VN') || 'N/A'}
+                  </p>
                 </div>
 
                 <div>

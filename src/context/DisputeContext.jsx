@@ -383,6 +383,23 @@ export const DisputeProvider = ({ children }) => {
     }
   }, [loadDisputeDetail]);
 
+  // Finalize reschedule agreement - Xác nhận ngày trả hàng đã thỏa thuận
+  const finalizeRescheduleAgreement = useCallback(async (disputeId, agreedDate) => {
+    try {
+      setIsLoading(true);
+      const response = await disputeApi.finalizeRescheduleAgreement(disputeId, agreedDate);
+      toast.success(response.message || 'Đã thỏa thuận ngày trả hàng thành công');
+      await loadDisputeDetail(disputeId);
+      return response.data?.dispute;
+    } catch (error) {
+      console.error('Finalize reschedule agreement error:', error);
+      toast.error(error.response?.data?.message || 'Không thể hoàn tất thỏa thuận');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadDisputeDetail]);
+
   // Xử lý penalty RENTER_NO_RETURN
   const processRenterNoReturn = useCallback(async (disputeId, data) => {
     try {
@@ -425,6 +442,7 @@ export const DisputeProvider = ({ children }) => {
     // Reschedule actions (RENTER_NO_RETURN)
     proposeReschedule,
     respondToReschedule,
+    finalizeRescheduleAgreement,
     processRenterNoReturn,
     
     // Admin actions
