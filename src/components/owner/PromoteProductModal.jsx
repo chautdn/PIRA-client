@@ -23,6 +23,7 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
   const [scheduleMode, setScheduleMode] = useState("override"); // 'override' or 'after'
   const [hasActivePromotion, setHasActivePromotion] = useState(false);
   const [activePromotionEndDate, setActivePromotionEndDate] = useState(null);
+  const [activationDate, setActivationDate] = useState("");
   const modalRef = useRef(null);
   const { balance } = useWallet();
 
@@ -96,6 +97,11 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
         duration,
         paymentMethod,
       };
+
+      // Add activation date if specified
+      if (activationDate) {
+        promotionData.activationDate = activationDate;
+      }
 
       // Add schedule mode if there's an active promotion
       if (hasActivePromotion) {
@@ -339,28 +345,49 @@ const PromoteProductModal = ({ product, onClose, onSuccess }) => {
               )}
             </div>
 
-            {/* Duration */}
+            {/* Activation Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Thời gian (ngày)
+                Ngày Kích Hoạt Quảng Cáo (Tùy Chọn)
               </label>
               <input
-                type="number"
-                min="1"
-                value={duration}
-                onChange={(e) => setDuration(parseInt(e.target.value) || 1)}
+                type="date"
+                value={activationDate}
+                onChange={(e) => setActivationDate(e.target.value)}
+                min={
+                  new Date(Date.now() + 86400000).toISOString().split("T")[0]
+                }
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="Nhập số ngày"
               />
-              {duration >= promotionService.DISCOUNT_CONFIG.minDays && (
-                <p className="text-green-600 text-sm mt-2 flex items-center gap-1">
-                  <Sparkles size={16} />
-                  Giảm giá {promotionService.DISCOUNT_CONFIG.percentage}% cho{" "}
-                  {promotionService.DISCOUNT_CONFIG.minDays}+ ngày!
-                </p>
-              )}
+              <p className="text-gray-500 text-xs mt-1">
+                Để trống để kích hoạt ngay lập tức. Chọn ngày để đặt lịch quảng
+                cáo (tối thiểu từ ngày mai).
+              </p>
             </div>
 
+            {
+              /* Duration */
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Thời gian (ngày)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={duration}
+                  onChange={(e) => setDuration(parseInt(e.target.value) || 1)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  placeholder="Nhập số ngày"
+                />
+                {duration >= promotionService.DISCOUNT_CONFIG.minDays && (
+                  <p className="text-green-600 text-sm mt-2 flex items-center gap-1">
+                    <Sparkles size={16} />
+                    Giảm giá {promotionService.DISCOUNT_CONFIG.percentage}% cho{" "}
+                    {promotionService.DISCOUNT_CONFIG.minDays}+ ngày!
+                  </p>
+                )}
+              </div>
+            }
             {/* Pricing Summary */}
             {pricing && (
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 space-y-2">

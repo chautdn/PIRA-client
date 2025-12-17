@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
+import { useI18n } from '../../hooks/useI18n';
 
 const PaymentMethodSelector = ({ onSelectMethod, selectedMethod, onClose }) => {
+  const { t } = useI18n();
   const [localSelection, setLocalSelection] = useState(selectedMethod || '');
 
   const paymentMethods = [
     {
       key: 'WALLET',
-      title: 'Ví điện tử',
-      description: 'Thanh toán toàn bộ từ số dư ví',
+      title: t('paymentMethodSelector.wallet'),
+      description: t('paymentMethodSelector.walletDesc'),
       icon: '💳'
     },
     {
       key: 'PAYOS',
-      title: 'Chuyển khoản ngân hàng',
-      description: 'Thanh toán toàn bộ qua PayOS (QR Code/Chuyển khoản)',
+      title: t('paymentMethodSelector.bankTransfer'),
+      description: t('paymentMethodSelector.bankTransferDesc'),
       icon: '🏦'
     },
     {
       key: 'COD',
-      title: 'Thanh toán khi nhận hàng',
-      description: 'Đặt cọc trước + Thanh toán còn lại khi nhận hàng',
+      title: t('paymentMethodSelector.cod'),
+      description: t('paymentMethodSelector.codDesc'),
       icon: '💵',
-      badge: 'Cần cọc'
+      badge: t('paymentMethodSelector.codBadge')
     }
   ];
 
@@ -35,7 +37,7 @@ const PaymentMethodSelector = ({ onSelectMethod, selectedMethod, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <h2 className="text-xl font-semibold mb-4">Chọn phương thức thanh toán</h2>
+        <h2 className="text-xl font-semibold mb-4">{t('paymentMethodSelector.title')}</h2>
         
         <div className="space-y-3">
           {paymentMethods.map((method) => (
@@ -79,14 +81,14 @@ const PaymentMethodSelector = ({ onSelectMethod, selectedMethod, onClose }) => {
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Hủy
+            {t('paymentMethodSelector.cancel')}
           </button>
           <button
             onClick={handleConfirm}
             disabled={!localSelection}
             className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Xác nhận
+            {t('paymentMethodSelector.confirm')}
           </button>
         </div>
       </div>

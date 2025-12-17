@@ -1,17 +1,20 @@
 import React from "react";
 import { motion } from "framer-motion";
 import icons from "../../../../utils/icons";
-
-const STEP_LABELS = [
-  { number: 1, label: "Cơ Bản", icon: icons.BiInfoCircle },
-  { number: 2, label: "Danh Mục", icon: icons.BiCategory },
-  { number: 3, label: "Hình Ảnh", icon: icons.BiImage },
-  { number: 4, label: "Giá Cả", icon: icons.BiMoney },
-  { number: 5, label: "Địa Điểm", icon: icons.BiMapPin },
-  { number: 6, label: "Quảng Cáo", icon: icons.BiCrown },
-];
+import { useI18n } from "../../../../hooks/useI18n";
 
 const StepIndicator = ({ currentStep, totalSteps = 6, onStepClick }) => {
+  const { t } = useI18n();
+  
+  const STEP_LABELS = [
+    { number: 1, labelKey: "stepBasic", icon: icons.BiInfoCircle },
+    { number: 2, labelKey: "stepCategory", icon: icons.BiCategory },
+    { number: 3, labelKey: "stepImages", icon: icons.BiImage },
+    { number: 4, labelKey: "stepPricing", icon: icons.BiMoney },
+    { number: 5, labelKey: "stepLocation", icon: icons.BiMapPin },
+    { number: 6, labelKey: "stepPromotion", icon: icons.BiCrown },
+  ];
+  
   return (
     <div className="mb-8">
       {/* Progress Bar */}
@@ -28,7 +31,7 @@ const StepIndicator = ({ currentStep, totalSteps = 6, onStepClick }) => {
 
         {/* Step Circles */}
         <div className="relative flex justify-between">
-          {STEP_LABELS.map(({ number, label, icon: Icon }) => {
+          {STEP_LABELS.map(({ number, labelKey, icon: Icon }) => {
             const isCompleted = number < currentStep;
             const isCurrent = number === currentStep;
             const isClickable = number <= currentStep;
@@ -69,7 +72,7 @@ const StepIndicator = ({ currentStep, totalSteps = 6, onStepClick }) => {
                       : "text-gray-400"
                   }`}
                 >
-                  {label}
+                  {t(`productForm.${labelKey}`)}
                 </span>
               </button>
             );
@@ -80,7 +83,7 @@ const StepIndicator = ({ currentStep, totalSteps = 6, onStepClick }) => {
       {/* Step Counter */}
       <div className="text-center">
         <p className="text-sm text-gray-600">
-          Bước {currentStep} / {totalSteps}
+          {t('productForm.stepLabel')} {currentStep} {t('productForm.of')} {totalSteps}
         </p>
       </div>
     </div>

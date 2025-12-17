@@ -1,6 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import icons from "../../../../utils/icons";
+import { useI18n } from "../../../../hooks/useI18n";
+import { translateCategory, translateSubCategory } from "../../../../utils/categoryTranslation";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -15,22 +17,23 @@ const CategoryStep = ({
   categoryMap,
   handleInputChange,
 }) => {
+  const { t, i18n } = useI18n();
   return (
     <motion.div className="space-y-6" {...fadeInUp}>
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center justify-center mb-2">
           <icons.BiCategory className="w-6 h-6 mr-3 text-primary-600" />
-          Phân Loại Sản Phẩm
+          {t('productForm.category')}
         </h2>
         <p className="text-gray-600">
-          Chọn danh mục phù hợp để khách hàng dễ dàng tìm thấy
+          {t('productForm.categoryDesc')}
         </p>
       </div>
 
       {/* Category Selection */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-3">
-          Danh Mục Chính <span className="text-red-500">*</span>
+          {t('productForm.mainCategory')} <span className="text-red-500">*</span>
         </label>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {categories.map((category) => (
@@ -54,14 +57,14 @@ const CategoryStep = ({
             >
               <div className="text-3xl mb-2">{category.icon}</div>
               <div className="text-sm font-semibold text-gray-900">
-                {category.name}
+                {translateCategory(category.name, i18n.language)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 {
                   (category.subCategories || category.subcategories || [])
                     .length
                 }{" "}
-                loại
+                {t('productForm.types')}
               </div>
             </button>
           ))}
@@ -77,7 +80,7 @@ const CategoryStep = ({
           categoryMap[formData.category]?.subcategories) && (
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Danh Mục Con <span className="text-red-500">*</span>
+              {t('productForm.subCategory')} <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {(
@@ -101,7 +104,7 @@ const CategoryStep = ({
                 >
                   <div className="text-2xl mb-2">{subCat.icon}</div>
                   <div className="text-sm font-semibold text-gray-900">
-                    {subCat.name}
+                    {translateSubCategory(subCat.name, i18n.language)}
                   </div>
                 </button>
               ))}

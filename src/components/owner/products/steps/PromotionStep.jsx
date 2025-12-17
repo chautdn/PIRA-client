@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import icons from "../../../../utils/icons";
 import promotionService from "../../../../services/promotion";
+import { useI18n } from "../../../../hooks/useI18n";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -16,6 +17,15 @@ const PromotionStep = ({
   handleInputChange,
   errors = {},
 }) => {
+  const { t } = useI18n();
+
+  // Get tomorrow's date as minimum date
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split("T")[0];
+  };
+
   const handlePromotionToggle = (enabled, tier = null) => {
     handleInputChange({
       target: {
@@ -24,6 +34,9 @@ const PromotionStep = ({
           ...formData.promotion,
           enabled,
           tier,
+          activationDate: enabled
+            ? formData.promotion.activationDate || getTomorrowDate()
+            : null,
         },
       },
     });
@@ -66,6 +79,18 @@ const PromotionStep = ({
     });
   };
 
+  const handleActivationDateChange = (date) => {
+    handleInputChange({
+      target: {
+        name: "promotion",
+        value: {
+          ...formData.promotion,
+          activationDate: date,
+        },
+      },
+    });
+  };
+
   const calculateTotal = () => {
     if (!formData.promotion.tier) return 0;
 
@@ -79,50 +104,279 @@ const PromotionStep = ({
 
   return (
     <motion.div id="promotion-section" className="space-y-8" {...fadeInUp}>
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-full font-bold text-sm mb-4 shadow-lg">
-          🚀 TĂNG TỐC BÁN HÀNG
-        </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-3">
-          Quảng Cáo Sản Phẩm
-        </h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Xuất hiện đầu trang, tăng 300% lượt xem và gấp 5 lần cơ hội được thuê
-        </p>
-      </div>
+      {/* Header - Redesigned */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-3xl p-8 text-white shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full -mr-32 -mt-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-10 rounded-full -ml-24 -mb-24"></div>
 
-      {/* Benefits Highlight */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center border-2 border-blue-200">
-          <div className="text-3xl mb-2">⚡</div>
-          <div className="font-bold text-gray-900 mb-1">Hiển thị đầu tiên</div>
-          <div className="text-sm text-gray-600">
-            Xuất hiện trên cùng kết quả tìm kiếm
+        <div className="relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
+            <icons.BiTrendingUp className="w-5 h-5" />
+            <span className="font-bold text-sm">
+              {t("productForm.promotionBadge")}
+            </span>
+          </div>
+
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">
+            {t("productForm.promotionTitle")}
+          </h2>
+
+          <p className="text-lg text-primary-50 max-w-2xl mx-auto mb-6">
+            {t("productForm.promotionSubtitle")}
+          </p>
+
+          {/* Benefits - Inline Style */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4 border border-white border-opacity-20">
+              <icons.BiRocket className="w-8 h-8 mx-auto mb-2" />
+              <div className="font-bold mb-1">{t("productForm.showFirst")}</div>
+              <div className="text-xs text-primary-50">
+                {t("productForm.showFirstDesc")}
+              </div>
+            </div>
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4 border border-white border-opacity-20">
+              <icons.BiStar className="w-8 h-8 mx-auto mb-2" />
+              <div className="font-bold mb-1">
+                {t("productForm.specialBadge")}
+              </div>
+              <div className="text-xs text-primary-50">
+                {t("productForm.specialBadgeDesc")}
+              </div>
+            </div>
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4 border border-white border-opacity-20">
+              <icons.BiShow className="w-8 h-8 mx-auto mb-2" />
+              <div className="font-bold mb-1">{t("productForm.moreViews")}</div>
+              <div className="text-xs text-primary-50">
+                {t("productForm.moreViewsDesc")}
+              </div>
+            </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center border-2 border-purple-200">
-          <div className="text-3xl mb-2">👑</div>
-          <div className="font-bold text-gray-900 mb-1">Huy hiệu đặc biệt</div>
-          <div className="text-sm text-gray-600">
-            Badge nổi bật thu hút khách hàng
-          </div>
+      </div>
+
+      {/* Tier Selection - Redesigned Compact Cards */}
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-gray-900 text-center mb-6">
+          {t("productForm.selectPackageTitle")}
+        </h3>
+
+        {/* Top Row - 3 Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 max-w-6xl mx-auto">
+          {Object.entries(promotionService.TIER_CONFIG)
+            .slice(0, 3)
+            .map(([tier, config]) => {
+              const isSelected =
+                formData.promotion.enabled &&
+                formData.promotion.tier === parseInt(tier);
+              const isPopular = tier === "3";
+
+              return (
+                <motion.div
+                  key={tier}
+                  className="relative"
+                  whileHover={{ y: -4 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {/* Popular Badge */}
+                  {isPopular && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20">
+                      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        <icons.BiTrendingUp className="inline w-3 h-3 mr-1" />
+                        {t("productForm.popular")}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleTierChange(tier)}
+                    className={`relative w-full rounded-xl overflow-hidden transition-all duration-300 ${
+                      isSelected
+                        ? "ring-4 ring-primary-400 shadow-2xl transform scale-105"
+                        : "shadow-md hover:shadow-xl"
+                    }`}
+                  >
+                    {/* Card Header */}
+                    <div
+                      className={`relative px-5 py-4 text-white ${
+                        tier === "1"
+                          ? "bg-gradient-to-br from-purple-500 to-purple-700"
+                          : tier === "2"
+                          ? "bg-gradient-to-br from-blue-500 to-blue-700"
+                          : "bg-gradient-to-br from-orange-500 to-red-600"
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 bg-white rounded-full p-1">
+                          <icons.FiCheck className="w-3.5 h-3.5 text-green-600" />
+                        </div>
+                      )}
+
+                      <h4 className="font-bold text-base mb-1">
+                        {t(`productForm.tier${tier}Name`)}
+                      </h4>
+
+                      <div className="flex items-baseline justify-center gap-0.5">
+                        <span className="text-2xl font-extrabold">
+                          {(promotionService.TIER_PRICES[tier] / 1000).toFixed(
+                            0
+                          )}
+                        </span>
+                        <span className="text-sm">.000 ₫</span>
+                      </div>
+                      <div className="text-xs opacity-90">
+                        {t("productForm.perDay")}
+                      </div>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="bg-white px-4 py-4">
+                      <div className="space-y-2 mb-4">
+                        {[1, 2, 3, 4].map((featureNum) => (
+                          <div
+                            key={featureNum}
+                            className="flex items-start gap-2 text-xs text-gray-700"
+                          >
+                            <icons.FiCheck className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span className="leading-tight">
+                              {t(`productForm.tier${tier}Feature${featureNum}`)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div
+                        className={`w-full py-2 rounded-lg font-semibold text-xs transition-all ${
+                          isSelected
+                            ? "bg-primary-600 text-white"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {isSelected
+                          ? t("productForm.selected")
+                          : t("productForm.selectThis")}
+                      </div>
+                    </div>
+                  </button>
+                </motion.div>
+              );
+            })}
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center border-2 border-green-200">
-          <div className="text-3xl mb-2">📈</div>
-          <div className="font-bold text-gray-900 mb-1">Tăng lượt xem</div>
-          <div className="text-sm text-gray-600">Nhiều người xem hơn 300%</div>
+
+        {/* Bottom Row - 2 Cards Centered */}
+        <div className="flex justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+            {Object.entries(promotionService.TIER_CONFIG)
+              .slice(3, 5)
+              .map(([tier, config]) => {
+                const isSelected =
+                  formData.promotion.enabled &&
+                  formData.promotion.tier === parseInt(tier);
+
+                return (
+                  <motion.div
+                    key={tier}
+                    className="relative"
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleTierChange(tier)}
+                      className={`relative w-full rounded-xl overflow-hidden transition-all duration-300 ${
+                        isSelected
+                          ? "ring-4 ring-primary-400 shadow-2xl transform scale-105"
+                          : "shadow-md hover:shadow-xl"
+                      }`}
+                    >
+                      {/* Card Header */}
+                      <div
+                        className={`relative px-5 py-4 text-white ${
+                          tier === "4"
+                            ? "bg-gradient-to-br from-green-500 to-green-700"
+                            : "bg-gradient-to-br from-gray-500 to-gray-700"
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 bg-white rounded-full p-1">
+                            <icons.FiCheck className="w-3.5 h-3.5 text-green-600" />
+                          </div>
+                        )}
+
+                        <h4 className="font-bold text-base mb-1">
+                          {t(`productForm.tier${tier}Name`)}
+                        </h4>
+
+                        <div className="flex items-baseline justify-center gap-0.5">
+                          <span className="text-2xl font-extrabold">
+                            {(
+                              promotionService.TIER_PRICES[tier] / 1000
+                            ).toFixed(0)}
+                          </span>
+                          <span className="text-sm">.000 ₫</span>
+                        </div>
+                        <div className="text-xs opacity-90">
+                          {t("productForm.perDay")}
+                        </div>
+                      </div>
+
+                      {/* Card Body */}
+                      <div className="bg-white px-4 py-4">
+                        <div className="space-y-2 mb-4">
+                          {[1, 2, 3, 4].map((featureNum) => (
+                            <div
+                              key={featureNum}
+                              className="flex items-start gap-2 text-xs text-gray-700"
+                            >
+                              <icons.FiCheck className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span className="leading-tight">
+                                {t(
+                                  `productForm.tier${tier}Feature${featureNum}`
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div
+                          className={`w-full py-2 rounded-lg font-semibold text-xs transition-all ${
+                            isSelected
+                              ? "bg-primary-600 text-white"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {isSelected
+                            ? t("productForm.selected")
+                            : t("productForm.selectThis")}
+                        </div>
+                      </div>
+                    </button>
+                  </motion.div>
+                );
+              })}
+          </div>
         </div>
       </div>
 
-      {/* "No Thanks" Option */}
+      {/* "No Thanks" Option - After tier selection */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t-2 border-dashed border-gray-300"></div>
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-4 text-sm font-bold text-gray-500 uppercase">
+            {t("productForm.or")}
+          </span>
+        </div>
+      </div>
+
       <div className="space-y-4">
         <motion.button
           type="button"
           onClick={() => handlePromotionToggle(false, null)}
           className={`w-full p-5 rounded-2xl border-2 transition-all text-center ${
             !formData.promotion.enabled
-              ? "border-gray-400 bg-gray-50 shadow-md"
+              ? "border-primary-500 bg-primary-50 shadow-md ring-2 ring-primary-200"
               : "border-gray-200 hover:border-gray-300 bg-white"
           }`}
           whileHover={{ scale: 1.02 }}
@@ -137,138 +391,44 @@ const PromotionStep = ({
               </div>
             )}
             <span className="font-semibold text-gray-700">
-              Không, tôi sẽ đăng bình thường (Miễn phí)
+              {t("productForm.normalPost")}
             </span>
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Sản phẩm sẽ xuất hiện theo thứ tự mặc định
+            {t("productForm.normalPostDesc")}
           </p>
         </motion.button>
       </div>
 
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t-2 border-dashed border-gray-300"></div>
-        </div>
-        <div className="relative flex justify-center">
-          <span className="bg-white px-4 text-sm font-bold text-gray-500 uppercase">
-            Hoặc chọn gói quảng cáo
-          </span>
-        </div>
-      </div>
-
-      {/* Tier Selection */}
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {Object.entries(promotionService.TIER_CONFIG).map(
-            ([tier, config]) => {
-              const isSelected =
-                formData.promotion.enabled &&
-                formData.promotion.tier === parseInt(tier);
-              const isPopular = tier === "3"; // Tier 3 (Popular)
-
-              return (
-                <div
-                  key={tier}
-                  className={`relative ${isPopular ? "pt-4" : ""}`}
-                >
-                  {/* Popular Badge */}
-                  {isPopular && (
-                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10">
-                      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 whitespace-nowrap">
-                        <span>🔥</span>
-                        <span>Phổ Biến</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <motion.button
-                    type="button"
-                    onClick={() => handleTierChange(tier)}
-                    className={`relative p-5 rounded-2xl border-2 transition-all w-full ${
-                      isSelected
-                        ? "border-primary-500 bg-primary-50 shadow-xl ring-2 ring-primary-300"
-                        : "border-gray-200 hover:border-primary-300 bg-white hover:shadow-md"
-                    }`}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {/* Selected Check Mark */}
-                    {isSelected && (
-                      <motion.div
-                        className="absolute -top-2 -right-2 bg-primary-600 text-white rounded-full p-1.5 shadow-lg"
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring", stiffness: 200 }}
-                      >
-                        <icons.FiCheck className="w-3.5 h-3.5" />
-                      </motion.div>
-                    )}
-
-                    <div className="text-center w-full">
-                      {/* Icon */}
-                      <div className="text-4xl mb-2">{config.icon}</div>
-
-                      {/* Tier Name */}
-                      <h4 className="font-bold text-lg mb-2 text-gray-900 truncate px-1">
-                        {config.name}
-                      </h4>
-
-                      {/* Price */}
-                      <div className="mb-3">
-                        <div className="text-2xl font-bold text-green-600 leading-tight">
-                          {promotionService
-                            .formatCurrency(promotionService.TIER_PRICES[tier])
-                            .replace(" VNĐ", "")
-                            .replace(",", ".")}
-                          <span className="text-base font-normal text-gray-600">
-                            {" "}
-                            ₫
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          /ngày
-                        </div>
-                      </div>
-
-                      {/* Features */}
-                      <div className="space-y-1.5 text-left px-1">
-                        {config.features.map((feature, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-start gap-1.5 text-xs text-gray-600"
-                          >
-                            <icons.FiCheck
-                              className={`w-3 h-3 mt-0.5 flex-shrink-0 ${
-                                isSelected
-                                  ? "text-primary-600"
-                                  : "text-gray-400"
-                              }`}
-                            />
-                            <span className="leading-tight break-words">
-                              {feature}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.button>
-                </div>
-              );
-            }
-          )}
-        </div>
-      </div>
-
-      {/* Duration and Payment - Only when tier is selected */}
+      {/* Duration, Date and Payment - Only when tier is selected */}
       {formData.promotion.enabled && formData.promotion.tier && (
         <>
+          {/* Activation Date Selection */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <icons.BiCalendar className="w-5 h-5 mr-2 text-primary-600" />
+              {t("productForm.activationDate")}
+            </h3>
+            <div className="relative">
+              <input
+                type="date"
+                value={formData.promotion.activationDate || getTomorrowDate()}
+                onChange={(e) => handleActivationDateChange(e.target.value)}
+                min={getTomorrowDate()}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-200 focus:border-primary-500 hover:border-primary-400 transition-all duration-200"
+              />
+            </div>
+            <p className="text-sm text-gray-500 flex items-center gap-2">
+              <icons.BiInfoCircle className="w-4 h-4" />
+              {t("productForm.activationDateDesc")}
+            </p>
+          </div>
+
           {/* Duration Selection */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <icons.BiCalendar className="w-5 h-5 mr-2 text-primary-600" />
-              Thời Gian Quảng Cáo
+              {t("productForm.promotionDuration")}
             </h3>
             <div className="flex items-center gap-4">
               <input
@@ -282,7 +442,7 @@ const PromotionStep = ({
               <div className="flex items-center gap-2 bg-primary-50 px-4 py-2 rounded-xl border border-primary-200 min-w-[120px]">
                 <icons.BiCalendar className="w-5 h-5 text-primary-600" />
                 <span className="font-bold text-primary-700">
-                  {formData.promotion.duration} ngày
+                  {formData.promotion.duration} {t("productForm.days")}
                 </span>
               </div>
             </div>
@@ -291,7 +451,7 @@ const PromotionStep = ({
                 <icons.BiCheckCircle className="w-5 h-5 text-green-600" />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-green-800">
-                    🎉 Giảm giá 10% cho quảng cáo từ 3 ngày trở lên!
+                    {t("productForm.discount10")}
                   </p>
                 </div>
               </div>
@@ -302,17 +462,21 @@ const PromotionStep = ({
           <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-2xl p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
               <icons.BiCalculator className="w-5 h-5 mr-2 text-yellow-600" />
-              Chi Phí Ước Tính
+              {t("productForm.estimatedCost")}
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-gray-700">Gói đã chọn:</span>
+                <span className="text-gray-700">
+                  {t("productForm.selectedPackage")}
+                </span>
                 <span className="font-bold text-gray-900">
-                  {promotionService.TIER_CONFIG[formData.promotion.tier]?.name}
+                  {t(`productForm.tier${formData.promotion.tier}Name`)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700">Giá mỗi ngày:</span>
+                <span className="text-gray-700">
+                  {t("productForm.pricePerDay")}
+                </span>
                 <span className="font-semibold text-gray-900">
                   {promotionService.formatCurrency(
                     promotionService.TIER_PRICES[formData.promotion.tier]
@@ -320,14 +484,18 @@ const PromotionStep = ({
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-700">Thời gian:</span>
+                <span className="text-gray-700">
+                  {t("productForm.duration")}
+                </span>
                 <span className="font-semibold text-gray-900">
-                  {formData.promotion.duration} ngày
+                  {formData.promotion.duration} {t("productForm.days")}
                 </span>
               </div>
               <div className="border-t-2 border-yellow-300 pt-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Tổng trước giảm:</span>
+                  <span className="text-gray-700">
+                    {t("productForm.totalBeforeDiscount")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {promotionService.formatCurrency(
                       promotionService.TIER_PRICES[formData.promotion.tier] *
@@ -338,7 +506,9 @@ const PromotionStep = ({
               </div>
               {formData.promotion.duration >= 3 && (
                 <div className="flex justify-between items-center text-green-700">
-                  <span className="font-semibold">Giảm giá (10%):</span>
+                  <span className="font-semibold">
+                    {t("productForm.discountLabel")}
+                  </span>
                   <span className="font-bold">
                     -
                     {promotionService.formatCurrency(
@@ -351,7 +521,9 @@ const PromotionStep = ({
               )}
               <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-xl p-4 mt-3">
                 <div className="flex justify-between items-center text-white">
-                  <span className="text-lg font-bold">Tổng thanh toán:</span>
+                  <span className="text-lg font-bold">
+                    {t("productForm.totalPayment")}
+                  </span>
                   <span className="text-2xl font-extrabold">
                     {promotionService.formatCurrency(calculateTotal())}
                   </span>
@@ -364,7 +536,7 @@ const PromotionStep = ({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <icons.HiCash className="w-5 h-5 mr-2 text-primary-600" />
-              Phương Thức Thanh Toán
+              {t("productForm.paymentMethod")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Wallet Payment */}
@@ -390,13 +562,13 @@ const PromotionStep = ({
                   </div>
                   <div className="flex-1 text-left">
                     <h4 className="font-bold text-gray-900 mb-1 text-lg">
-                      Ví PIRA
+                      {t("productForm.piraWallet")}
                     </h4>
                     <p className="text-sm text-gray-600">
                       {walletLoading ? (
                         <span className="flex items-center gap-2">
                           <icons.BiLoaderAlt className="w-3 h-3 animate-spin" />
-                          Đang tải...
+                          {t("productForm.loading")}
                         </span>
                       ) : (
                         <span className="font-semibold text-primary-600">
@@ -431,10 +603,10 @@ const PromotionStep = ({
                   </div>
                   <div className="flex-1 text-left">
                     <h4 className="font-bold text-gray-900 mb-1 text-lg">
-                      PayOS
+                      {t("productForm.payosBank")}
                     </h4>
                     <p className="text-sm text-gray-600">
-                      Thanh toán qua ngân hàng
+                      {t("productForm.payViaBank")}
                     </p>
                   </div>
                 </div>
@@ -449,7 +621,7 @@ const PromotionStep = ({
         <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 text-center">
           <icons.BiInfoCircle className="w-8 h-8 text-blue-600 mx-auto mb-3" />
           <p className="text-blue-800 font-semibold">
-            👆 Vui lòng chọn gói quảng cáo ở trên để xem chi tiết thanh toán
+            {t("productForm.selectPromotionPackage")}
           </p>
         </div>
       )}
@@ -458,7 +630,7 @@ const PromotionStep = ({
       <div className="bg-gray-50 border-2 border-gray-300 rounded-2xl p-6 mt-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <icons.BiInfoCircle className="w-5 h-5 mr-2 text-gray-700" />
-          Điều Khoản và Điều Kiện
+          {t("productForm.termsTitle")}
         </h3>
         <div className="flex items-start gap-3">
           <input
@@ -479,16 +651,16 @@ const PromotionStep = ({
             htmlFor="agreedToTerms"
             className="text-gray-700 leading-relaxed cursor-pointer"
           >
-            Tôi đã đọc và đồng ý với{" "}
+            {t("productForm.termsAgree")}{" "}
             <a
               href="/terms-and-conditions"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary-600 hover:text-primary-700 font-semibold underline"
             >
-              Điều Khoản và Điều Kiện
+              {t("productForm.termsLink")}
             </a>{" "}
-            của PIRA khi đăng sản phẩm cho thuê trên nền tảng.
+            {t("productForm.termsOf")}
           </label>
         </div>
         {errors.agreedToTerms && (

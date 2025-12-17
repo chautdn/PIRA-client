@@ -66,14 +66,14 @@ const ChatbotAI = () => {
             <div style="flex: 1;">
               <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${idx + 1}. ${title}</div>
               <div style="color: #6b7280; font-size: 13px; margin-bottom: 4px;">📦 ${category}</div>
-              <div style="color: #7c3aed; font-weight: 700; font-size: 14px; margin-bottom: 4px;">💰 ${price}/ngày</div>
-              ${rating > 0 ? `<div style="color: #fbbf24; font-size: 12px;">⭐ ${rating.toFixed(1)}/5 (${reviewCount} đánh giá)</div>` : ''}
+              <div style="color: #7c3aed; font-weight: 700; font-size: 14px; margin-bottom: 4px;"> ${price}/ngày</div>
+              ${rating > 0 ? `<div style="color: #fbbf24; font-size: 12px;"> ${rating.toFixed(1)}/5 (${reviewCount} đánh giá)</div>` : ''}
             </div>
           </div>
           <a href="/product/${product._id}" 
              onclick="window.location.href='/product/${product._id}'; return false;"
              style="display: inline-block; margin-top: 8px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 6px 16px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500; cursor: pointer; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3); transition: all 0.2s;">
-            📋 Xem chi tiết
+             Xem chi tiết
           </a>
         </div>
       `;

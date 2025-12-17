@@ -12,6 +12,7 @@ import {
   ArcElement,
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import { useI18n } from '../../../hooks/useI18n';
 
 // Register ChartJS components
 ChartJS.register(
@@ -27,6 +28,7 @@ ChartJS.register(
 );
 
 const RevenueChart = ({ revenueData, loading, groupBy = 'month' }) => {
+  const { t } = useI18n();
   const chartData = useMemo(() => {
     if (!revenueData || !revenueData.revenueByPeriod) {
       return null;
@@ -41,14 +43,14 @@ const RevenueChart = ({ revenueData, loading, groupBy = 'month' }) => {
       labels: periods,
       datasets: [
         {
-          label: 'Tổng doanh thu',
+          label: t("ownerStatistics.chart.totalRevenue"),
           data: revenues,
           backgroundColor: 'rgba(59, 130, 246, 0.5)',
           borderColor: 'rgb(59, 130, 246)',
           borderWidth: 2,
         },
         {
-          label: 'Doanh thu ròng',
+          label: t("ownerStatistics.chart.netRevenue"),
           data: netRevenues,
           backgroundColor: 'rgba(34, 197, 94, 0.5)',
           borderColor: 'rgb(34, 197, 94)',
@@ -67,7 +69,7 @@ const RevenueChart = ({ revenueData, loading, groupBy = 'month' }) => {
       },
       title: {
         display: true,
-        text: 'Biểu đồ doanh thu theo thời gian',
+        text: t("ownerStatistics.chart.title"),
         font: {
           size: 16,
           weight: 'bold',
@@ -119,7 +121,7 @@ const RevenueChart = ({ revenueData, loading, groupBy = 'month' }) => {
   if (!chartData) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 h-96 flex items-center justify-center">
-        <p className="text-gray-500">Không có dữ liệu để hiển thị</p>
+        <p className="text-gray-500">{t("ownerStatistics.chart.noData")}</p>
       </div>
     );
   }
@@ -134,7 +136,7 @@ const RevenueChart = ({ revenueData, loading, groupBy = 'month' }) => {
       {revenueData?.summary && (
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-1">Tổng doanh thu</p>
+            <p className="text-sm text-gray-600 mb-1">{t("ownerStatistics.chart.totalRevenue")}</p>
             <p className="text-lg font-bold text-blue-600">
               {new Intl.NumberFormat('vi-VN', {
                 style: 'currency',
@@ -145,7 +147,7 @@ const RevenueChart = ({ revenueData, loading, groupBy = 'month' }) => {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-1">Doanh thu ròng</p>
+            <p className="text-sm text-gray-600 mb-1">{t("ownerStatistics.chart.netRevenue")}</p>
             <p className="text-lg font-bold text-green-600">
               {new Intl.NumberFormat('vi-VN', {
                 style: 'currency',

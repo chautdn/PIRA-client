@@ -4,6 +4,7 @@ import { useRentalOrder } from "../context/RentalOrderContext";
 import { toast } from "../components/common/Toast";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../context/CartContext";
+import { useI18n } from "../hooks/useI18n";
 import api from "../services/api";
 import earlyReturnApi from "../services/earlyReturn.Api";
 import rentalOrderService from "../services/rentalOrder";
@@ -17,6 +18,7 @@ import { Package } from "lucide-react";
 import useOrderSocket from "../hooks/useOrderSocket";
 
 const RentalOrdersPage = () => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -276,15 +278,15 @@ const RentalOrdersPage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Vui lòng đăng nhập</h2>
+          <h2 className="text-2xl font-bold mb-4">{t('common.confirm')}</h2>
           <p className="text-gray-600 mb-4">
-            Bạn cần đăng nhập để xem đơn hàng
+            {t('rentalOrders.noBrowseRentals')}
           </p>
           <button
             onClick={() => navigate("/login")}
             className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
           >
-            Đăng nhập
+            {t('rentalOrders.login')}
           </button>
         </div>
       </div>
@@ -296,9 +298,9 @@ const RentalOrdersPage = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Quản lý đơn thuê</h1>
+          <h1 className="text-3xl font-bold">{t('rentalOrders.title')}</h1>
           <p className="text-gray-600">
-            Theo dõi và quản lý các đơn hàng thuê của bạn
+            {t('rentalOrders.subtitle')}
           </p>
         </div>
 
@@ -308,7 +310,7 @@ const RentalOrdersPage = () => {
             <div className="border-b border-gray-200">
               <div className="px-6 py-4">
                 <h2 className="text-xl font-semibold text-blue-600">
-                  Đơn thuê của tôi ({(myOrders || []).length})
+                  {t('rentalOrders.myRentals')} ({(myOrders || []).length})
                 </h2>
               </div>
             </div>
@@ -329,7 +331,7 @@ const RentalOrdersPage = () => {
             <div className="bg-white rounded-lg shadow-md p-8">
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                <span className="ml-3">Đang tải đơn hàng...</span>
+                <span className="ml-3">{t('rentalOrders.loading')}</span>
               </div>
             </div>
           ) : filteredOrders.length === 0 ? (
@@ -337,17 +339,17 @@ const RentalOrdersPage = () => {
               <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-600 mb-2">
                 {searchQuery || statusFilter !== "all"
-                  ? "Không tìm thấy đơn hàng nào"
-                  : "Chưa có đơn hàng nào"}
+                  ? t('rentalOrders.notFound')
+                  : t('rentalOrders.noRentals')}
               </h3>
               <p className="text-gray-500 mb-4">
-                Bạn chưa có đơn thuê nào. Hãy tạo đơn thuê đầu tiên!
+                {t('rentalOrders.noRentalsDesc')}
               </p>
               <button
                 onClick={() => navigate("/products")}
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
               >
-                Xem sản phẩm
+                {t('rentalOrders.viewProducts')}
               </button>
             </div>
           ) : (
@@ -378,11 +380,12 @@ const RentalOrdersPage = () => {
                 disabled={(currentPagination.page || 1) === 1}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
-                Trước
+                {t('rentalOrders.pagination.previous')}
               </button>
 
               <span className="px-4 py-2">
-                Trang {currentPagination.page || 1} /{" "}
+                {t('rentalOrders.pagination.page')} {currentPagination.page || 1} {t('rentalOrders.pagination.of')}
+                {" "}
                 {currentPagination.pages || 1}
               </span>
 
@@ -403,7 +406,7 @@ const RentalOrdersPage = () => {
                 }
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
-                Sau
+                {t('rentalOrders.pagination.next')}
               </button>
             </div>
           )}
@@ -437,7 +440,7 @@ const RentalOrdersPage = () => {
                 status: statusFilter !== "all" ? statusFilter : undefined,
               });
               loadEarlyReturnRequests();
-              toast.success("Tạo yêu cầu trả hàng sớm thành công!");
+              toast.success(t('rentalOrders.earlyReturn.requestEarlyReturn'));
             }}
           />
         )}
@@ -457,7 +460,7 @@ const RentalOrdersPage = () => {
               loadMyOrders({
                 status: statusFilter !== "all" ? statusFilter : undefined,
               });
-              toast.success("Yêu cầu gia hạn đã được gửi!");
+              toast.success(t('rentalOrders.extendRental.successMessage'));
             }}
           />
         )}

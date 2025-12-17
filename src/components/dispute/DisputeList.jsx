@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '../../hooks/useI18n';
 import { useDispute } from '../../context/DisputeContext';
 import {
   getDisputeStatusColor,
@@ -11,6 +12,7 @@ import {
 
 const DisputeList = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { disputes, isLoading, loadMyDisputes } = useDispute();
   const [filters, setFilters] = useState({
     status: '',
@@ -45,38 +47,38 @@ const DisputeList = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Trạng thái
+              {t('disputes.status')}
             </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             >
-              <option value="">Tất cả</option>
-              <option value="OPEN">Chờ phản hồi</option>
-              <option value="IN_NEGOTIATION">Đang đàm phán</option>
-              <option value="ADMIN_REVIEWING">Admin xem xét</option>
-              <option value="THIRD_PARTY_ESCALATED">Bên thứ 3</option>
-              <option value="RESOLVED">Đã giải quyết</option>
+              <option value="">{t('disputes.allStatuses')}</option>
+              <option value="OPEN">{t('disputes.open')}</option>
+              <option value="IN_NEGOTIATION">{t('disputes.inNegotiation')}</option>
+              <option value="ADMIN_REVIEWING">{t('disputes.adminReviewing')}</option>
+              <option value="THIRD_PARTY_ESCALATED">{t('disputes.thirdPartyEscalated')}</option>
+              <option value="RESOLVED">{t('disputes.resolved')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Loại
+              {t('disputes.category')}
             </label>
             <select
               value={filters.type}
               onChange={(e) => handleFilterChange('type', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             >
-              <option value="">Tất cả</option>
-              <option value="PRODUCT_NOT_AS_DESCRIBED">Không đúng mô tả</option>
-              <option value="MISSING_ITEMS">Thiếu hàng</option>
-              <option value="DAMAGED_BY_SHIPPER">Shipper làm hỏng</option>
-              <option value="PRODUCT_DEFECT">Sản phẩm lỗi</option>
-              <option value="DAMAGED_ON_RETURN">Hư hỏng khi trả</option>
-              <option value="LATE_RETURN">Trả hàng trễ</option>
+              <option value="">{t('disputes.allCategories')}</option>
+              <option value="PRODUCT_NOT_AS_DESCRIBED">{t('disputes.notAsDescribed')}</option>
+              <option value="MISSING_ITEMS">{t('disputes.missingItems')}</option>
+              <option value="DAMAGED_BY_SHIPPER">{t('disputes.damagedByShipper')}</option>
+              <option value="PRODUCT_DEFECT">{t('disputes.productDefect')}</option>
+              <option value="DAMAGED_ON_RETURN">{t('disputes.damagedOnReturn')}</option>
+              <option value="LATE_RETURN">{t('disputes.lateReturn')}</option>
             </select>
           </div>
 
@@ -85,7 +87,7 @@ const DisputeList = () => {
               onClick={() => setFilters({ status: '', type: '' })}
               className="w-full px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
             >
-              Xóa bộ lọc
+              {t('disputes.clearFilters')}
             </button>
           </div>
         </div>
@@ -97,16 +99,16 @@ const DisputeList = () => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Mã tranh chấp
+                {t('disputes.disputeId')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Loại
+                {t('disputes.type')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Trạng thái
+                {t('disputes.status')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ngày tạo
+                {t('disputes.createdDate')}
               </th>
             </tr>
           </thead>
@@ -114,7 +116,7 @@ const DisputeList = () => {
             {disputes.length === 0 ? (
               <tr>
                 <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                  Không có tranh chấp nào
+                  {t('disputes.noDisputes')}
                 </td>
               </tr>
             ) : (

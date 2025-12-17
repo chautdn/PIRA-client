@@ -5,10 +5,13 @@ import { useAuth } from '../../hooks/useAuth';
 import icons from "../../utils/icons";
 
 const { BiClipboard, BiCheckCircle, FaHourglassHalf , FiRefreshCcw , FiCreditCard, FiSearch, FiTrash2, FiUser, FiPackage, FiDollarSign, FiBell, FiCalendar, FiSettings, FiEye, FiTruck, MdOutlineRefresh, FiX } = icons;
+import { useI18n } from '../../hooks/useI18n';
+import { translateCategory } from '../../utils/categoryTranslation';
 
 const OrderManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { i18n } = useI18n();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -563,7 +566,7 @@ const OrderManagement = () => {
                         {order.product?.category && (
                           <div className="mt-1">
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200">
-                              📁 {order.product.category.name}
+                              📁 {translateCategory(order.product.category.name, i18n.language)}
                             </span>
                           </div>
                         )}

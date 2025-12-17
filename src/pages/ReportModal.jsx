@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userReportService } from '../services/userReport';
+import { useI18n } from '../hooks/useI18n';
 
 const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     reportType: '',
     reason: '',
@@ -13,10 +15,10 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
   const [success, setSuccess] = useState(false);
 
   const reportTypes = [
-    { value: 'SPAM', label: 'Spam', description: 'Sản phẩm được đăng nhiều lần' },
-    { value: 'INAPPROPRIATE', label: 'Nội dung không phù hợp', description: 'Hình ảnh hoặc mô tả không phù hợp' },
-    { value: 'HARASSMENT', label: 'Quấy rối', description: 'Hành vi quấy rối người dùng' },
-    { value: 'OTHER', label: 'Khác', description: 'Lý do khác' }
+    { value: 'SPAM', label: t('reportModal.spam'), description: t('reportModal.spamDesc') },
+    { value: 'INAPPROPRIATE', label: t('reportModal.inappropriate'), description: t('reportModal.inappropriateDesc') },
+    { value: 'HARASSMENT', label: t('reportModal.harassment'), description: t('reportModal.harassmentDesc') },
+    { value: 'OTHER', label: t('reportModal.other'), description: t('reportModal.otherDesc') }
   ];
 
   const handleInputChange = (e) => {
@@ -31,7 +33,7 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
     e.preventDefault();
     
     if (!formData.reportType) {
-      setError('Vui lòng chọn loại báo cáo');
+      setError(t('reportModal.reportTypeRequired'));
       return;
     }
 
@@ -71,11 +73,11 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
       console.error('Report error:', error);
       
       if (error.response?.status === 400) {
-        setError(error.response.data.message || 'Dữ liệu không hợp lệ');
+        setError(error.response.data.message || t('reportModal.errorInvalid'));
       } else if (error.response?.status === 429) {
-        setError('Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.');
+        setError(t('reportModal.errorTooMany'));
       } else {
-        setError('Có lỗi xảy ra khi gửi báo cáo. Vui lòng thử lại.');
+        setError(t('reportModal.errorGeneral'));
       }
     } finally {
       setLoading(false);
@@ -115,10 +117,10 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div>
               <h3 className="text-xl font-bold text-gray-900">
-                🚨 Báo cáo sản phẩm
+                {t('reportModal.title')}
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                Báo cáo sản phẩm: <span className="font-medium">{product?.title}</span>
+                {t('reportModal.reportProduct')} <span className="font-medium">{product?.title}</span>
               </p>
             </div>
             <button
@@ -142,10 +144,10 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
                 <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="font-medium">Báo cáo đã được gửi thành công!</span>
+                <span className="font-medium">{t('reportModal.successMessage')}</span>
               </div>
               <p className="text-sm text-green-600 mt-1">
-                Chúng tôi sẽ xem xét và xử lý báo cáo của bạn trong thời gian sớm nhất.
+                {t('reportModal.successNote')}
               </p>
             </motion.div>
           )}
@@ -155,7 +157,7 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
             {/* Report Type */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-900 mb-3">
-                Loại báo cáo <span className="text-red-500">*</span>
+                {t('reportModal.reportType')} <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {reportTypes.map((type) => (
@@ -196,7 +198,7 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
             {/* Reason */}
             <div className="mb-6">
               <label htmlFor="reason" className="block text-sm font-medium text-gray-900 mb-2">
-                Lý do cụ thể
+                {t('reportModal.specificReason')}
               </label>
               <input
                 type="text"
@@ -204,19 +206,19 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
                 name="reason"
                 value={formData.reason}
                 onChange={handleInputChange}
-                placeholder="Nhập lý do báo cáo ngắn gọn..."
+                placeholder={t('reportModal.reasonPlaceholder')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 maxLength={1000}
               />
               <p className="text-xs text-gray-500 mt-1">
-                {formData.reason.length}/1000 ký tự
+                {formData.reason.length}/1000 {t('reportModal.charCount')}
               </p>
             </div>
 
             {/* Description */}
             <div className="mb-6">
               <label htmlFor="description" className="block text-sm font-medium text-gray-900 mb-2">
-                Mô tả chi tiết
+                {t('reportModal.detailedDescription')}
               </label>
               <textarea
                 id="description"
@@ -224,12 +226,12 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={4}
-                placeholder="Mô tả chi tiết về vấn đề bạn gặp phải..."
+                placeholder={t('reportModal.descriptionPlaceholder')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
                 maxLength={2000}
               />
               <p className="text-xs text-gray-500 mt-1">
-                {formData.description.length}/2000 ký tự
+                {formData.description.length}/2000 {t('reportModal.charCount')}
               </p>
             </div>
 
@@ -258,7 +260,7 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
               >
-                Hủy
+                {t('reportModal.cancel')}
               </motion.button>
               <motion.button
                 type="submit"
@@ -274,10 +276,10 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
                 {loading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Đang gửi...
+                    {t('reportModal.sending')}
                   </div>
                 ) : (
-                  '🚨 Gửi báo cáo'
+                  t('reportModal.submit')
                 )}
               </motion.button>
             </div>
@@ -286,8 +288,7 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
           {/* Info Footer */}
           <div className="bg-gray-50 px-6 py-4 rounded-b-2xl">
             <p className="text-xs text-gray-600">
-              <span className="font-medium">📋 Lưu ý:</span> Báo cáo sai sự thật có thể bị xử phạt. 
-              Chúng tôi sẽ xem xét báo cáo của bạn trong vòng 24-48 giờ.
+              <span className="font-medium">{t('reportModal.footerNote')}</span> {t('reportModal.footerWarning')}
             </p>
           </div>
         </motion.div>

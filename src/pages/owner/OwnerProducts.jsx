@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useI18n } from "../../hooks/useI18n";
 import { ownerProductApi } from "../../services/ownerProduct.Api";
 import ProductCard from "../../components/common/ProductCard";
 import ConfirmModal from "../../components/owner/ConfirmModal";
@@ -22,6 +23,7 @@ const ProductActionButtons = ({
   onUnhide,
   onDelete,
   onPromote,
+  t,
 }) => {
   const [showActions, setShowActions] = useState(false);
   const isHidden = product.status === "OWNER_HIDDEN";
@@ -56,7 +58,7 @@ const ProductActionButtons = ({
               className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
             >
               <FiEdit className="w-4 h-4" />
-              <span>Chỉnh sửa</span>
+              <span>{t("ownerProducts.edit")}</span>
             </button>
 
             <button
@@ -67,7 +69,11 @@ const ProductActionButtons = ({
               className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-blue-700"
             >
               <FiTrendingUp className="w-4 h-4" />
-              <span>{product.isPromoted ? "Quảng cáo lại" : "Quảng cáo"}</span>
+              <span>
+                {product.isPromoted
+                  ? t("ownerProducts.promotAgain")
+                  : t("ownerProducts.promote")}
+              </span>
             </button>
 
             <div className="border-t border-gray-200 my-1"></div>
@@ -81,7 +87,7 @@ const ProductActionButtons = ({
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-green-700"
               >
                 <FiEye className="w-4 h-4" />
-                <span>Hiện lại</span>
+                <span>{t("ownerProducts.show")}</span>
               </button>
             ) : (
               <button
@@ -92,7 +98,7 @@ const ProductActionButtons = ({
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-orange-700"
               >
                 <FiEyeOff className="w-4 h-4" />
-                <span>Ẩn sản phẩm</span>
+                <span>{t("ownerProducts.hide")}</span>
               </button>
             )}
 
@@ -106,7 +112,7 @@ const ProductActionButtons = ({
               className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center gap-3 text-red-700"
             >
               <FiTrash2 className="w-4 h-4" />
-              <span>Xóa sản phẩm</span>
+              <span>{t("ownerProducts.delete")}</span>
             </button>
           </div>
         </>
@@ -117,6 +123,7 @@ const ProductActionButtons = ({
 
 export default function OwnerProducts() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [products, setProducts] = useState([]);
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
@@ -156,6 +163,7 @@ export default function OwnerProducts() {
   const loadProducts = async () => {
     try {
       setLoading(true);
+      setError(null); // Clear previous errors
       const res = await ownerProductApi.getOwnerProducts(filters);
 
       if (res.success) {
@@ -164,10 +172,11 @@ export default function OwnerProducts() {
       } else {
         setProducts([]);
         setPagination({});
+        setError(res.message || t("ownerProducts.errorMessage"));
       }
     } catch (e) {
       console.error("Error loading owner products:", e);
-      setError("Không tải được danh sách sản phẩm");
+      setError(e.message || t("ownerProducts.errorMessage"));
       setProducts([]);
     } finally {
       setLoading(false);
@@ -285,11 +294,11 @@ export default function OwnerProducts() {
   const getActionName = (type) => {
     switch (type) {
       case "hide":
-        return "ẩn";
+        return t("ownerProducts.hide");
       case "unhide":
-        return "hiện";
+        return t("ownerProducts.show");
       case "delete":
-        return "xóa";
+        return t("ownerProducts.delete");
       default:
         return "xử lý";
     }
@@ -299,34 +308,31 @@ export default function OwnerProducts() {
     switch (modalState.type) {
       case "hide":
         return {
-          title: "Ẩn Sản Phẩm",
-          message:
-            "Bạn có chắc chắn muốn ẩn sản phẩm này không? Sản phẩm sẽ không còn hiển thị với người dùng khác, nhưng bạn có thể hiện lại bất kỳ lúc nào.",
-          confirmText: "Ẩn Sản Phẩm",
+          title: t("ownerProducts.modal.hide.title"),
+          message: t("ownerProducts.modal.hide.message"),
+          confirmText: t("ownerProducts.modal.hide.confirm"),
           type: "hide",
         };
       case "unhide":
         return {
-          title: "Hiện Lại Sản Phẩm",
-          message:
-            "Bạn có chắc chắn muốn hiện lại sản phẩm này không? Sản phẩm sẽ hiển thị trở lại cho người dùng khác.",
-          confirmText: "Hiện Lại",
+          title: t("ownerProducts.modal.unhide.title"),
+          message: t("ownerProducts.modal.unhide.message"),
+          confirmText: t("ownerProducts.modal.unhide.confirm"),
           type: "unhide",
         };
       case "delete":
         return {
-          title: "Xóa Sản Phẩm",
-          message:
-            "Bạn có chắc chắn muốn xóa sản phẩm này không? Sau khi xóa, sản phẩm sẽ không còn hiển thị và hành động này không thể hoàn tác.",
-          confirmText: "Xóa Sản Phẩm",
+          title: t("ownerProducts.modal.delete.title"),
+          message: t("ownerProducts.modal.delete.message"),
+          confirmText: t("ownerProducts.modal.delete.confirm"),
           type: "danger",
         };
       case "error":
         return {
-          title: "Lỗi",
+          title: t("ownerProducts.modal.error.title"),
           message:
             modalState.errorMessage || "Có lỗi xảy ra. Vui lòng thử lại.",
-          confirmText: "Đóng",
+          confirmText: t("ownerProducts.modal.error.close"),
           type: "error",
         };
       default:
@@ -346,18 +352,16 @@ export default function OwnerProducts() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              Sản Phẩm Của Tôi
+              {t("ownerProducts.title")}
             </h1>
-            <p className="text-gray-600 mt-2">
-              Quản lý các sản phẩm cho thuê của bạn
-            </p>
+            <p className="text-gray-600 mt-2">{t("ownerProducts.subtitle")}</p>
           </div>
           <Link
             to="/owner/products/create"
             className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-all shadow-lg hover:shadow-xl"
           >
             <FiPlus className="w-5 h-5" />
-            <span className="font-medium">Thêm Sản Phẩm</span>
+            <span className="font-medium">{t("ownerProducts.addProduct")}</span>
           </Link>
         </div>
 
@@ -367,7 +371,7 @@ export default function OwnerProducts() {
             <div className="flex-1 relative">
               <input
                 type="text"
-                placeholder="Tìm kiếm sản phẩm của bạn..."
+                placeholder={t("ownerProducts.search")}
                 className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700"
                 value={filters.search}
                 onChange={(e) => updateFilters({ search: e.target.value })}
@@ -405,7 +409,7 @@ export default function OwnerProducts() {
               <span className="text-green-600 font-bold">
                 {pagination.totalItems || 0}
               </span>{" "}
-              sản phẩm
+              {t("ownerProducts.status.available")}
             </div>
           </div>
         </div>
@@ -431,17 +435,17 @@ export default function OwnerProducts() {
             >
               <div className="text-6xl mb-6">📦</div>
               <h3 className="text-2xl font-bold text-gray-800 mb-3">
-                Chưa có sản phẩm nào
+                {t("ownerProducts.noProducts")}
               </h3>
               <p className="text-gray-600 mb-8 text-lg">
-                Bắt đầu cho thuê sản phẩm của bạn ngay hôm nay!
+                {t("ownerProducts.noProductsDesc")}
               </p>
               <button
                 onClick={() => navigate("/owner/products/create")}
                 className="inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-4 rounded-xl hover:shadow-2xl transition-all transform hover:scale-105 text-lg font-semibold"
               >
                 <FiPlus className="w-6 h-6" />
-                Tạo Sản Phẩm Đầu Tiên
+                {t("ownerProducts.createFirstProduct")}
               </button>
             </motion.div>
           </div>
@@ -474,6 +478,7 @@ export default function OwnerProducts() {
                   onUnhide={handleUnhide}
                   onDelete={handleDelete}
                   onPromote={handlePromote}
+                  t={t}
                 />
 
                 {/* Status Badge */}
@@ -481,7 +486,7 @@ export default function OwnerProducts() {
                   {product.status === "ACTIVE" && (
                     <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
                       <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                      Đang hoạt động
+                      {t("ownerProducts.status.available")}
                     </span>
                   )}
                   {product.status === "PENDING" && (
@@ -493,31 +498,31 @@ export default function OwnerProducts() {
                   {product.status === "INACTIVE" && (
                     <span className="bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
                       <span className="w-2 h-2 bg-white rounded-full"></span>
-                      Không hoạt động
+                      {t("ownerProducts.status.unavailable")}
                     </span>
                   )}
                   {product.status === "SUSPENDED" && (
                     <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
                       <span className="w-2 h-2 bg-white rounded-full"></span>
-                      Đã đình chỉ
+                      {t("ownerProducts.status.suspended")}
                     </span>
                   )}
                   {product.status === "RENTED" && (
                     <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
                       <span className="w-2 h-2 bg-white rounded-full"></span>
-                      Đang cho thuê
+                      {t("ownerProducts.status.rented")}
                     </span>
                   )}
                   {product.status === "DRAFT" && (
                     <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
                       <span className="w-2 h-2 bg-white rounded-full"></span>
-                      Bản nháp
+                      {t("ownerProducts.status.draft")}
                     </span>
                   )}
                   {product.status === "OWNER_HIDDEN" && (
                     <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1">
                       <FiEyeOff className="w-3 h-3" />
-                      Đã ẩn
+                      {t("ownerProducts.status.hidden")}
                     </span>
                   )}
                 </div>
@@ -550,7 +555,7 @@ export default function OwnerProducts() {
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
                 >
-                  Trước
+                  {t("ownerProducts.previous")}
                 </button>
               )}
 
@@ -619,14 +624,15 @@ export default function OwnerProducts() {
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50 transition-all"
                 >
-                  Sau
+                  {t("ownerProducts.next")}
                 </button>
               )}
             </div>
 
             {/* Page info */}
             <div className="text-sm text-gray-600">
-              Trang {pagination.currentPage} / {pagination.totalPages}
+              {t("ownerProducts.pageOf")} {pagination.currentPage} /{" "}
+              {pagination.totalPages}
             </div>
           </div>
         )}
@@ -639,7 +645,7 @@ export default function OwnerProducts() {
         onConfirm={modalState.type === "error" ? closeModal : confirmAction}
         {...getModalConfig()}
         loading={modalState.loading}
-        cancelText={modalState.type === "error" ? null : "Hủy"}
+        cancelText={modalState.type === "error" ? null : t("ownerProducts.cancel")}
       />
 
       {/* Promote Product Modal */}

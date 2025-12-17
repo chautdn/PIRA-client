@@ -4,6 +4,7 @@ import { X, Calendar, DollarSign, AlertCircle, Loader, Check, ChevronRight } fro
 import Portal from "../common/Portal";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import { useI18n } from "../../hooks/useI18n";
 
 /**
  * Extend Rental Modal - Single page with per-product calendar picker
@@ -14,6 +15,7 @@ const ExtendRentalModal = ({
   masterOrder,
   onSuccess,
 }) => {
+  const { t, language } = useI18n();
   const [loading, setLoading] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -258,7 +260,7 @@ const ExtendRentalModal = ({
   // Handle submit
   const handleSubmit = async () => {
     if (validSelections.length === 0) {
-      toast.error('Vui lòng chọn sản phẩm và ngày gia hạn');
+      toast.error(t('extendRentalModal.selectProductsError'));
       return;
     }
 
@@ -292,12 +294,12 @@ const ExtendRentalModal = ({
       });
 
       console.log('✅ Extension request response:', response);
-      toast.success('Gửi yêu cầu gia hạn thành công');
+      toast.success(t('extendRentalModal.successMessage'));
       onClose();
       onSuccess?.();
     } catch (error) {
       console.error('❌ Error sending extension request:', error);
-      toast.error(error.response?.data?.message || 'Lỗi gửi yêu cầu gia hạn');
+      toast.error(error.response?.data?.message || t('extendRentalModal.errorMessage'));
     } finally {
       setLoading(false);
     }
@@ -316,13 +318,13 @@ const ExtendRentalModal = ({
                 className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[95vh] flex flex-col"
               >
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <h2 className="text-2xl font-bold text-gray-900">Gia hạn thời gian thuê</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{t('extendRentalModal.title')}</h2>
                   <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                     <X className="w-6 h-6" />
                   </button>
                 </div>
                 <div className="p-6 text-center text-gray-500">
-                  <p>Không tìm thấy đơn hàng hoặc sản phẩm</p>
+                  <p>{t('extendRentalModal.notFoundOrder')}</p>
                 </div>
               </motion.div>
             </div>
@@ -332,10 +334,13 @@ const ExtendRentalModal = ({
     );
   }
 
-  // Get minimum date (tomorrow)
-  const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 1);
-  const minDateStr = minDate.toISOString().split('T')[0];
+  // Get minimum date per product (old endDate + 1 day)
+  const getMinDateForProduct = (product) => {
+    if (!product?.rentalPeriod?.endDate) return new Date().toISOString().split('T')[0];
+    const oldEndDate = new Date(product.rentalPeriod.endDate);
+    oldEndDate.setDate(oldEndDate.getDate() + 1); // Allow selection from next day after old endDate
+    return oldEndDate.toISOString().split('T')[0];
+  };
 
   return (
     <Portal>
@@ -351,9 +356,9 @@ const ExtendRentalModal = ({
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Gia hạn thời gian thuê</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{t('extendRentalModal.title')}</h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    Danh sách các sản phẩm có trong suborder
+                    {t('extendRentalModal.subtitle')}
                   </p>
                 </div>
                 <button
@@ -378,8 +383,8 @@ const ExtendRentalModal = ({
                         className="w-5 h-5 text-blue-600 rounded cursor-pointer"
                       />
                       <label htmlFor="select-all" className="ml-3 cursor-pointer flex-1">
-                        <p className="font-medium text-gray-900">Chọn tất cả</p>
-                        <p className="text-xs text-gray-600">Chọn tất cả {products.length} sản phẩm</p>
+                        <p className="font-medium text-gray-900">{t('extendRentalModal.selectAll')}</p>
+                        <p className="text-xs text-gray-600">{t('extendRentalModal.selectAllProducts', { count: products.length })}</p>
                       </label>
                     </div>
 
@@ -449,13 +454,13 @@ const ExtendRentalModal = ({
                                   <p className="font-bold text-gray-900 break-words">{productName}</p>
                                   <div className="text-xs text-gray-600 space-y-1 mt-2">
                                     {productId && productId !== 'N/A' && (
-                                      <p>Mã sản phẩm: <span className="font-semibold text-gray-900">{productId}</span></p>
+                                      <p>{t('extendRentalModal.productCode')} <span className="font-semibold text-gray-900">{productId}</span></p>
                                     )}
                                     {productSku && (
-                                      <p>SKU: <span className="font-semibold text-gray-900">{productSku}</span></p>
+                                      <p>{t('extendRentalModal.sku')} <span className="font-semibold text-gray-900">{productSku}</span></p>
                                     )}
-                                    <p>Giá thuê: <span className="font-bold text-green-600">{dailyPrice.toLocaleString('vi-VN')}đ/ngày</span></p>
-                                    <p>Ngày kết thúc: <span className="font-medium">{currentEndDate.toLocaleDateString('vi-VN')}</span></p>
+                                    <p>{t('extendRentalModal.rentalPrice')} <span className="font-bold text-green-600">{dailyPrice.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ{t('extendRentalModal.perDay')}</span></p>
+                                    <p>{t('extendRentalModal.endDate')} <span className="font-medium">{currentEndDate.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</span></p>
                                   </div>
                                 </div>
                               </div>
@@ -466,28 +471,28 @@ const ExtendRentalModal = ({
                                   <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                       <Calendar className="w-4 h-4 inline mr-2" />
-                                      Chọn ngày kết thúc mới muốn gia hạn
+                                      {t('extendRentalModal.selectNewEndDate')}
                                     </label>
                                     <input
                                       type="date"
                                       value={newEndDate || ''}
                                       onChange={(e) => handleDateChange(product._id, e.target.value)}
-                                      min={minDateStr}
+                                      min={getMinDateForProduct(product)}
                                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
                                     {newEndDate && extensionDays > 0 && (
                                       <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm space-y-2">
                                         <div className="flex justify-between">
-                                          <span className="text-gray-600">Số ngày gia hạn:</span>
-                                          <span className="font-semibold text-gray-900">{extensionDays} ngày</span>
+                                          <span className="text-gray-600">{t('extendRentalModal.extensionDays')}</span>
+                                          <span className="font-semibold text-gray-900">{extensionDays} {t('extendRentalModal.days')}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                          <span className="text-gray-600">Giá/ngày:</span>
-                                          <span className="font-semibold text-gray-900">{dailyPrice.toLocaleString('vi-VN')}đ</span>
+                                          <span className="text-gray-600">{t('extendRentalModal.pricePerDay')}</span>
+                                          <span className="font-semibold text-gray-900">{dailyPrice.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ</span>
                                         </div>
                                         <div className="flex justify-between pt-2 border-t border-blue-200">
-                                          <span className="text-gray-600">Phí gia hạn:</span>
-                                          <span className="font-bold text-green-600">{extensionFee.toLocaleString('vi-VN')}đ</span>
+                                          <span className="text-gray-600">{t('extendRentalModal.extensionFee')}</span>
+                                          <span className="font-bold text-green-600">{extensionFee.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ</span>
                                         </div>
                                       </div>
                                     )}
@@ -499,7 +504,7 @@ const ExtendRentalModal = ({
                         })
                       ) : (
                         <div className="text-center py-8 text-gray-500">
-                          <p>Không có sản phẩm nào trong đơn hàng này</p>
+                          <p>{t('extendRentalModal.noProducts')}</p>
                         </div>
                       )}
                     </div>
@@ -507,7 +512,7 @@ const ExtendRentalModal = ({
                 ) : (
                   // Summary View
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-lg text-gray-900">Xác nhận yêu cầu gia hạn</h3>
+                    <h3 className="font-semibold text-lg text-gray-900">{t('extendRentalModal.confirmExtension')}</h3>
 
                     {/* Summary Products */}
                     <div className="space-y-3">
@@ -542,9 +547,9 @@ const ExtendRentalModal = ({
                               <div className="flex-1 min-w-0">
                                 <h4 className="text-lg font-bold text-gray-900 break-words">{productName}</h4>
                                 <div className="text-sm text-gray-600 space-y-1 mt-2">
-                                  {productDetail?.sku && <p>SKU: <span className="font-medium text-gray-900">{productDetail.sku}</span></p>}
-                                  {productDetail?.code && !productDetail?.sku && <p>Mã: <span className="font-medium text-gray-900">{productDetail.code}</span></p>}
-                                  <p>Trạng thái: <span className="font-medium text-blue-600">{item.product.productStatus}</span></p>
+                                  {productDetail?.sku && <p>{t('extendRentalModal.sku')} <span className="font-medium text-gray-900">{productDetail.sku}</span></p>}
+                                  {productDetail?.code && !productDetail?.sku && <p>{t('extendRentalModal.code')} <span className="font-medium text-gray-900">{productDetail.code}</span></p>}
+                                  <p>{t('extendRentalModal.status')} <span className="font-medium text-blue-600">{item.product.productStatus}</span></p>
                                 </div>
                               </div>
                             </div>
@@ -552,24 +557,24 @@ const ExtendRentalModal = ({
                             {/* Date and Fee Info Grid */}
                             <div className="grid grid-cols-2 gap-3 text-sm">
                               <div>
-                                <p className="text-gray-600">Ngày kết thúc hiện tại</p>
-                                <p className="font-bold text-gray-900">{currentEndDate.toLocaleDateString('vi-VN')}</p>
+                                <p className="text-gray-600">{t('extendRentalModal.currentEndDate')}</p>
+                                <p className="font-bold text-gray-900">{currentEndDate.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</p>
                               </div>
                               <div>
-                                <p className="text-gray-600">Ngày kết thúc mới</p>
-                                <p className="font-bold text-blue-600">{newEndDate.toLocaleDateString('vi-VN')}</p>
+                                <p className="text-gray-600">{t('extendRentalModal.newEndDate')}</p>
+                                <p className="font-bold text-blue-600">{newEndDate.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</p>
                               </div>
                               <div>
-                                <p className="text-gray-600">Giá thuê</p>
-                                <p className="font-bold text-gray-900">{item.dailyPrice.toLocaleString('vi-VN')}đ/ngày</p>
+                                <p className="text-gray-600">{t('extendRentalModal.rentalPrice')}</p>
+                                <p className="font-bold text-gray-900">{item.dailyPrice.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ{t('extendRentalModal.perDay')}</p>
                               </div>
                               <div>
-                                <p className="text-gray-600">Số ngày gia hạn</p>
-                                <p className="font-bold text-gray-900">{item.extensionDays} ngày</p>
+                                <p className="text-gray-600">{t('extendRentalModal.extensionDays')}</p>
+                                <p className="font-bold text-gray-900">{item.extensionDays} {t('extendRentalModal.days')}</p>
                               </div>
                               <div className="col-span-2 pt-2 border-t border-orange-200">
-                                <p className="text-gray-600">Phí gia hạn</p>
-                                <p className="font-bold text-green-600 text-lg">{item.extensionFee.toLocaleString('vi-VN')}đ</p>
+                                <p className="text-gray-600">{t('extendRentalModal.extensionFee')}</p>
+                                <p className="font-bold text-green-600 text-lg">{item.extensionFee.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ</p>
                               </div>
                             </div>
                           </div>
@@ -583,15 +588,15 @@ const ExtendRentalModal = ({
                         <div className="flex items-center space-x-3">
                           <DollarSign className="w-5 h-5 text-orange-600" />
                           <div>
-                            <p className="text-sm text-gray-600">Tổng phí gia hạn</p>
+                            <p className="text-sm text-gray-600">{t('extendRentalModal.totalExtensionFee')}</p>
                             <p className="text-2xl font-bold text-orange-600">
-                              {totalFee.toLocaleString('vi-VN')}đ
+                              {totalFee.toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}đ
                             </p>
                           </div>
                         </div>
                       </div>
                       <p className="text-xs text-gray-600 mt-2">
-                        Phí sẽ được trừ từ ví của bạn khi chủ hàng chấp nhận
+                        {t('extendRentalModal.feeDeductedFromWallet')}
                       </p>
                     </div>
 
@@ -599,12 +604,12 @@ const ExtendRentalModal = ({
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex space-x-3">
                       <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-blue-700">
-                        <p className="font-medium mb-1">Quy trình gia hạn:</p>
+                        <p className="font-medium mb-1">{t('extendRentalModal.extensionProcess')}</p>
                         <ul className="space-y-1 text-xs">
-                          <li>✓ Yêu cầu được gửi đến chủ hàng</li>
-                          <li>✓ Chủ hàng xác nhận hoặc từ chối</li>
-                          <li>✓ Nếu xác nhận, phí sẽ được trừ ngay</li>
-                          <li>✓ Ngày kết thúc sẽ được cập nhật</li>
+                          <li>{t('extendRentalModal.step1')}</li>
+                          <li>{t('extendRentalModal.step2')}</li>
+                          <li>{t('extendRentalModal.step3')}</li>
+                          <li>{t('extendRentalModal.step4')}</li>
                         </ul>
                       </div>
                     </div>
@@ -626,7 +631,7 @@ const ExtendRentalModal = ({
                   disabled={loading}
                   className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition disabled:opacity-50"
                 >
-                  {showSummary ? 'Quay lại' : 'Hủy'}
+                  {showSummary ? t('extendRentalModal.back') : t('extendRentalModal.cancel')}
                 </button>
 
                 {!showSummary ? (
@@ -636,7 +641,7 @@ const ExtendRentalModal = ({
                     disabled={validSelections.length === 0}
                     className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition disabled:opacity-50 disabled:bg-gray-400 flex items-center justify-center space-x-2"
                   >
-                    <span>Xem tổng tiền</span>
+                    <span>{t('extendRentalModal.viewTotal')}</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
@@ -649,12 +654,12 @@ const ExtendRentalModal = ({
                     {loading ? (
                       <>
                         <Loader className="w-4 h-4 animate-spin" />
-                        <span>Đang gửi...</span>
+                        <span>{t('extendRentalModal.sending')}</span>
                       </>
                     ) : (
                       <>
                         <Check className="w-4 h-4" />
-                        <span>Gửi yêu cầu gia hạn</span>
+                        <span>{t('extendRentalModal.sendRequest')}</span>
                       </>
                     )}
                   </button>

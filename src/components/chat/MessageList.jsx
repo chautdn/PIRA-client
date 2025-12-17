@@ -1,4 +1,5 @@
 import React from "react";
+import { useI18n } from "../../hooks/useI18n";
 import MessageItem from "./MessageItem";
 
 const MessageList = ({
@@ -7,13 +8,15 @@ const MessageList = ({
   messageEndRef,
   className = "",
 }) => {
+  const { t } = useI18n();
+  
   if (!messages || messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center text-gray-500">
-          <div className="text-lg mb-2">No messages yet</div>
+          <div className="text-lg mb-2">{t('chat.noMessagesYet')}</div>
           <div className="text-sm">
-            Start the conversation by sending a message
+            {t('chat.startNewChat')}
           </div>
         </div>
       </div>
