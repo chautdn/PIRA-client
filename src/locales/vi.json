@@ -132,7 +132,7 @@
     "confirm": "Xác nhận"
   },
   "userDropdown": {
-    "profile": "Hộ sơ cá nhân",
+    "profile": "Hồ sơ cá nhân",
     "vouchers": "Đổi Voucher",
     "myProducts": "Sản phẩm của tôi",
     "myRentals": "Đơn thuê của tôi",
@@ -1863,6 +1863,7 @@
     "editButton": "Chỉnh sửa",
     "deleteButton": "Xóa",
     "chooseNewPhoto": "Chọn Ảnh Mới",
+    "uploading": "Đang tải lên...",
     "cannotLoadBankAccount": "Không thể tải thông tin tài khoản ngân hàng",
     "bankAccountUpdateSuccess": "Cập nhật tài khoản ngân hàng thành công",
     "bankAccountAddSuccess": "Thêm tài khoản ngân hàng thành công",
