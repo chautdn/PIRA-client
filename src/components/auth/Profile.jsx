@@ -87,6 +87,7 @@ const Profile = () => {
   // Error states
   const [errors, setErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [formData, setFormData] = useState({
     profile: {
@@ -272,9 +273,26 @@ const Profile = () => {
 
     try {
       setSaving(true);
-      const response = await userService.updateProfile(formData);
+      
+      // Preserve avatar in formData before sending
+      const profileData = {
+        ...formData,
+        profile: {
+          ...formData.profile,
+          avatar: user?.profile?.avatar, // Preserve current avatar
+        },
+      };
+      
+      const response = await userService.updateProfile(profileData);
       const userData = response.data.data;
+      
+      // Update local state
       setUser(userData);
+      
+      // Update global AuthContext and localStorage
+      localStorage.setItem("user", JSON.stringify(userData));
+      await refreshUser();
+      
       setEditing(false);
       setErrors({});
       toast.success(t("profilePage.updateSuccess"));
@@ -417,7 +435,7 @@ const Profile = () => {
     }
 
     try {
-      setSaving(true);
+      setUploadingAvatar(true);
       const response = await userService.uploadAvatar(file);
       console.log("📸 Avatar upload response:", response.data);
 
@@ -426,13 +444,21 @@ const Profile = () => {
         response.data?.status === "success" &&
         response.data?.data?.avatarUrl
       ) {
-        setUser((prev) => ({
-          ...prev,
+        const updatedUser = {
+          ...user,
           profile: {
-            ...prev.profile,
+            ...user.profile,
             avatar: response.data.data.avatarUrl,
           },
-        }));
+        };
+        
+        // Update local state
+        setUser(updatedUser);
+        
+        // Update global AuthContext and localStorage
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        await refreshUser();
+        
         toast.success("Cập nhật avatar thành công!");
       } else {
         toast.error("Không thể upload avatar");
@@ -441,7 +467,7 @@ const Profile = () => {
       console.error("❌ Avatar upload error:", error);
       toast.error(error.response?.data?.message || "Không thể upload avatar");
     } finally {
-      setSaving(false);
+      setUploadingAvatar(false);
     }
   };
 
@@ -1406,15 +1432,32 @@ const Profile = () => {
                         </div>
                       </div>
 
-                      <label className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl cursor-pointer hover:from-blue-600 hover:to-blue-700 text-sm shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                      <label className={`px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl text-sm shadow-lg transition-all duration-200 ${
+                        uploadingAvatar
+                          ? "opacity-75 cursor-not-allowed"
+                          : "cursor-pointer hover:from-blue-600 hover:to-blue-700 transform hover:-translate-y-0.5"
+                      }`}>
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleAvatarUpload}
                           className="hidden"
+                          disabled={uploadingAvatar}
                         />
-                        <FiCamera className="inline mr-2" />
-                        {t("profilePage.chooseNewPhoto")}
+                        {uploadingAvatar ? (
+                          <>
+                            <svg className="animate-spin inline mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {t("profilePage.uploading") || "Đang tải lên..."}
+                          </>
+                        ) : (
+                          <>
+                            <FiCamera className="inline mr-2" />
+                            {t("profilePage.chooseNewPhoto")}
+                          </>
+                        )}
                       </label>
 
                       <div className="text-xs text-gray-500 mt-4 text-center bg-gray-50 p-3 rounded-lg">

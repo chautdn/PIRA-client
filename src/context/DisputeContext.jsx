@@ -349,6 +349,74 @@ export const DisputeProvider = ({ children }) => {
     }
   }, [loadDisputeDetail]);
 
+  // Renter đề xuất reschedule
+  const proposeReschedule = useCallback(async (disputeId, data) => {
+    try {
+      setIsLoading(true);
+      const response = await disputeApi.proposeReschedule(disputeId, data);
+      toast.success('Đã gửi đề xuất reschedule');
+      await loadDisputeDetail(disputeId);
+      return response.data?.dispute;
+    } catch (error) {
+      console.error('Propose reschedule error:', error);
+      toast.error(error.response?.data?.message || 'Không thể gửi đề xuất reschedule');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadDisputeDetail]);
+
+  // Owner phản hồi reschedule
+  const respondToReschedule = useCallback(async (disputeId, data) => {
+    try {
+      setIsLoading(true);
+      const response = await disputeApi.respondToReschedule(disputeId, data);
+      toast.success(response.message || 'Phản hồi thành công');
+      await loadDisputeDetail(disputeId);
+      return response.data?.dispute;
+    } catch (error) {
+      console.error('Respond to reschedule error:', error);
+      toast.error(error.response?.data?.message || 'Không thể phản hồi reschedule');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadDisputeDetail]);
+
+  // Finalize reschedule agreement - Xác nhận ngày trả hàng đã thỏa thuận
+  const finalizeRescheduleAgreement = useCallback(async (disputeId, agreedDate) => {
+    try {
+      setIsLoading(true);
+      const response = await disputeApi.finalizeRescheduleAgreement(disputeId, agreedDate);
+      toast.success(response.message || 'Đã thỏa thuận ngày trả hàng thành công');
+      await loadDisputeDetail(disputeId);
+      return response.data?.dispute;
+    } catch (error) {
+      console.error('Finalize reschedule agreement error:', error);
+      toast.error(error.response?.data?.message || 'Không thể hoàn tất thỏa thuận');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadDisputeDetail]);
+
+  // Xử lý penalty RENTER_NO_RETURN
+  const processRenterNoReturn = useCallback(async (disputeId, data) => {
+    try {
+      setIsLoading(true);
+      const response = await disputeApi.processRenterNoReturn(disputeId, data);
+      toast.success('Đã xử lý penalty');
+      await loadDisputeDetail(disputeId);
+      return response.data?.dispute;
+    } catch (error) {
+      console.error('Process renter no return error:', error);
+      toast.error(error.response?.data?.message || 'Không thể xử lý penalty');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadDisputeDetail]);
+
   const value = {
     disputes,
     currentDispute,
@@ -370,6 +438,12 @@ export const DisputeProvider = ({ children }) => {
     processFinalAgreement,
     shareShipperInfo,
     uploadThirdPartyEvidence,
+    
+    // Reschedule actions (RENTER_NO_RETURN)
+    proposeReschedule,
+    respondToReschedule,
+    finalizeRescheduleAgreement,
+    processRenterNoReturn,
     
     // Admin actions
     loadAllDisputes,

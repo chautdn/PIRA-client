@@ -78,12 +78,8 @@ const RentalOrderDetailPage = () => {
 
   const handleDisputeSubmit = async (disputeData) => {
     try {
-      await createDispute({
-        ...disputeData,
-        subOrderId: selectedProduct.subOrder._id,
-        productId: selectedProduct.product.product._id,
-        productIndex: selectedProduct.productIndex,
-      });
+      // Modal đã build đầy đủ data rồi, gửi trực tiếp
+      await createDispute(disputeData);
       setShowDisputeModal(false);
       setSelectedProduct(null);
       toast.success(t("rentalOrderDetail.createDisputeSuccess"));
@@ -1900,7 +1896,10 @@ const RentalOrderDetailPage = () => {
             setSelectedProduct(null);
           }}
           onSubmit={handleDisputeSubmit}
-          rentalOrder={currentOrder}
+          subOrder={selectedProduct.subOrder}
+          product={selectedProduct.product}
+          productIndex={selectedProduct.productIndex}
+          shipment={selectedProduct.product?.deliveryShipment || selectedProduct.product?.returnShipment || null}
         />
       )}
 
