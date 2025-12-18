@@ -26,6 +26,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   // Confirmation modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [failedStage, setFailedStage] = useState(null); // 'PICKUP' or 'DELIVERY'
 
   const loadProofDataFn = async (shipmentId) => {
     try {
@@ -169,6 +170,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
       // Update status
       setCurrentStatus('CANCELLED');
+      setFailedStage('PICKUP');
       
       // Close modal after 1.5s
       setTimeout(() => {
@@ -210,6 +212,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
       // Update status
       setCurrentStatus('CANCELLED');
+      setFailedStage('DELIVERY');
       
       // Close modal after 1.5s
       setTimeout(() => {
@@ -264,6 +267,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       setRejectReason('PRODUCT_DAMAGED');
       setRejectNotes('');
       setCurrentStatus(rejectReason === 'PRODUCT_DAMAGED' ? 'DELIVERY_FAILED' : 'FAILED');
+      setFailedStage('DELIVERY');
       
       // Close modal after 1.5s
       setTimeout(() => {
@@ -758,10 +762,10 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                       )}
                     </div>
                   ) : null}
-                  {isFailedState && (
+                  {isFailedState && failedStage === 'PICKUP' && (
                     <div className="bg-orange-50 border border-orange-300 rounded-lg p-3 sm:p-4 mt-2">
                       <p className="text-xs sm:text-sm text-orange-700">
-                        ℹ️ Đơn hàng đã bị hủy/thất bại. Bạn vẫn có thể tải ảnh lên để lưu trữ nhưng không thể thay đổi trạng thái.
+                        ℹ️ Đơn hàng đã bị hủy vì không thể nhận hàng từ chủ. Bạn vẫn có thể tải ảnh lên để lưu trữ.
                       </p>
                     </div>
                   )}
@@ -911,6 +915,13 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                       )}
                     </div>
                   ) : null}
+                  {isFailedState && failedStage === 'DELIVERY' && (
+                    <div className="bg-orange-50 border border-orange-300 rounded-lg p-3 sm:p-4 mt-2">
+                      <p className="text-xs sm:text-sm text-orange-700">
+                        ℹ️ Đơn hàng đã bị thất bại vì không thể giao hàng cho renter. Bạn vẫn có thể tải ảnh lên để lưu trữ.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
