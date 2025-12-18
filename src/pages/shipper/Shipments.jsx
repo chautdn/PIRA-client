@@ -243,7 +243,7 @@ export default function ShipmentsPage() {
   // Check if shipment can be accepted (must be on or after scheduled date)
   const canAcceptShipment = (shipment) => {
     // 🔧 TESTING MODE: Temporarily disable date validation
-    // return true;
+    //return true;
     
     if (!shipment) return false;
     

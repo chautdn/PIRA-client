@@ -7,6 +7,12 @@ import { X, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function ShipmentManagementModal({ shipment, isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
+  const [pickupLoading, setPickupLoading] = useState(false);
+  const [deliveryLoading, setDeliveryLoading] = useState(false);
+  const [cannotPickupLoading, setCannotPickupLoading] = useState(false);
+  const [cannotContactRenterLoading, setCannotContactRenterLoading] = useState(false);
+  const [acceptShipmentLoading, setAcceptShipmentLoading] = useState(false);
+  
   const [pickupImages, setPickupImages] = useState([]);
   const [deliveryImages, setDeliveryImages] = useState([]);
   const [proofData, setProofData] = useState(null);
@@ -16,6 +22,10 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   const [showRenterRejectDialog, setShowRenterRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState('PRODUCT_DAMAGED'); // PRODUCT_DAMAGED or NO_CONTACT
   const [rejectNotes, setRejectNotes] = useState('');
+  
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const loadProofDataFn = async (shipmentId) => {
     try {
@@ -52,7 +62,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
         return;
       }
 
-      setLoading(true);
+      setPickupLoading(true);
 
       const formData = new FormData();
       pickupImages.forEach(file => {
@@ -82,7 +92,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     } catch (err) {
       toast.error(err.message || 'Lỗi khi upload pickup');
     } finally {
-      setLoading(false);
+      setPickupLoading(false);
     }
   };
 
@@ -99,7 +109,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
         return;
       }
 
-      setLoading(true);
+      setDeliveryLoading(true);
 
       const formData = new FormData();
       deliveryImages.forEach(file => {
@@ -129,17 +139,24 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     } catch (err) {
       toast.error(err.message || 'Lỗi khi upload delivery');
     } finally {
-      setLoading(false);
+      setDeliveryLoading(false);
     }
   };
 
   const handleCannotPickup = async () => {
-    if (!window.confirm('⚠️ Bạn chắc chắn không thể nhận hàng từ owner?\n\nShipment sẽ bị hủy, owner sẽ bị trừ 20 điểm creditScore, và người thuê sẽ được hoàn lại tiền (không hoàn phí ship).')) {
-      return;
-    }
+    setConfirmAction({
+      type: 'cannotPickup',
+      title: 'Không thể nhận hàng từ chủ?',
+      message: 'Shipment sẽ bị hủy, owner sẽ bị trừ 20 điểm creditScore, và người thuê sẽ được hoàn lại tiền (không hoàn phí ship).',
+      confirmText: 'Xác nhận',
+      cancelText: 'Hủy'
+    });
+    setShowConfirmModal(true);
+  };
 
+  const executeCannotPickup = async () => {
     try {
-      setLoading(true);
+      setCannotPickupLoading(true);
 
       // Call API to report owner no-show
       await ShipmentService.ownerNoShow(shipment._id, { notes: '' });
@@ -161,17 +178,25 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     } catch (err) {
       toast.error(err.message || 'Lỗi khi ghi nhận owner no-show');
     } finally {
-      setLoading(false);
+      setCannotPickupLoading(false);
+      setShowConfirmModal(false);
     }
   };
 
   const handleCannotPickupRenter = async () => {
-    if (!window.confirm('⚠️ Bạn chắc chắn không thể liên lạc được với renter khi trả hàng?\n\nShipment sẽ bị ghi nhận là trả hàng thất bại, chủ hàng sẽ mở tranh chấp để giải quyết.')) {
-      return;
-    }
+    setConfirmAction({
+      type: 'cannotContactRenter',
+      title: 'Không liên lạc được với người thuê?',
+      message: 'Shipment sẽ bị ghi nhận là trả hàng thất bại, chủ hàng sẽ mở tranh chấp để giải quyết.',
+      confirmText: 'Xác nhận',
+      cancelText: 'Hủy'
+    });
+    setShowConfirmModal(true);
+  };
 
+  const executeCannotContactRenter = async () => {
     try {
-      setLoading(true);
+      setCannotContactRenterLoading(true);
       setError('');
 
       // Call API to report return failed
@@ -194,7 +219,16 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     } catch (err) {
       toast.error(err.message || 'Lỗi khi ghi nhận không liên lạc được renter');
     } finally {
-      setLoading(false);
+      setCannotContactRenterLoading(false);
+      setShowConfirmModal(false);
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (confirmAction?.type === 'cannotPickup') {
+      await executeCannotPickup();
+    } else if (confirmAction?.type === 'cannotContactRenter') {
+      await executeCannotContactRenter();
     }
   }
 
@@ -251,9 +285,60 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     setDeliveryImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Check if shipment can be accepted based on scheduled date
+  const canAcceptShipment = () => {
+    if (!shipment) return false;
+    
+    let scheduledDate = null;
+    if (shipment.scheduledAt) {
+      scheduledDate = new Date(shipment.scheduledAt);
+    } else {
+      const rentalPeriod = shipment.subOrder?.rentalPeriod || shipment.subOrder?.masterOrder?.rentalPeriod;
+      if (rentalPeriod) {
+        if (shipment.type === 'DELIVERY' && rentalPeriod.startDate) {
+          scheduledDate = new Date(rentalPeriod.startDate);
+        } else if (shipment.type === 'RETURN' && rentalPeriod.endDate) {
+          scheduledDate = new Date(rentalPeriod.endDate);
+        }
+      }
+    }
+
+    if (!scheduledDate) return true; // Allow if no date found
+
+    scheduledDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return today >= scheduledDate;
+  };
+
+  // Get scheduled date string for display
+  const getScheduledDateString = () => {
+    let scheduledDate = null;
+    if (shipment.scheduledAt) {
+      scheduledDate = new Date(shipment.scheduledAt);
+    } else {
+      const rentalPeriod = shipment.subOrder?.rentalPeriod || shipment.subOrder?.masterOrder?.rentalPeriod;
+      if (rentalPeriod) {
+        if (shipment.type === 'DELIVERY' && rentalPeriod.startDate) {
+          scheduledDate = new Date(rentalPeriod.startDate);
+        } else if (shipment.type === 'RETURN' && rentalPeriod.endDate) {
+          scheduledDate = new Date(rentalPeriod.endDate);
+        }
+      }
+    }
+    return scheduledDate ? scheduledDate.toLocaleDateString('vi-VN') : null;
+  };
+
   const handleAcceptShipment = async () => {
+    if (!canAcceptShipment()) {
+      const dateStr = getScheduledDateString();
+      toast.error(`⏰ Chưa đến ngày giao hàng! Bạn chỉ có thể nhận đơn từ 00:00 ngày ${dateStr}`);
+      return;
+    }
+
     try {
-      setLoading(true);
+      setAcceptShipmentLoading(true);
       
       await ShipmentService.acceptShipment(shipment._id);
       
@@ -270,7 +355,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       const errorMsg = err.message || 'Lỗi khi nhận đơn hàng';
       toast.error(errorMsg);
     } finally {
-      setLoading(false);
+      setAcceptShipmentLoading(false);
     }
   };
 
@@ -432,23 +517,34 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   {/* Accept Button for PENDING shipments */}
                   {currentStatus === 'PENDING' && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
-                      <button
-                        onClick={handleAcceptShipment}
-                        disabled={loading}
-                        className="w-full px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:from-green-700 active:to-emerald-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 touch-manipulation"
-                      >
-                        {loading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Đang xử lý...</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 size={16} />
-                            <span>✅ Xác nhận nhận đơn</span>
-                          </>
-                        )}
-                      </button>
+                      {canAcceptShipment() ? (
+                        <button
+                          onClick={handleAcceptShipment}
+                          disabled={acceptShipmentLoading}
+                          className="w-full px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:from-green-700 active:to-emerald-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 touch-manipulation"
+                        >
+                          {acceptShipmentLoading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <span>Đang xử lý...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={16} />
+                              <span>Nhận đơn</span>
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 text-center">
+                          <p className="text-yellow-800 font-semibold text-xs sm:text-sm mb-1">
+                            ⏰ Chưa đến ngày giao hàng
+                          </p>
+                          <p className="text-yellow-700 text-[10px] xs:text-xs">
+                            Bạn có thể nhận đơn từ 00:00 ngày <strong>{getScheduledDateString()}</strong>
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -604,14 +700,14 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={handleConfirmPickup}
-                        disabled={pickupImages.length === 0 || loading || isFailedState}
+                        disabled={pickupImages.length === 0 || pickupLoading || isFailedState}
                         className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
-                          pickupImages.length > 0 && !loading
+                          pickupImages.length > 0 && !pickupLoading
                             ? 'bg-blue-600 hover:bg-blue-700 text-white'
                             : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                         }`}
                       >
-                        {loading ? (
+                        {pickupLoading ? (
                           <>
                             <CheckCircle2 size={18} className="flex-shrink-0" /> ⏳ Đang xử lý...
                           </>
@@ -631,10 +727,10 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                       {currentStatus === 'SHIPPER_CONFIRMED' && !isReturnShipment && (
                         <button
                           onClick={handleCannotPickup}
-                          disabled={loading}
+                          disabled={cannotPickupLoading}
                           className="w-full px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-1.5 sm:gap-2"
                         >
-                          {loading ? (
+                          {cannotPickupLoading ? (
                             <>⏳ Đang xử lý...</>
                           ) : (
                             <>
@@ -648,10 +744,10 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                       {currentStatus === 'SHIPPER_CONFIRMED' && isReturnShipment && (
                         <button
                           onClick={handleCannotPickupRenter}
-                          disabled={loading}
+                          disabled={cannotContactRenterLoading}
                           className="w-full px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm border-2 border-red-400 text-red-600 hover:bg-red-50 transition-all flex items-center justify-center gap-1.5 sm:gap-2"
                         >
-                          {loading ? (
+                          {cannotContactRenterLoading ? (
                             <>⏳ Đang xử lý...</>
                           ) : (
                             <>
@@ -780,14 +876,14 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={handleConfirmDelivery}
-                        disabled={deliveryImages.length === 0 || loading || isFailedState}
+                        disabled={deliveryImages.length === 0 || deliveryLoading || isFailedState}
                         className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
-                          deliveryImages.length > 0 && !loading
+                          deliveryImages.length > 0 && !deliveryLoading
                             ? 'bg-green-600 hover:bg-green-700 text-white'
                             : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                         }`}
                       >
-                        {loading ? (
+                        {deliveryLoading ? (
                           <>
                             <CheckCircle2 size={18} className="flex-shrink-0" /> ⏳ Đang xử lý...
                           </>
@@ -912,6 +1008,69 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           {loading ? '⏳ Đang xử lý...' : 'Xác nhận'}
                         </button>
                       </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Confirmation Modal */}
+            <AnimatePresence>
+              {showConfirmModal && confirmAction && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
+                  onClick={() => !cannotPickupLoading && !cannotContactRenterLoading && setShowConfirmModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+                  >
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                          <AlertCircle className="text-white" size={28} />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">{confirmAction.title}</h3>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="px-6 py-5">
+                      <p className="text-gray-700 leading-relaxed">
+                        {confirmAction.message}
+                      </p>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-6 py-4 bg-gray-50 flex gap-3">
+                      <button
+                        onClick={() => setShowConfirmModal(false)}
+                        disabled={cannotPickupLoading || cannotContactRenterLoading}
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {confirmAction.cancelText}
+                      </button>
+                      <button
+                        onClick={handleConfirmAction}
+                        disabled={cannotPickupLoading || cannotContactRenterLoading}
+                        className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold hover:from-red-600 hover:to-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {(cannotPickupLoading || cannotContactRenterLoading) ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          confirmAction.confirmText
+                        )}
+                      </button>
                     </div>
                   </motion.div>
                 </motion.div>
