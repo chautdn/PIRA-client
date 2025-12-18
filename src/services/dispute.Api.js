@@ -242,6 +242,40 @@ const disputeApi = {
   adminGetStatistics: async () => {
     const response = await api.get('/disputes/admin/statistics');
     return response.data;
+  },
+
+  // ========== RESCHEDULE APIs (RENTER_NO_RETURN) ==========
+
+  /**
+   * Renter đề xuất reschedule
+   */
+  proposeReschedule: async (disputeId, data) => {
+    const response = await api.post(`/disputes/${disputeId}/reschedule/propose`, data);
+    return response.data;
+  },
+
+  /**
+   * Owner phản hồi reschedule request
+   */
+  respondToReschedule: async (disputeId, data) => {
+    const response = await api.post(`/disputes/${disputeId}/reschedule/respond`, data);
+    return response.data;
+  },
+
+  /**
+   * Finalize reschedule agreement - Xác nhận ngày trả hàng đã thỏa thuận
+   */
+  finalizeRescheduleAgreement: async (disputeId, agreedDate) => {
+    const response = await api.post(`/disputes/${disputeId}/finalize-agreement`, { agreedDate });
+    return response.data;
+  },
+
+  /**
+   * Xử lý penalty cho RENTER_NO_RETURN
+   */
+  processRenterNoReturn: async (disputeId, data) => {
+    const response = await api.post(`/disputes/${disputeId}/process-renter-no-return`, data);
+    return response.data;
   }
 };
 

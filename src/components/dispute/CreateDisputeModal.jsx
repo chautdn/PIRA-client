@@ -3,7 +3,15 @@ import { getDisputeTypesForShipment } from '../../utils/disputeHelpers';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
-const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
+const CreateDisputeModal = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  subOrder,           // SubOrder object
+  product,            // Selected product from subOrder.products
+  productIndex,       // Index of the product in products array
+  shipment = null     // Optional shipment (delivery or return)
+}) => {
   const [formData, setFormData] = useState({
     shipmentType: 'DELIVERY',
     type: '',
@@ -86,9 +94,25 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
       
       setIsUploading(false);
 
+      // Xác định shipmentId dựa trên shipmentType
+      let shipmentId = null;
+      if (formData.shipmentType === 'DELIVERY' && product?.deliveryShipment) {
+        shipmentId = product.deliveryShipment._id || product.deliveryShipment;
+      } else if (formData.shipmentType === 'RETURN' && product?.returnShipment) {
+        shipmentId = product.returnShipment._id || product.returnShipment;
+      } else if (shipment) {
+        shipmentId = shipment._id || shipment;
+      }
+
       const submitData = {
-        rentalOrderId: rentalOrder._id,
-        ...formData,
+        subOrderId: subOrder._id,
+        productId: product?.product?._id || product?.product,
+        productIndex: productIndex,
+        shipmentId: shipmentId,
+        shipmentType: formData.shipmentType,
+        type: formData.type,
+        title: formData.title,
+        description: formData.description,
         evidence: {
           photos: imageUrls,
           videos: videoResults.map(v => v.url),
@@ -100,6 +124,8 @@ const CreateDisputeModal = ({ isOpen, onClose, onSubmit, rentalOrder }) => {
       if (formData.type === 'DAMAGED_ON_RETURN' && formData.repairCost > 0) {
         submitData.repairCost = parseFloat(formData.repairCost);
       }
+
+      console.log('[CreateDisputeModal] Submitting dispute data:', submitData);
 
       await onSubmit(submitData);
       onClose();

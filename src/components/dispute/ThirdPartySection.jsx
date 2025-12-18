@@ -86,10 +86,10 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Complainant */}
+                {/* Complainant - với RETURN dispute: Owner là complainant, với DELIVERY: Renter là complainant */}
                 <div className="bg-blue-50 p-3 rounded">
                   <p className="text-xs text-blue-600 font-medium mb-2">
-                    NGƯỜI THUÊ
+                    {dispute.shipmentType === 'RETURN' ? 'CHỦ HÀNG' : 'NGƯỜI THUÊ'}
                   </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.complainant.name}</p>
@@ -98,10 +98,10 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                   </div>
                 </div>
 
-                {/* Respondent */}
+                {/* Respondent - với RETURN dispute: Renter là respondent, với DELIVERY: Owner là respondent */}
                 <div className="bg-orange-50 p-3 rounded">
                   <p className="text-xs text-orange-600 font-medium mb-2">
-                    CHỦ HÀNG
+                    {dispute.shipmentType === 'RETURN' ? 'NGƯỜI THUÊ' : 'CHỦ HÀNG'}
                   </p>
                   <div className="text-sm space-y-1">
                     <p><strong>Tên:</strong> {sharedData.partyInfo.respondent.name}</p>
@@ -119,6 +119,153 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
               Sau khi nhận được kết quả từ bên thứ 3, vui lòng upload bằng chứng bên dưới trước hạn <strong>{formatDate(evidenceDeadline)}</strong>.
             </p>
           </div>
+
+          {/* Ảnh bằng chứng từ Shipper */}
+          {sharedData.shipperEvidence && (
+            <div className="bg-white p-4 rounded border border-green-300 space-y-4">
+              <h4 className="font-semibold text-green-900 flex items-center gap-2">
+                <span>📷</span> Ảnh bằng chứng từ Shipper
+              </h4>
+              <p className="text-xs text-gray-600">
+                Đây là các ảnh do shipper chụp trong quá trình vận chuyển. Hai bên có thể sử dụng làm bằng chứng khi ra bên thứ 3.
+              </p>
+
+              {/* DELIVERY Phase - Giai đoạn giao hàng */}
+              {sharedData.shipperEvidence.deliveryPhase && (
+                <div className="border border-blue-200 rounded-lg overflow-hidden">
+                  <div className="bg-blue-100 px-4 py-2">
+                    <h5 className="font-medium text-blue-800">🚚 Giai đoạn GIAO HÀNG</h5>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    {/* Giai đoạn 1: Nhận từ Owner */}
+                    <div className="bg-blue-50 p-3 rounded">
+                      <p className="text-sm font-medium text-blue-700 mb-2">
+                        📦 Giai đoạn 1: Shipper nhận hàng từ Chủ hàng (Owner)
+                      </p>
+                      {sharedData.shipperEvidence.deliveryPhase.pickupFromOwner?.timestamp && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Thời gian: {formatDate(sharedData.shipperEvidence.deliveryPhase.pickupFromOwner.timestamp)}
+                        </p>
+                      )}
+                      {sharedData.shipperEvidence.deliveryPhase.pickupFromOwner?.images?.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {sharedData.shipperEvidence.deliveryPhase.pickupFromOwner.images.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={`Pickup from owner ${idx + 1}`}
+                              className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+                              onClick={() => window.open(img, '_blank')}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Không có ảnh</p>
+                      )}
+                    </div>
+
+                    {/* Giai đoạn 2: Giao cho Renter */}
+                    <div className="bg-blue-50 p-3 rounded">
+                      <p className="text-sm font-medium text-blue-700 mb-2">
+                        🏠 Giai đoạn 2: Shipper giao hàng cho Người thuê (Renter)
+                      </p>
+                      {sharedData.shipperEvidence.deliveryPhase.deliveryToRenter?.timestamp && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Thời gian: {formatDate(sharedData.shipperEvidence.deliveryPhase.deliveryToRenter.timestamp)}
+                        </p>
+                      )}
+                      {sharedData.shipperEvidence.deliveryPhase.deliveryToRenter?.images?.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {sharedData.shipperEvidence.deliveryPhase.deliveryToRenter.images.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={`Delivery to renter ${idx + 1}`}
+                              className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+                              onClick={() => window.open(img, '_blank')}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Không có ảnh</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* RETURN Phase - Giai đoạn trả hàng (chỉ có với RETURN dispute) */}
+              {sharedData.shipperEvidence.returnPhase && (
+                <div className="border border-orange-200 rounded-lg overflow-hidden">
+                  <div className="bg-orange-100 px-4 py-2">
+                    <h5 className="font-medium text-orange-800">🔄 Giai đoạn TRẢ HÀNG</h5>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    {/* Giai đoạn 3: Nhận từ Renter */}
+                    <div className="bg-orange-50 p-3 rounded">
+                      <p className="text-sm font-medium text-orange-700 mb-2">
+                        📦 Giai đoạn 3: Shipper nhận hàng trả từ Người thuê (Renter)
+                      </p>
+                      {sharedData.shipperEvidence.returnPhase.pickupFromRenter?.timestamp && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Thời gian: {formatDate(sharedData.shipperEvidence.returnPhase.pickupFromRenter.timestamp)}
+                        </p>
+                      )}
+                      {sharedData.shipperEvidence.returnPhase.pickupFromRenter?.images?.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {sharedData.shipperEvidence.returnPhase.pickupFromRenter.images.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={`Pickup from renter ${idx + 1}`}
+                              className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+                              onClick={() => window.open(img, '_blank')}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Không có ảnh</p>
+                      )}
+                    </div>
+
+                    {/* Giai đoạn 4: Giao về cho Owner */}
+                    <div className="bg-orange-50 p-3 rounded">
+                      <p className="text-sm font-medium text-orange-700 mb-2">
+                        🏠 Giai đoạn 4: Shipper giao hàng về cho Chủ hàng (Owner)
+                      </p>
+                      {sharedData.shipperEvidence.returnPhase.deliveryToOwner?.timestamp && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Thời gian: {formatDate(sharedData.shipperEvidence.returnPhase.deliveryToOwner.timestamp)}
+                        </p>
+                      )}
+                      {sharedData.shipperEvidence.returnPhase.deliveryToOwner?.images?.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {sharedData.shipperEvidence.returnPhase.deliveryToOwner.images.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img}
+                              alt={`Delivery to owner ${idx + 1}`}
+                              className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+                              onClick={() => window.open(img, '_blank')}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Không có ảnh</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Thông báo nếu không có ảnh nào */}
+              {!sharedData.shipperEvidence.deliveryPhase && !sharedData.shipperEvidence.returnPhase && (
+                <p className="text-sm text-gray-500 italic text-center py-4">
+                  Không tìm thấy ảnh bằng chứng từ shipper cho dispute này.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

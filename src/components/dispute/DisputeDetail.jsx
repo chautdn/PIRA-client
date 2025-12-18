@@ -7,12 +7,16 @@ import DisputeEvidence from './DisputeEvidence';
 import DisputeTimeline from './DisputeTimeline';
 import DisputeActions from './DisputeActions';
 import NegotiationRoom from './NegotiationRoom';
+import RenterNoReturnNegotiationRoom from './RenterNoReturnNegotiationRoom';
 import ThirdPartySection from './ThirdPartySection';
 import WalletDepositWarning from './WalletDepositWarning';
+import RescheduleSection from './RescheduleSection';
+import { useAuth } from '../../hooks/useAuth';
 
 const DisputeDetail = () => {
   const { disputeId } = useParams();
   const { currentDispute, isLoading, loadDisputeDetail } = useDispute();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (disputeId) {
@@ -100,6 +104,11 @@ const DisputeDetail = () => {
                   />
                 )}
               </div>
+            )}
+
+            {/* Reschedule Section - Only for RENTER_NO_RETURN */}
+            {currentDispute.type === 'RENTER_NO_RETURN' && (
+              <RescheduleSection dispute={currentDispute} currentUser={user} />
             )}
 
             {/* Admin Decision */}
@@ -243,13 +252,16 @@ const DisputeDetail = () => {
               </div>
             )}
 
-            {/* Negotiation Room */}
+            {/* Negotiation Room - Dùng component khác nhau tùy theo loại dispute */}
             {(currentDispute.status === 'IN_NEGOTIATION' || 
               currentDispute.status === 'NEGOTIATION_AGREED' ||
               currentDispute.status === 'NEGOTIATION_NEEDED' ||
-              currentDispute.status === 'AGREED_AWAITING_ADMIN' ||
-              currentDispute.status === 'THIRD_PARTY_ESCALATED') && (
-              <NegotiationRoom dispute={currentDispute} />
+              currentDispute.status === 'AGREED_AWAITING_ADMIN') && (
+              currentDispute.type === 'RENTER_NO_RETURN' ? (
+                <RenterNoReturnNegotiationRoom dispute={currentDispute} />
+              ) : (
+                <NegotiationRoom dispute={currentDispute} />
+              )
             )}
 
             {/* Wallet Deposit Warning for RESPONDENT_ACCEPTED */}
