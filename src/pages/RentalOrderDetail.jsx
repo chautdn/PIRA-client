@@ -28,12 +28,12 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Star,
   MessageCircle,
   RotateCcw,
   Plus,
   Loader2,
 } from "lucide-react";
+import { IoStarSharp } from "react-icons/io5";
 
 const RentalOrderDetailPage = () => {
   const { id } = useParams();
@@ -682,7 +682,7 @@ const RentalOrderDetailPage = () => {
                 }}
                 className="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 flex items-center space-x-2"
               >
-                <Star className="w-5 h-5" />
+                <IoStarSharp className="w-5 h-5" />
                 <span>{t("rentalOrderDetail.rate")}</span>
               </button>
             )}

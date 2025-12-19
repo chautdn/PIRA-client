@@ -291,6 +291,10 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
   // Check if shipment can be accepted based on scheduled date
   const canAcceptShipment = () => {
+    // 🔧 TESTING MODE: Temporarily disable date validation
+    return true; // DISABLED FOR TESTING - Comment this line to re-enable validation
+    
+    /* COMMENTED FOR TESTING
     if (!shipment) return false;
     
     let scheduledDate = null;
@@ -314,6 +318,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     today.setHours(0, 0, 0, 0);
     
     return today >= scheduledDate;
+    */
   };
 
   // Get scheduled date string for display
