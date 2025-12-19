@@ -243,8 +243,9 @@ export default function ShipmentsPage() {
   // Check if shipment can be accepted (must be on or after scheduled date)
   const canAcceptShipment = (shipment) => {
     // 🔧 TESTING MODE: Temporarily disable date validation
-    // return true;
+    return true; // DISABLED FOR TESTING - Comment this line to re-enable validation
     
+    /* COMMENTED FOR TESTING
     if (!shipment) return false;
     
     let scheduledDate = null;
@@ -275,15 +276,19 @@ export default function ShipmentsPage() {
     
     // Can accept if today >= scheduled date
     return today >= scheduledDate;
+    */
   };
 
   const handleAccept = async (s) => {
+    // 🔧 TESTING MODE: Date validation disabled
+    /* COMMENTED FOR TESTING
     // Validate date before accepting
     if (!canAcceptShipment(s)) {
       const toast = require('react-hot-toast').default;
       toast.error('⏰ Chưa đến ngày giao hàng! Bạn chỉ có thể nhận đơn từ 00:00 ngày ' + formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate)));
       return;
     }
+    */
     try {
       await ShipmentService.acceptShipment(s._id);
       // refresh

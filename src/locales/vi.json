@@ -944,7 +944,11 @@
       "VOUCHER": "Phiếu giảm giá",
       "EXTENSION_REQUEST": "Yêu cầu gia hạn thuê",
       "EXTENSION_APPROVED": "Gia hạn được chấp nhận",
-      "EXTENSION_REJECTED": "Gia hạn bị từ chối"
+      "EXTENSION_REJECTED": "Gia hạn bị từ chối",
+      "EARLY_RETURN_REQUEST": "Yêu cầu trả hàng sớm",
+      "EARLY_RETURN_UPDATED": "Cập nhật trả hàng sớm",
+      "EARLY_RETURN_DELETED": "Hủy trả hàng sớm",
+      "EARLY_RETURN_SHIPPER": "Cập nhật lịch giao hàng"
     }
   },
   "errors": {
@@ -971,7 +975,7 @@
         "main_subtitle": "Thuê Thiết Bị Du Lịch Ngay!",
         "tagline": "Khám phá.  Ghi lại.  Chia sẻ.",
         "description": "Truy cập thiết bị du lịch cao cấp từ những người địa phương đáng tin cậy.",
-        "badge": "Được tin tưởng bởi 10,000+ du khách"
+        "badge": "Được tin tưởng bởi nhiều du khách"
       },
       "cta_primary": "Tìm Thiết Bị Ngay",
       "cta_secondary": "Cho Thuê Đồ",
@@ -1863,7 +1867,6 @@
     "editButton": "Chỉnh sửa",
     "deleteButton": "Xóa",
     "chooseNewPhoto": "Chọn Ảnh Mới",
-    "uploading": "Đang tải lên...",
     "cannotLoadBankAccount": "Không thể tải thông tin tài khoản ngân hàng",
     "bankAccountUpdateSuccess": "Cập nhật tài khoản ngân hàng thành công",
     "bankAccountAddSuccess": "Thêm tài khoản ngân hàng thành công",

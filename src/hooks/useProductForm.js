@@ -408,11 +408,11 @@ export const useProductForm = () => {
         formDataToSend.append("subCategory", formData.subCategory);
       }
 
-      // Add pricing fields
-      formDataToSend.append("pricing.dailyRate", formData.pricing.dailyRate);
+      // Add pricing fields (trim whitespace)
+      formDataToSend.append("pricing.dailyRate", String(formData.pricing.dailyRate).trim());
       formDataToSend.append(
         "pricing.deposit.amount",
-        formData.pricing.deposit.amount
+        String(formData.pricing.deposit.amount).trim()
       );
       formDataToSend.append(
         "pricing.deposit.type",

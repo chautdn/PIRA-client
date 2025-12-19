@@ -402,7 +402,7 @@ const Navigation = () => {
 
                 {/* Notification Bell - Only show for authenticated users */}
                 {user && (
-                  <div className="hidden xs:block">
+                  <div>
                     <NotificationBell />
                   </div>
                 )}

@@ -922,7 +922,11 @@
       "VOUCHER": "Voucher",
       "EXTENSION_REQUEST": "Extension Request",
       "EXTENSION_APPROVED": "Extension Approved",
-      "EXTENSION_REJECTED": "Extension Rejected"
+      "EXTENSION_REJECTED": "Extension Rejected",
+      "EARLY_RETURN_REQUEST": "Early Return Request",
+      "EARLY_RETURN_UPDATED": "Early Return Updated",
+      "EARLY_RETURN_DELETED": "Early Return Cancelled",
+      "EARLY_RETURN_SHIPPER": "Shipment Schedule Updated"
     }
   },
   "errors": {
@@ -1796,7 +1800,6 @@
     "editButton": "Edit",
     "deleteButton": "Delete",
     "chooseNewPhoto": "Choose New Photo",
-    "uploading": "Uploading...",
     "cannotLoadBankAccount": "Cannot load bank account information",
     "bankAccountUpdateSuccess": "Bank account updated successfully",
     "bankAccountAddSuccess": "Bank account added successfully",

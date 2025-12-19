@@ -150,15 +150,15 @@ const NotificationBell = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+            className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-32 sm:top-auto mt-0 sm:mt-2 w-auto sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">{t('notifications.title')}</h3>
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{t('notifications.title')}</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap"
                 >
                   {t('notifications.markAllAsRead')}
                 </button>
@@ -166,7 +166,7 @@ const NotificationBell = () => {
             </div>
 
             {/* Notifications List */}
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -182,12 +182,12 @@ const NotificationBell = () => {
                     key={notification._id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
+                    className={`p-3 sm:p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
                       notification.status !== "READ" ? "bg-blue-50" : ""
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2 sm:gap-3">
                       <div className="flex-1 min-w-0">
                         {/* Category Badge */}
                         <div className="flex items-center gap-2 mb-1">

@@ -4,6 +4,10 @@ import { useAuth } from '../../hooks/useAuth';
 import ShipmentService from '../../services/shipment';
 import useChatSocket from '../../hooks/useChatSocket';
 import ShipmentManagementModal from '../../components/shipper/ShipmentManagementModal';
+import { FaCalendarAlt } from 'react-icons/fa';
+import { LuPackage } from 'react-icons/lu';
+import { CiDeliveryTruck } from 'react-icons/ci';
+import { IoCheckmarkDoneCircle } from 'react-icons/io5';
 
 export default function ShipmentsCalendar() {
   const { user } = useAuth();
@@ -168,7 +172,7 @@ export default function ShipmentsCalendar() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                <span className="text-xl sm:text-2xl">📅</span>
+                <FaCalendarAlt className="text-xl sm:text-2xl text-white" />
               </div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                 Quản lý đơn hàng
@@ -247,7 +251,7 @@ export default function ShipmentsCalendar() {
                           whileHover={{ scale: 1.03, y: -2 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleShipmentClick(shipment)}
-                          className={`p-3 rounded-lg border-l-4 cursor-pointer transition-all shadow-sm hover:shadow-md ${
+                          className={`p-3 rounded-lg cursor-pointer transition-all shadow-sm hover:shadow-md ${
                             getStatusColor(shipment.status)
                           }`}
                         >
@@ -304,7 +308,7 @@ export default function ShipmentsCalendar() {
                           key={shipment._id}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleShipmentClick(shipment)}
-                          className={`p-2.5 rounded-lg border-l-4 cursor-pointer transition-all shadow-sm active:shadow-md ${
+                          className={`p-2.5 rounded-lg cursor-pointer transition-all shadow-sm active:shadow-md ${
                             getStatusColor(shipment.status)
                           }`}
                         >
@@ -329,10 +333,10 @@ export default function ShipmentsCalendar() {
 
         {/* Stats */}
         <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                <span className="text-xl sm:text-2xl">📦</span>
+                <LuPackage className="text-xl sm:text-2xl text-white" />
               </div>
               <div className="min-w-0">
                 <div className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Tổng đơn</div>
@@ -340,10 +344,10 @@ export default function ShipmentsCalendar() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 hover:shadow-xl transition-shadow">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                <span className="text-xl sm:text-2xl">🚚</span>
+                <CiDeliveryTruck className="text-xl sm:text-2xl text-white" />
               </div>
               <div className="min-w-0">
                 <div className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Đang giao</div>
@@ -353,10 +357,10 @@ export default function ShipmentsCalendar() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-6 hover:shadow-xl transition-shadow sm:col-span-2 lg:col-span-1">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                <span className="text-xl sm:text-2xl">✅</span>
+                <IoCheckmarkDoneCircle className="text-xl sm:text-2xl text-white" />
               </div>
               <div className="min-w-0">
                 <div className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Hoàn thành</div>
