@@ -944,7 +944,11 @@
       "VOUCHER": "Phiếu giảm giá",
       "EXTENSION_REQUEST": "Yêu cầu gia hạn thuê",
       "EXTENSION_APPROVED": "Gia hạn được chấp nhận",
-      "EXTENSION_REJECTED": "Gia hạn bị từ chối"
+      "EXTENSION_REJECTED": "Gia hạn bị từ chối",
+      "EARLY_RETURN_REQUEST": "Yêu cầu trả hàng sớm",
+      "EARLY_RETURN_UPDATED": "Cập nhật trả hàng sớm",
+      "EARLY_RETURN_DELETED": "Hủy trả hàng sớm",
+      "EARLY_RETURN_SHIPPER": "Cập nhật lịch giao hàng"
     }
   },
   "errors": {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { formatCurrency } from '../../utils/constants';
 import { includesIgnoreDiacritics } from '../../utils/textUtils';
+import { CiDeliveryTruck } from 'react-icons/ci';
 
 const AdminShipmentManagement = () => {
   const navigate = useNavigate();
@@ -119,7 +120,7 @@ const AdminShipmentManagement = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            🚚 Quản lí Vận chuyển
+            <CiDeliveryTruck className="w-8 h-8" /> Quản lí Vận chuyển
           </h1>
           <p className="text-gray-600 mt-2">Quản lý shipper và thống kê vận chuyển toàn hệ thống</p>
         </div>

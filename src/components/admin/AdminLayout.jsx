@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../context/ThemeContext";
 import { ROUTES } from "../../utils/constants";
 import icons from "../../utils/icons";
+import { CiDeliveryTruck } from "react-icons/ci";
 
 const { IoBarChart, FiUser, FiPackage, BiCreditCard, FiGift, BsCart4, FiAlertTriangle, FaBalanceScale, BsBuildings, FiDollarSign, FiSettings } = icons;
 
@@ -75,7 +76,7 @@ const AdminLayout = () => {
     {
       name: "Quản lí Vận chuyển",
       path: "/admin/shipments",
-      icon: "🚚",
+      icon: <CiDeliveryTruck />,
     },
     {
       name: "Cài đặt",
