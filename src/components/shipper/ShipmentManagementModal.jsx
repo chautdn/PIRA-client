@@ -22,6 +22,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   const [showRenterRejectDialog, setShowRenterRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState('PRODUCT_DAMAGED'); // PRODUCT_DAMAGED or NO_CONTACT
   const [rejectNotes, setRejectNotes] = useState('');
+  const [returnToOwnerImages, setReturnToOwnerImages] = useState([]); // Images of returning goods to owner
   
   // Confirmation modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -58,14 +59,15 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
   const handleConfirmPickup = async () => {
     try {
-      if (pickupImages.length === 0) {
-        toast.error('Vui lòng tải lên ít nhất 1 ảnh pickup');
+      if (pickupImages.length < 3) {
+        toast.error('Vui lòng tải lên ít nhất 3 ảnh/video pickup');
         return;
       }
 
       setPickupLoading(true);
 
       const formData = new FormData();
+      let fileCount = 0;
       pickupImages.forEach(file => {
         // Handle both File objects and URLs
         if (typeof file === 'string') {
@@ -73,10 +75,14 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
           return;
         }
         formData.append('images', file);
+        fileCount++;
       });
 
+      console.log(`📤 Uploading ${fileCount} pickup files...`);
+      console.log('Files to upload:', pickupImages.map(f => typeof f === 'string' ? 'URL' : f.name));
+
       // Upload only new files
-      if (formData.has('images')) {
+      if (fileCount > 0) {
         await ShipmentService.uploadProof(shipment._id, formData);
       }
 
@@ -105,14 +111,15 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
   const handleConfirmDelivery = async () => {
     try {
-      if (deliveryImages.length === 0) {
-        toast.error('Vui lòng tải lên ít nhất 1 ảnh delivery');
+      if (deliveryImages.length < 3) {
+        toast.error('Vui lòng tải lên ít nhất 3 ảnh/video delivery');
         return;
       }
 
       setDeliveryLoading(true);
 
       const formData = new FormData();
+      let fileCount = 0;
       deliveryImages.forEach(file => {
         // Handle both File objects and URLs
         if (typeof file === 'string') {
@@ -120,10 +127,14 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
           return;
         }
         formData.append('images', file);
+        fileCount++;
       });
 
+      console.log(`📤 Uploading ${fileCount} delivery files...`);
+      console.log('Files to upload:', deliveryImages.map(f => typeof f === 'string' ? 'URL' : f.name));
+
       // Upload only new files
-      if (formData.has('images')) {
+      if (fileCount > 0) {
         await ShipmentService.uploadProof(shipment._id, formData);
       }
 
@@ -236,9 +247,12 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   }
 
   const handleRenterReject = async () => {
-    if (!rejectNotes.trim()) {
-      toast.error('Vui lòng nhập lý do renter không nhận hàng');
-      return;
+    // If NO_CONTACT, require images
+    if (rejectReason === 'NO_CONTACT') {
+      if (returnToOwnerImages.length < 3) {
+        toast.error('Vui lòng tải lên ít nhất 3 ảnh/video đã giao hàng lại cho owner');
+        return;
+      }
     }
 
     try {
@@ -246,16 +260,30 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
       const reason = rejectReason === 'PRODUCT_DAMAGED' ? 'Sản phẩm có lỗi' : 'Không liên lạc được với renter';
 
+      // If NO_CONTACT, upload images first
+      if (rejectReason === 'NO_CONTACT' && returnToOwnerImages.length > 0) {
+        const formData = new FormData();
+        returnToOwnerImages.forEach(file => {
+          if (typeof file !== 'string') {
+            formData.append('images', file);
+          }
+        });
+        
+        if (formData.has('images')) {
+          await ShipmentService.uploadProof(shipment._id, formData);
+        }
+      }
+
       // Call API to reject delivery with reason
       await ShipmentService.rejectDelivery(shipment._id, {
         reason: rejectReason,
-        notes: rejectNotes
+        notes: rejectNotes || reason
       });
 
       // Show success toast with reason
       const toastMessage = rejectReason === 'PRODUCT_DAMAGED' 
         ? '✅ Đã ghi nhận sản phẩm có lỗi!'
-        : '✅ Đã ghi nhận renter không nhận hàng!';
+        : '✅ Đã xác nhận giao hàng lại cho owner!';
       
       toast.success(toastMessage, {
         duration: 3,
@@ -266,6 +294,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
       setShowRenterRejectDialog(false);
       setRejectReason('PRODUCT_DAMAGED');
       setRejectNotes('');
+      setReturnToOwnerImages([]);
       setCurrentStatus(rejectReason === 'PRODUCT_DAMAGED' ? 'DELIVERY_FAILED' : 'FAILED');
       setFailedStage('DELIVERY');
       
@@ -281,12 +310,29 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     }
   };
 
+  const handleReturnToOwnerImageUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    setReturnToOwnerImages(prev => [...prev, ...files]);
+  };
+
+  const removeReturnToOwnerImage = (index) => {
+    setReturnToOwnerImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const removePickupImage = (index) => {
     setPickupImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const removeDeliveryImage = (index) => {
     setDeliveryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Helper to check if file is video
+  const isVideoFile = (file) => {
+    if (typeof file === 'string') {
+      return file.match(/\.(mp4|webm|ogg|mov)$/i);
+    }
+    return file.type?.startsWith('video/');
   };
 
   // Check if shipment can be accepted based on scheduled date
@@ -628,8 +674,8 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   </h3>
                   <p className="text-xs sm:text-sm text-blue-800 break-words">
                     {isReturnShipment
-                      ? 'Tải lên ảnh chứng minh khi nhận hàng trả từ người thuê (tối thiểu 1 ảnh)'
-                      : 'Tải lên ảnh chứng minh khi nhận hàng từ chủ hàng (tối thiểu 1 ảnh)'}
+                      ? 'Tải lên ảnh/video chứng minh khi nhận hàng trả từ người thuê (tối thiểu 3 ảnh/video)'
+                      : 'Tải lên ảnh/video chứng minh khi nhận hàng từ chủ hàng (tối thiểu 3 ảnh/video)'}
                   </p>
                 </div>
 
@@ -638,14 +684,14 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     <label className="block cursor-pointer">
                       <div className="flex flex-col items-center justify-center py-6">
                         <Upload className="text-blue-500 mb-2" size={32} />
-                        <p className="text-sm font-semibold text-gray-700">Nhấn để tải ảnh lên</p>
-                        <p className="text-xs text-gray-500 mt-1">hoặc kéo thả ảnh vào đây</p>
-                        <p className="text-xs text-gray-400 mt-2">Tối thiểu 1 ảnh</p>
+                        <p className="text-sm font-semibold text-gray-700">Nhấn để tải ảnh/video lên</p>
+                        <p className="text-xs text-gray-500 mt-1">hoặc kéo thả ảnh/video vào đây</p>
+                        <p className="text-xs text-gray-400 mt-2">Tối thiểu 3 ảnh/video</p>
                       </div>
                       <input
                         type="file"
                         multiple
-                        accept="image/*"
+                        accept="image/*,video/*"
                         onChange={handlePickupImageUpload}
                         disabled={loading}
                         className="hidden"
@@ -657,11 +703,19 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                       {pickupImages.map((file, idx) => (
                         <div key={idx} className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-[4/3]">
-                          <img
-                            src={typeof file === 'string' ? file : URL.createObjectURL(file)}
-                            alt={`pickup-${idx}`}
-                            className="w-full h-full object-contain rounded-lg shadow-sm"
-                          />
+                          {isVideoFile(file) ? (
+                            <video
+                              src={typeof file === 'string' ? file : URL.createObjectURL(file)}
+                              className="w-full h-full object-contain rounded-lg shadow-sm"
+                              controls
+                            />
+                          ) : (
+                            <img
+                              src={typeof file === 'string' ? file : URL.createObjectURL(file)}
+                              alt={`pickup-${idx}`}
+                              className="w-full h-full object-contain rounded-lg shadow-sm"
+                            />
+                          )}
                           {!pickupUploaded && !deliveryUploaded && canStillDocument && (
                             <button
                               onClick={() => removePickupImage(idx)}
@@ -684,7 +738,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           <input
                             type="file"
                             multiple
-                            accept="image/*"
+                            accept="image/*,video/*"
                             onChange={handlePickupImageUpload}
                             disabled={loading}
                             className="hidden"
@@ -709,9 +763,9 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={handleConfirmPickup}
-                        disabled={pickupImages.length === 0 || pickupLoading || isFailedState}
+                        disabled={pickupImages.length < 3 || pickupLoading || isFailedState}
                         className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
-                          pickupImages.length > 0 && !pickupLoading
+                          pickupImages.length >= 3 && !pickupLoading
                             ? 'bg-blue-600 hover:bg-blue-700 text-white'
                             : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                         }`}
@@ -790,8 +844,8 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   </h3>
                   <p className="text-xs sm:text-sm text-green-800 break-words">
                     {isReturnShipment
-                      ? 'Tải lên ảnh chứng minh khi giao hàng cho chủ hàng (tối thiểu 1 ảnh)'
-                      : 'Tải lên ảnh chứng minh khi giao hàng cho người thuê (tối thiểu 1 ảnh)'}
+                      ? 'Tải lên ảnh/video chứng minh khi giao hàng cho chủ hàng (tối thiểu 3 ảnh/video)'
+                      : 'Tải lên ảnh/video chứng minh khi giao hàng cho người thuê (tối thiểu 3 ảnh/video)'}
                   </p>
                 </div>
 
@@ -800,14 +854,14 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     <label className="block cursor-pointer">
                       <div className="flex flex-col items-center justify-center py-4 sm:py-6">
                         <Upload className="text-green-500 mb-1.5 sm:mb-2" size={28} />
-                        <p className="text-xs sm:text-sm font-semibold text-gray-700">Nhấn để tải ảnh lên</p>
-                        <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5 sm:mt-1">hoặc kéo thả ảnh vào đây</p>
-                        <p className="text-[10px] xs:text-xs text-gray-400 mt-1.5 sm:mt-2">Tối thiểu 1 ảnh</p>
+                        <p className="text-xs sm:text-sm font-semibold text-gray-700">Nhấn để tải ảnh/video lên</p>
+                        <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5 sm:mt-1">hoặc kéo thả ảnh/video vào đây</p>
+                        <p className="text-[10px] xs:text-xs text-gray-400 mt-1.5 sm:mt-2">Tối thiểu 3 ảnh/video</p>
                       </div>
                       <input
                         type="file"
                         multiple
-                        accept="image/*"
+                        accept="image/*,video/*"
                         onChange={handleDeliveryImageUpload}
                         disabled={loading || !pickupUploaded}
                         className="hidden"
@@ -825,11 +879,19 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                       {deliveryImages.map((file, idx) => (
                         <div key={idx} className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-[4/3]">
-                          <img
-                            src={typeof file === 'string' ? file : URL.createObjectURL(file)}
-                            alt={`delivery-${idx}`}
-                            className="w-full h-full object-contain rounded-lg shadow-sm"
-                          />
+                          {isVideoFile(file) ? (
+                            <video
+                              src={typeof file === 'string' ? file : URL.createObjectURL(file)}
+                              className="w-full h-full object-contain rounded-lg shadow-sm"
+                              controls
+                            />
+                          ) : (
+                            <img
+                              src={typeof file === 'string' ? file : URL.createObjectURL(file)}
+                              alt={`delivery-${idx}`}
+                              className="w-full h-full object-contain rounded-lg shadow-sm"
+                            />
+                          )}
                           {!deliveryUploaded && canStillDocument && (
                             <button
                               onClick={() => removeDeliveryImage(idx)}
@@ -852,7 +914,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           <input
                             type="file"
                             multiple
-                            accept="image/*"
+                            accept="image/*,video/*"
                             onChange={handleDeliveryImageUpload}
                             disabled={loading || !pickupUploaded}
                             className="hidden"
@@ -885,9 +947,9 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={handleConfirmDelivery}
-                        disabled={deliveryImages.length === 0 || deliveryLoading || isFailedState}
+                        disabled={deliveryImages.length < 3 || deliveryLoading || isFailedState}
                         className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
-                          deliveryImages.length > 0 && !deliveryLoading
+                          deliveryImages.length >= 3 && !deliveryLoading
                             ? 'bg-green-600 hover:bg-green-700 text-white'
                             : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                         }`}
@@ -975,7 +1037,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                               onChange={(e) => setRejectReason(e.target.value)}
                               className="w-4 h-4"
                             />
-                            <span className="text-gray-700 font-medium text-xs sm:text-sm">🔨 Sản phẩm có lỗi</span>
+                            <span className="text-gray-700 font-medium text-xs sm:text-sm">Sản phẩm có lỗi</span>
                           </label>
                           <label className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 border rounded-lg cursor-pointer hover:bg-blue-50 transition"
                             style={{ borderColor: rejectReason === 'NO_CONTACT' ? '#2563eb' : '#d1d5db' }}>
@@ -992,25 +1054,67 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         </div>
                       </div>
 
-                      {/* Notes Input */}
-                      <div>
-                        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
-                          Ghi chú chi tiết:
-                        </label>
-                        <textarea
-                          value={rejectNotes}
-                          onChange={(e) => setRejectNotes(e.target.value)}
-                          placeholder="Nhập chi tiết lý do..."
-                          className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm"
-                          rows={3}
-                          disabled={loading}
-                        />
-                      </div>
+                      {/* Image Upload for NO_CONTACT */}
+                      {rejectReason === 'NO_CONTACT' && (
+                        <div>
+                          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">
+                            Ảnh/Video đã giao hàng lại cho owner:
+                          </label>
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition">
+                            <label className="cursor-pointer block text-center">
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*,video/*"
+                                onChange={handleReturnToOwnerImageUpload}
+                                className="hidden"
+                                disabled={loading}
+                              />
+                              <div className="flex flex-col items-center gap-2">
+                                <Upload className="text-gray-400" size={32} />
+                                <span className="text-xs sm:text-sm text-gray-600 font-medium">
+                                  Tải lên ảnh/video chứng minh
+                                </span>
+                              </div>
+                            </label>
+                          </div>
+                          {returnToOwnerImages.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 mt-3">
+                              {returnToOwnerImages.map((img, idx) => (
+                                <div key={idx} className="relative group">
+                                  {isVideoFile(img) ? (
+                                    <video
+                                      src={typeof img === 'string' ? img : URL.createObjectURL(img)}
+                                      className="w-full h-20 object-cover rounded-lg border"
+                                      controls
+                                    />
+                                  ) : (
+                                    <img
+                                      src={typeof img === 'string' ? img : URL.createObjectURL(img)}
+                                      alt="Return proof"
+                                      className="w-full h-20 object-cover rounded-lg border"
+                                    />
+                                  )}
+                                  <button
+                                    onClick={() => removeReturnToOwnerImage(idx)}
+                                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-xs"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Action Buttons */}
                       <div className="flex gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
                         <button
-                          onClick={() => setShowRenterRejectDialog(false)}
+                          onClick={() => {
+                            setShowRenterRejectDialog(false);
+                            setReturnToOwnerImages([]);
+                          }}
                           disabled={loading}
                           className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold text-xs sm:text-sm hover:bg-gray-50 transition disabled:opacity-50"
                         >
@@ -1018,7 +1122,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                         </button>
                         <button
                           onClick={handleRenterReject}
-                          disabled={loading || !rejectNotes.trim()}
+                          disabled={loading || (rejectReason === 'NO_CONTACT' && returnToOwnerImages.length < 3)}
                           className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg font-semibold text-xs sm:text-sm hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading ? '⏳ Đang xử lý...' : 'Xác nhận'}
