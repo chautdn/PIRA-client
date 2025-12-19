@@ -273,7 +273,7 @@ const Profile = () => {
 
     try {
       setSaving(true);
-      
+
       // Preserve avatar in formData before sending
       const profileData = {
         ...formData,
@@ -282,17 +282,17 @@ const Profile = () => {
           avatar: user?.profile?.avatar, // Preserve current avatar
         },
       };
-      
+
       const response = await userService.updateProfile(profileData);
       const userData = response.data.data;
-      
+
       // Update local state
       setUser(userData);
-      
+
       // Update global AuthContext and localStorage
       localStorage.setItem("user", JSON.stringify(userData));
       await refreshUser();
-      
+
       setEditing(false);
       setErrors({});
       toast.success(t("profilePage.updateSuccess"));
@@ -451,14 +451,14 @@ const Profile = () => {
             avatar: response.data.data.avatarUrl,
           },
         };
-        
+
         // Update local state
         setUser(updatedUser);
-        
+
         // Update global AuthContext and localStorage
         localStorage.setItem("user", JSON.stringify(updatedUser));
         await refreshUser();
-        
+
         toast.success("Cập nhật avatar thành công!");
       } else {
         toast.error("Không thể upload avatar");
@@ -648,16 +648,6 @@ const Profile = () => {
       ],
     },
 
-    {
-      id: "orders",
-      icon: <FaClipboardList className="text-xl" />,
-      label: t("profilePage.menuOrders"),
-    },
-    {
-      id: "vouchers",
-      icon: <FaTicketAlt className="text-xl" />,
-      label: t("profilePage.menuVouchers"),
-    },
   ];
 
   if (loading) {
@@ -1432,11 +1422,13 @@ const Profile = () => {
                         </div>
                       </div>
 
-                      <label className={`px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl text-sm shadow-lg transition-all duration-200 ${
-                        uploadingAvatar
-                          ? "opacity-75 cursor-not-allowed"
-                          : "cursor-pointer hover:from-blue-600 hover:to-blue-700 transform hover:-translate-y-0.5"
-                      }`}>
+                      <label
+                        className={`px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl text-sm shadow-lg transition-all duration-200 ${
+                          uploadingAvatar
+                            ? "opacity-75 cursor-not-allowed"
+                            : "cursor-pointer hover:from-blue-600 hover:to-blue-700 transform hover:-translate-y-0.5"
+                        }`}
+                      >
                         <input
                           type="file"
                           accept="image/*"
@@ -1446,9 +1438,25 @@ const Profile = () => {
                         />
                         {uploadingAvatar ? (
                           <>
-                            <svg className="animate-spin inline mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg
+                              className="animate-spin inline mr-2 h-4 w-4 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
                             </svg>
                             {t("profilePage.uploading") || "Đang tải lên..."}
                           </>

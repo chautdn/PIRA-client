@@ -1796,7 +1796,6 @@
     "editButton": "Edit",
     "deleteButton": "Delete",
     "chooseNewPhoto": "Choose New Photo",
-    "uploading": "Uploading...",
     "cannotLoadBankAccount": "Cannot load bank account information",
     "bankAccountUpdateSuccess": "Bank account updated successfully",
     "bankAccountAddSuccess": "Bank account added successfully",
