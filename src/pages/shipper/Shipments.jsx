@@ -97,11 +97,12 @@ export default function ShipmentsPage() {
     load();
   }, [user]);
 
-  // Listen for real-time shipment creation
+  // Listen for real-time shipment creation and notifications
   useEffect(() => {
     if (!socket || !connected) return;
 
     const handleShipmentCreated = (data) => {
+      console.log('📦 [Shipments] Shipment created event received:', data);
       
       // Show toast notification immediately
       const typeLabel = data.shipment.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Trả hàng';
@@ -115,6 +116,20 @@ export default function ShipmentsPage() {
           const data = resp.data || resp;
           const shipmentsData = Array.isArray(data) ? data : (data.data || data);
           setShipments(shipmentsData);
+          
+          // Also reload proofs for new shipments
+          const proofsMap = { ...proofs };
+          for (const shipment of shipmentsData) {
+            if (!proofsMap[shipment._id]) {
+              try {
+                const proofData = await ShipmentService.getProof(shipment._id);
+                proofsMap[shipment._id] = proofData.data || proofData;
+              } catch (err) {
+                // Proof might not exist yet
+              }
+            }
+          }
+          setProofs(proofsMap);
         } catch (err) {
           console.error('Failed to reload shipments after socket event:', err.message);
         }
@@ -123,12 +138,30 @@ export default function ShipmentsPage() {
       reloadShipments();
     };
 
+    const handleNotification = (data) => {
+      console.log('🔔 [Shipments] Notification received:', data);
+      
+      // If it's a shipment notification, show toast and refresh
+      if (data.notification?.type === 'SHIPMENT') {
+        const toast = require('react-hot-toast').default;
+        toast.success(
+          `🔔 ${data.notification.title || 'Thông báo mới'}`,
+          { duration: 5000 }
+        );
+      }
+    };
+
     socket.on('shipment:created', handleShipmentCreated);
+    socket.on('notification:new', handleNotification);
+
+    console.log('✅ [Shipments] Socket listeners registered for shipment:created and notification:new');
 
     return () => {
       socket.off('shipment:created', handleShipmentCreated);
+      socket.off('notification:new', handleNotification);
+      console.log('🔌 [Shipments] Socket listeners removed');
     };
-  }, [socket, connected]);
+  }, [socket, connected, proofs]);
 
   // Format date to Vietnamese format DD/MM/YYYY
   const formatDateVN = (date) => {

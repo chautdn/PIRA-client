@@ -48,6 +48,24 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     if (isOpen && shipment?._id) {
       setCurrentStatus(shipment.status);
       loadProofDataFn(shipment._id);
+      
+      // Debug: Log shipment data
+      console.log('📦 Shipment data:', shipment);
+      console.log('📦 SubOrder:', shipment.subOrder);
+      console.log('📦 Products:', shipment.subOrder?.products);
+      console.log('📦 DeliveryBatches:', shipment.subOrder?.deliveryBatches);
+      
+      if (shipment.subOrder?.deliveryBatches) {
+        const pendingBatches = shipment.subOrder.deliveryBatches.filter(
+          batch => batch.shippingFee?.status === 'PENDING'
+        );
+        console.log('📦 PENDING batches:', pendingBatches);
+        
+        const pendingProductIds = pendingBatches.flatMap(
+          batch => batch.products || []
+        );
+        console.log('📦 PENDING product IDs:', pendingProductIds);
+      }
     }
   }, [isOpen, shipment?._id]);
 
@@ -525,33 +543,97 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   </div>
                   
                   {/* Products */}
-                  {shipment?.subOrder?.products && shipment.subOrder.products.length > 0 && (
-                    <div>
-                      <span className="text-gray-600 block mb-2">Sản phẩm:</span>
-                      <div className="space-y-2">
-                        {shipment.subOrder.products.map((item, idx) => {
-                          return (
-                          <div key={idx} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-gray-200">
-                            {item.product?.images?.[0]?.url && (
-                              <img
-                                src={item.product.images[0].url}
-                                alt={item.product?.title || 'Product'}
-                                className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-md flex-shrink-0"
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-xs sm:text-sm line-clamp-2">
-                                {item.product?.title || 'Sản phẩm'}
-                              </p>
-                              <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5">
-                                Số lượng: <span className="font-semibold text-gray-700">{item.quantity}</span>
-                              </p>
+                  {shipment?.subOrder?.products && shipment.subOrder.products.length > 0 && (() => {
+                    let productsToShow = [];
+                    
+                    console.group('🔍 Product Filtering Debug');
+                    console.log('📦 SubOrder:', shipment.subOrder);
+                    console.log('📦 Products array:', shipment.subOrder.products);
+                    console.log('📦 DeliveryBatches:', shipment.subOrder.deliveryBatches);
+                    
+                    // Try to filter by deliveryBatches PENDING status
+                    if (shipment.subOrder.deliveryBatches && shipment.subOrder.deliveryBatches.length > 0) {
+                      console.log('✅ DeliveryBatches found:', shipment.subOrder.deliveryBatches.length);
+                      
+                      // Log all batches
+                      shipment.subOrder.deliveryBatches.forEach((batch, idx) => {
+                        console.log(`Batch ${idx}:`, {
+                          products: batch.products,
+                          status: batch.shippingFee?.status,
+                          shippingFee: batch.shippingFee
+                        });
+                      });
+                      
+                      // Get all product IDs from PENDING batches
+                      const pendingBatches = shipment.subOrder.deliveryBatches
+                        .filter(batch => batch.shippingFee?.status === 'PENDING');
+                      
+                      console.log(`🟡 Found ${pendingBatches.length} PENDING batches`);
+                      
+                      const pendingProductIds = pendingBatches.flatMap(batch => 
+                        (batch.products || []).map(p => {
+                          const id = typeof p === 'string' ? p : (p._id?.toString() || p.toString());
+                          console.log('  Batch product ID:', id);
+                          return id;
+                        })
+                      );
+                      
+                      console.log('🔍 PENDING product IDs:', pendingProductIds);
+                      
+                      // Filter products - Compare with item._id (product item ID, not product document ID)
+                      productsToShow = shipment.subOrder.products.filter(item => {
+                        const itemId = item._id?.toString();
+                        const productDocId = item.product?._id?.toString() || item.product?.toString();
+                        const isIncluded = pendingProductIds.includes(itemId) || pendingProductIds.includes(productDocId);
+                        console.log(`  Check: ${item.product?.title}`);
+                        console.log(`    - Item ID: ${itemId}`);
+                        console.log(`    - Product Doc ID: ${productDocId}`);
+                        console.log(`    - Result: ${isIncluded ? '✅ SHOW' : '❌ HIDE'}`);
+                        return isIncluded;
+                      });
+                      
+                      console.log(`Result: ${productsToShow.length} products will be shown`);
+                    } else {
+                      // Fallback: show all products if no deliveryBatches
+                      console.warn('⚠️ No deliveryBatches found, showing ALL products');
+                      productsToShow = shipment.subOrder.products;
+                    }
+                    
+                    console.groupEnd();
+                    
+                    if (productsToShow.length === 0) {
+                      console.error('❌ No products to show - all filtered out or no PENDING batches');
+                      return null;
+                    }
+                    
+                    return (
+                      <div>
+                        <span className="text-gray-600 block mb-2">Sản phẩm:</span>
+                        <div className="space-y-2">
+                          {productsToShow.map((item, idx) => {
+                            return (
+                            <div key={idx} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-gray-200">
+                              {item.product?.images?.[0]?.url && (
+                                <img
+                                  src={item.product.images[0].url}
+                                  alt={item.product?.title || 'Product'}
+                                  className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-md flex-shrink-0"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 text-xs sm:text-sm line-clamp-2">
+                                  {item.product?.title || 'Sản phẩm'}
+                                </p>
+                                <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5">
+                                  Số lượng: <span className="font-semibold text-gray-700">{item.quantity}</span>
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        )})}
+                          )})}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                   
                   <div>
                     <span className="text-gray-600 block">Phí vận chuyển:</span>

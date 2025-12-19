@@ -192,17 +192,39 @@ export const WalletProvider = ({ children }) => {
       });
     };
 
+    const handleExtensionApproved = (data) => {
+      console.log('✅ Extension approved:', data);
+      toast.success(data.message || 'Yêu cầu gia hạn được chấp nhận', {
+        duration: 5000,
+      });
+      // Refresh balance to show updated frozen amount for owner
+      fetchBalance();
+    };
+
+    const handleExtensionRejected = (data) => {
+      console.log('❌ Extension rejected:', data);
+      toast.error(data.message || 'Yêu cầu gia hạn bị từ chối', {
+        duration: 5000,
+      });
+      // Refresh balance to show refunded amount for renter
+      fetchBalance();
+    };
+
     // Listen to socket events
     socket.on("wallet-updated", handleWalletUpdate);
     socket.on("wallet-transaction-updated", handleTransactionUpdate);
     socket.on("wallet-payment-status", handlePaymentStatus);
     socket.on("wallet-maintenance", handleWalletMaintenance);
+    socket.on("extension-approved", handleExtensionApproved);
+    socket.on("extension-rejected", handleExtensionRejected);
 
     return () => {
       socket.off("wallet-updated", handleWalletUpdate);
       socket.off("wallet-transaction-updated", handleTransactionUpdate);
       socket.off("wallet-payment-status", handlePaymentStatus);
       socket.off("wallet-maintenance", handleWalletMaintenance);
+      socket.off("extension-approved", handleExtensionApproved);
+      socket.off("extension-rejected", handleExtensionRejected);
     };
   }, [user, socket, connected, fetchBalance]);
 
