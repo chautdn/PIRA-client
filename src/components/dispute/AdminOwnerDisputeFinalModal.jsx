@@ -90,32 +90,6 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
             </div>
           )}
 
-          {/* Kết quả từ bên thứ 3 (nếu có) */}
-          {!isFromNegotiation && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <h4 className="font-semibold text-purple-900 mb-3">📋 Kết quả từ bên thứ 3:</h4>
-              <p className="text-sm text-purple-800 whitespace-pre-wrap mb-3">
-                {thirdPartyDecision || 'Không có thông tin'}
-              </p>
-              {thirdPartyDocs.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-xs text-purple-700 mb-2">📎 Có {thirdPartyDocs.length} ảnh bằng chứng</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {thirdPartyDocs.map((doc, idx) => (
-                      <a key={idx} href={doc} target="_blank" rel="noopener noreferrer">
-                        <img 
-                          src={doc} 
-                          alt={`Evidence ${idx + 1}`} 
-                          className="w-full h-24 object-cover rounded border-2 border-purple-200 hover:border-purple-400 cursor-pointer"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Quyết định cuối cùng */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -147,11 +121,13 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
                         Số tiền bồi thường (VNĐ) <span className="text-red-500">*</span>
                       </label>
                       <input
-                        type="number"
-                        value={compensationAmount}
-                        onChange={(e) => setCompensationAmount(e.target.value)}
+                        type="text"
+                        value={compensationAmount ? Number(compensationAmount).toLocaleString('vi-VN') : ''}
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                          setCompensationAmount(rawValue);
+                        }}
                         placeholder="Nhập số tiền bồi thường..."
-                        min="0"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                       />
                       <p className="text-xs text-gray-500 mt-1">

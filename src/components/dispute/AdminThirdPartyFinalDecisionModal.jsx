@@ -135,31 +135,6 @@ const AdminThirdPartyFinalDecisionModal = ({ isOpen, onClose, dispute, onSuccess
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
-          {/* Thông tin bên thứ 3 (readonly) */}
-          {dispute.thirdPartyResolution?.evidence && (
-            <div className="bg-purple-50 p-4 rounded-lg mb-6 border border-purple-200">
-              <h4 className="font-semibold text-purple-900 mb-3">Kết quả từ bên thứ 3:</h4>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <p className="font-medium text-purple-800">Quyết định chính thức:</p>
-                  <p className="text-purple-700 bg-white p-3 rounded mt-1 whitespace-pre-wrap">
-                    {dispute.thirdPartyResolution.evidence.officialDecision}
-                  </p>
-                </div>
-                {dispute.thirdPartyResolution.evidence.photos?.length > 0 && (
-                  <p className="text-purple-700">
-                    📷 Có {dispute.thirdPartyResolution.evidence.photos.length} ảnh bằng chứng
-                  </p>
-                )}
-                {dispute.thirdPartyResolution.evidence.documents?.length > 0 && (
-                  <p className="text-purple-700">
-                    📄 Có {dispute.thirdPartyResolution.evidence.documents.length} tài liệu đính kèm
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
           <div className="space-y-6">
             {/* Chọn quyết định */}
             <div>
