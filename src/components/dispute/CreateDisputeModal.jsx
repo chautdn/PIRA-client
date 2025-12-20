@@ -276,11 +276,12 @@ const CreateDisputeModal = ({
                   Chi phí sửa chữa/bồi thường (VNĐ) <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={formData.repairCost}
-                  onChange={(e) => setFormData(prev => ({ ...prev, repairCost: e.target.value }))}
+                  type="text"
+                  value={formData.repairCost ? Number(formData.repairCost).toLocaleString('vi-VN') : ''}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                    setFormData(prev => ({ ...prev, repairCost: rawValue }));
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="Nhập chi phí ước tính..."
                   required

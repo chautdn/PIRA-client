@@ -3,6 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispute } from '../../context/DisputeContext';
 import { useAuth } from '../../hooks/useAuth';
 import disputeApi from '../../services/dispute.Api';
+import { 
+  ChevronLeft, Package, Truck, Calendar, User, FileText, 
+  Camera, Users, Clock, Scale, MessageSquare, CheckCircle, 
+  XCircle, AlertTriangle, Image as ImageIcon, Mail, Phone, FileCheck
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
   getDisputeStatusColor,
@@ -79,43 +84,43 @@ const AdminDisputeDetail = () => {
   const canProcessPayment = dispute.status === 'RESPONDENT_ACCEPTED' && dispute.repairCost > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              {dispute.disputeId}
-            </h1>
-            <p className="text-sm text-gray-600">{dispute.title}</p>
-          </div>
-          <div className="flex gap-2">
-            <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getDisputeStatusColor(dispute.status)}`}>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => navigate('/admin/disputes')}
+                className="text-white/80 hover:text-white transition"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h1 className="text-xl font-bold text-white">{dispute.disputeId}</h1>
+            </div>
+            <span className={`px-3 py-1.5 text-sm font-semibold rounded-full ${getDisputeStatusColor(dispute.status)}`}>
               {getDisputeStatusText(dispute.status)}
             </span>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <p className="text-gray-600">Loại tranh chấp</p>
-            <p className="font-medium text-gray-900">{getDisputeTypeText(dispute.type)}</p>
+        
+        {/* Quick Info Bar */}
+        <div className="px-6 py-3 bg-gray-50 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm border-t">
+          <div className="flex items-center gap-2">
+            <Package className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-600">{getDisputeTypeText(dispute.type)}</span>
           </div>
-          <div>
-            <p className="text-gray-600">Loại vận chuyển</p>
-            <p className="font-medium text-gray-900">
-              {dispute.shipmentType === 'DELIVERY' ? 'Giao hàng' : 'Trả hàng'}
-            </p>
+          <div className="flex items-center gap-2">
+            <Truck className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-600">{dispute.shipmentType === 'DELIVERY' ? 'Giao hàng' : 'Trả hàng'}</span>
           </div>
-          <div>
-            <p className="text-gray-600">Ngày tạo</p>
-            <p className="font-medium text-gray-900">{formatDate(dispute.createdAt)}</p>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-600">{formatDate(dispute.createdAt)}</span>
           </div>
-          <div>
-            <p className="text-gray-600">Admin phụ trách</p>
-            <p className="font-medium text-gray-900">
-              {dispute.assignedAdmin?.profile?.fullName || 'Chưa phân công'}
-            </p>
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-600">{dispute.assignedAdmin?.profile?.fullName || 'Chưa phân công'}</span>
           </div>
         </div>
 
@@ -172,117 +177,107 @@ const AdminDisputeDetail = () => {
             </button>
           </div>
         )}
-
-        {canProcessOwnerDisputeResult && (
-          <div className="mt-4 pt-4 border-t">
-            <button
-              onClick={() => setShowOwnerDisputeFinalModal(true)}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium"
-            >
-              Đưa ra quyết định cuối cùng (Owner Dispute)
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="border-b border-gray-200 overflow-x-auto">
+          <nav className="flex min-w-max -mb-px">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-6 py-3 text-sm font-medium border-b-2 ${
+              className={`px-5 py-3 text-sm font-medium border-b-2 transition ${
                 activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Tổng quan
+              <FileText className="w-4 h-4 inline mr-1" /> Tổng quan
             </button>
             <button
               onClick={() => setActiveTab('evidence')}
-              className={`px-6 py-3 text-sm font-medium border-b-2 ${
+              className={`px-5 py-3 text-sm font-medium border-b-2 transition ${
                 activeTab === 'evidence'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Bằng chứng
+              <Camera className="w-4 h-4 inline mr-1" /> Bằng chứng
             </button>
             <button
               onClick={() => setActiveTab('parties')}
-              className={`px-6 py-3 text-sm font-medium border-b-2 ${
+              className={`px-5 py-3 text-sm font-medium border-b-2 transition ${
                 activeTab === 'parties'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Các bên liên quan
+              <Users className="w-4 h-4 inline mr-1" /> Các bên
             </button>
             <button
               onClick={() => setActiveTab('timeline')}
-              className={`px-6 py-3 text-sm font-medium border-b-2 ${
+              className={`px-5 py-3 text-sm font-medium border-b-2 transition ${
                 activeTab === 'timeline'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Lịch sử
+              <Clock className="w-4 h-4 inline mr-1" /> Lịch sử
             </button>
             {(dispute.status === 'THIRD_PARTY_ESCALATED' || 
               dispute.status === 'THIRD_PARTY_EVIDENCE_UPLOADED' ||
               dispute.thirdPartyResolution) && (
               <button
                 onClick={() => setActiveTab('thirdparty')}
-                className={`px-6 py-3 text-sm font-medium border-b-2 ${
+                className={`px-5 py-3 text-sm font-medium border-b-2 transition ${
                   activeTab === 'thirdparty'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Bên thứ 3
+                <Scale className="w-4 h-4 inline mr-1" /> Bên thứ 3
               </button>
             )}
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-5">
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <div className="space-y-6">
-              {/* Admin Process Payment */}
-              {canProcessPayment && (
-                <AdminProcessPayment 
-                  dispute={dispute}
-                  onUpdate={(updatedDispute) => {
-                    loadDisputeDetail(disputeId);
-                  }}
-                />
-              )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Left Column */}
+              <div className="space-y-5">
+                {/* Admin Process Payment */}
+                {canProcessPayment && (
+                  <AdminProcessPayment 
+                    dispute={dispute}
+                    onUpdate={() => loadDisputeDetail(disputeId)}
+                  />
+                )}
 
-              {/* Description */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Mô tả</h3>
-                <p className="text-gray-700 whitespace-pre-wrap">{dispute.description}</p>
-              </div>
+                {/* Description */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-500" /> Mô tả vấn đề
+                  </h3>
+                  <p className="text-gray-600 text-sm whitespace-pre-wrap">{dispute.description || 'Không có mô tả'}</p>
+                </div>
 
-              {/* Product Info */}
-              {dispute.subOrder && dispute.subOrder.products && dispute.subOrder.products[dispute.productIndex] && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Thông tin sản phẩm</h3>
+                {/* Product Info */}
+                {dispute.subOrder?.products?.[dispute.productIndex] && (
                   <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-gray-500" /> Sản phẩm liên quan
+                    </h3>
                     {(() => {
                       const productData = dispute.subOrder.products[dispute.productIndex];
                       const product = productData?.product;
                       
-                      // Get image URL - handle both string and object format
                       const getImageUrl = () => {
                         if (!product?.images?.[0]) return null;
                         const firstImage = product.images[0];
                         return typeof firstImage === 'string' ? firstImage : firstImage?.url;
                       };
                       
-                      // Get deposit amount - handle both number and object format
                       const getDepositAmount = () => {
                         if (productData?.totalDeposit) return productData.totalDeposit;
                         if (product?.pricing?.deposit) {
@@ -293,339 +288,404 @@ const AdminDisputeDetail = () => {
                       };
                       
                       return (
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
                           {getImageUrl() ? (
                             <img 
                               src={getImageUrl()} 
-                              alt={product.title || product.name || 'Product'}
-                              className="w-24 h-24 object-cover rounded-lg border"
+                              alt={product?.title || product?.name || 'Product'}
+                              className="w-20 h-20 object-cover rounded-lg border flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-24 h-24 bg-gray-200 rounded-lg border flex items-center justify-center">
-                              <span className="text-gray-400 text-xs">No image</span>
+                            <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <ImageIcon className="w-8 h-8 text-gray-400" />
                             </div>
                           )}
-                          <div className="flex-1 space-y-2">
-                            <p className="font-semibold text-gray-900">{product?.title || product?.name || 'Không có tên sản phẩm'}</p>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                              <div>
-                                <span className="text-gray-600">Số lượng:</span>
-                                <span className="ml-2 font-medium">{productData?.quantity || 0}</span>
-                              </div>
-                              <div>
-                                <span className="text-gray-600">Giá thuê/ngày:</span>
-                                <span className="ml-2 font-medium">
-                                  {product?.pricing?.dailyRate 
-                                    ? `${product.pricing.dailyRate.toLocaleString('vi-VN')}đ` 
-                                    : 'Chưa có'}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-gray-600">Tiền cọc:</span>
-                                <span className="ml-2 font-medium">
-                                  {getDepositAmount()
-                                    ? `${getDepositAmount().toLocaleString('vi-VN')}đ` 
-                                    : 'Chưa có'}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-gray-600">Chủ hàng:</span>
-                                <span className="ml-2 font-medium">{dispute.subOrder.owner?.profile?.fullName || 'Không rõ'}</span>
-                              </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 text-sm truncate">{product?.title || product?.name || 'Không có tên'}</p>
+                            <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-500">
+                              <span>SL: <span className="text-gray-700 font-medium">{productData?.quantity || 0}</span></span>
+                              <span>Giá/ngày: <span className="text-gray-700 font-medium">{product?.pricing?.dailyRate?.toLocaleString('vi-VN')}đ</span></span>
+                              <span>Tiền cọc: <span className="text-gray-700 font-medium">{getDepositAmount()?.toLocaleString('vi-VN')}đ</span></span>
+                              <span>Chủ hàng: <span className="text-gray-700 font-medium">{dispute.subOrder?.owner?.profile?.fullName}</span></span>
                             </div>
                           </div>
                         </div>
                       );
                     })()}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Rental Order Info */}
-              {dispute.subOrder && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Thông tin đơn thuê</h3>
-                  <div className="bg-blue-50 rounded-lg p-4 grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600">Mã SubOrder</p>
-                      <p className="font-medium text-gray-900 font-mono text-xs break-all">
-                        {dispute.subOrder.subOrderId || dispute.subOrder._id || 'Không có'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Người thuê</p>
-                      <p className="font-medium text-gray-900">
-                        {dispute.subOrder.masterOrder?.renter?.profile?.fullName || 'Không rõ'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Ngày bắt đầu thuê</p>
-                      <p className="font-medium text-gray-900">
-                        {(() => {
-                          const productData = dispute.subOrder.products?.[dispute.productIndex];
-                          const startDate = productData?.rentalPeriod?.startDate || dispute.subOrder.rentalPeriod?.startDate;
-                          return startDate ? formatDate(startDate) : 'Chưa có';
-                        })()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Ngày kết thúc thuê</p>
-                      <p className="font-medium text-gray-900">
-                        {(() => {
-                          const productData = dispute.subOrder.products?.[dispute.productIndex];
-                          const endDate = productData?.rentalPeriod?.endDate || dispute.subOrder.rentalPeriod?.endDate;
-                          return endDate ? formatDate(endDate) : 'Chưa có';
-                        })()}
-                      </p>
+                {/* Rental Order Info */}
+                {dispute.subOrder && (
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-500" /> Thông tin đơn thuê
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="text-gray-500">Mã đơn</p>
+                        <p className="font-mono text-gray-700 truncate">{dispute.subOrder.subOrderId || dispute.subOrder._id}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Người thuê</p>
+                        <p className="font-medium text-gray-700">{dispute.subOrder.masterOrder?.renter?.profile?.fullName}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Bắt đầu</p>
+                        <p className="font-medium text-gray-700">
+                          {formatDate(dispute.subOrder.products?.[dispute.productIndex]?.rentalPeriod?.startDate)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Kết thúc</p>
+                        <p className="font-medium text-gray-700">
+                          {formatDate(dispute.subOrder.products?.[dispute.productIndex]?.rentalPeriod?.endDate)}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Respondent Response */}
-              {dispute.respondentResponse && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Phản hồi từ bên bị khiếu nại</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">Quyết định:</span>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                        dispute.respondentResponse.decision === 'ACCEPTED' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {dispute.respondentResponse.decision === 'ACCEPTED' ? 'Chấp nhận' : 'Từ chối'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Lý do:</p>
+              {/* Right Column */}
+              <div className="space-y-5">
+                {/* Respondent Response */}
+                {dispute.respondentResponse?.decision && (
+                  <div className="bg-orange-50 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-orange-500" /> Phản hồi từ bên bị khiếu nại
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded flex items-center gap-1 ${
+                          dispute.respondentResponse.decision === 'ACCEPTED' 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {dispute.respondentResponse.decision === 'ACCEPTED' 
+                            ? <><CheckCircle className="w-3 h-3" /> Chấp nhận</> 
+                            : <><XCircle className="w-3 h-3" /> Từ chối</>}
+                        </span>
+                        <span className="text-xs text-gray-400">{formatDate(dispute.respondentResponse.respondedAt)}</span>
+                      </div>
                       <p className="text-sm text-gray-600">{dispute.respondentResponse.reason}</p>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      Phản hồi lúc: {formatDate(dispute.respondentResponse.respondedAt)}
-                    </p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Admin Decision */}
-              {dispute.adminDecision && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Quyết định của Admin</h3>
-                  <div className="bg-purple-50 rounded-lg p-4 space-y-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Quyết định:</p>
-                      <p className="text-sm text-gray-900 font-semibold">
-                        {dispute.adminDecision.decision === 'COMPLAINANT_RIGHT' 
-                          ? '✅ Người khiếu nại đúng' 
-                          : '✅ Bên bị khiếu nại đúng'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Lý do:</p>
-                      <p className="text-sm text-gray-600">{dispute.adminDecision.reasoning}</p>
-                    </div>
-                    {dispute.adminDecision.refundAmount > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-1">Số tiền hoàn:</p>
-                        <p className="text-sm text-gray-900 font-semibold">
-                          {dispute.adminDecision.refundAmount.toLocaleString('vi-VN')}đ
+                {/* Admin Decision */}
+                {dispute.adminDecision?.decidedAt && (
+                  <div className="bg-purple-50 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <Scale className="w-4 h-4 text-purple-500" /> Quyết định của Admin
+                    </h3>
+                    <div className="space-y-3">
+                      {dispute.adminDecision.whoIsRight && (
+                        <p className="text-sm font-medium text-gray-900">
+                          {dispute.adminDecision.whoIsRight === 'COMPLAINANT_RIGHT' 
+                            ? <><CheckCircle className="w-4 h-4 inline mr-1 text-green-500" /> Người khiếu nại đúng</> 
+                            : <><CheckCircle className="w-4 h-4 inline mr-1 text-green-500" /> Bên bị khiếu nại đúng</>}
                         </p>
-                      </div>
-                    )}
-                    {dispute.adminDecision.penaltyAmount > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-1">Số tiền phạt:</p>
-                        <p className="text-sm text-red-600 font-semibold">
-                          {dispute.adminDecision.penaltyAmount.toLocaleString('vi-VN')}đ
-                        </p>
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-500 pt-2 border-t">
-                      Quyết định lúc: {formatDate(dispute.adminDecision.decidedAt)}
-                    </p>
+                      )}
+                      {dispute.adminDecision.decision && (
+                        <p className="text-sm text-gray-700 font-medium">{dispute.adminDecision.decision}</p>
+                      )}
+                      {dispute.adminDecision.reasoning && (
+                        <p className="text-sm text-gray-600">{dispute.adminDecision.reasoning}</p>
+                      )}
+                      
+                      {(dispute.adminDecision.refundAmount > 0 || dispute.adminDecision.penaltyAmount > 0) && (
+                        <div className="flex gap-4 pt-2 border-t border-purple-200">
+                          {dispute.adminDecision.refundAmount > 0 && (
+                            <div className="text-xs">
+                              <span className="text-gray-500">Hoàn tiền: </span>
+                              <span className="font-semibold text-green-600">
+                                {dispute.adminDecision.refundAmount.toLocaleString('vi-VN')}đ
+                              </span>
+                            </div>
+                          )}
+                          {dispute.adminDecision.penaltyAmount > 0 && (
+                            <div className="text-xs">
+                              <span className="text-gray-500">Phạt: </span>
+                              <span className="font-semibold text-red-600">
+                                {dispute.adminDecision.penaltyAmount.toLocaleString('vi-VN')}đ
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                    {/* Response Status */}
-                    {dispute.status === 'ADMIN_DECISION_MADE' && (
-                      <div className="pt-3 border-t space-y-2">
-                        <p className="text-sm font-medium text-gray-700">Trạng thái phản hồi:</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className={`p-2 rounded ${
-                            dispute.adminDecision.complainantAccepted === true 
-                              ? 'bg-green-100 border border-green-300' 
-                              : dispute.adminDecision.complainantAccepted === false 
-                              ? 'bg-red-100 border border-red-300'
-                              : 'bg-gray-100 border border-gray-300'
+                      {dispute.status === 'ADMIN_DECISION_MADE' && (
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-purple-200">
+                          <div className={`p-2 rounded text-xs ${
+                            dispute.adminDecision.complainantAccepted === true ? 'bg-green-100' 
+                            : dispute.adminDecision.complainantAccepted === false ? 'bg-red-100' 
+                            : 'bg-gray-100'
                           }`}>
-                            <p className="text-xs font-medium text-gray-700">Người khiếu nại:</p>
-                            <p className="text-xs font-semibold">
-                              {dispute.adminDecision.complainantAccepted === true 
-                                ? '✅ Đã đồng ý' 
-                                : dispute.adminDecision.complainantAccepted === false 
-                                ? '❌ Không đồng ý'
-                                : '⏳ Chờ phản hồi'}
+                            <p className="text-gray-500">Người khiếu nại</p>
+                            <p className="font-semibold flex items-center gap-1">
+                              {dispute.adminDecision.complainantAccepted === true ? <><CheckCircle className="w-3 h-3 text-green-600" /> Đồng ý</>
+                              : dispute.adminDecision.complainantAccepted === false ? <><XCircle className="w-3 h-3 text-red-600" /> Không đồng ý</>
+                              : <><Clock className="w-3 h-3 text-gray-500" /> Chờ</>}
                             </p>
                           </div>
-                          <div className={`p-2 rounded ${
-                            dispute.adminDecision.respondentAccepted === true 
-                              ? 'bg-green-100 border border-green-300' 
-                              : dispute.adminDecision.respondentAccepted === false 
-                              ? 'bg-red-100 border border-red-300'
-                              : 'bg-gray-100 border border-gray-300'
+                          <div className={`p-2 rounded text-xs ${
+                            dispute.adminDecision.respondentAccepted === true ? 'bg-green-100' 
+                            : dispute.adminDecision.respondentAccepted === false ? 'bg-red-100' 
+                            : 'bg-gray-100'
                           }`}>
-                            <p className="text-xs font-medium text-gray-700">Bên bị khiếu nại:</p>
-                            <p className="text-xs font-semibold">
-                              {dispute.adminDecision.respondentAccepted === true 
-                                ? '✅ Đã đồng ý' 
-                                : dispute.adminDecision.respondentAccepted === false 
-                                ? '❌ Không đồng ý'
-                                : '⏳ Chờ phản hồi'}
+                            <p className="text-gray-500">Bên bị khiếu nại</p>
+                            <p className="font-semibold flex items-center gap-1">
+                              {dispute.adminDecision.respondentAccepted === true ? <><CheckCircle className="w-3 h-3 text-green-600" /> Đồng ý</>
+                              : dispute.adminDecision.respondentAccepted === false ? <><XCircle className="w-3 h-3 text-red-600" /> Không đồng ý</>
+                              : <><Clock className="w-3 h-3 text-gray-500" /> Chờ</>}
                             </p>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                      
+                      {dispute.adminDecision.decidedAt && (
+                        <p className="text-xs text-gray-400 pt-1">
+                          Quyết định lúc: {formatDate(dispute.adminDecision.decidedAt)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-
+                )}
+              </div>
             </div>
           )}
 
           {/* Evidence Tab */}
           {activeTab === 'evidence' && (
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Complainant Evidence */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Bằng chứng từ người khiếu nại ({dispute.complainant?.profile?.fullName})
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-blue-500" /> Bằng chứng từ {dispute.complainant?.profile?.fullName}
+                  <span className="text-xs font-normal text-gray-500">(Người khiếu nại)</span>
                 </h3>
-                <div className="bg-blue-50 rounded-lg p-4">
-                  {dispute.evidence?.description && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700 mb-1">Mô tả:</p>
-                      <p className="text-sm text-gray-600">{dispute.evidence.description}</p>
-                    </div>
-                  )}
-                  {dispute.evidence?.photos?.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Hình ảnh ({dispute.evidence.photos.length}):</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {dispute.evidence.photos.map((photo, idx) => (
-                          <div 
-                            key={idx} 
-                            className="relative group cursor-pointer"
-                            onClick={() => window.open(photo, '_blank')}
-                          >
-                            <img
-                              src={photo}
-                              alt={`Evidence ${idx + 1}`}
-                              className="w-full h-32 object-cover rounded border hover:border-blue-500 transition"
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded flex items-center justify-center pointer-events-none">
-                              <span className="text-white text-sm opacity-0 group-hover:opacity-100">
-                                🔍 Xem chi tiết
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {dispute.evidence?.videos?.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Video ({dispute.evidence.videos.length}):</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {dispute.evidence.videos.map((video, idx) => (
-                          <div key={idx}>
-                            <video
-                              controls
-                              className="w-full rounded border"
-                              style={{ maxHeight: '250px' }}
-                            >
-                              <source src={video} type="video/mp4" />
-                              Trình duyệt không hỗ trợ video.
-                            </video>
-                            <p className="text-xs text-gray-500 mt-1 text-center">Video {idx + 1}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {(!dispute.evidence?.photos || dispute.evidence.photos.length === 0) && 
-                   (!dispute.evidence?.videos || dispute.evidence.videos.length === 0) && (
-                    <p className="text-sm text-gray-500">Không có bằng chứng hình ảnh/video</p>
-                  )}
-                </div>
+                
+                {dispute.evidence?.description && (
+                  <p className="text-sm text-gray-600 mb-3 p-2 bg-white rounded">{dispute.evidence.description}</p>
+                )}
+                
+                {dispute.evidence?.photos?.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {dispute.evidence.photos.map((photo, idx) => (
+                      <img
+                        key={idx}
+                        src={photo}
+                        alt={`Evidence ${idx + 1}`}
+                        onClick={() => window.open(photo, '_blank')}
+                        className="w-full h-24 object-cover rounded border cursor-pointer hover:opacity-80 transition"
+                      />
+                    ))}
+                  </div>
+                )}
+                
+                {dispute.evidence?.videos?.length > 0 && (
+                  <div className="space-y-2">
+                    {dispute.evidence.videos.map((video, idx) => (
+                      <video key={idx} controls className="w-full rounded border max-h-40">
+                        <source src={video} type="video/mp4" />
+                      </video>
+                    ))}
+                  </div>
+                )}
+                
+                {!dispute.evidence?.photos?.length && !dispute.evidence?.videos?.length && (
+                  <p className="text-sm text-gray-400 italic">Không có bằng chứng</p>
+                )}
               </div>
 
               {/* Respondent Evidence */}
-              {dispute.respondentResponse?.evidence && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Bằng chứng từ bên bị khiếu nại ({dispute.respondent?.profile?.fullName})
+              <div className="bg-orange-50 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-orange-500" /> Bằng chứng từ {dispute.respondent?.profile?.fullName}
+                  <span className="text-xs font-normal text-gray-500">(Bên bị khiếu nại)</span>
+                </h3>
+                
+                {dispute.respondentResponse?.evidence?.description && (
+                  <p className="text-sm text-gray-600 mb-3 p-2 bg-white rounded">
+                    {dispute.respondentResponse.evidence.description}
+                  </p>
+                )}
+                
+                {dispute.respondentResponse?.evidence?.photos?.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {dispute.respondentResponse.evidence.photos.map((photo, idx) => (
+                      <img
+                        key={idx}
+                        src={photo}
+                        alt={`Response Evidence ${idx + 1}`}
+                        onClick={() => window.open(photo, '_blank')}
+                        className="w-full h-24 object-cover rounded border cursor-pointer hover:opacity-80 transition"
+                      />
+                    ))}
+                  </div>
+                )}
+                
+                {dispute.respondentResponse?.evidence?.videos?.length > 0 && (
+                  <div className="space-y-2">
+                    {dispute.respondentResponse.evidence.videos.map((video, idx) => (
+                      <video key={idx} controls className="w-full rounded border max-h-40">
+                        <source src={video} type="video/mp4" />
+                      </video>
+                    ))}
+                  </div>
+                )}
+                
+                {!dispute.respondentResponse?.evidence && (
+                  <p className="text-sm text-gray-400 italic">Chưa có phản hồi</p>
+                )}
+              </div>
+
+              {/* Contract Section */}
+              {dispute.subOrder?.contract && (
+                <div className="bg-green-50 rounded-lg p-4 lg:col-span-2">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-green-600" /> Hợp đồng thuê sản phẩm
                   </h3>
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    {dispute.respondentResponse.evidence.description && (
-                      <div className="mb-3">
-                        <p className="text-sm font-medium text-gray-700 mb-1">Mô tả:</p>
-                        <p className="text-sm text-gray-600">{dispute.respondentResponse.evidence.description}</p>
-                      </div>
-                    )}
-                    {dispute.respondentResponse.evidence.photos?.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-sm font-medium text-gray-700 mb-2">
-                          Hình ảnh ({dispute.respondentResponse.evidence.photos.length}):
+                  
+                  <div className="bg-white rounded-lg p-4 border border-green-200">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          Số hợp đồng: {dispute.subOrder.contract.contractNumber}
                         </p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {dispute.respondentResponse.evidence.photos.map((photo, idx) => (
-                            <div 
-                              key={idx} 
-                              className="relative group cursor-pointer"
-                              onClick={() => window.open(photo, '_blank')}
-                            >
-                              <img
-                                src={photo}
-                                alt={`Response Evidence ${idx + 1}`}
-                                className="w-full h-32 object-cover rounded border hover:border-orange-500 transition"
-                              />
-                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded flex items-center justify-center pointer-events-none">
-                                <span className="text-white text-sm opacity-0 group-hover:opacity-100">
-                                  🔍 Xem chi tiết
-                                </span>
-                              </div>
-                            </div>
-                          ))}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Trạng thái: 
+                          <span className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${
+                            dispute.subOrder.contract.status === 'SIGNED' || dispute.subOrder.contract.status === 'ACTIVE'
+                              ? 'bg-green-100 text-green-700'
+                              : dispute.subOrder.contract.status === 'COMPLETED'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {dispute.subOrder.contract.status === 'SIGNED' ? 'Đã ký'
+                              : dispute.subOrder.contract.status === 'ACTIVE' ? 'Đang hiệu lực'
+                              : dispute.subOrder.contract.status === 'COMPLETED' ? 'Hoàn thành'
+                              : dispute.subOrder.contract.status}
+                          </span>
+                        </p>
+                        {dispute.subOrder.contract.terms && (
+                          <div className="mt-2 flex gap-4 text-xs text-gray-600">
+                            <p>Tiền cọc: <span className="font-medium">{dispute.subOrder.contract.terms.deposit?.toLocaleString('vi-VN')}đ</span></p>
+                            <p>Tổng tiền: <span className="font-medium">{dispute.subOrder.contract.terms.totalAmount?.toLocaleString('vi-VN')}đ</span></p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        {dispute.subOrder.contract.content?.pdfUrl && (
+                          <a
+                            href={dispute.subOrder.contract.content.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium"
+                          >
+                            <FileText className="w-4 h-4" />
+                            Xem PDF
+                          </a>
+                        )}
+                        {dispute.subOrder.contract.content?.htmlContent && (
+                          <button
+                            onClick={() => {
+                              let html = dispute.subOrder.contract.content.htmlContent;
+                              const signatures = dispute.subOrder.contract.signatures;
+                              
+                              // Thêm CSS để ẩn phần chữ ký cũ
+                              const hideOldSignatureCSS = `
+                                <style>
+                                  .signatures { display: none !important; }
+                                </style>
+                              `;
+                              
+                              // Chèn CSS vào head
+                              if (html.includes('</head>')) {
+                                html = html.replace('</head>', hideOldSignatureCSS + '</head>');
+                              }
+                              
+                              // Tạo phần hiển thị chữ ký mới
+                              let signatureImages = `
+                                <div style="display: flex; justify-content: space-between; margin: 20px 40px; padding: 20px; border-top: 2px solid #333;">
+                                  <div style="text-align: center; width: 45%;">
+                                    <p style="font-weight: bold; color: #333;">BÊN CHO THUÊ</p>
+                                    <p style="font-size: 12px; color: #666;">(Ký và ghi rõ họ tên)</p>
+                                    ${signatures?.owner?.signed && signatures?.owner?.signature 
+                                      ? `<img src="${signatures.owner.signature}" style="max-width: 200px; max-height: 100px; margin: 10px auto; display: block; border: 1px solid #ddd; padding: 5px; background: #fff;" alt="Owner Signature" />`
+                                      : '<div style="width: 200px; height: 100px; border: 1px dashed #ccc; margin: 10px auto;"></div>'
+                                    }
+                                    ${signatures?.owner?.signedAt 
+                                      ? `<p style="font-size: 11px; color: #666;">Đã ký lúc: ${new Date(signatures.owner.signedAt).toLocaleString('vi-VN')}</p>`
+                                      : ''
+                                    }
+                                  </div>
+                                  <div style="text-align: center; width: 45%;">
+                                    <p style="font-weight: bold; color: #333;">BÊN THUÊ</p>
+                                    <p style="font-size: 12px; color: #666;">(Ký và ghi rõ họ tên)</p>
+                                    ${signatures?.renter?.signed && signatures?.renter?.signature 
+                                      ? `<img src="${signatures.renter.signature}" style="max-width: 200px; max-height: 100px; margin: 10px auto; display: block; border: 1px solid #ddd; padding: 5px; background: #fff;" alt="Renter Signature" />`
+                                      : '<div style="width: 200px; height: 100px; border: 1px dashed #ccc; margin: 10px auto;"></div>'
+                                    }
+                                    ${signatures?.renter?.signedAt 
+                                      ? `<p style="font-size: 11px; color: #666;">Đã ký lúc: ${new Date(signatures.renter.signedAt).toLocaleString('vi-VN')}</p>`
+                                      : ''
+                                    }
+                                  </div>
+                                </div>
+                              `;
+                              
+                              // Chèn trước footer nếu có, không thì chèn trước </body>
+                              const footerIndex = html.lastIndexOf('<div class="footer">');
+                              const bodyEndIndex = html.lastIndexOf('</body>');
+                              
+                              if (footerIndex > -1) {
+                                html = html.slice(0, footerIndex) + signatureImages + html.slice(footerIndex);
+                              } else if (bodyEndIndex > -1) {
+                                html = html.slice(0, bodyEndIndex) + signatureImages + html.slice(bodyEndIndex);
+                              } else {
+                                html += signatureImages;
+                              }
+                              
+                              const newWindow = window.open('', '_blank');
+                              newWindow.document.write(html);
+                              newWindow.document.close();
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                          >
+                            <FileCheck className="w-4 h-4" />
+                            Xem hợp đồng
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Signature info */}
+                    {dispute.subOrder.contract.signatures && (
+                      <div className="mt-3 pt-3 border-t border-green-200 grid grid-cols-2 gap-3">
+                        <div className="text-xs">
+                          <p className="text-gray-500 mb-1">Chữ ký Owner:</p>
+                          {dispute.subOrder.contract.signatures.owner?.signed ? (
+                            <p className="flex items-center gap-1 text-green-600">
+                              <CheckCircle className="w-3 h-3" /> Đã ký - {new Date(dispute.subOrder.contract.signatures.owner.signedAt).toLocaleDateString('vi-VN')}
+                            </p>
+                          ) : (
+                            <p className="text-gray-400">Chưa ký</p>
+                          )}
+                        </div>
+                        <div className="text-xs">
+                          <p className="text-gray-500 mb-1">Chữ ký Renter:</p>
+                          {dispute.subOrder.contract.signatures.renter?.signed ? (
+                            <p className="flex items-center gap-1 text-green-600">
+                              <CheckCircle className="w-3 h-3" /> Đã ký - {new Date(dispute.subOrder.contract.signatures.renter.signedAt).toLocaleDateString('vi-VN')}
+                            </p>
+                          ) : (
+                            <p className="text-gray-400">Chưa ký</p>
+                          )}
                         </div>
                       </div>
-                    )}
-                    {dispute.respondentResponse.evidence.videos?.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-sm font-medium text-gray-700 mb-2">
-                          Video ({dispute.respondentResponse.evidence.videos.length}):
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {dispute.respondentResponse.evidence.videos.map((video, idx) => (
-                            <div key={idx}>
-                              <video
-                                controls
-                                className="w-full rounded border"
-                                style={{ maxHeight: '250px' }}
-                              >
-                                <source src={video} type="video/mp4" />
-                                Trình duyệt không hỗ trợ video.
-                              </video>
-                              <p className="text-xs text-gray-500 mt-1 text-center">Video {idx + 1}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {(!dispute.respondentResponse.evidence.photos || 
-                      dispute.respondentResponse.evidence.photos.length === 0) &&
-                     (!dispute.respondentResponse.evidence.videos || 
-                      dispute.respondentResponse.evidence.videos.length === 0) && (
-                      <p className="text-sm text-gray-500">Không có bằng chứng hình ảnh/video</p>
                     )}
                   </div>
                 </div>
@@ -635,28 +695,36 @@ const AdminDisputeDetail = () => {
 
           {/* Parties Tab */}
           {activeTab === 'parties' && (
-            <div className="space-y-4">
-              {/* Complainant */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="bg-blue-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Người khiếu nại <span className="text-sm font-normal text-gray-600">(Chủ hàng)</span>
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <p><span className="font-medium">Tên:</span> {dispute.complainant?.profile?.fullName || 'N/A'}</p>
-                  <p><span className="font-medium">Email:</span> {dispute.complainant?.email || 'N/A'}</p>
-                  <p><span className="font-medium">Số điện thoại:</span> {dispute.complainant?.phone || 'N/A'}</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                    {dispute.complainant?.profile?.fullName?.charAt(0) || '?'}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{dispute.complainant?.profile?.fullName || 'N/A'}</p>
+                    <p className="text-xs text-blue-600">Người khiếu nại</p>
+                  </div>
+                </div>
+                <div className="space-y-1.5 text-sm text-gray-600">
+                  <p className="flex items-center gap-2"><Mail className="w-4 h-4" /> {dispute.complainant?.email || 'N/A'}</p>
+                  <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> {dispute.complainant?.phone || 'N/A'}</p>
                 </div>
               </div>
 
-              {/* Respondent */}
               <div className="bg-orange-50 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Bên bị khiếu nại <span className="text-sm font-normal text-gray-600">(Người thuê)</span>
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <p><span className="font-medium">Tên:</span> {dispute.respondent?.profile?.fullName || 'N/A'}</p>
-                  <p><span className="font-medium">Email:</span> {dispute.respondent?.email || 'N/A'}</p>
-                  <p><span className="font-medium">Số điện thoại:</span> {dispute.respondent?.phone || 'N/A'}</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                    {dispute.respondent?.profile?.fullName?.charAt(0) || '?'}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{dispute.respondent?.profile?.fullName || 'N/A'}</p>
+                    <p className="text-xs text-orange-600">Bên bị khiếu nại</p>
+                  </div>
+                </div>
+                <div className="space-y-1.5 text-sm text-gray-600">
+                  <p className="flex items-center gap-2"><Mail className="w-4 h-4" /> {dispute.respondent?.email || 'N/A'}</p>
+                  <p className="flex items-center gap-2"><Phone className="w-4 h-4" /> {dispute.respondent?.phone || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -664,19 +732,27 @@ const AdminDisputeDetail = () => {
 
           {/* Timeline Tab */}
           {activeTab === 'timeline' && (
-            <div className="space-y-4">
-              {dispute.timeline?.map((event, idx) => (
-                <div key={idx} className="flex gap-4">
-                  <div className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-blue-500"></div>
-                  <div className="flex-1 pb-4 border-b border-gray-200 last:border-0">
-                    <p className="font-medium text-gray-900">{event.action}</p>
-                    <p className="text-sm text-gray-600 mt-1">{event.details}</p>
-                    <p className="text-xs text-gray-500 mt-1">{formatDate(event.timestamp)}</p>
-                  </div>
+            <div className="relative">
+              {dispute.timeline?.length > 0 ? (
+                <div className="space-y-0">
+                  {dispute.timeline.map((event, idx) => (
+                    <div key={idx} className="flex gap-3 pb-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-100"></div>
+                        {idx < dispute.timeline.length - 1 && (
+                          <div className="w-0.5 h-full bg-gray-200 mt-1"></div>
+                        )}
+                      </div>
+                      <div className="flex-1 pb-3">
+                        <p className="text-sm font-medium text-gray-900">{event.action}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{event.details}</p>
+                        <p className="text-xs text-gray-400 mt-1">{formatDate(event.timestamp)}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              {(!dispute.timeline || dispute.timeline.length === 0) && (
-                <p className="text-sm text-gray-500">Không có lịch sử</p>
+              ) : (
+                <p className="text-sm text-gray-400 italic text-center py-8">Không có lịch sử</p>
               )}
             </div>
           )}

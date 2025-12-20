@@ -434,6 +434,67 @@ const EarlyReturnCard = ({
         </span>
       </div>
 
+      {/* Products - Only show PENDING products from deliveryBatches */}
+      {(() => {
+        const subOrder = request.subOrder;
+        if (!subOrder?.products || !subOrder?.deliveryBatches) return null;
+
+        // Get product IDs from PENDING batches
+        const pendingProductIds = subOrder.deliveryBatches
+          .filter((batch) => batch.shippingFee?.status === "PENDING")
+          .flatMap((batch) => batch.products.map((p) => p.toString()));
+
+        // Filter products that are in PENDING batches
+        const pendingProducts = subOrder.products.filter((p) =>
+          pendingProductIds.includes(p._id?.toString())
+        );
+
+        if (pendingProducts.length === 0) return null;
+
+        return (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Package className="w-4 h-4 text-indigo-600" />
+              <p className="text-xs font-semibold text-indigo-600">
+                SẢN PHẨM TRẢ SỚM ({pendingProducts.length})
+              </p>
+            </div>
+            <div className="space-y-2">
+              {pendingProducts.map((productItem, idx) => {
+                const product = productItem.product;
+                return (
+                  <div
+                    key={idx}
+                    className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex items-center gap-3"
+                  >
+                    {product?.images?.[0] && (
+                      <img
+                        src={product.images[0]}
+                        alt={product.title || product.name}
+                        className="w-12 h-12 rounded object-cover"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 text-sm">
+                        {product?.title || product?.name || "Sản phẩm"}
+                      </p>
+                      <p className="text-xs text-gray-600">
+                        Số lượng: {productItem.quantity || 1}
+                      </p>
+                      {productItem.totalRental && (
+                        <p className="text-xs text-indigo-700 font-medium">
+                          {formatCurrency(productItem.totalRental)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         {/* Renter Info */}
         <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">

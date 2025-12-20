@@ -3,11 +3,13 @@ import { useDispute } from '../../context/DisputeContext';
 import { toast } from 'react-hot-toast';
 import { formatDate } from '../../utils/disputeHelpers';
 import AdminThirdPartyFinalDecisionModal from './AdminThirdPartyFinalDecisionModal';
+import AdminOwnerDisputeFinalModal from './AdminOwnerDisputeFinalModal';
 
 const ThirdPartySection = ({ dispute, isAdmin = false }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAdminFinalDecisionModal, setShowAdminFinalDecisionModal] = useState(false);
+  const [showAdminOwnerDisputeFinalModal, setShowAdminOwnerDisputeFinalModal] = useState(false);
   const { shareShipperInfo, uploadThirdPartyEvidence, loadDisputeDetail } = useDispute();
 
   const handleShareShipperInfo = async () => {
@@ -382,12 +384,24 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
           <p className="text-green-800 mb-3">
             <strong>✅ Đã nhận được kết quả từ bên thứ 3.</strong> Admin có thể đưa ra quyết định cuối cùng dựa trên bằng chứng trên.
           </p>
-          <button
-            onClick={() => setShowAdminFinalDecisionModal(true)}
-            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
-          >
-            Đưa ra quyết định cuối cùng
-          </button>
+          {/* Nút xanh cho DELIVERY (renter tạo dispute) */}
+          {dispute.shipmentType === 'DELIVERY' && (
+            <button
+              onClick={() => setShowAdminFinalDecisionModal(true)}
+              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+            >
+              Đưa ra quyết định cuối cùng
+            </button>
+          )}
+          {/* Nút tím cho RETURN (owner tạo dispute) */}
+          {dispute.shipmentType === 'RETURN' && (
+            <button
+              onClick={() => setShowAdminOwnerDisputeFinalModal(true)}
+              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium"
+            >
+              Đưa ra quyết định cuối cùng
+            </button>
+          )}
         </div>
       )}
 
@@ -405,6 +419,18 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
         <AdminThirdPartyFinalDecisionModal
           isOpen={showAdminFinalDecisionModal}
           onClose={() => setShowAdminFinalDecisionModal(false)}
+          dispute={dispute}
+          onSuccess={() => {
+            loadDisputeDetail(dispute._id);
+          }}
+        />
+      )}
+
+      {/* Admin Owner Dispute Final Modal (for RETURN shipment type) */}
+      {showAdminOwnerDisputeFinalModal && (
+        <AdminOwnerDisputeFinalModal
+          isOpen={showAdminOwnerDisputeFinalModal}
+          onClose={() => setShowAdminOwnerDisputeFinalModal(false)}
           dispute={dispute}
           onSuccess={() => {
             loadDisputeDetail(dispute._id);
