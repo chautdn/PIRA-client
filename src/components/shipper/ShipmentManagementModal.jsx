@@ -48,6 +48,24 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     if (isOpen && shipment?._id) {
       setCurrentStatus(shipment.status);
       loadProofDataFn(shipment._id);
+      
+      // Debug: Log shipment data
+      console.log('📦 Shipment data:', shipment);
+      console.log('📦 SubOrder:', shipment.subOrder);
+      console.log('📦 Products:', shipment.subOrder?.products);
+      console.log('📦 DeliveryBatches:', shipment.subOrder?.deliveryBatches);
+      
+      if (shipment.subOrder?.deliveryBatches) {
+        const pendingBatches = shipment.subOrder.deliveryBatches.filter(
+          batch => batch.shippingFee?.status === 'PENDING'
+        );
+        console.log('📦 PENDING batches:', pendingBatches);
+        
+        const pendingProductIds = pendingBatches.flatMap(
+          batch => batch.products || []
+        );
+        console.log('📦 PENDING product IDs:', pendingProductIds);
+      }
     }
   }, [isOpen, shipment?._id]);
 
@@ -525,33 +543,67 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   </div>
                   
                   {/* Products */}
-                  {shipment?.subOrder?.products && shipment.subOrder.products.length > 0 && (
-                    <div>
-                      <span className="text-gray-600 block mb-2">Sản phẩm:</span>
-                      <div className="space-y-2">
-                        {shipment.subOrder.products.map((item, idx) => {
-                          return (
-                          <div key={idx} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-gray-200">
-                            {item.product?.images?.[0]?.url && (
-                              <img
-                                src={item.product.images[0].url}
-                                alt={item.product?.title || 'Product'}
-                                className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-md flex-shrink-0"
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-xs sm:text-sm line-clamp-2">
-                                {item.product?.title || 'Sản phẩm'}
-                              </p>
-                              <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5">
-                                Số lượng: <span className="font-semibold text-gray-700">{item.quantity}</span>
-                              </p>
+                  {shipment?.subOrder?.products && shipment.subOrder.products.length > 0 && (() => {
+                    console.group('🔍 Product Filtering Debug - ONLY CONFIRMED');
+                    console.log('📦 Total products in subOrder:', shipment.subOrder.products.length);
+                    
+                    // Log all products with their status
+                    shipment.subOrder.products.forEach((item, index) => {
+                      console.log(`\nProduct ${index}:`, {
+                        title: item.product?.title,
+                        productStatus: item.productStatus,
+                        _id: item._id
+                      });
+                    });
+                    
+                    // Filter by productStatus = CONFIRMED only
+                    const productsToShow = shipment.subOrder.products.filter(item => {
+                      const isConfirmed = item.productStatus === 'CONFIRMED';
+                      console.log(`\n  Filtering: ${item.product?.title}`);
+                      console.log(`    ✓ productStatus: "${item.productStatus}"`);
+                      console.log(`    ✓ Result: ${isConfirmed ? '✅ SHOW (CONFIRMED)' : '❌ HIDE (not CONFIRMED)'}`);
+                      return isConfirmed;
+                    });
+                    
+                    console.log(`\n🎯 FINAL RESULT: ${productsToShow.length} out of ${shipment.subOrder.products.length} products will be displayed`);
+                    if (productsToShow.length > 0) {
+                      console.log('Products to display:', productsToShow.map(p => p.product?.title));
+                    }
+                    console.groupEnd();
+                    
+                    if (productsToShow.length === 0) {
+                      console.error('❌ No products to show - all filtered out or no PENDING batches');
+                      return null;
+                    }
+                    
+                    return (
+                      <div>
+                        <span className="text-gray-600 block mb-2">Sản phẩm:</span>
+                        <div className="space-y-2">
+                          {productsToShow.map((item, idx) => {
+                            return (
+                            <div key={idx} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-gray-200">
+                              {item.product?.images?.[0]?.url && (
+                                <img
+                                  src={item.product.images[0].url}
+                                  alt={item.product?.title || 'Product'}
+                                  className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-md flex-shrink-0"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 text-xs sm:text-sm line-clamp-2">
+                                  {item.product?.title || 'Sản phẩm'}
+                                </p>
+                                <p className="text-[10px] xs:text-xs text-gray-500 mt-0.5">
+                                  Số lượng: <span className="font-semibold text-gray-700">{item.quantity}</span>
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        )})}
+                          )})}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                   
                   <div>
                     <span className="text-gray-600 block">Phí vận chuyển:</span>

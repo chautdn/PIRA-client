@@ -35,15 +35,17 @@ const useChatSocket = () => {
 
     // Handle authentication
     socket.on("connect", () => {
+      console.log('🔌 [useChatSocket] Socket connected, emitting authenticate...');
       socket.emit("authenticate", token);
     });
 
     socket.on("auth:success", (data) => {
+      console.log('✅ [useChatSocket] Authentication successful, user:', data.user?._id);
       setConnected(true);
     });
 
     socket.on("auth:error", (error) => {
-      console.error("Chat connection failed");
+      console.error("❌ [useChatSocket] Chat connection failed:", error);
       setConnected(false);
     });
 

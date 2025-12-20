@@ -38,16 +38,44 @@ export default function ShipmentsCalendar() {
     }
   };
 
-  // Listen for real-time shipment updates
+  // Listen for real-time shipment updates and notifications
   useEffect(() => {
     if (!socket || !connected) return;
 
-    const handleShipmentCreated = () => {
+    const handleShipmentCreated = (data) => {
+      console.log('📦 [ShipmentsCalendar] Shipment created event received:', data);
+      
+      // Show toast notification
+      const typeLabel = data.shipment?.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Trả hàng';
+      const toast = require('react-hot-toast').default;
+      toast.success(`✅ ${typeLabel} mới: ${data.shipment?.shipmentId || ''}`);
+      
       loadShipments();
     };
 
+    const handleNotification = (data) => {
+      console.log('🔔 [ShipmentsCalendar] Notification received:', data);
+      
+      // If it's a shipment notification, show toast and refresh
+      if (data.notification?.type === 'SHIPMENT') {
+        const toast = require('react-hot-toast').default;
+        toast.success(
+          `🔔 ${data.notification.title || 'Thông báo mới'}`,
+          { duration: 5000 }
+        );
+      }
+    };
+
     socket.on('shipment:created', handleShipmentCreated);
-    return () => socket.off('shipment:created', handleShipmentCreated);
+    socket.on('notification:new', handleNotification);
+    
+    console.log('✅ [ShipmentsCalendar] Socket listeners registered');
+
+    return () => {
+      socket.off('shipment:created', handleShipmentCreated);
+      socket.off('notification:new', handleNotification);
+      console.log('🔌 [ShipmentsCalendar] Socket listeners removed');
+    };
   }, [socket, connected]);
 
   // Get week dates (Monday to Sunday)
