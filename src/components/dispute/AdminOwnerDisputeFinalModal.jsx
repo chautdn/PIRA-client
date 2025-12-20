@@ -211,7 +211,7 @@ const AdminOwnerDisputeFinalModal = ({ isOpen, onClose, dispute, onUpdate }) => 
           <div className="flex justify-between pt-4 border-t border-gray-200">
             <button
               onClick={() => {
-                if (window.confirm('Bạn có chắc muốn từ chối bằng chứng này? Dispute sẽ quay lại trạng thái THIRD_PARTY_ESCALATED')) {
+                if (window.confirm('Bạn có chắc muốn từ chối bằng chứng này? Dispute sẽ quay lại trạng thái Chuyển bên thứ 3')) {
                   onClose();
                   // Trigger reject modal in parent
                   window.dispatchEvent(new CustomEvent('openRejectEvidenceModal'));

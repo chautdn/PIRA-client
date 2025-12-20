@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDispute } from '../../context/DisputeContext';
 import { toast } from 'react-hot-toast';
+import { getDisputeTypeText } from '../../utils/disputeHelpers';
 
 /**
  * Modal cho Owner đưa ra quyết định cuối cùng khi Owner tạo dispute RETURN
@@ -68,7 +69,7 @@ const OwnerDisputeFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
               <strong>Renter:</strong> {dispute.respondent.profile?.fullName}
             </p>
             <p className="text-sm text-blue-900 mt-1">
-              <strong>Vấn đề:</strong> {dispute.type}
+              <strong>Vấn đề:</strong> {getDisputeTypeText(dispute.type)}
             </p>
           </div>
 

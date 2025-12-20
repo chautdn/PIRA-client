@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../hooks/useI18n';
 import { useDispute } from '../../context/DisputeContext';
+import useDisputeSocket from '../../hooks/useDisputeSocket';
 import {
   getDisputeStatusColor,
   getDisputeStatusText,
@@ -14,9 +15,34 @@ const DisputeList = () => {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { disputes, isLoading, loadMyDisputes } = useDispute();
+  
   const [filters, setFilters] = useState({
     status: '',
     type: ''
+  });
+  
+  // Initialize socket for realtime updates with custom callbacks
+  const { isConnected } = useDisputeSocket({
+    onDisputeCreated: () => {
+      // Reload list khi có dispute mới
+      console.log('📡 [Socket] New dispute, reloading list...');
+      loadMyDisputes(filters);
+    },
+    onDisputeStatusChanged: () => {
+      // Reload list khi status thay đổi
+      console.log('📡 [Socket] Status changed, reloading list...');
+      loadMyDisputes(filters);
+    },
+    onResponseReceived: () => {
+      // Reload list khi nhận phản hồi
+      console.log('📡 [Socket] Response received, reloading list...');
+      loadMyDisputes(filters);
+    },
+    onDisputeCompleted: () => {
+      // Reload list khi dispute hoàn thành
+      console.log('📡 [Socket] Dispute completed, reloading list...');
+      loadMyDisputes(filters);
+    }
   });
 
   useEffect(() => {

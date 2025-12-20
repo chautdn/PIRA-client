@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import disputeApi from '../../services/dispute.Api';
+import useDisputeSocket from '../../hooks/useDisputeSocket';
 import {
   getDisputeStatusColor,
   getDisputeStatusText,
@@ -21,12 +22,7 @@ const AdminDisputeManagement = () => {
   });
   const [statistics, setStatistics] = useState(null);
 
-  useEffect(() => {
-    loadDisputes();
-    loadStatistics();
-  }, [filters]);
-
-  const loadDisputes = async () => {
+  const loadDisputes = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await disputeApi.adminGetAllDisputes(filters);
@@ -36,16 +32,44 @@ const AdminDisputeManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters]);
 
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       const response = await disputeApi.adminGetStatistics();
       setStatistics(response.data?.statistics || null);
     } catch (error) {
       console.error('Load statistics error:', error);
     }
-  };
+  }, []);
+
+  // Initialize socket for realtime updates
+  const { isConnected } = useDisputeSocket({
+    onDisputeCreated: () => {
+      console.log('📡 [Socket] New dispute, reloading list...');
+      loadDisputes();
+      loadStatistics();
+    },
+    onNewEvidence: () => {
+      console.log('📡 [Socket] New evidence, reloading list...');
+      loadDisputes();
+    },
+    onDisputeStatusChanged: () => {
+      console.log('📡 [Socket] Status changed, reloading list...');
+      loadDisputes();
+      loadStatistics();
+    },
+    onDisputeCompleted: () => {
+      console.log('📡 [Socket] Dispute completed, reloading list...');
+      loadDisputes();
+      loadStatistics();
+    }
+  });
+
+  useEffect(() => {
+    loadDisputes();
+    loadStatistics();
+  }, [loadDisputes, loadStatistics]);
 
   const handleRowClick = (disputeId) => {
     navigate(`/admin/disputes/${disputeId}`);
@@ -113,6 +137,7 @@ const AdminDisputeManagement = () => {
             </select>
           </div>
 
+          {/* Priority filter - hidden
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Ưu tiên
@@ -129,6 +154,7 @@ const AdminDisputeManagement = () => {
               <option value="URGENT">Khẩn cấp</option>
             </select>
           </div>
+          */}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -174,9 +200,11 @@ const AdminDisputeManagement = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Trạng thái
               </th>
+              {/* Priority column - hidden
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ưu tiên
               </th>
+              */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ngày tạo
               </th>
@@ -185,7 +213,7 @@ const AdminDisputeManagement = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {disputes.length === 0 ? (
               <tr>
-                <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
                   Không có tranh chấp nào
                 </td>
               </tr>
@@ -213,11 +241,13 @@ const AdminDisputeManagement = () => {
                       {getDisputeStatusText(dispute.status)}
                     </span>
                   </td>
+                  {/* Priority column - hidden
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(dispute.priority)}`}>
                       {getPriorityText(dispute.priority)}
                     </span>
                   </td>
+                  */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(dispute.createdAt)}
                   </td>
