@@ -544,61 +544,31 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   
                   {/* Products */}
                   {shipment?.subOrder?.products && shipment.subOrder.products.length > 0 && (() => {
-                    let productsToShow = [];
+                    console.group('🔍 Product Filtering Debug - ONLY CONFIRMED');
+                    console.log('📦 Total products in subOrder:', shipment.subOrder.products.length);
                     
-                    console.group('🔍 Product Filtering Debug');
-                    console.log('📦 SubOrder:', shipment.subOrder);
-                    console.log('📦 Products array:', shipment.subOrder.products);
-                    console.log('📦 DeliveryBatches:', shipment.subOrder.deliveryBatches);
+                    // Log all products with their status
+                    shipment.subOrder.products.forEach((item, index) => {
+                      console.log(`\nProduct ${index}:`, {
+                        title: item.product?.title,
+                        productStatus: item.productStatus,
+                        _id: item._id
+                      });
+                    });
                     
-                    // Try to filter by deliveryBatches PENDING status
-                    if (shipment.subOrder.deliveryBatches && shipment.subOrder.deliveryBatches.length > 0) {
-                      console.log('✅ DeliveryBatches found:', shipment.subOrder.deliveryBatches.length);
-                      
-                      // Log all batches
-                      shipment.subOrder.deliveryBatches.forEach((batch, idx) => {
-                        console.log(`Batch ${idx}:`, {
-                          products: batch.products,
-                          status: batch.shippingFee?.status,
-                          shippingFee: batch.shippingFee
-                        });
-                      });
-                      
-                      // Get all product IDs from PENDING batches
-                      const pendingBatches = shipment.subOrder.deliveryBatches
-                        .filter(batch => batch.shippingFee?.status === 'PENDING');
-                      
-                      console.log(`🟡 Found ${pendingBatches.length} PENDING batches`);
-                      
-                      const pendingProductIds = pendingBatches.flatMap(batch => 
-                        (batch.products || []).map(p => {
-                          const id = typeof p === 'string' ? p : (p._id?.toString() || p.toString());
-                          console.log('  Batch product ID:', id);
-                          return id;
-                        })
-                      );
-                      
-                      console.log('🔍 PENDING product IDs:', pendingProductIds);
-                      
-                      // Filter products - Compare with item._id (product item ID, not product document ID)
-                      productsToShow = shipment.subOrder.products.filter(item => {
-                        const itemId = item._id?.toString();
-                        const productDocId = item.product?._id?.toString() || item.product?.toString();
-                        const isIncluded = pendingProductIds.includes(itemId) || pendingProductIds.includes(productDocId);
-                        console.log(`  Check: ${item.product?.title}`);
-                        console.log(`    - Item ID: ${itemId}`);
-                        console.log(`    - Product Doc ID: ${productDocId}`);
-                        console.log(`    - Result: ${isIncluded ? '✅ SHOW' : '❌ HIDE'}`);
-                        return isIncluded;
-                      });
-                      
-                      console.log(`Result: ${productsToShow.length} products will be shown`);
-                    } else {
-                      // Fallback: show all products if no deliveryBatches
-                      console.warn('⚠️ No deliveryBatches found, showing ALL products');
-                      productsToShow = shipment.subOrder.products;
+                    // Filter by productStatus = CONFIRMED only
+                    const productsToShow = shipment.subOrder.products.filter(item => {
+                      const isConfirmed = item.productStatus === 'CONFIRMED';
+                      console.log(`\n  Filtering: ${item.product?.title}`);
+                      console.log(`    ✓ productStatus: "${item.productStatus}"`);
+                      console.log(`    ✓ Result: ${isConfirmed ? '✅ SHOW (CONFIRMED)' : '❌ HIDE (not CONFIRMED)'}`);
+                      return isConfirmed;
+                    });
+                    
+                    console.log(`\n🎯 FINAL RESULT: ${productsToShow.length} out of ${shipment.subOrder.products.length} products will be displayed`);
+                    if (productsToShow.length > 0) {
+                      console.log('Products to display:', productsToShow.map(p => p.product?.title));
                     }
-                    
                     console.groupEnd();
                     
                     if (productsToShow.length === 0) {
