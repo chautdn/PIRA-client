@@ -650,11 +650,11 @@ const UserManagement = () => {
                     <div className="flex items-center">
                       <div className="relative">
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center ring-2 ring-white shadow-lg">
-                          {user.avatar ? (
-                            <img src={user.avatar} alt="" className="w-12 h-12 rounded-full object-cover" />
+                          {user.profile?.avatar ? (
+                            <img src={user.profile?.avatar} alt="" className="w-12 h-12 rounded-full object-cover" />
                           ) : (
                             <span className="text-white font-bold text-lg">
-                              {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                              {user.profile?.firstName?.charAt(0)}{user.profile?.lastName?.charAt(0)}
                             </span>
                           )}
                         </div>
@@ -662,7 +662,7 @@ const UserManagement = () => {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-bold text-gray-900">
-                          {user.firstName} {user.lastName}
+                          {user.profile?.firstName} {user.profile?.lastName}
                         </div>
                         <div className="text-xs text-gray-500 font-mono">ID: {user._id.slice(-8)}</div>
                       </div>
@@ -879,10 +879,7 @@ const UserManagement = () => {
                 Xác nhận thay đổi trạng thái
               </h3>
               <p className="text-gray-600">
-                Bạn có chắc chắn muốn {confirmDialog.newStatus === 'INACTIVE' ? 'khóa' : 'kích hoạt'} tài khoản của user:
-              </p>
-              <p className="font-semibold text-gray-800 mt-2">
-                {confirmDialog.userName}
+                Bạn có chắc chắn muốn {confirmDialog.newStatus === 'INACTIVE' ? 'khóa' : 'kích hoạt'} tài khoản của user này
               </p>
               <p className="text-sm text-gray-500 mt-1">
                 Trạng thái hiện tại: 

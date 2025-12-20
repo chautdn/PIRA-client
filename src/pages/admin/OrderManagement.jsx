@@ -501,16 +501,10 @@ const OrderManagement = () => {
                   <FiUser className="inline mr-1" /> Khách hàng
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <FiPackage className="inline mr-1" /> Sản phẩm
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   <FiDollarSign className="inline mr-1" /> Giá trị
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   <FiBell className="inline mr-1" /> Trạng thái
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  <FiCalendar className="inline mr-1" /> Thời gian thuê
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   <FiSettings className="inline mr-1" /> Thao tác
@@ -548,43 +542,27 @@ const OrderManagement = () => {
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {order.renter?.fullName || order.renter?.name || 'N/A'}
+                          {order.renter?.profile?.firstName} {order.renter?.profile?.lastName}
                         </div>
                         <div className="text-sm text-gray-500">
                           {order.renter?.email || 'N/A'}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 line-clamp-2">
-                          {order.product?.title || order.product?.name || 'N/A'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Chủ: {order.owner?.fullName || order.owner?.name || 'N/A'}
-                        </div>
-                        {order.product?.category && (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200">
-                              📁 {translateCategory(order.product.category.name, i18n.language)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                    
                     <td className="px-6 py-4">
                       <div className="space-y-1">
                         <div className="text-sm font-bold text-green-700">
-                          <FiDollarSign className="inline mr-1" /> {formatCurrency(order.pricing?.total)}
+                          {formatCurrency(order?.totalAmount + order.totalShippingFee + order.totalDepositAmount) }
                         </div>
                         {order.pricing?.deposit && (
                           <div className="text-xs text-orange-600">
-                            🔒 Cọc: {formatCurrency(order.pricing.deposit)}
+                            🔒 Cọc: {formatCurrency(order.totalDepositAmount)}
                           </div>
                         )}
                         {order.pricing?.deliveryFee && (
                           <div className="text-xs text-blue-600">
-                            🚚 Ship: {formatCurrency(order.pricing.deliveryFee)}
+                            🚚 Ship: {formatCurrency(order.totalShippingFee)}
                           </div>
                         )}
                       </div>
@@ -600,19 +578,7 @@ const OrderManagement = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {order.rentalPeriod?.duration || 'N/A'} {order.rentalPeriod?.unit === 'DAY' ? 'ngày' : order.rentalPeriod?.unit === 'WEEK' ? 'tuần' : order.rentalPeriod?.unit === 'MONTH' ? 'tháng' : ''}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {order.rentalPeriod?.startDate ? formatDate(order.rentalPeriod.startDate) : 'N/A'}
-                      </div>
-                      {order.pricing?.rentalRate && (
-                        <div className="text-xs text-green-600">
-                          📅 {formatCurrency(order.pricing.rentalRate)}/{order.rentalPeriod?.unit === 'DAY' ? 'ngày' : order.rentalPeriod?.unit === 'WEEK' ? 'tuần' : 'tháng'}
-                        </div>
-                      )}
-                    </td>
+                    
                     <td className="px-6 py-4">
                       <button
                         onClick={() => navigate(`/admin/orders/${order._id}`)}

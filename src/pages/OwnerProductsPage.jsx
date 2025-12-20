@@ -243,7 +243,7 @@ export default function OwnerProductsPage() {
                 <h1 className="text-3xl font-bold text-gray-800">
                   Sản phẩm của{' '}
                   <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                    {ownerInfo.profile?.fullName || ownerInfo.email?.split('@')[0] || 'Chủ sở hữu'}
+                    {ownerInfo.profile?.firstName } {ownerInfo.profile?.lastName || ''}
                   </span>
                 </h1>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
