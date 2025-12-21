@@ -71,7 +71,7 @@ export default function Home() {
         setLoading(true);
         // Fetch top-rated and most-rented products with random order
         const response = await recommendationService.getTopRatedAndMostRented({
-          limit: 12 // Fetch 12 products for the carousel
+          limit: 12, // Fetch 12 products for the carousel
         });
 
         console.log("[Home] Raw response:", response);
@@ -86,7 +86,10 @@ export default function Home() {
           productsToShow = response.products;
         }
 
-        console.log("[Home] Top rated & most rented products count:", productsToShow.length);
+        console.log(
+          "[Home] Top rated & most rented products count:",
+          productsToShow.length
+        );
         console.log("[Home] Sample product:", productsToShow[0]);
 
         setFeaturedProducts(productsToShow);
@@ -125,13 +128,13 @@ export default function Home() {
       if (carouselRef.current) {
         const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
         const cardWidth = 320 + 24; // width + gap
-        
+
         // If reached the end, scroll back to start
         if (scrollLeft + clientWidth >= scrollWidth - 10) {
-          carouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+          carouselRef.current.scrollTo({ left: 0, behavior: "smooth" });
         } else {
           // Otherwise scroll to next card
-          carouselRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
+          carouselRef.current.scrollBy({ left: cardWidth, behavior: "smooth" });
         }
       }
     }, 4000); // Auto-scroll every 4 seconds
@@ -360,12 +363,30 @@ export default function Home() {
               variants={fadeInUpStagger}
             >
               {[
-                { Icon: MdCameraAlt, label: t("pages.home.categories_list.camera") },
-                { Icon: MdBackpack, label: t("pages.home.categories_list.balo") },
-                { Icon: FaCampground, label: t("pages.home.categories_list.tent") },
-                { Icon: MdLuggage, label: t("pages.home.categories_list.luggage") },
-                { Icon: MdFlightTakeoff, label: t("pages.home.categories_list.flycam") },
-                { Icon: MdGpsFixed, label: t("pages.home.categories_list.gps") },
+                {
+                  Icon: MdCameraAlt,
+                  label: t("pages.home.categories_list.camera"),
+                },
+                {
+                  Icon: MdBackpack,
+                  label: t("pages.home.categories_list.balo"),
+                },
+                {
+                  Icon: FaCampground,
+                  label: t("pages.home.categories_list.tent"),
+                },
+                {
+                  Icon: MdLuggage,
+                  label: t("pages.home.categories_list.luggage"),
+                },
+                {
+                  Icon: MdFlightTakeoff,
+                  label: t("pages.home.categories_list.flycam"),
+                },
+                {
+                  Icon: MdGpsFixed,
+                  label: t("pages.home.categories_list.gps"),
+                },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -426,7 +447,9 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiStar className="text-2xl text-yellow-300" />
-                <span className="font-semibold">{t("pages.home.trust_rating")}</span>
+                <span className="font-semibold">
+                  {t("pages.home.trust_rating")}
+                </span>
               </motion.div>
               <motion.div
                 className="flex items-center gap-2 py-2"
@@ -434,7 +457,9 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiShieldCheck className="text-2xl text-green-300" />
-                <span className="font-semibold">{t("pages.home.trust_secure")}</span>
+                <span className="font-semibold">
+                  {t("pages.home.trust_secure")}
+                </span>
               </motion.div>
               <motion.div
                 className="flex items-center gap-2 py-2"
@@ -442,7 +467,9 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <HiClock className="text-2xl text-blue-300" />
-                <span className="font-semibold">{t("pages.home.trust_support")}</span>
+                <span className="font-semibold">
+                  {t("pages.home.trust_support")}
+                </span>
               </motion.div>
             </motion.div>
           </motion.div>
@@ -595,7 +622,9 @@ export default function Home() {
           {loading ? (
             <div className="mt-8 flex flex-col items-center justify-center py-12">
               <Loading />
-              <p className="mt-4 text-gray-500">{t("pages.home.featured.loading")}</p>
+              <p className="mt-4 text-gray-500">
+                {t("pages.home.featured.loading")}
+              </p>
             </div>
           ) : error ? (
             <div className="mt-8 text-center py-12">
@@ -1130,8 +1159,14 @@ export default function Home() {
               viewport={{ once: true }}
             >
               {[
-                { number: "10,000+", label: t("pages.home.statistics.travelers") },
-                { number: "5,000+", label: t("pages.home.statistics.equipment") },
+                {
+                  number: "10,000+",
+                  label: t("pages.home.statistics.travelers"),
+                },
+                {
+                  number: "5,000+",
+                  label: t("pages.home.statistics.equipment"),
+                },
                 { number: "4.9★", label: t("pages.home.statistics.rating") },
               ].map((stat, idx) => (
                 <motion.div

@@ -9,7 +9,7 @@ export const getRedirectPath = (userRole) => {
     case "SHIPPER":
       return "/shipments"; // Redirect to shipment management page
     case "ADMIN":
-      return ROUTES.ADMIN_DASHBOARD; // Nếu có
+      return "/admin"; // Admin dashboard
     default:
       return ROUTES.HOME; // Default fallback
   }

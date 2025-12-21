@@ -17,12 +17,18 @@ const walletReducer = (state, action) => {
     case "SET_LOADING":
       return { ...state, loading: action.payload };
     case "SET_BALANCE":
+      // Ensure all values are numbers, never objects
+      const payload = action.payload || {};
+      const available = typeof payload.available === 'number' ? payload.available : 0;
+      const frozen = typeof payload.frozen === 'number' ? payload.frozen : 0;
+      const display = typeof payload.display === 'number' ? payload.display : (available + frozen);
+      
       return { 
         ...state, 
-        balance: action.payload.display || action.payload,
-        available: action.payload.available || 0,
-        frozen: action.payload.frozen || 0,
-        display: action.payload.display || action.payload,
+        balance: display,
+        available,
+        frozen,
+        display,
         error: null 
       };
     case "SET_TRANSACTIONS":
@@ -76,9 +82,10 @@ export const WalletProvider = ({ children }) => {
       const balanceData = response.data?.metadata || {};
       console.log("Balance data:", balanceData);
 
-      const available = Number(balanceData.available) || 0;
-      const frozen = Number(balanceData.frozen) || 0;
-      const display = Number(balanceData.balance) || (available + frozen);
+      // Ensure we're working with numbers, not objects
+      const available = typeof balanceData.available === 'number' ? balanceData.available : 0;
+      const frozen = typeof balanceData.frozen === 'number' ? balanceData.frozen : 0;
+      const display = typeof balanceData.balance === 'number' ? balanceData.balance : (available + frozen);
 
       console.log("Final: available=", available, "frozen=", frozen, "display=", display);
 
@@ -97,7 +104,16 @@ export const WalletProvider = ({ children }) => {
         "Failed to fetch wallet balance";
       dispatch({ type: "SET_ERROR", payload: errorMessage });
       console.error("Wallet fetch error:", error);
-      toast.error(errorMessage);
+      
+      // Set balance to 0 on error instead of leaving it undefined
+      dispatch({
+        type: "SET_BALANCE",
+        payload: {
+          available: 0,
+          frozen: 0,
+          display: 0
+        },
+      });
     } finally {
       dispatch({ type: "SET_LOADING", payload: false });
     }

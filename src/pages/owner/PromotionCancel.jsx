@@ -13,7 +13,7 @@ const PromotionCancel = () => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          navigate("/dashboard");
+          navigate("/owner/products");
           return 0;
         }
         return prev - 1;
@@ -83,7 +83,7 @@ const PromotionCancel = () => {
 
         {/* Redirect Info */}
         <p className="text-sm text-gray-500 mb-6">
-          Redirecting to dashboard in{" "}
+          Redirecting to your products in{" "}
           <span className="font-bold text-blue-600">{countdown}</span>{" "}
           seconds...
         </p>
@@ -98,11 +98,11 @@ const PromotionCancel = () => {
             Try Again
           </button>
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/owner/products")}
             className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
           >
             <ArrowLeft size={18} />
-            Go to Dashboard
+            Go to My Products
           </button>
         </div>
       </motion.div>
