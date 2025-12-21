@@ -58,6 +58,14 @@ const NotificationBell = () => {
       await markAsRead(notification._id);
     }
 
+    // Check if it's an extension request notification
+    if (notification.type === 'EXTENSION_REQUEST' || notification.type === 'Extension Request') {
+      setIsOpen(false);
+      // Navigate to owner rental requests page with extension_requests filter
+      navigate('/owner/rental-requests?filter=extension_requests');
+      return;
+    }
+
     // Navigate based on notification action URL
     if (notification.actions && notification.actions.length > 0) {
       const action = notification.actions[0];

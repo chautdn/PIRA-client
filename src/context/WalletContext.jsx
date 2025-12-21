@@ -17,12 +17,17 @@ const walletReducer = (state, action) => {
     case "SET_LOADING":
       return { ...state, loading: action.payload };
     case "SET_BALANCE":
+      // Ensure all values are numbers, not objects
+      const available = Number(action.payload.available) || 0;
+      const frozen = Number(action.payload.frozen) || 0;
+      const display = Number(action.payload.display) || Number(action.payload.balance) || (available + frozen);
+      
       return { 
         ...state, 
-        balance: action.payload.display || action.payload,
-        available: action.payload.available || 0,
-        frozen: action.payload.frozen || 0,
-        display: action.payload.display || action.payload,
+        balance: display,
+        available,
+        frozen,
+        display,
         error: null 
       };
     case "SET_TRANSACTIONS":
@@ -164,7 +169,20 @@ export const WalletProvider = ({ children }) => {
 
     const handleWalletUpdate = (data) => {
       if (data.type === "balance_updated") {
-        dispatch({ type: "SET_BALANCE", payload: data.newBalance });
+        // Ensure newBalance is properly formatted
+        const balanceData = data.newBalance || {};
+        const available = Number(balanceData.available) || 0;
+        const frozen = Number(balanceData.frozen) || 0;
+        const display = Number(balanceData.balance) || Number(balanceData.display) || (available + frozen);
+        
+        dispatch({ 
+          type: "SET_BALANCE", 
+          payload: {
+            available,
+            frozen,
+            display
+          }
+        });
         // Silently update balance - toast is shown by TopUpSuccess page
       }
 

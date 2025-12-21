@@ -185,6 +185,7 @@ const useOrderSocket = (callbacks = {}) => {
     }, [updateOrderRealtime]),
 
     onExtensionRequest: useCallback((data) => {
+      console.log('🔔 [useOrderSocket] Extension request received:', data);
       // Update state: Mark order has extension request
       if (data.orderId) {
         updateOrderRealtime(data.orderId, {
@@ -203,6 +204,34 @@ const useOrderSocket = (callbacks = {}) => {
         { duration: 6000 }
       );
     }, [updateOrderRealtime]),
+
+    onExtensionApproved: useCallback((data) => {
+      console.log('✅ [useOrderSocket] Extension approved:', data);
+      toast.success(
+        <div className="flex items-start gap-2">
+          <icons.FaCheckCircle className="text-green-500 mt-1" />
+          <div>
+            <strong>Gia hạn thành công!</strong><br />
+            Yêu cầu gia hạn đã được chấp nhận
+          </div>
+        </div>,
+        { duration: 6000 }
+      );
+    }, []),
+
+    onExtensionRejected: useCallback((data) => {
+      console.log('❌ [useOrderSocket] Extension rejected:', data);
+      toast.error(
+        <div className="flex items-start gap-2">
+          <icons.FaTimesCircle className="text-red-500 mt-1" />
+          <div>
+            <strong>Gia hạn bị từ chối!</strong><br />
+            {data.rejectionReason || 'Yêu cầu gia hạn bị từ chối'}
+          </div>
+        </div>,
+        { duration: 6000 }
+      );
+    }, []),
   };
 
   // Merge custom callbacks with defaults
@@ -243,6 +272,9 @@ const useOrderSocket = (callbacks = {}) => {
     socket.on('shipment:statusChanged', finalCallbacks.onShipmentUpdate);
     socket.on('earlyReturn:newRequest', finalCallbacks.onEarlyReturnRequest);
     socket.on('extension:newRequest', finalCallbacks.onExtensionRequest);
+    socket.on('extension-request', finalCallbacks.onExtensionRequest); // Also listen to this event
+    socket.on('extension-approved', finalCallbacks.onExtensionApproved);
+    socket.on('extension-rejected', finalCallbacks.onExtensionRejected);
 
     socketRef.current = socket;
     return socket;
@@ -262,6 +294,9 @@ const useOrderSocket = (callbacks = {}) => {
         socket.off('shipment:statusChanged');
         socket.off('earlyReturn:newRequest');
         socket.off('extension:newRequest');
+        socket.off('extension-request');
+        socket.off('extension-approved');
+        socket.off('extension-rejected');
         socket.disconnect();
         socketRef.current = null;
       }
