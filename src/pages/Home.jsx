@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ROUTES } from "../utils/constants";
 import { productService } from "../services/product";
+import recommendationService from "../services/recommendation";
 import Loading from "../components/common/Loading";
 import ChatbotAI from "../components/common/ChatbotAI";
 import { useWallet } from "../context/WalletContext";
@@ -63,58 +64,30 @@ export default function Home() {
     fetchBalance();
   }, [fetchBalance]);
 
-  // Fetch top 10 promoted products (highest tier first)
+  // Fetch top rated and most rented products (randomized for home carousel)
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
-        // Fetch more products to ensure we get promoted ones
-        const response = await productService.list({
-          limit: 50,
-          sort: "createdAt",
-          order: "desc",
+        // Fetch top-rated and most-rented products with random order
+        const response = await recommendationService.getTopRatedAndMostRented({
+          limit: 12 // Fetch 12 products for the carousel
         });
 
         console.log("[Home] Raw response:", response);
 
-        // Get all products from different possible response structures
-        let allProducts = [];
-        if (response.data?.data?.products) {
-          allProducts = response.data.data.products;
+        // Get products from the response
+        let productsToShow = [];
+        if (response.metadata?.products) {
+          productsToShow = response.metadata.products;
         } else if (response.data?.products) {
-          allProducts = response.data.products;
-        } else if (response.data?.data) {
-          allProducts = Array.isArray(response.data.data)
-            ? response.data.data
-            : [];
-        } else if (Array.isArray(response.data)) {
-          allProducts = response.data;
+          productsToShow = response.data.products;
         } else if (response.products) {
-          allProducts = response.products;
+          productsToShow = response.products;
         }
 
-        console.log("[Home] All products count:", allProducts.length);
-        console.log("[Home] Sample product:", allProducts[0]);
-        console.log(
-          "[Home] Promoted products:",
-          allProducts.filter((p) => p.isPromoted)
-        );
-
-        const promotedProducts = allProducts
-          .filter((p) => p.isPromoted && p.promotionTier)
-          .sort((a, b) => a.promotionTier - b.promotionTier); // Lower tier number = higher priority
-
-        console.log(
-          "[Home] Filtered promoted products count:",
-          promotedProducts.length
-        );
-        console.log("[Home] Promoted products data:", promotedProducts);
-
-        // If no promoted products, fall back to showing all products
-        const productsToShow =
-          promotedProducts.length > 0
-            ? promotedProducts.slice(0, 10)
-            : allProducts.slice(0, 10);
+        console.log("[Home] Top rated & most rented products count:", productsToShow.length);
+        console.log("[Home] Sample product:", productsToShow[0]);
 
         setFeaturedProducts(productsToShow);
       } catch (err) {
@@ -142,6 +115,28 @@ export default function Home() {
     checkScrollability();
     carousel.addEventListener("scroll", checkScrollability);
     return () => carousel.removeEventListener("scroll", checkScrollability);
+  }, [featuredProducts]);
+
+  // Auto-scroll carousel every 4 seconds
+  useEffect(() => {
+    if (!carouselRef.current || featuredProducts.length === 0) return;
+
+    const autoScrollInterval = setInterval(() => {
+      if (carouselRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
+        const cardWidth = 320 + 24; // width + gap
+        
+        // If reached the end, scroll back to start
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          carouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          // Otherwise scroll to next card
+          carouselRef.current.scrollBy({ left: cardWidth, behavior: 'smooth' });
+        }
+      }
+    }, 4000); // Auto-scroll every 4 seconds
+
+    return () => clearInterval(autoScrollInterval);
   }, [featuredProducts]);
 
   // Helper functions
@@ -587,19 +582,13 @@ export default function Home() {
           >
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <span className="text-lg">⭐</span>
-              <span>
-                {featuredProducts.some((p) => p.isPromoted)
-                  ? "TOP PROMOTED"
-                  : t("pages.home.featured.label")}
-              </span>
+              <span>TOP RATED & MOST RENTED</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
               {t("pages.home.featured.title")}
             </h2>
             <p className="text-gray-600 text-lg">
-              {featuredProducts.some((p) => p.isPromoted)
-                ? t("pages.home.featured.promoted_desc")
-                : t("pages.home.featured.description")}
+              {t("pages.home.featured.description")}
             </p>
           </motion.div>
 
@@ -756,15 +745,10 @@ export default function Home() {
                             whileInView={{ opacity: 1 }}
                             transition={{ delay: idx * 0.05 }}
                           />
-
-                          {/* Position indicator */}
-                          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                            #{idx + 1}
-                          </div>
                         </motion.div>
 
                         <div className="p-5">
-                          <motion.div
+                          {/* <motion.div
                             className="flex items-center gap-1 text-sm text-gray-500 mb-2"
                             whileHover={{ x: 3 }}
                             transition={{ duration: 0.2 }}
@@ -773,7 +757,7 @@ export default function Home() {
                             <span className="font-medium">
                               {product.location?.address?.city || "N/A"}
                             </span>
-                          </motion.div>
+                          </motion.div> */}
 
                           <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary-700 transition-colors line-clamp-2 mb-3 h-14">
                             {product.title}

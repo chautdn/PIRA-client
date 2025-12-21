@@ -866,7 +866,9 @@ export default function ProductList() {
                             <span className="text-sm text-gray-500 font-normal">{t("productList.perDay")}</span>
                           </p>
                           <div className="mt-2 text-xs text-gray-500">
-                            {t("productList.from")}: {item.owner?.profile?.fullName || item.owner?.email?.split('@')[0]}
+                            {t("productList.from")}: {item.owner?.profile?.firstName && item.owner?.profile?.lastName
+                              ? `${item.owner.profile.firstName} ${item.owner.profile.lastName}`
+                              : item.owner?.email?.split('@')[0]}
                           </div>
                         </div>
                       </Link>

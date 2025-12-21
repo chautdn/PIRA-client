@@ -74,6 +74,23 @@ const recommendationService = {
       console.error('Error fetching recommended products:', error);
       throw error;
     }
+  },
+
+  /**
+   * Get top rated and most rented products (randomized)
+   */
+  getTopRatedAndMostRented: async (params = {}) => {
+    try {
+      const response = await api.get('/recommendations/top-rated-most-rented', {
+        params: {
+          limit: params.limit || 12
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching top rated and most rented products:', error);
+      throw error;
+    }
   }
 };
 
