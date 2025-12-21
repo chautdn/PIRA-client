@@ -4,6 +4,7 @@ import { useRentalOrder } from "../context/RentalOrderContext";
 import { useAuth } from "../hooks/useAuth";
 import { useI18n } from "../hooks/useI18n";
 import { useEarlyReturn } from "../hooks/useEarlyReturn";
+import useOrderSocket from "../hooks/useOrderSocket";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import rentalOrderService from "../services/rentalOrder";
@@ -65,6 +66,21 @@ const RentalOrderDetailPage = () => {
   const [showCancelPendingModal, setShowCancelPendingModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [extensionRequests, setExtensionRequests] = useState([]);
+
+  // Initialize WebSocket with callbacks to reload extension requests
+  const { isConnected } = useOrderSocket({
+    onExtensionApproved: (data) => {
+      console.log('✅ [RentalOrderDetail] Extension approved, reloading...');
+      fetchExtensionRequests();
+      loadOrderDetail(id);
+    },
+    onExtensionRejected: (data) => {
+      console.log('❌ [RentalOrderDetail] Extension rejected, reloading...');
+      fetchExtensionRequests();
+      loadOrderDetail(id);
+    },
+  });
 
   // Check if this is a payment return
   const payment = searchParams.get("payment");
@@ -174,6 +190,25 @@ const RentalOrderDetailPage = () => {
     }
   };
 
+  // Fetch extension requests for this order
+  const fetchExtensionRequests = async () => {
+    try {
+      const response = await api.get('/extensions/renter-requests');
+      const allRequests = response.data?.data || response.data?.metadata?.requests || [];
+      
+      // Filter requests for this specific master order
+      const filteredRequests = allRequests.filter(
+        (req) => req.masterOrder?._id === id || req.masterOrder === id
+      );
+      
+      console.log('[RentalOrderDetail] Extension requests loaded:', filteredRequests);
+      setExtensionRequests(filteredRequests);
+    } catch (error) {
+      console.error('Failed to fetch extension requests:', error);
+      setExtensionRequests([]);
+    }
+  };
+
   // Fetch early return requests for this order
   const fetchEarlyReturnRequests = async () => {
     if (!currentOrder || !currentOrder._id) return;
@@ -208,9 +243,10 @@ const RentalOrderDetailPage = () => {
     }
   };
 
-  // Load early return requests for this order
+  // Load early return requests and extension requests for this order
   useEffect(() => {
     fetchEarlyReturnRequests();
+    fetchExtensionRequests();
   }, [currentOrder]);
 
   // Open extend modal if action parameter is set
@@ -723,6 +759,16 @@ const RentalOrderDetailPage = () => {
                 }`}
               >
                 {t("rentalOrderDetail.earlyReturnRequests")}
+              </button>
+              <button
+                onClick={() => setActiveTab("extensionRequests")}
+                className={`py-4 px-2 border-b-2 font-medium text-sm ${
+                  activeTab === "extensionRequests"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Yêu Cầu Gia Hạn
               </button>
               <button
                 onClick={() => setActiveTab("timeline")}
@@ -1627,6 +1673,137 @@ const RentalOrderDetailPage = () => {
               </div>
             )}
 
+            {activeTab === "extensionRequests" && (
+              <div className="space-y-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+                    <Calendar className="w-5 h-5 text-orange-600" />
+                    <span>Yêu Cầu Gia Hạn</span>
+                  </h3>
+
+                  {extensionRequests.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p>Chưa có yêu cầu gia hạn nào</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {extensionRequests.map((request) => {
+                        const productData = request.product;
+                        const productDetail = request.productDetail;
+                        const currentEndDate = new Date(productData.currentEndDate);
+                        const newEndDate = new Date(productData.newEndDate);
+
+                        // Determine status display
+                        const getStatusInfo = (status) => {
+                          switch (status) {
+                            case 'PENDING':
+                              return {
+                                label: 'Đang đợi xác nhận',
+                                color: 'bg-yellow-100 text-yellow-800',
+                                icon: '⏳'
+                              };
+                            case 'APPROVED':
+                              return {
+                                label: 'Gia hạn thành công',
+                                color: 'bg-green-100 text-green-800',
+                                icon: '✅'
+                              };
+                            case 'REJECTED':
+                              return {
+                                label: 'Gia hạn thất bại',
+                                color: 'bg-red-100 text-red-800',
+                                icon: '❌'
+                              };
+                            default:
+                              return {
+                                label: status,
+                                color: 'bg-gray-100 text-gray-800',
+                                icon: 'ℹ️'
+                              };
+                          }
+                        };
+
+                        const statusInfo = getStatusInfo(productData.status);
+
+                        return (
+                          <div
+                            key={`${request.extensionId}-${productData.productId}`}
+                            className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
+                          >
+                            <div className="flex items-start space-x-4">
+                              {/* Product Image */}
+                              <div className="flex-shrink-0">
+                                <img
+                                  src={
+                                    productDetail?.thumbnail ||
+                                    productDetail?.images?.[0]?.url ||
+                                    productDetail?.images?.[0] ||
+                                    "/placeholder.jpg"
+                                  }
+                                  alt={productDetail?.name || productData.productName}
+                                  className="w-20 h-20 object-cover rounded-lg"
+                                />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1">
+                                {/* Product Name */}
+                                <h4 className="font-semibold text-gray-900 mb-2">
+                                  {productDetail?.name || productDetail?.title || productData.productName}
+                                </h4>
+
+                                {/* Status Badge */}
+                                <div className="mb-3">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
+                                    <span className="mr-1">{statusInfo.icon}</span>
+                                    {statusInfo.label}
+                                  </span>
+                                </div>
+
+                                {/* Extension Details */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3">
+                                  <div>
+                                    <span className="text-gray-600">Ngày kết thúc hiện tại:</span>
+                                    <p className="font-medium">{currentEndDate.toLocaleDateString('vi-VN')}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600">Ngày kết thúc mới:</span>
+                                    <p className="font-medium text-green-600">{newEndDate.toLocaleDateString('vi-VN')}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600">Số ngày gia hạn:</span>
+                                    <p className="font-bold text-orange-600">{productData.extensionDays} ngày</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600">Phí gia hạn:</span>
+                                    <p className="font-bold text-blue-600">{productData.extensionFee?.toLocaleString('vi-VN')} đ</p>
+                                  </div>
+                                </div>
+
+                                {/* Rejection Reason */}
+                                {productData.status === 'REJECTED' && productData.rejectionReason && (
+                                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                    <p className="text-sm font-medium text-red-800 mb-1">Lý do từ chối:</p>
+                                    <p className="text-sm text-red-700">{productData.rejectionReason}</p>
+                                  </div>
+                                )}
+
+                                {/* Created At */}
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Tạo lúc: {new Date(request.createdAt).toLocaleString('vi-VN')}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === "timeline" && (
               <div className="space-y-4">
                 <div className="space-y-4">
@@ -1912,6 +2089,7 @@ const RentalOrderDetailPage = () => {
           onSuccess={() => {
             setShowExtendRentalModal(false);
             loadOrderDetail(id);
+            fetchExtensionRequests();
           }}
         />
       )}

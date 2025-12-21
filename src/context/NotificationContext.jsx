@@ -24,7 +24,7 @@ const notificationReducer = (state, action) => {
       return {
         ...state,
         notifications: [action.payload, ...state.notifications],
-        unreadCount: state.unreadCount + 1,
+        // Don't increment locally - will be updated by notification:count event from server
       };
     case "MARK_AS_READ":
       return {
@@ -107,29 +107,39 @@ export const NotificationProvider = ({ children }) => {
 
   // Listen for real-time notification updates
   useEffect(() => {
-    if (!socket || !isAuthenticated) return;
+    console.log('[NotificationContext] Socket listener effect triggered', {
+      hasSocket: !!socket,
+      isAuthenticated,
+      socketConnected: socket?.connected
+    });
+
+    if (!socket || !isAuthenticated) {
+      console.log('[NotificationContext] ❌ Not setting up listeners - socket or auth missing');
+      return;
+    }
+
+    console.log('[NotificationContext] ✅ Setting up socket listeners...');
 
     const handleNewNotification = (data) => {
-      console.log("📬 New notification received:", data);
+      console.log("📬 [NotificationContext] New notification received:", data);
       dispatch({ type: "ADD_NOTIFICATION", payload: data.notification });
-      // Also refresh unread count
-      fetchUnreadCount();
+      // Count will be updated via notification:count event from server
     };
 
     const handleNotificationCount = (data) => {
-      console.log("🔔 Notification count update:", data);
+      console.log("🔔 [NotificationContext] Notification count update:", data);
       dispatch({ type: "SET_UNREAD_COUNT", payload: data.unreadCount });
     };
 
     socket.on("notification:new", handleNewNotification);
     socket.on("notification:count", handleNotificationCount);
 
-    console.log("✅ Notification socket listeners registered");
+    console.log("✅ [NotificationContext] Notification socket listeners registered");
 
     return () => {
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:count", handleNotificationCount);
-      console.log("🔌 Notification socket listeners removed");
+      console.log("🔌 [NotificationContext] Notification socket listeners removed");
     };
   }, [socket, isAuthenticated]);
 

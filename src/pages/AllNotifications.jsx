@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Bell, Trash2, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNotification } from "../hooks/useNotification";
+import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
 const AllNotifications = () => {
+  const navigate = useNavigate();
   const {
     notifications,
     unreadCount,
@@ -31,8 +33,17 @@ const AllNotifications = () => {
   }, [currentPage, selectedType, selectedStatus]);
 
   const handleNotificationClick = async (notification) => {
+    // Mark as read
     if (notification.status !== "READ") {
       await markAsRead(notification._id);
+    }
+    
+    // Navigate if actions exist
+    if (notification.actions && notification.actions.length > 0) {
+      const action = notification.actions[0]; // Use first action
+      if (action.url) {
+        navigate(action.url);
+      }
     }
   };
 

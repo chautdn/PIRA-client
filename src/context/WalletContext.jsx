@@ -180,7 +180,20 @@ export const WalletProvider = ({ children }) => {
 
     const handleWalletUpdate = (data) => {
       if (data.type === "balance_updated") {
-        dispatch({ type: "SET_BALANCE", payload: data.newBalance });
+        // Ensure newBalance is properly formatted
+        const balanceData = data.newBalance || {};
+        const available = Number(balanceData.available) || 0;
+        const frozen = Number(balanceData.frozen) || 0;
+        const display = Number(balanceData.balance) || Number(balanceData.display) || (available + frozen);
+        
+        dispatch({ 
+          type: "SET_BALANCE", 
+          payload: {
+            available,
+            frozen,
+            display
+          }
+        });
         // Silently update balance - toast is shown by TopUpSuccess page
       }
 

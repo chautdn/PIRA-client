@@ -66,14 +66,36 @@ export default function ShipmentsCalendar() {
       }
     };
 
+    const handleScheduleUpdated = (data) => {
+      console.log('📅 [ShipmentsCalendar] Schedule updated event received:', data);
+      
+      // Show toast notification
+      const toast = require('react-hot-toast').default;
+      toast.success(
+        `📅 Lịch trình cập nhật: ${data.productName || 'Sản phẩm'} - gia hạn ${data.extensionDays || 0} ngày`,
+        { duration: 5000 }
+      );
+      
+      // Update shipment scheduledAt in state for real-time UI update
+      setShipments(prevShipments => 
+        prevShipments.map(s => 
+          s._id === data.shipmentId 
+            ? { ...s, scheduledAt: data.newScheduledAt }
+            : s
+        )
+      );
+    };
+
     socket.on('shipment:created', handleShipmentCreated);
     socket.on('notification:new', handleNotification);
+    socket.on('shipment:scheduleUpdated', handleScheduleUpdated);
     
     console.log('✅ [ShipmentsCalendar] Socket listeners registered');
 
     return () => {
       socket.off('shipment:created', handleShipmentCreated);
       socket.off('notification:new', handleNotification);
+      socket.off('shipment:scheduleUpdated', handleScheduleUpdated);
       console.log('🔌 [ShipmentsCalendar] Socket listeners removed');
     };
   }, [socket, connected]);
