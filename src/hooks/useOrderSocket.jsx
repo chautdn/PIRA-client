@@ -275,6 +275,8 @@ const useOrderSocket = (callbacks = {}) => {
     }, []),
   };
 
+  const finalCallbacks = { ...defaultCallbacks, ...callbacks };
+
   // Initialize socket connection
   const initSocket = useCallback(() => {
     if (!user?._id) {
