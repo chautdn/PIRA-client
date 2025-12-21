@@ -25,22 +25,18 @@ const DisputeList = () => {
   const { isConnected } = useDisputeSocket({
     onDisputeCreated: () => {
       // Reload list khi có dispute mới
-      console.log('📡 [Socket] New dispute, reloading list...');
       loadMyDisputes(filters);
     },
     onDisputeStatusChanged: () => {
       // Reload list khi status thay đổi
-      console.log('📡 [Socket] Status changed, reloading list...');
       loadMyDisputes(filters);
     },
     onResponseReceived: () => {
       // Reload list khi nhận phản hồi
-      console.log('📡 [Socket] Response received, reloading list...');
       loadMyDisputes(filters);
     },
     onDisputeCompleted: () => {
       // Reload list khi dispute hoàn thành
-      console.log('📡 [Socket] Dispute completed, reloading list...');
       loadMyDisputes(filters);
     }
   });

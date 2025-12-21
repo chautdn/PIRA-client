@@ -56,7 +56,6 @@ const WithdrawalManagement = () => {
     if (!socket) return;
 
     const handleSystemWalletUpdate = (data) => {
-      console.log("💰 System wallet update received:", data);
       setSystemWallet((prev) => ({
         ...prev,
         balance: data.balance,
@@ -65,14 +64,12 @@ const WithdrawalManagement = () => {
     };
 
     const handleWithdrawalRequested = (data) => {
-      console.log("📥 New withdrawal request received:", data);
       toast.success("Có yêu cầu rút tiền mới!");
       // Refresh the withdrawals list
       fetchWithdrawals();
     };
 
     const handleWithdrawalUpdated = (data) => {
-      console.log("🔄 Withdrawal updated:", data);
       // Refresh the withdrawals list
       fetchWithdrawals();
     };
@@ -92,11 +89,8 @@ const WithdrawalManagement = () => {
     try {
       setLoadingWallet(true);
       const result = await adminService.getSystemWallet();
-      console.log("🏦 System wallet fetched:", result);
-      console.log("💰 Balance data:", result?.balance);
       setSystemWallet(result);
     } catch (error) {
-      console.error("Error fetching system wallet:", error);
       toast.error("Không thể tải số dư ví hệ thống");
     } finally {
       setLoadingWallet(false);
@@ -115,7 +109,6 @@ const WithdrawalManagement = () => {
       setWithdrawals(result.withdrawals || []);
       setPagination(result.pagination || {});
     } catch (error) {
-      console.error("Error fetching withdrawals:", error);
       toast.error("Không thể tải danh sách rút tiền");
     } finally {
       setLoading(false);

@@ -26,7 +26,6 @@ const AdminBankDetail = () => {
     try {
       setLoading(true);
       const response = await adminService.getBankAccountById(userId);
-      console.log('Bank Account Detail Response:', response);
       setUser(response);
     } catch (error) {
       console.error('Error loading bank account detail:', error);

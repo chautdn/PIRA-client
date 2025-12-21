@@ -130,10 +130,7 @@ const AdminDisputeDetail = () => {
       const dataDisputeNumber = data.disputeNumber?.toString();
       const currentId = currentDispute?._id?.toString();
       
-      console.log('📡 [Socket] onNewEvidence received:', { dataDisputeId, dataDisputeNumber, disputeId, currentId });
-      
       if (disputeId && (dataDisputeId === disputeId || dataDisputeNumber === disputeId || currentId === dataDisputeId)) {
-        console.log('📡 [Socket] New evidence matched, reloading dispute detail...');
         loadDisputeDetail(disputeId);
         toast.info('Có bằng chứng mới được upload!', { duration: 4000 });
       }
@@ -144,10 +141,7 @@ const AdminDisputeDetail = () => {
       const dataDisputeNumber = data.disputeNumber?.toString();
       const currentId = currentDispute?._id?.toString();
       
-      console.log('📡 [Socket] onDisputeStatusChanged received:', { dataDisputeId, dataDisputeNumber, disputeId, currentId, status: data.status });
-      
       if (disputeId && (dataDisputeId === disputeId || dataDisputeNumber === disputeId || currentId === dataDisputeId)) {
-        console.log('📡 [Socket] Status changed matched, reloading dispute detail...');
         loadDisputeDetail(disputeId);
       }
     },
@@ -157,10 +151,7 @@ const AdminDisputeDetail = () => {
       const dataDisputeNumber = data.disputeNumber?.toString();
       const currentId = currentDispute?._id?.toString();
       
-      console.log('📡 [Socket] onDisputeCompleted received:', { dataDisputeId, dataDisputeNumber, disputeId, currentId });
-      
       if (disputeId && (dataDisputeId === disputeId || dataDisputeNumber === disputeId || currentId === dataDisputeId)) {
-        console.log('📡 [Socket] Dispute completed matched, reloading dispute detail...');
         loadDisputeDetail(disputeId);
         toast.success('Khiếu nại đã được giải quyết!', { duration: 4000 });
       }
@@ -919,7 +910,6 @@ const AdminDisputeDetail = () => {
             // Reload dispute detail
             loadDisputeDetail(disputeId);
           } catch (error) {
-            console.error('Admin review error:', error);
             toast.error(error.response?.data?.message || 'Không thể gửi quyết định');
           }
         }}
@@ -1008,7 +998,6 @@ const AdminDisputeDetail = () => {
                     setRejectReason('');
                     loadDisputeDetail(disputeId);
                   } catch (error) {
-                    console.error('Reject evidence error:', error);
                     toast.error(error.response?.data?.message || 'Không thể từ chối bằng chứng');
                   } finally {
                     setIsRejecting(false);

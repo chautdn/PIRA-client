@@ -70,17 +70,13 @@ export const WalletProvider = ({ children }) => {
     dispatch({ type: "SET_LOADING", payload: true });
     try {
       const response = await api.get("/payment/wallet/balance");
-      console.log("=== Wallet API Response ===", response.data);
 
       // API returns data in metadata field
       const balanceData = response.data?.metadata || {};
-      console.log("Balance data:", balanceData);
-
+      
       const available = Number(balanceData.available) || 0;
       const frozen = Number(balanceData.frozen) || 0;
       const display = Number(balanceData.balance) || (available + frozen);
-
-      console.log("Final: available=", available, "frozen=", frozen, "display=", display);
 
       dispatch({
         type: "SET_BALANCE",
@@ -96,7 +92,6 @@ export const WalletProvider = ({ children }) => {
         error.message ||
         "Failed to fetch wallet balance";
       dispatch({ type: "SET_ERROR", payload: errorMessage });
-      console.error("Wallet fetch error:", error);
       toast.error(errorMessage);
     } finally {
       dispatch({ type: "SET_LOADING", payload: false });
@@ -193,7 +188,6 @@ export const WalletProvider = ({ children }) => {
     };
 
     const handleExtensionApproved = (data) => {
-      console.log('✅ Extension approved:', data);
       toast.success(data.message || 'Yêu cầu gia hạn được chấp nhận', {
         duration: 5000,
       });
@@ -202,7 +196,6 @@ export const WalletProvider = ({ children }) => {
     };
 
     const handleExtensionRejected = (data) => {
-      console.log('❌ Extension rejected:', data);
       toast.error(data.message || 'Yêu cầu gia hạn bị từ chối', {
         duration: 5000,
       });

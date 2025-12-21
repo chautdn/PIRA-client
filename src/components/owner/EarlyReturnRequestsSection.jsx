@@ -41,33 +41,21 @@ const EarlyReturnRequestsSection = () => {
   const fetchEarlyReturnRequests = async () => {
     try {
       setLoading(true);
-      console.log("[EarlyReturnRequestsSection] Fetching owner requests...");
       const response = await earlyReturnApi.getOwnerRequests({
         page: 1,
         limit: 50,
       });
-
-      console.log("[EarlyReturnRequestsSection] API response:", response);
 
       // Check both data.requests and metadata.requests for compatibility
       const requests =
         response.data?.requests || response.metadata?.requests || [];
 
       if (requests.length > 0) {
-        console.log(
-          "[EarlyReturnRequestsSection] Setting requests:",
-          requests.length
-        );
         setRequests(requests);
       } else {
-        console.log("[EarlyReturnRequestsSection] No requests found");
         setRequests([]);
       }
     } catch (error) {
-      console.error(
-        "[EarlyReturnRequestsSection] Error fetching requests:",
-        error
-      );
       setRequests([]);
       // Don't show error toast if it's just empty or not found
       if (error.response?.status !== 404) {
@@ -96,7 +84,6 @@ const EarlyReturnRequestsSection = () => {
       });
       fetchEarlyReturnRequests();
     } catch (error) {
-      console.error("Confirm return error:", error);
       toast.error(
         error.response?.data?.message || "Có lỗi xảy ra khi xác nhận"
       );

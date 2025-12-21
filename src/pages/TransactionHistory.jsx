@@ -38,7 +38,7 @@ const TransactionHistory = () => {
       const response = await paymentService.getTransactionHistory(filter);
       setTransactions(response.metadata?.transactions || []);
     } catch (error) {
-      console.error('Error loading transactions:', error);
+      // Error handled silently
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ const TransactionHistory = () => {
       const response = await paymentService.getWalletBalance();
       setWalletBalance(response.metadata?.balance || 0);
     } catch (error) {
-      console.error('Error loading wallet balance:', error);
+      // Error handled silently
     }
   };
 

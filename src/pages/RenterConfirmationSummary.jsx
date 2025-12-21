@@ -56,7 +56,6 @@ const RenterConfirmationSummary = () => {
   }, [data]);
 
   const handleRenterDecision = async (decision, result) => {
-    console.log('Renter decision:', decision, result);
     setShowPartialDecisionModal(false);
     setPartialDecisionSubOrder(null);
     
@@ -78,17 +77,12 @@ const RenterConfirmationSummary = () => {
     try {
       setLoading(true);
       const response = await rentalOrderService.getConfirmationSummary(masterOrderId);
-      
-      console.log('🔍 Confirmation Summary Response:', response);
-      
+
       // Backend trả về: { data: { metadata: { masterOrderNumber, status, ... } } }
       const actualData = response.data?.metadata || response.metadata || response.data || response;
-      
-      console.log('🔍 Actual data extracted:', actualData);
-      
+
       setData(actualData);
     } catch (error) {
-      console.error('Error loading confirmation summary:', error);
       toast.error(error.message);
       navigate('/rental-orders');
     } finally {
@@ -109,7 +103,6 @@ const RenterConfirmationSummary = () => {
       setShowRejectModal(false);
       setRejectingSubOrder(null);
     } catch (error) {
-      console.error('Error rejecting SubOrder:', error);
       toast.error(error.response?.data?.message || t('renterConfirmationSummary.rejectError'));
     } finally {
       setLoading(false);
@@ -131,7 +124,6 @@ const RenterConfirmationSummary = () => {
       setCancelReason('');
       await loadConfirmationSummary();
     } catch (error) {
-      console.error('Error cancelling pending order:', error);
       toast.error(error.message || 'Không thể hủy đơn hàng');
     } finally {
       setLoading(false);
@@ -147,7 +139,6 @@ const RenterConfirmationSummary = () => {
   }
 
   if (!data) {
-    console.log('⚠️ No data available, data state:', data);
     return (
       <div className="max-w-6xl mx-auto p-6">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -163,16 +154,7 @@ const RenterConfirmationSummary = () => {
     );
   }
 
-  console.log('✅ Rendering with data:', data);
-
   const { masterOrderNumber, status, confirmationSummary = {}, subOrders = [] } = data;
-  
-  console.log('📊 Parsed data:', {
-    masterOrderNumber,
-    status,
-    confirmationSummary,
-    subOrdersCount: subOrders.length
-  });
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -493,14 +475,6 @@ const RenterConfirmationSummary = () => {
                 {/* Contract Link and Actions */}
                 {confirmedProducts.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-gray-200">
-                    {console.log('🔍 SubOrder contract info:', {
-                      subOrderId: subOrder._id,
-                      subOrderNumber: subOrder.subOrderNumber,
-                      contract: subOrder.contract,
-                      contractStatus: subOrder.contractStatus,
-                      status: subOrder.status
-                    })}
-                    
                     {/* Warning for partially confirmed orders */}
                     {subOrder.status === 'PARTIALLY_CONFIRMED' && rejectedProducts.length > 0 && (
                       <div className="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
@@ -530,7 +504,6 @@ const RenterConfirmationSummary = () => {
                       {subOrder.contract ? (
                         <button
                           onClick={() => {
-                            console.log('📄 Navigating to contract:', subOrder.contract);
                             navigate(`/rental-orders/contracts?contractId=${subOrder.contract}`);
                           }}
                           className="flex-1 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"

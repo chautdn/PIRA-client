@@ -19,15 +19,12 @@ export default function ManageShipmentModal({ isOpen, onClose, subOrder, masterO
     setLoadingShippers(true);
     try {
       const response = await ShipmentService.getAvailableShippers?.();
-      console.log('📡 Full API Response:', response);
       
       // Response structure: { status: 'success', data: [...] }
       const shipperList = Array.isArray(response?.data) ? response.data : [];
-      console.log(`✅ Loaded ${shipperList.length} shippers:`, shipperList);
       
       setShippers(shipperList);
     } catch (err) {
-      console.error('❌ Error loading shippers:', err.message);
       setShippers([]);
     } finally {
       setLoadingShippers(false);
@@ -61,7 +58,6 @@ export default function ManageShipmentModal({ isOpen, onClose, subOrder, masterO
       onSuccess && onSuccess(res.data);
       onClose && onClose();
     } catch (err) {
-      console.error('Create shipment failed', err.message);
       toast.error(err.message || 'Không thể gửi yêu cầu');
       setLoading(false);
     }
@@ -102,8 +98,6 @@ export default function ManageShipmentModal({ isOpen, onClose, subOrder, masterO
                       `${shipper?.profile?.firstName || ''} ${shipper?.profile?.lastName || ''}`.trim() ||
                       shipper?.email ||
                       `Shipper #${idx}`;
-                    
-                    console.log(`Shipper ${idx}:`, { shipper, displayName });
                     
                     return (
                       <option key={shipper._id || idx} value={shipper._id}>

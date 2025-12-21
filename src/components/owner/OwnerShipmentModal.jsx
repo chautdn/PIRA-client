@@ -18,9 +18,6 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
   const loadShipments = async () => {
     setLoading(true);
     try {
-      console.log('📦 SubOrder shipments:', subOrder?.shipments);
-      console.log('📦 MasterOrder shipments:', masterOrder?.shipments);
-      
       // Thử lấy shipment từ subOrder hoặc masterOrder
       let shipmentList = [];
       
@@ -30,12 +27,9 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
         shipmentList = masterOrder.shipments;
       }
       
-      console.log('📦 All shipments from order:', shipmentList);
-      
       // Nếu không có từ order, thử từ API
       if (shipmentList.length === 0) {
         const response = await ShipmentService.getShipmentsByMasterOrder?.(masterOrder._id);
-        console.log('📦 Shipments from API:', response);
         
         if (Array.isArray(response)) {
           shipmentList = response;
@@ -46,14 +40,10 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
         }
       }
       
-      console.log('📦 All shipments:', shipmentList);
-      
       // Lọc RETURN shipments (hàng được trả về từ người thuê)
       const returnShipments = shipmentList.filter(s => s.type === 'RETURN');
-      console.log('📦 Filtered return shipments:', returnShipments);
       setShipments(returnShipments);
     } catch (err) {
-      console.error('Error loading shipments:', err);
       // Không hiển thị error toast nếu API fail, vì shipment có thể chưa được tạo
       setShipments([]);
     } finally {
@@ -78,7 +68,6 @@ export default function OwnerShipmentModal({ isOpen, onClose, subOrder, masterOr
       
       onClose();
     } catch (err) {
-      console.error('Error confirming shipment:', err.message);
       toast.error(err.response?.data?.message || 'Không thể xác nhận đã nhận hàng');
     } finally {
       setConfirming(false);

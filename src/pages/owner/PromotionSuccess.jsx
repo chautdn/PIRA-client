@@ -41,9 +41,6 @@ const PromotionSuccess = () => {
         const promotionResult =
           response.data?.metadata || response.data?.data || response.data;
 
-        console.log("Full API response:", response.data);
-        console.log("Promotion verification result:", promotionResult);
-
         // ✅ If promotion is active, show toast
         if (
           promotionResult?.isActive &&

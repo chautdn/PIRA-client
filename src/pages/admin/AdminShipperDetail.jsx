@@ -36,21 +36,13 @@ const AdminShipperDetail = () => {
       setLoading(true);
       setError(null);
 
-      console.log('📦 Loading shipper data for ID:', shipperId);
-
       // Get shipper details from API
       const shipperData = await adminService.getShipperById(shipperId);
-      console.log('✅ Shipper data received:', shipperData);
       
       if (shipperData) {
         setShipper(shipperData);
         setShipments(shipperData.recentShipments || []);
         
-        console.log('📊 Recent shipments:', shipperData.recentShipments?.length || 0);
-        if (shipperData.recentShipments?.[0]) {
-          console.log('📦 First shipment sample:', shipperData.recentShipments[0]);
-          console.log('🛍️ Products in first shipment:', shipperData.recentShipments[0].products);
-        }
         
         // Calculate stats from recent shipments
         const today = new Date();
@@ -68,14 +60,11 @@ const AdminShipperDetail = () => {
           totalFailed: shipperData.failedShipments || 0
         };
         
-        console.log('📈 Calculated stats:', calculatedStats);
         setStats(calculatedStats);
       } else {
-        console.error('❌ No shipper data received');
         setError('Không tìm thấy shipper');
       }
     } catch (err) {
-      console.error('❌ Error loading shipper data:', err);
       setError(err.message || 'Lỗi tải dữ liệu');
     } finally {
       setLoading(false);

@@ -387,11 +387,6 @@ const RentalOrderForm = () => {
 
         // Calculate shipping for each SubOrder (Owner) separately
         for (const [ownerId, group] of Object.entries(updatedGroups)) {
-          console.log(
-            `🚚 Calculating shipping for Owner ${ownerId}:`,
-            group.products.length,
-            "products"
-          );
 
           // Group this owner's products by delivery date
           const deliveryBatches = {};
@@ -420,13 +415,11 @@ const RentalOrderForm = () => {
             latitude: group.owner.address?.coordinates?.latitude || null,
             longitude: group.owner.address?.coordinates?.longitude || null,
           };
-          console.log("Owner Location:", ownerLocation);
 
           const userLocation = {
             latitude: orderData.deliveryAddress.latitude || null,
             longitude: orderData.deliveryAddress.longitude || null,
           };
-          console.log("User Location:", userLocation);
 
           // Kiểm tra tọa độ - KHÔNG fallback, báo lỗi rõ ràng
           if (!ownerLocation.latitude || !ownerLocation.longitude) {
@@ -471,12 +464,6 @@ const RentalOrderForm = () => {
               },
               products,
             };
-
-            console.log(
-              `🚚 Calculating batch shipping for ${deliveryDate}:`,
-              products.length,
-              "products"
-            );
 
             const shippingResponse = await calculateShipping(shippingData);
 
@@ -537,11 +524,6 @@ const RentalOrderForm = () => {
             subOrderTotalShipping += batchFinalFee;
             subOrderOriginalShipping += originalBatchFee;
 
-            console.log(
-              `✅ Delivery batch ${deliveryDate} - Owner ${
-                group.owner.profile?.firstName
-              }: ${batchFinalFee.toLocaleString("vi-VN")}đ (original: ${originalBatchFee.toLocaleString("vi-VN")}đ) - ${shipping.distance.toFixed(2)}km - ${batchProducts.length} products`
-            );
           }
 
           // Update SubOrder shipping info
@@ -557,11 +539,6 @@ const RentalOrderForm = () => {
           masterTotalShipping += subOrderTotalShipping;
           masterOriginalShipping += subOrderOriginalShipping;
 
-          console.log(
-            `📦 SubOrder ${ownerId} total: ${subOrderTotalShipping.toLocaleString(
-              "vi-VN"
-            )}đ (original: ${subOrderOriginalShipping.toLocaleString("vi-VN")}đ) - ${deliveryCount} deliveries`
-          );
         }
 
         // Update state with calculated shipping fees
@@ -582,7 +559,6 @@ const RentalOrderForm = () => {
           )}đ cho ${Object.keys(updatedGroups).length} SubOrder`
         );
       } catch (error) {
-        console.error("❌ Error in trip-based shipping calculation:", error);
         toast.error(`Lỗi tính phí ship: ${error.message}`);
       }
     };
@@ -669,9 +645,6 @@ const RentalOrderForm = () => {
           case "WALLET":
             // For wallet payment, let the order creation handle the deduction
             // No separate payment processing needed - avoid double deduction
-            console.log(
-              "💳 Wallet payment selected - skipping separate payment processing to avoid double deduction"
-            );
             paymentResult = {
               method: "WALLET",
               status: "PENDING",
@@ -752,10 +725,6 @@ const RentalOrderForm = () => {
           }),
         };
 
-        console.log(
-          "📤 Creating order after successful payment:",
-          orderWithPayment
-        );
         const paidOrder = await createPaidOrder(orderWithPayment);
 
         if (!paidOrder || !paidOrder._id) {
@@ -769,10 +738,6 @@ const RentalOrderForm = () => {
           (paymentMethod === "PAYOS" || paymentMethod === "BANK_TRANSFER") &&
           paidOrder.paymentInfo?.paymentDetails?.paymentUrl
         ) {
-          console.log(
-            "🔗 Redirecting to PayOS payment:",
-            paidOrder.paymentInfo.paymentDetails.paymentUrl
-          );
 
           // Save order info to sessionStorage for later use
           sessionStorage.setItem(
@@ -795,10 +760,6 @@ const RentalOrderForm = () => {
           paymentMethod === "COD" &&
           paidOrder.paymentInfo?.paymentDetails?.depositPaymentUrl
         ) {
-          console.log(
-            "🔗 Redirecting to PayOS deposit payment:",
-            paidOrder.paymentInfo.paymentDetails.depositPaymentUrl
-          );
 
           // Save order info to sessionStorage
           sessionStorage.setItem(
@@ -863,7 +824,6 @@ const RentalOrderForm = () => {
           },
         });
       } catch (error) {
-        console.error("Lỗi xử lý thanh toán:", error);
         alert(`Có lỗi xảy ra: ${error.message}. Vui lòng thử lại.`);
       }
     };
@@ -875,7 +835,6 @@ const RentalOrderForm = () => {
         const totalDeposit = await calculateTotalDeposit();
 
         if (!totalDeposit || totalDeposit <= 0) {
-          console.error("❌ Invalid deposit amount:", totalDeposit);
           throw new Error(
             `Không thể tính được tiền cọc cho đơn hàng này. Deposit calculated: ${totalDeposit}`
           );
@@ -928,7 +887,6 @@ const RentalOrderForm = () => {
           )}đ thanh toán khi nhận hàng`,
         };
       } catch (error) {
-        console.error("❌ COD deposit payment error:", error);
         return {
           method: "COD",
           status: "FAILED",
@@ -953,31 +911,18 @@ const RentalOrderForm = () => {
           throw new Error("Invalid response format from deposit API");
         }
       } catch (error) {
-        console.error("❌ Error calculating deposit from API:", error);
 
         // Fallback to client-side calculation
-        console.log("🔄 Falling back to client-side deposit calculation");
         const items = fromCart
           ? selectedItems
           : directRentalData
           ? [directRentalData]
           : [];
 
-        console.log("📋 Items for deposit calculation:", {
-          fromCart,
-          selectedItems: selectedItems?.length || 0,
-          directRentalData: !!directRentalData,
-          totalItems: items.length,
-          cartItems: cartItems?.length || 0,
-        });
-
         // If no items found, try to get from cartItems as last resort
         const finalItems = items.length > 0 ? items : cartItems || [];
 
         if (finalItems.length === 0) {
-          console.error(
-            "❌ No items found for deposit calculation in any source"
-          );
           throw new Error("Không có sản phẩm nào để tính tiền cọc");
         }
 
@@ -1023,7 +968,6 @@ const RentalOrderForm = () => {
     // Process PayOS payment with real API
     const processPayOSPayment = async (method, amount) => {
       try {
-        console.log("🏦 Processing PayOS payment for amount:", amount);
 
         // This will be handled by createPaidOrder - just return pending status
         // The actual PayOS payment link will be in the order response
@@ -1033,7 +977,6 @@ const RentalOrderForm = () => {
           message: "Đang tạo link thanh toán PayOS",
         };
       } catch (error) {
-        console.error("❌ PayOS payment error:", error);
         return {
           method: method,
           status: "FAILED",
@@ -1876,7 +1819,6 @@ const RentalOrderForm = () => {
       </div>
     );
   } catch (error) {
-    console.error("RentalOrderForm Error:", error);
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">

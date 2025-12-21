@@ -70,7 +70,7 @@ const RescheduleRequestModal = ({ isOpen, onClose, dispute }) => {
       await proposeReschedule(dispute._id, formData);
       onClose();
     } catch (error) {
-      console.error('Submit reschedule error:', error);
+      // Handle error silently
     } finally {
       setIsSubmitting(false);
     }
@@ -181,7 +181,6 @@ const RescheduleRequestModal = ({ isOpen, onClose, dispute }) => {
               onChange={(e) => {
                 const files = Array.from(e.target.files);
                 // In real app, upload files and get URLs
-                console.log('Selected files:', files);
                 handleEvidenceChange('photos', files.map(f => f.name));
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

@@ -22,11 +22,6 @@ const NotificationBell = () => {
     fetchNotifications,
   } = useNotification();
 
-  // Debug log
-  useEffect(() => {
-    console.log('🔔 [NotificationBell] unreadCount changed:', unreadCount);
-  }, [unreadCount]);
-
   // Refresh notifications when dropdown opens
   useEffect(() => {
     if (isOpen) {

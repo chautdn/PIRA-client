@@ -28,7 +28,6 @@ const AdminDisputeManagement = () => {
       const response = await disputeApi.adminGetAllDisputes(filters);
       setDisputes(response.data?.disputes || []);
     } catch (error) {
-      console.error('Load disputes error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -39,28 +38,23 @@ const AdminDisputeManagement = () => {
       const response = await disputeApi.adminGetStatistics();
       setStatistics(response.data?.statistics || null);
     } catch (error) {
-      console.error('Load statistics error:', error);
     }
   }, []);
 
   // Initialize socket for realtime updates
   const { isConnected } = useDisputeSocket({
     onDisputeCreated: () => {
-      console.log('📡 [Socket] New dispute, reloading list...');
       loadDisputes();
       loadStatistics();
     },
     onNewEvidence: () => {
-      console.log('📡 [Socket] New evidence, reloading list...');
       loadDisputes();
     },
     onDisputeStatusChanged: () => {
-      console.log('📡 [Socket] Status changed, reloading list...');
       loadDisputes();
       loadStatistics();
     },
     onDisputeCompleted: () => {
-      console.log('📡 [Socket] Dispute completed, reloading list...');
       loadDisputes();
       loadStatistics();
     }

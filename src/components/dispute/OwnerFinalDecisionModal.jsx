@@ -20,14 +20,11 @@ const OwnerFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
 
     try {
       setIsSubmitting(true);
-      console.log('🔄 Submitting owner decision:', decision.trim());
       const result = await submitOwnerFinalDecision(dispute._id, { decision: decision.trim() });
-      console.log('✅ Owner decision submitted successfully:', result);
       toast.success('Đã đưa ra quyết định cuối cùng, chờ Renter phản hồi');
       setDecision('');
       onClose();
     } catch (error) {
-      console.error('❌ Submit owner decision error:', error);
       toast.error(error.message || 'Không thể gửi quyết định');
     } finally {
       setIsSubmitting(false);

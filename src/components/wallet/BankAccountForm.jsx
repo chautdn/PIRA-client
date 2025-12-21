@@ -15,16 +15,12 @@ const BankAccountFormInner = ({
 }) => {
   const renderCount = useRef(0);
   renderCount.current += 1;
-  console.log("🔄 BankAccountForm render #", renderCount.current, {
-    existingAccount,
-  });
 
   // Check if existingAccount has actual data (not just empty object)
   const hasExistingAccount = Boolean(existingAccount?.accountNumber);
 
   // Initialize state with lazy initialization function - ONLY RUNS ONCE
   const [formState, setFormState] = useState(() => {
-    console.log("🎬 Initializing state with:", existingAccount);
     return {
       bankCode: existingAccount?.bankCode || "",
       accountNumber: existingAccount?.accountNumber || "",
@@ -36,10 +32,8 @@ const BankAccountFormInner = ({
   const [loading, setLoading] = useState(false);
 
   const handleChange = (field, value) => {
-    console.log("📝 Field change:", field, "=", value);
     setFormState((prev) => {
       const newState = { ...prev, [field]: value };
-      console.log("✅ New state:", newState);
       return newState;
     });
     if (errors[field]) {
@@ -101,7 +95,6 @@ const BankAccountFormInner = ({
       const errorMessage =
         error.response?.data?.message || "Không thể lưu tài khoản ngân hàng";
       toast.error(errorMessage);
-      console.error("Bank account error:", error);
     } finally {
       setLoading(false);
     }

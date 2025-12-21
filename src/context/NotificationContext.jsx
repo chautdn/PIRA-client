@@ -95,13 +95,9 @@ export const NotificationProvider = ({ children }) => {
 
   // Fetch notifications on mount
   useEffect(() => {
-    console.log('🔍 [NotificationContext] useEffect triggered - isAuthenticated:', isAuthenticated, 'user:', user?._id);
     if (isAuthenticated && user) {
-      console.log('✅ [NotificationContext] User authenticated, fetching notifications and unread count');
       fetchNotifications();
       fetchUnreadCount();
-    } else {
-      console.log('❌ [NotificationContext] User not authenticated or user is null');
     }
   }, [isAuthenticated, user]);
 
@@ -110,26 +106,21 @@ export const NotificationProvider = ({ children }) => {
     if (!socket || !isAuthenticated) return;
 
     const handleNewNotification = (data) => {
-      console.log("📬 New notification received:", data);
       dispatch({ type: "ADD_NOTIFICATION", payload: data.notification });
       // Also refresh unread count
       fetchUnreadCount();
     };
 
     const handleNotificationCount = (data) => {
-      console.log("🔔 Notification count update:", data);
       dispatch({ type: "SET_UNREAD_COUNT", payload: data.unreadCount });
     };
 
     socket.on("notification:new", handleNewNotification);
     socket.on("notification:count", handleNotificationCount);
 
-    console.log("✅ Notification socket listeners registered");
-
     return () => {
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:count", handleNotificationCount);
-      console.log("🔌 Notification socket listeners removed");
     };
   }, [socket, isAuthenticated]);
 
@@ -141,25 +132,18 @@ export const NotificationProvider = ({ children }) => {
         limit,
         filters
       );
-      console.log("📋 Fetched notifications:", result);
       dispatch({ type: "SET_NOTIFICATIONS", payload: result });
     } catch (error) {
-      console.error("❌ Error fetching notifications:", error);
       dispatch({ type: "SET_ERROR", payload: error.message });
     }
   };
 
   const fetchUnreadCount = async () => {
-    console.log('🚀 [NotificationContext] fetchUnreadCount CALLED');
     try {
-      console.log('🌐 [NotificationContext] About to call notificationService.getUnreadCount()');
       const count = await notificationService.getUnreadCount();
-      console.log('🔢 [NotificationContext] Unread count fetched:', count);
-      console.log('🔢 [NotificationContext] Dispatching SET_UNREAD_COUNT');
       dispatch({ type: 'SET_UNREAD_COUNT', payload: count });
     } catch (error) {
-      console.error('❌ [NotificationContext] Error fetching unread count:', error);
-      console.error('❌ [NotificationContext] Error details:', error.response?.data || error.message);
+      // Error handled silently
     }
   };
 
@@ -168,7 +152,7 @@ export const NotificationProvider = ({ children }) => {
       await notificationService.markAsRead(notificationId);
       dispatch({ type: "MARK_AS_READ", payload: notificationId });
     } catch (error) {
-      console.error("Error marking as read:", error);
+      // Error handled silently
     }
   };
 
@@ -177,7 +161,7 @@ export const NotificationProvider = ({ children }) => {
       await notificationService.markAllAsRead();
       dispatch({ type: "MARK_ALL_AS_READ" });
     } catch (error) {
-      console.error("Error marking all as read:", error);
+      // Error handled silently
     }
   };
 
@@ -186,7 +170,7 @@ export const NotificationProvider = ({ children }) => {
       await notificationService.deleteNotification(notificationId);
       dispatch({ type: "DELETE_NOTIFICATION", payload: notificationId });
     } catch (error) {
-      console.error("Error deleting notification:", error);
+      // Error handled silently
     }
   };
 

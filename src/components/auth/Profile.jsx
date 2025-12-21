@@ -119,7 +119,6 @@ const Profile = () => {
 
   // Handle location selection from MapSelector
   const handleLocationSelect = (locationData) => {
-    console.log("Selected location:", locationData);
     setFormData((prev) => ({
       ...prev,
       address: {
@@ -437,7 +436,6 @@ const Profile = () => {
     try {
       setUploadingAvatar(true);
       const response = await userService.uploadAvatar(file);
-      console.log("📸 Avatar upload response:", response.data);
 
       // Backend trả: { status: 'success', data: { avatarUrl: '...' } }
       if (
@@ -498,7 +496,6 @@ const Profile = () => {
   };
 
   const handlePasswordSubmitForCCCD = async () => {
-    console.log("user authProvider:", user?.authProvider);
     // Kiểm tra nếu user đăng nhập bằng OAuth (không có password)
     if (user?.authProvider && user.authProvider !== "local") {
       // Người dùng OAuth không cần password, load trực tiếp
@@ -509,9 +506,6 @@ const Profile = () => {
           kycService.getUserCCCD(),
           kycService.getCCCDImages(""), // Pass empty string for OAuth users
         ]);
-
-        console.log("📥 Data Response (OAuth):", dataResponse);
-        console.log("📥 Images Response (OAuth):", imagesResponse);
 
         if (dataResponse?.status === "success" && dataResponse?.data) {
           setCccdData(dataResponse.data);
@@ -548,17 +542,12 @@ const Profile = () => {
         kycService.getCCCDImages(passwordForCCCD),
       ]);
 
-      console.log("📥 Data Response:", dataResponse);
-      console.log("📥 Images Response:", imagesResponse);
-
       // kycService đã unwrap response.data, nên dataResponse = { status, message, data, metadata }
       // Backend trả data trực tiếp trong field 'data', không nested
       if (dataResponse?.status === "success" && dataResponse?.data) {
-        console.log("💾 Setting CCCD Data:", dataResponse.data);
         setCccdData(dataResponse.data);
 
         if (imagesResponse?.status === "success" && imagesResponse?.data) {
-          console.log("🖼️ Setting CCCD Images:", imagesResponse.data);
           setCccdImages(imagesResponse.data);
         }
 
@@ -590,7 +579,6 @@ const Profile = () => {
       user?.authProvider &&
       user.authProvider !== "local"
     ) {
-      console.log("🔓 OAuth user detected, auto-loading CCCD data...");
       handlePasswordSubmitForCCCD();
     }
   }, [showPasswordPrompt]);

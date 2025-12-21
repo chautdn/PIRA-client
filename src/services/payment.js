@@ -7,7 +7,7 @@ class PaymentService {
   // Create PayOS payment session for order
   async createOrderPaymentSession(orderData) {
     try {
-      console.log("📤 Creating PayOS payment session:", orderData);
+      
       const response = await api.post("/payment/order", {
         amount: orderData.totalAmount,
         orderInfo: {
@@ -16,7 +16,6 @@ class PaymentService {
           items: orderData.items || [],
         },
       });
-      console.log("✅ PayOS session created:", response.data);
       return response.data;
     } catch (error) {
       console.error("❌ PayOS session creation error:", error);
@@ -29,7 +28,6 @@ class PaymentService {
   // Process wallet payment for order
   async processWalletPayment(orderData) {
     try {
-      console.log("📤 Processing wallet payment:", orderData);
       const response = await api.post("/payment/wallet/deduct", {
         amount: orderData.totalAmount,
         orderInfo: {
@@ -41,7 +39,6 @@ class PaymentService {
           totalShipping: orderData.totalShipping || 0,
         },
       });
-      console.log("✅ Wallet payment processed:", response.data);
       return response.data;
     } catch (error) {
       console.error("❌ Wallet payment error:", error);

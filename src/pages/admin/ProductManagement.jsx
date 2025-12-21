@@ -79,10 +79,8 @@ const ProductManagement = () => {
         return (a.name || '').localeCompare(b.name || '', 'vi-VN');
       });
       
-      console.log('Loaded categories:', sortedCategories);
       setCategories(sortedCategories);
     } catch (err) {
-      console.error('Load categories error:', err);
       setCategories([]);
     }
   };
@@ -91,7 +89,6 @@ const ProductManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('ProductManagement - Loading products with filters:', filters);
       
       // Check if user is authenticated
       const token = localStorage.getItem('accessToken');
@@ -102,7 +99,6 @@ const ProductManagement = () => {
       }
       
       const response = await adminService.getProducts(filters);
-      console.log('ProductManagement - API response:', response);
       
       // Handle response structure similar to OrderManagement
       if (response && response.success && response.data) {
@@ -147,10 +143,7 @@ const ProductManagement = () => {
         });
       }
       
-      console.log('ProductManagement - Products count:', (response.products || []).length);
-      console.log('ProductManagement - Pagination:', pagination);
     } catch (err) {
-      console.error('Load products error:', err);
       
       // Handle specific error types
       if (err.response?.status === 401) {
@@ -179,7 +172,6 @@ const ProductManagement = () => {
   };
 
   const handleFilterChange = (key, value) => {
-    console.log('ProductManagement - Filter change:', { key, value });
     
     if (key === 'search') {
       // Update search query immediately (for UI)

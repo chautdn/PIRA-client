@@ -11,7 +11,6 @@ const PromotionBanner = () => {
 
   // Socket integration for real-time updates
   useSystemPromotionSocket((newPromotion) => {
-    console.log("[PromotionBanner] Socket received promotion:", newPromotion);
     if (
       newPromotion &&
       newPromotion.banner &&
@@ -40,16 +39,13 @@ const PromotionBanner = () => {
   const loadActivePromotion = async () => {
     try {
       setLoading(true);
-      console.log("[PromotionBanner] Loading active promotion...");
       const response = await systemPromotionService.getActive();
-      console.log("[PromotionBanner] API response:", response);
 
       if (
         response.metadata.promotions &&
         response.metadata.promotions.length > 0
       ) {
         const activePromo = response.metadata.promotions[0];
-        console.log("[PromotionBanner] Active promotion found:", activePromo);
 
         // Check if this promotion was previously dismissed
         const dismissedPromotions = JSON.parse(
@@ -58,21 +54,12 @@ const PromotionBanner = () => {
 
         if (!dismissedPromotions.includes(activePromo._id)) {
           setPromotion(activePromo);
-          console.log("[PromotionBanner] Promotion set to state");
-        } else {
-          console.log("[PromotionBanner] Promotion was dismissed");
         }
-      } else {
-        console.log("[PromotionBanner] No active promotions found");
       }
     } catch (error) {
-      console.error(
-        "[PromotionBanner] Failed to load active promotion:",
-        error
-      );
+      // Handle error silently or log to monitoring service
     } finally {
       setLoading(false);
-      console.log("[PromotionBanner] Loading complete");
     }
   };
 
@@ -94,11 +81,6 @@ const PromotionBanner = () => {
   };
 
   if (loading || !promotion || isDismissed) {
-    console.log("[PromotionBanner] Not rendering:", {
-      loading,
-      hasPromotion: !!promotion,
-      isDismissed,
-    });
     return null;
   }
 
@@ -107,11 +89,6 @@ const PromotionBanner = () => {
   const bannerTitle = promotion.banner?.bannerTitle || promotion.title;
   const bannerDescription =
     promotion.banner?.bannerDescription || promotion.description;
-
-  console.log("[PromotionBanner] Rendering banner with:", {
-    bannerTitle,
-    bannerDescription,
-  });
 
   return (
     <AnimatePresence>

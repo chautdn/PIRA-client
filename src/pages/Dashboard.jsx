@@ -19,7 +19,7 @@ export default function Dashboard() {
       await logout();
       navigate(ROUTES.LOGIN);
     } catch (error) {
-      console.error("Logout error:", error);
+      // Error handled silently
     } finally {
       setLoading(false);
       setShowLogoutModal(false);

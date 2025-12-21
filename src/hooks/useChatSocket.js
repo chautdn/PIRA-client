@@ -5,8 +5,7 @@ import toast from "react-hot-toast";
 
 // Get socket server URL from API URL
 const getServerUrl = () => {
-  const apiUrl =
-    import.meta.env.VITE_API_URL || "https://api.pira.asia/api";
+  const apiUrl = import.meta.env.VITE_API_URL || "https://api.pira.asia/api";
   // Remove /api suffix if present
   return apiUrl.replace(/\/api$/, "");
 };
@@ -36,17 +35,14 @@ const useChatSocket = () => {
 
     // Handle authentication
     socket.on("connect", () => {
-      console.log('🔌 [useChatSocket] Socket connected, emitting authenticate...');
       socket.emit("authenticate", token);
     });
 
     socket.on("auth:success", (data) => {
-      console.log('✅ [useChatSocket] Authentication successful, user:', data.user?._id);
       setConnected(true);
     });
 
     socket.on("auth:error", (error) => {
-      console.error("❌ [useChatSocket] Chat connection failed:", error);
       setConnected(false);
     });
 
@@ -84,18 +80,14 @@ const useChatSocket = () => {
 
     // Handle connection errors
     socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
       setConnected(false);
     });
 
     socket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
       setConnected(false);
     });
 
-    socket.on("error", (error) => {
-      console.error("Socket error:", error);
-    });
+    socket.on("error", (error) => {});
   }, [token, user]); // CRITICAL: Only primitive dependencies
 
   // CRITICAL: Cleanup on unmount
@@ -106,7 +98,6 @@ const useChatSocket = () => {
 
     return () => {
       if (socketRef.current) {
-        console.log("Cleaning up socket connection");
         socketRef.current.disconnect();
         socketRef.current = null;
         setConnected(false);

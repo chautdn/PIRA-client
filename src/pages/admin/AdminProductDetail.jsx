@@ -50,9 +50,7 @@ const AdminProductDetail = () => {
       setLoading(true);
       setError(null);
       
-      console.log('Fetching product with ID:', productId);
       const data = await adminService.getProductById(productId);
-      console.log('Received product data:', data);
       
       if (data) {
         setProduct(data);
@@ -61,7 +59,6 @@ const AdminProductDetail = () => {
       }
     } catch (err) {
       setError(err.message || 'Không thể tải thông tin sản phẩm');
-      console.error('Load product error:', err);
     } finally {
       setLoading(false);
     }
@@ -94,9 +91,7 @@ const AdminProductDetail = () => {
       setActionLoading(true);
       
       const { newStatus } = confirmDialog;
-      console.log('Updating product status:', productId, newStatus);
       const updatedData = await adminService.updateProductStatus(productId, newStatus);
-      console.log('Status update response:', updatedData);
       
       // Update local state
       setProduct(prev => ({ ...prev, status: newStatus }));
@@ -115,7 +110,6 @@ const AdminProductDetail = () => {
       
     } catch (err) {
       showNotification(err.message || 'Có lỗi xảy ra khi cập nhật trạng thái', 'error');
-      console.error('Update status error:', err);
       // Close dialog even on error
       setConfirmDialog({ show: false, newStatus: '', currentStatus: '', productTitle: '', message: '' });
     } finally {
@@ -143,7 +137,6 @@ const AdminProductDetail = () => {
       setReviews((prev) => (reviewsPage === 1 ? items : prev.concat(items)));
       setReviewsTotal(pagination.total || 0);
     } catch (err) {
-      console.error('Error loading reviews:', err);
       setReviews([]);
     } finally {
       setReviewsLoading(false);

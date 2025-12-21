@@ -324,8 +324,6 @@ const CreatePromotionModal = ({ promotion, onClose, onSuccess }) => {
     try {
       setLoading(true);
 
-      console.log("📤 Form data being submitted:", formData);
-
       // Validate
       if (!formData.title || !formData.startDate || !formData.endDate) {
         toast.error("Please fill in all required fields");
@@ -341,9 +339,6 @@ const CreatePromotionModal = ({ promotion, onClose, onSuccess }) => {
         setLoading(false);
         return;
       }
-
-      console.log("✅ Validation passed, sending to API...");
-      
       let response;
       if (isEditMode) {
         response = await systemPromotionService.update(promotion._id, formData);
@@ -352,12 +347,8 @@ const CreatePromotionModal = ({ promotion, onClose, onSuccess }) => {
         response = await systemPromotionService.create(formData);
         toast.success("Promotion created successfully! Users have been notified.");
       }
-      
-      console.log("✅ API response:", response);
       onSuccess();
     } catch (error) {
-      console.error("❌ Error creating promotion:", error);
-      console.error("❌ Error response:", error.response?.data);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||

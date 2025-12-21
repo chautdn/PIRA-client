@@ -30,74 +30,46 @@ const KycModal = ({
   const loadKycData = async () => {
     try {
       setInitialLoading(true);
-      console.log("🔍 Modal - Starting loadKycData...");
 
       // Lấy trạng thái KYC
       const statusResponse = await kycService.getKYCStatus();
-      console.log("🔍 Modal - KYC Status Full Response:", statusResponse);
-      console.log("🔍 Modal - Status Data:", statusResponse.data);
-      console.log(
-        "🔍 Modal - Response Success:",
-        statusResponse.data?.status === "success"
-      );
 
       if (statusResponse.data?.status === "success") {
         const kycData = statusResponse.data.data;
-        console.log("🔍 Modal - KYC Data:", kycData);
-        console.log("🔍 Modal - Is Verified Check:", kycData?.isVerified);
 
         setKycStatus(kycData);
 
         // **KIỂM TRA ĐIỀU KIỆN XÁC THỰC**
         if (kycData && kycData.isVerified === true) {
-          console.log("✅ Modal - KYC is verified! Loading CCCD data...");
 
           try {
             // Lấy thông tin CCCD đã lưu
             const cccdResponse = await kycService.getUserCCCD();
-            console.log("🔍 Modal - CCCD Full Response:", cccdResponse);
-            console.log("🔍 Modal - CCCD Data:", cccdResponse.data);
-            console.log(
-              "🔍 Modal - CCCD Success:",
-              cccdResponse.data?.status === "success"
-            );
 
             if (
               cccdResponse.data?.status === "success" &&
               cccdResponse.data.data
             ) {
               const cccdData = cccdResponse.data.data;
-              console.log("✅ Modal - Setting OCR Data:", cccdData);
-              console.log("✅ Modal - Moving to step 4 (Already Verified)");
 
               setOcrData(cccdData);
               setStep(4); // Hiển thị thông tin đã xác thực
             } else {
-              console.log("⚠️ Modal - No CCCD data found, showing upload form");
               resetToUpload();
             }
           } catch (cccdError) {
-            console.error("❌ Modal - Error loading CCCD data:", cccdError);
             resetToUpload();
           }
         } else {
-          console.log(
-            "⚠️ Modal - Not verified (isVerified:",
-            kycData?.isVerified,
-            "), showing upload form"
-          );
           resetToUpload();
         }
       } else {
-        console.log("⚠️ Modal - No KYC status found, showing upload form");
         resetToUpload();
       }
     } catch (error) {
-      console.error("❌ Modal - Error loading KYC data:", error);
       resetToUpload();
     } finally {
       setInitialLoading(false);
-      console.log("🔍 Modal - loadKycData completed");
     }
   };
 
@@ -141,8 +113,6 @@ const KycModal = ({
       setLoading(true);
       const response = await kycService.uploadCCCDImages(frontImage, backImage);
 
-      console.log("🔍 Upload Response:", response);
-
       const isSuccess = response.data?.status === "success";
       const responseData = response.data?.data;
       const extractedInfo = responseData?.cccd?.extractedInfo;
@@ -158,7 +128,6 @@ const KycModal = ({
         toast.error(response.data?.message || "Upload thất bại");
       }
     } catch (error) {
-      console.error("❌ Upload error:", error);
       toast.error(error.message || "Có lỗi xảy ra khi upload");
     } finally {
       setLoading(false);
@@ -180,7 +149,6 @@ const KycModal = ({
         toast.error(response.data?.message || "Cập nhật profile thất bại");
       }
     } catch (error) {
-      console.error("Apply to profile error:", error);
       toast.error(
         error?.response?.data?.message ||
           error.message ||

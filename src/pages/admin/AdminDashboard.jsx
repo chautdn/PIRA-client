@@ -61,12 +61,10 @@ const AdminDashboard = () => {
       setError(null);
       
       const dashboardData = await adminService.getDashboardStats();
-      console.log('Dashboard data from API:', dashboardData);
       
       if (dashboardData) {
         // Check if data has the expected structure
         if (dashboardData.overview) {
-          console.log('Dashboard data has overview structure');
           setStats({
             overview: {
               totalUsers: dashboardData.overview.totalUsers || 0,
@@ -84,7 +82,6 @@ const AdminDashboard = () => {
             }
           });
         } else {
-          console.log('Dashboard data does not have overview structure:', Object.keys(dashboardData));
           // Handle flat structure or different format
           setStats({
             overview: {

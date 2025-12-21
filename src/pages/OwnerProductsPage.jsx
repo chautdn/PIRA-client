@@ -136,7 +136,7 @@ export default function OwnerProductsPage() {
         setParentCategories(res.data);
       }
     } catch (error) {
-      console.error('Failed to load parent categories:', error);
+      // Error handled silently
     }
   };
 
@@ -147,7 +147,6 @@ export default function OwnerProductsPage() {
         setSubCategories(res.data);
       }
     } catch (error) {
-      console.error('Failed to load subcategories:', error);
       setSubCategories([]);
     }
   };
@@ -207,7 +206,6 @@ export default function OwnerProductsPage() {
         }
       }
     } catch (error) {
-      console.error('Error loading products:', error);
       toast.error('Không thể tải sản phẩm');
       setProducts([]);
     } finally {

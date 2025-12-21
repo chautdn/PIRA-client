@@ -6,32 +6,20 @@ class AdminService {
   async getDashboardStats() {
     try {
       const response = await api.get("/admin/dashboard");
-      console.log("AdminService getDashboardStats - Full response:", response);
-      console.log(
-        "AdminService getDashboardStats - Response data:",
-        response.data
-      );
 
       // Handle different response structures
       if (response.data && response.data.success && response.data.data) {
-        console.log("Found dashboard data in response.data.data");
         return response.data.data;
       } else if (response.data && response.data.metadata) {
-        console.log("Found dashboard data in response.data.metadata");
         return response.data.metadata;
       } else if (response.data) {
-        console.log("Using response.data directly");
         return response.data;
       }
 
-      console.warn("No valid dashboard data structure found");
       return null;
     } catch (error) {
-      console.error("Error fetching dashboard stats:", error);
-
       // If authentication error, return null to trigger fallback
       if (error.response?.status === 401) {
-        console.warn("Not authorized to access admin dashboard");
         return null;
       }
 
@@ -60,7 +48,6 @@ class AdminService {
       const response = await api.get("/admin/statistics/revenue", { params });
       return response.data?.data || response.data;
     } catch (error) {
-      console.error("Error fetching revenue statistics:", error);
       throw error;
     }
   }
@@ -70,7 +57,6 @@ class AdminService {
       const response = await api.get("/admin/statistics/profit", { params });
       return response.data?.data || response.data;
     } catch (error) {
-      console.error("Error fetching profit statistics:", error);
       throw error;
     }
   }
@@ -83,7 +69,6 @@ class AdminService {
       });
       return response.data?.data || response.data;
     } catch (error) {
-      console.error("Error fetching revenue by owner:", error);
       throw error;
     }
   }
@@ -93,7 +78,6 @@ class AdminService {
       const response = await api.get("/admin/statistics/deposit", { params });
       return response.data?.data || response.data;
     } catch (error) {
-      console.error("Error fetching deposit statistics:", error);
       throw error;
     }
   }
@@ -105,7 +89,6 @@ class AdminService {
       });
       return response.data?.data || response.data;
     } catch (error) {
-      console.error("Error fetching top rental products:", error);
       throw error;
     }
   }
@@ -117,7 +100,6 @@ class AdminService {
       });
       return response.data?.data || response.data;
     } catch (error) {
-      console.error("Error fetching suborder status breakdown:", error);
       throw error;
     }
   }
@@ -137,8 +119,6 @@ class AdminService {
         return { users: [], total: 0, totalPages: 1 };
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
-
       // Return mock data if server is not available
       if (error.code === "NETWORK_ERROR" || error.response?.status === 500) {
         return {
@@ -155,12 +135,6 @@ class AdminService {
   async getUserById(userId) {
     try {
       const response = await api.get(`/admin/users/${userId}`);
-      console.log("AdminService getUserById - Full response:", response);
-      console.log("AdminService getUserById - response.data:", response.data);
-      console.log(
-        "AdminService getUserById - response.data.metadata:",
-        response.data?.metadata
-      );
 
       // Handle different response structures
       let userData = null;
@@ -168,25 +142,14 @@ class AdminService {
       // Check for responseUtils.success format: { success, message, data }
       if (response.data && response.data.data) {
         userData = response.data.data;
-        console.log("Found user data in response.data.data");
       } else if (response.data && response.data.metadata) {
         userData = response.data.metadata;
-        console.log("Found user data in response.data.metadata");
       } else if (response.data) {
         userData = response.data;
-        console.log("Using response.data directly");
       }
-
-      console.log("AdminService getUserById - Final userData:", userData);
-      console.log(
-        "AdminService getUserById - userData.email:",
-        userData?.email
-      );
 
       return userData || null;
     } catch (error) {
-      console.error("Error fetching user:", error);
-
       // Handle specific error cases
       if (error.response?.status === 404) {
         throw new Error("User not found");
@@ -207,7 +170,6 @@ class AdminService {
       const response = await api.put(`/admin/users/${userId}`, userData);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error updating user:", error);
       throw error;
     }
   }
@@ -219,7 +181,6 @@ class AdminService {
       });
       return response.data.metadata;
     } catch (error) {
-      console.error("Error updating user status:", error);
       throw error;
     }
   }
@@ -229,7 +190,6 @@ class AdminService {
       const response = await api.patch(`/admin/users/${userId}/role`, { role });
       return response.data.metadata;
     } catch (error) {
-      console.error("Error updating user role:", error);
       throw error;
     }
   }
@@ -238,7 +198,6 @@ class AdminService {
   async getUserOrders(userId) {
     try {
       const response = await api.get(`/admin/users/${userId}/orders`);
-      console.log("AdminService getUserOrders - Full response:", response);
 
       // Handle different response structures
       if (response.data && response.data.data) {
@@ -251,7 +210,6 @@ class AdminService {
 
       return [];
     } catch (error) {
-      console.error("Error fetching user orders:", error);
       throw error;
     }
   }
@@ -259,7 +217,6 @@ class AdminService {
   async getUserProducts(userId) {
     try {
       const response = await api.get(`/admin/users/${userId}/products`);
-      console.log("AdminService getUserProducts - Full response:", response);
 
       // Handle different response structures
       if (response.data && response.data.data) {
@@ -272,7 +229,6 @@ class AdminService {
 
       return [];
     } catch (error) {
-      console.error("Error fetching user products:", error);
       throw error;
     }
   }
@@ -280,7 +236,6 @@ class AdminService {
   async getUserBankAccount(userId) {
     try {
       const response = await api.get(`/admin/users/${userId}/bank-account`);
-      console.log("AdminService getUserBankAccount - Full response:", response);
 
       // Handle different response structures
       if (response.data && response.data.data) {
@@ -293,7 +248,6 @@ class AdminService {
 
       return null;
     } catch (error) {
-      console.error("Error fetching user bank account:", error);
       throw error;
     }
   }
@@ -313,8 +267,6 @@ class AdminService {
         return { products: [], total: 0, totalPages: 1 };
       }
     } catch (error) {
-      console.error("Error fetching products:", error);
-
       // Return mock data if server is not available
       if (error.code === "NETWORK_ERROR" || error.response?.status === 500) {
         return {
@@ -331,15 +283,6 @@ class AdminService {
   async getProductById(productId) {
     try {
       const response = await api.get(`/admin/products/${productId}`);
-      console.log("AdminService getProductById - Full response:", response);
-      console.log(
-        "AdminService getProductById - response.data:",
-        response.data
-      );
-      console.log(
-        "AdminService getProductById - response.data.metadata:",
-        response.data?.metadata
-      );
 
       // Handle different response structures
       let productData = null;
@@ -347,28 +290,14 @@ class AdminService {
       // Check for responseUtils.success format: { success, message, data }
       if (response.data && response.data.data) {
         productData = response.data.data;
-        console.log("Found product data in response.data.data");
       } else if (response.data && response.data.metadata) {
         productData = response.data.metadata;
-        console.log("Found product data in response.data.metadata");
       } else if (response.data) {
         productData = response.data;
-        console.log("Using response.data directly");
       }
-
-      console.log(
-        "AdminService getProductById - Final productData:",
-        productData
-      );
-      console.log(
-        "AdminService getProductById - productData.title:",
-        productData?.title
-      );
 
       return productData || null;
     } catch (error) {
-      console.error("Error fetching product:", error);
-
       // Handle specific error cases
       if (error.response?.status === 404) {
         throw new Error("Product not found");
@@ -392,7 +321,6 @@ class AdminService {
       );
       return response.data.metadata;
     } catch (error) {
-      console.error("Error approving product:", error);
       throw error;
     }
   }
@@ -405,7 +333,6 @@ class AdminService {
       );
       return response.data.metadata;
     } catch (error) {
-      console.error("Error rejecting product:", error);
       throw error;
     }
   }
@@ -418,7 +345,6 @@ class AdminService {
       );
       return response.data.metadata;
     } catch (error) {
-      console.error("Error updating product:", error);
       throw error;
     }
   }
@@ -428,10 +354,6 @@ class AdminService {
       const response = await api.patch(`/admin/products/${productId}/status`, {
         status,
       });
-      console.log(
-        "AdminService updateProductStatus - Full response:",
-        response
-      );
 
       // Handle different response structures
       let productData = null;
@@ -446,8 +368,6 @@ class AdminService {
 
       return productData || { status };
     } catch (error) {
-      console.error("Error updating product status:", error);
-
       // Handle specific error cases
       if (error.response?.status === 404) {
         throw new Error("Product not found");
@@ -470,7 +390,6 @@ class AdminService {
       const response = await api.get(`/admin/categories?${query}`);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error fetching categories:", error);
       throw error;
     }
   }
@@ -480,7 +399,6 @@ class AdminService {
       const response = await api.get(`/admin/categories/${categoryId}`);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error fetching category:", error);
       throw error;
     }
   }
@@ -490,7 +408,6 @@ class AdminService {
       const response = await api.post("/admin/categories", categoryData);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error creating category:", error);
       throw error;
     }
   }
@@ -503,7 +420,6 @@ class AdminService {
       );
       return response.data.metadata;
     } catch (error) {
-      console.error("Error updating category:", error);
       throw error;
     }
   }
@@ -513,7 +429,6 @@ class AdminService {
       const response = await api.delete(`/admin/categories/${categoryId}`);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error deleting category:", error);
       throw error;
     }
   }
@@ -522,43 +437,27 @@ class AdminService {
   async getOrders(params = {}) {
     try {
       const query = new URLSearchParams(params).toString();
-      console.log(
-        "🔄 AdminService.getOrders - Calling API with params:",
-        params
-      );
-      console.log("🔗 API URL:", `/admin/orders?${query}`);
 
       const response = await api.get(`/admin/orders?${query}`);
-      console.log("📦 AdminService.getOrders - Raw response:", response);
-      console.log("📦 AdminService.getOrders - Response data:", response.data);
 
       // Handle different response structures from backend
       if (response.data) {
         // Check for success wrapper format
         if (response.data.success && response.data.data) {
-          console.log("✅ Found data in success wrapper");
           return response.data.data;
         }
         // Check for metadata format
         else if (response.data.metadata) {
-          console.log("✅ Found data in metadata");
           return response.data.metadata;
         }
         // Direct data format
         else {
-          console.log("✅ Using direct response data");
           return response.data;
         }
       }
 
-      console.log("⚠️ No valid data structure found");
       return { orders: [], total: 0, totalPages: 1, currentPage: 1 };
     } catch (error) {
-      console.error("❌ AdminService.getOrders - Error:", error);
-      console.error("❌ Error response:", error.response);
-      console.error("❌ Error status:", error.response?.status);
-      console.error("❌ Error data:", error.response?.data);
-
       // Re-throw with more context
       if (error.response?.status === 401) {
         throw new Error("Unauthorized: Please login as admin");
@@ -577,12 +476,6 @@ class AdminService {
   async getOrderById(orderId) {
     try {
       const response = await api.get(`/admin/orders/${orderId}`);
-      console.log("AdminService getOrderById - Full response:", response);
-      console.log("AdminService getOrderById - response.data:", response.data);
-      console.log(
-        "AdminService getOrderById - response.data.metadata:",
-        response.data?.metadata
-      );
 
       // Handle different response structures
       let orderData = null;
@@ -590,21 +483,14 @@ class AdminService {
       // Check for responseUtils.success format: { success, message, data }
       if (response.data && response.data.data) {
         orderData = response.data.data;
-        console.log("Found order data in response.data.data");
       } else if (response.data && response.data.metadata) {
         orderData = response.data.metadata;
-        console.log("Found order data in response.data.metadata");
       } else if (response.data) {
         orderData = response.data;
-        console.log("Using response.data directly");
       }
-
-      console.log("AdminService getOrderById - Final orderData:", orderData);
 
       return orderData || null;
     } catch (error) {
-      console.error("Error fetching order:", error);
-
       // Handle specific error cases
       if (error.response?.status === 404) {
         throw new Error("Order not found");
@@ -627,7 +513,6 @@ class AdminService {
       });
       return response.data;
     } catch (error) {
-      console.error("Error updating order status:", error);
       throw error;
     }
   }
@@ -639,7 +524,6 @@ class AdminService {
       const response = await api.get(`/admin/reports?${query}`);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error fetching reports:", error);
       throw error;
     }
   }
@@ -652,7 +536,6 @@ class AdminService {
       );
       return response.data.metadata;
     } catch (error) {
-      console.error("Error handling report:", error);
       throw error;
     }
   }
@@ -663,7 +546,6 @@ class AdminService {
       const response = await api.get("/admin/settings");
       return response.data.metadata;
     } catch (error) {
-      console.error("Error fetching system settings:", error);
       throw error;
     }
   }
@@ -673,7 +555,6 @@ class AdminService {
       const response = await api.put("/admin/settings", settings);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error updating system settings:", error);
       throw error;
     }
   }
@@ -684,7 +565,6 @@ class AdminService {
       const response = await api.get(`/admin/analytics?period=${period}`);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error fetching analytics:", error);
       throw error;
     }
   }
@@ -695,7 +575,6 @@ class AdminService {
       const response = await api.get(`/admin/revenue-stats?${query}`);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error fetching revenue stats:", error);
       throw error;
     }
   }
@@ -709,7 +588,6 @@ class AdminService {
       });
       return response.data.metadata;
     } catch (error) {
-      console.error("Error bulk updating users:", error);
       throw error;
     }
   }
@@ -718,10 +596,9 @@ class AdminService {
   async getShipmentStats() {
     try {
       const response = await api.get("/admin/shipment-stats");
-      console.log('getShipmentStats raw response:', response);
-      
+
       // Handle responseUtils format: { status: 'success', data: {...} }
-      if (response.data?.status === 'success' && response.data?.data) {
+      if (response.data?.status === "success" && response.data?.data) {
         return response.data.data;
       }
       // Handle direct data
@@ -730,7 +607,6 @@ class AdminService {
       }
       return response.data;
     } catch (error) {
-      console.error("Error fetching shipment stats:", error);
       return null;
     }
   }
@@ -739,10 +615,9 @@ class AdminService {
     try {
       const query = new URLSearchParams(params).toString();
       const response = await api.get(`/admin/shippers?${query}`);
-      console.log('getAllShippers raw response:', response);
-      
+
       // Handle responseUtils format: { status: 'success', data: {...} }
-      if (response.data?.status === 'success' && response.data?.data) {
+      if (response.data?.status === "success" && response.data?.data) {
         const result = response.data.data;
         // result should have { data: [...], pagination: {...} }
         return result;
@@ -753,7 +628,6 @@ class AdminService {
       }
       return response.data;
     } catch (error) {
-      console.error("Error fetching shippers:", error);
       return null;
     }
   }
@@ -761,10 +635,9 @@ class AdminService {
   async getShipperById(shipperId) {
     try {
       const response = await api.get(`/admin/shippers/${shipperId}`);
-      console.log('📦 getShipperById raw response:', response);
-      
+
       // Handle responseUtils format: { status: 'success', data: {...} }
-      if (response.data?.status === 'success' && response.data?.data) {
+      if (response.data?.status === "success" && response.data?.data) {
         return response.data.data;
       }
       // Handle direct data
@@ -773,7 +646,6 @@ class AdminService {
       }
       return response.data;
     } catch (error) {
-      console.error("❌ Error fetching shipper details:", error);
       throw error;
     }
   }
@@ -786,7 +658,6 @@ class AdminService {
       });
       return response.data.metadata;
     } catch (error) {
-      console.error("Error bulk updating products:", error);
       throw error;
     }
   }
@@ -797,7 +668,6 @@ class AdminService {
       const response = await api.post("/admin/notifications", notificationData);
       return response.data.metadata;
     } catch (error) {
-      console.error("Error sending notification:", error);
       throw error;
     }
   }
@@ -810,7 +680,6 @@ class AdminService {
       );
       return response.data.metadata;
     } catch (error) {
-      console.error("Error broadcasting notification:", error);
       throw error;
     }
   }
@@ -835,7 +704,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching reports:", error);
       throw error;
     }
   }
@@ -849,7 +717,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching report detail:", error);
       throw error;
     }
   }
@@ -866,7 +733,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error updating report status:", error);
       throw error;
     }
   }
@@ -885,7 +751,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error suspending reported product:", error);
       throw error;
     }
   }
@@ -910,7 +775,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching bank accounts:", error);
       throw error;
     }
   }
@@ -924,7 +788,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching bank account detail:", error);
       throw error;
     }
   }
@@ -943,7 +806,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error verifying bank account:", error);
       throw error;
     }
   }
@@ -962,7 +824,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error rejecting bank account:", error);
       throw error;
     }
   }
@@ -982,7 +843,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error updating bank account status:", error);
       throw error;
     }
   }
@@ -1007,7 +867,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching withdrawals:", error);
       throw error;
     }
   }
@@ -1021,7 +880,6 @@ class AdminService {
       }
       return response.data.data || response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching system wallet:", error);
       throw error;
     }
   }
@@ -1041,7 +899,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error updating withdrawal status:", error);
       throw error;
     }
   }
@@ -1066,7 +923,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching transactions:", error);
       throw error;
     }
   }
@@ -1080,7 +936,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching transaction detail:", error);
       throw error;
     }
   }
@@ -1104,7 +959,6 @@ class AdminService {
       }
       return response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching transaction stats:", error);
       throw error;
     }
   }
@@ -1140,7 +994,6 @@ class AdminService {
 
       return { success: true };
     } catch (error) {
-      console.error("Error exporting transactions:", error);
       throw error;
     }
   }
@@ -1157,7 +1010,6 @@ class AdminService {
       }
       return response.data.data || response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching withdrawal financial analysis:", error);
       throw error;
     }
   }
@@ -1173,7 +1025,6 @@ class AdminService {
       }
       return response.data.data || response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching user financial profile:", error);
       throw error;
     }
   }
@@ -1197,7 +1048,6 @@ class AdminService {
       }
       return response.data.data || response.data.metadata || response.data;
     } catch (error) {
-      console.error("Error fetching enhanced withdrawals:", error);
       throw error;
     }
   }

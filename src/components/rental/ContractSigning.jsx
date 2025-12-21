@@ -46,7 +46,6 @@ const ContractSigning = () => {
   // Initialize WebSocket for real-time contract updates
   const { emitContractSigned, emitContractCompleted } = useOrderSocket({
     onContractSigned: (data) => {
-      console.log('📝 Contract signed by other party, reloading...');
       if (contractId) {
         const loadContract = async () => {
           try {
@@ -61,15 +60,13 @@ const ContractSigning = () => {
               setHasAlreadySigned(alreadySigned);
             }
           } catch (error) {
-            console.error('Error reloading contract:', error);
+            // Handle error silently
           }
         };
         loadContract();
       }
     },
   });
-
-  console.log('🔍 ContractSigning - contractId:', contractId);
 
   // Load contract details
   useEffect(() => {
@@ -81,17 +78,12 @@ const ContractSigning = () => {
     
     const loadContract = async () => {
       try {
-        console.log('📄 Loading contract:', contractId);
-        
         const response = await rentalOrderService.getContractDetail(contractId);
-        console.log('✅ Contract loaded - Full response:', response);
         
         // Handle nested response structure
         const actualData = response.data?.metadata || response.metadata || response.data || response;
-        console.log('📦 Extracted data:', actualData);
         
         if (!actualData.contract) {
-          console.error('❌ No contract in response:', actualData);
           throw new Error('Không tìm thấy thông tin hợp đồng trong response');
         }
         
@@ -106,9 +98,7 @@ const ContractSigning = () => {
         setHasAlreadySigned(alreadySigned);
         
         setIsLoading(false);
-        console.log('✅ Contract set successfully. Already signed:', alreadySigned, 'Message:', actualData.signMessage);
       } catch (error) {
-        console.error('❌ Error loading contract:', error);
         setError(error.message || 'Không thể tải thông tin hợp đồng');
         setIsLoading(false);
       }
@@ -170,9 +160,7 @@ const ContractSigning = () => {
       setSentCount(response.data.sentCount);
       
       toast.success(response.message || t('contractSigning.otpSentSuccess'));
-      console.log('✅ OTP sent successfully:', response);
     } catch (error) {
-      console.error('❌ Error sending OTP:', error);
       setOtpError(error.message);
       toast.error(error.message || t('contractSigning.otpSentError'));
     } finally {
@@ -195,9 +183,7 @@ const ContractSigning = () => {
       
       setOtpVerified(true);
       toast.success(t('contractSigning.otpVerifiedSuccess'));
-      console.log('✅ OTP verified successfully');
     } catch (error) {
-      console.error('❌ Error verifying OTP:', error);
       setOtpError(error.message);
       toast.error(error.message || t('contractSigning.otpVerifyError'));
     } finally {
@@ -298,7 +284,6 @@ const ContractSigning = () => {
 
       // Call actual API
       const response = await rentalOrderService.signContract(contractId, signData);
-      console.log('✅ Contract signed:', response);
       
       // Update state to reflect signing
       setHasAlreadySigned(true);
@@ -314,7 +299,6 @@ const ContractSigning = () => {
       toast.success(t('contractSigning.signSuccess'));
       // Don't navigate away - let user download PDF
     } catch (error) {
-      console.error('❌ Error signing contract:', error);
       setError(error.message || t('contractSigning.signError'));
       toast.error(error.message || t('contractSigning.signError'));
     } finally {
@@ -376,7 +360,6 @@ const ContractSigning = () => {
         }, 250);
       }
     } catch (error) {
-      console.error('Error downloading contract:', error);
       toast.error(t('contractSigning.downloadError'));
     }
   };

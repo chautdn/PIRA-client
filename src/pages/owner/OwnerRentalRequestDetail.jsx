@@ -57,20 +57,8 @@ const OwnerRentalRequestDetail = () => {
       setLoading(true);
       const response = await ownerProductApi.getSubOrderDetail(subOrderId);
       const subOrderData = response.data || response;
-      console.log('🔍 SubOrder Data:', subOrderData);
-      console.log('🔍 SubOrder Status:', subOrderData?.status);
-      console.log('🔍 MasterOrder:', subOrderData?.masterOrder);
-      console.log('🔍 Delivery Address:', subOrderData?.masterOrder?.deliveryAddress);
-      console.log('🔍 Contract:', subOrderData?.contract);
-      if (subOrderData?.contract) {
-        console.log('🔍 Contract ID:', subOrderData.contract._id || subOrderData.contract);
-        console.log('🔍 Contract Signatures:', subOrderData.contract.signatures);
-        console.log('🔍 Owner Signed:', subOrderData.contract.signatures?.owner?.signed);
-        console.log('🔍 Renter Signed:', subOrderData.contract.signatures?.renter?.signed);
-      }
       setSubOrder(subOrderData);
     } catch (error) {
-      console.error(t('ownerRentalRequestDetail.errorLoadingDetail'), error);
       toast.error(t('ownerRentalRequestDetail.errorLoadingRequest'));
       navigate('/owner/rental-requests');
     } finally {
@@ -84,7 +72,6 @@ const OwnerRentalRequestDetail = () => {
       toast.success(t('ownerRentalRequestDetail.productConfirmed'));
       await fetchSubOrderDetail();
     } catch (error) {
-      console.error(t('ownerRentalRequestDetail.errorConfirming'), error);
       toast.error(error.message || t('ownerRentalRequestDetail.errorConfirmProduct'));
     }
   };
@@ -103,7 +90,6 @@ const OwnerRentalRequestDetail = () => {
       setSelectedItemIndex(null);
       await fetchSubOrderDetail();
     } catch (error) {
-      console.error(t('ownerRentalRequestDetail.errorRejecting'), error);
       toast.error(error.message || t('ownerRentalRequestDetail.errorRejectProduct'));
     }
   };
@@ -175,7 +161,6 @@ const OwnerRentalRequestDetail = () => {
       
       await fetchSubOrderDetail();
     } catch (error) {
-      console.error(t('ownerRentalRequestDetail.errorProcessing'), error);
       toast.error(error.message || t('ownerRentalRequestDetail.bulkProcessError'));
     }
   };
@@ -194,7 +179,6 @@ const OwnerRentalRequestDetail = () => {
       toast.success(`Đã xác nhận tất cả ${allPendingProductIds.length} sản phẩm`);
       await fetchSubOrderDetail();
     } catch (error) {
-      console.error(t('ownerRentalRequestDetail.errorConfirmAll'), error);
       toast.error(error.message || t('ownerRentalRequestDetail.bulkConfirmError'));
     }
   };
@@ -215,7 +199,6 @@ const OwnerRentalRequestDetail = () => {
         throw new Error('Không tìm thấy dữ liệu hợp đồng trong response');
       }
     } catch (error) {
-      console.error('Lỗi tải hợp đồng:', error);
       toast.error(error.message || 'Không thể tải hợp đồng');
       setShowSigningInModal(false);
     } finally {
@@ -253,7 +236,6 @@ const OwnerRentalRequestDetail = () => {
       toast.success('Tạo tranh chấp thành công!');
       await fetchSubOrderDetail();
     } catch (error) {
-      console.error('Error creating dispute:', error);
       toast.error(error.response?.data?.message || 'Tạo tranh chấp thất bại');
     }
   };
@@ -280,7 +262,6 @@ const OwnerRentalRequestDetail = () => {
         navigate('/owner/rental-requests');
       }, 2000);
     } catch (error) {
-      console.error('Lỗi hủy đơn hàng:', error);
       toast.error(error.message || 'Không thể hủy đơn hàng');
     } finally {
       setLoadingCancelOrder(false);
@@ -309,7 +290,6 @@ const OwnerRentalRequestDetail = () => {
         navigate('/owner/rental-requests');
       }, 2000);
     } catch (error) {
-      console.error('Lỗi từ chối đơn hàng:', error);
       toast.error(error.message || 'Không thể từ chối đơn hàng');
     } finally {
       setLoadingRejectAll(false);

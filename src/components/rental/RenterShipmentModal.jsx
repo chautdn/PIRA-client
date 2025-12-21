@@ -49,8 +49,6 @@ export default function RenterShipmentModal({ isOpen, onClose, masterOrderId, ma
       // Gọi API xác nhận đã nhận hàng cho subOrder
       const response = await rentalOrderService.renterConfirmDelivered(masterOrder.subOrders[0]._id);
       
-      console.log('✅ Renter confirmed delivery response:', response);
-      
       toast.success(t('renterShipmentModal.confirmSuccess'));
       
       // Gọi callback để cập nhật trạng thái

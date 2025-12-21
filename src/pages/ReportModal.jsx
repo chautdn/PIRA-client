@@ -70,8 +70,6 @@ const ReportModal = ({ isOpen, onClose, product, onReportSuccess }) => {
       }, 2000);
 
     } catch (error) {
-      console.error('Report error:', error);
-      
       if (error.response?.status === 400) {
         setError(error.response.data.message || t('reportModal.errorInvalid'));
       } else if (error.response?.status === 429) {

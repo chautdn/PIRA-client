@@ -29,28 +29,14 @@ const AvailabilityCalendar = ({ productId, selectedDates, onDateSelect }) => {
         endOfMonth.toISOString().split('T')[0]
       );
       
-      console.log('🔍 Full API response:', JSON.stringify(response, null, 2));
-      
       if (response.status === 'success') {
         // Correct response structure: response.data.metadata.calendar
         const calendarData = response.data?.metadata?.calendar || [];
-        console.log('📊 Calendar data received:', calendarData);
-        console.log('📊 Calendar data length:', calendarData.length);
-        if (calendarData.length > 0) {
-          console.log('📅 First calendar entry:', calendarData[0]);
-        }
         setCalendar(calendarData);
       } else {
-        console.error('❌ API Error:', response.message);
         setError(response.message || 'Không thể lấy lịch availability');
       }
     } catch (error) {
-      console.error('❌ Error fetching availability calendar:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
       setError(`Lỗi khi tải lịch availability: ${error.message}`);
     } finally {
       setLoading(false);

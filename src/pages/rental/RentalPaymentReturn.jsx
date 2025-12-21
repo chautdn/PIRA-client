@@ -37,14 +37,10 @@ const RentalPaymentReturn = () => {
       }
 
       try {
-        console.log('🔄 Verifying payment:', { masterOrderId, orderCode });
-
         // Call verify payment API
         const response = await api.post(`/rental-orders/${masterOrderId}/verify-payment`, {
           orderCode: orderCode
         });
-
-        console.log('✅ Verification response:', response.data);
 
         if (response.data.success) {
           setStatus('success');

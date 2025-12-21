@@ -176,7 +176,6 @@ export default function ProductDetail() {
       if (returnD > delivery) {
         const diffTime = Math.abs(returnD - delivery);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        console.log('Rental days:', diffDays);
       }
     }
   }, [deliveryDate, returnDate]);
@@ -197,7 +196,6 @@ export default function ProductDetail() {
   useEffect(() => {
     const checkCanWriteReview = async () => {
       if (!user || !product?._id) {
-        console.log('⏭️  Skipping review check - user or product missing');
         setCanWriteReview(false);
         return;
       }
@@ -212,8 +210,7 @@ export default function ProductDetail() {
         // Path 1: { metadata: { orders: [...] } }
         if (response?.metadata?.orders) {
           allOrders = response.metadata.orders;
-          console.log('✅ Found orders in metadata.orders, count:', allOrders.length);
-        } 
+        }
         // Path 2: { data: { metadata: { orders: [...] } } }
         else if (response?.data?.metadata?.orders) {
           allOrders = response.data.metadata.orders;
@@ -230,13 +227,10 @@ export default function ProductDetail() {
         
         }
         
-        console.log('📋 Total orders found:', allOrders.length);
-        
         // Filter to COMPLETED orders only
         const orders = allOrders.filter(o => o.status === 'COMPLETED');
         
         if (orders.length === 0) {
-          console.log('⚠️  No completed orders found for user');
           setCanWriteReview(false);
           setMyCompletedOrders([]);
           return;
@@ -277,13 +271,12 @@ export default function ProductDetail() {
         }
         
         if (!hasRented) {
-          console.log('❌ Product not found in completed orders');
+          // Product not found in completed orders
         }
         
         setCanWriteReview(hasRented);
         setMyCompletedOrders(orders);
       } catch (err) {
-        console.error('Error checking review eligibility:', err);
         setCanWriteReview(false);
       }
     };
@@ -311,11 +304,9 @@ export default function ProductDetail() {
         }).filter(url => url) // Remove any undefined/null URLs
       }));
       
-      console.log('Processed reviews with photos:', processedItems);
       setReviews((prev) => (reviewsPage === 1 ? processedItems : prev.concat(processedItems)));
       setReviewsTotal(pagination.total || 0);
     } catch (err) {
-      console.error('Error loading reviews', err);
       setReviews([]);
     } finally {
       setReviewsLoading(false);
@@ -330,7 +321,7 @@ export default function ProductDetail() {
         setReviews((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
       }
     } catch (err) {
-      console.error('Error toggling helpful', err);
+      // Error handled silently
     }
   };
 
@@ -342,7 +333,7 @@ export default function ProductDetail() {
         setReviews((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
       }
     } catch (err) {
-      console.error('Error toggling response helpful', err);
+      // Error handled silently
     }
   };
 
@@ -366,7 +357,6 @@ export default function ProductDetail() {
         setReviews(items);
         setReviewsTotal(pagination.total || 0);
       } catch (e) {
-        console.error('Error switching review target', e);
         setReviews([]);
       } finally {
         setReviewsLoading(false);
@@ -423,7 +413,6 @@ export default function ProductDetail() {
     
     // Load shipper info if reviewing shipper and not already loaded
     if (reviewsTarget === 'SHIPPER' && !shipperInfo && myCompletedOrders.length > 0) {
-      console.log('🔍 Opening shipper review modal, loading shipper info...');
       loadShipperInfoFromOrders();
     }
     
@@ -462,7 +451,6 @@ export default function ProductDetail() {
       return;
     }
     try {
-      console.log('Submitting review with photos:', newReview.photos); // Debug log
   const fd = new FormData();
       // set type according to selected target (PRODUCT => product, OWNER/SHIPPER => user)
       const typeForServer = (reviewsTarget === 'PRODUCT') ? 'product' : 'user';
@@ -475,7 +463,6 @@ export default function ProductDetail() {
         let revieweeId;
         if (reviewsTarget === 'SHIPPER' && shipperInfo?._id) {
           revieweeId = shipperInfo._id;
-          console.log('Using shipper from order context:', shipperInfo);
         } else {
           revieweeId = reviewsTarget === 'OWNER' ? product?.owner?._id : product?.shipper;
         }
@@ -489,14 +476,12 @@ export default function ProductDetail() {
       
       // Ensure photos are appended with 'photos' field name
       if (newReview.photos && newReview.photos.length > 0) {
-        console.log('Appending photos to FormData:', newReview.photos);
         for (const photo of newReview.photos) {
           fd.append('photos', photo);
         }
       }
 
   const response = await reviewService.create(fd);
-  console.log('Review created successfully:', response.data);
   
   // Clean up preview URLs
   previewImages.forEach(url => URL.revokeObjectURL(url));
@@ -504,16 +489,11 @@ export default function ProductDetail() {
   
   setShowWriteModal(false);
   // refresh first page for current target
-  console.log('📝 About to refresh reviews, target:', reviewsTarget);
   await changeReviewsTarget(reviewsTarget);
   setNewReview({ rating: 5, title: '', comment: '', photos: [], type: reviewsTarget });
   if (fileInputRef.current) fileInputRef.current.value = null;
   toast.success(t("productDetail.reviewSubmitSuccess"));
     } catch (err) {
-      console.error('Error creating review', err);
-      console.error('Error response:', err.response?.data);
-      console.error('Error status:', err.response?.status);
-      
       // Check for duplicate review error - differentiate by type
       const errorMessage = err.response?.data?.message || '';
       const errorStatus = err.response?.status;
@@ -561,7 +541,6 @@ export default function ProductDetail() {
       setReplyBoxOpen((prev) => ({ ...prev, [reviewId]: false }));
       toast.success('Phản hồi đã được gửi thành công!');
     } catch (err) {
-      console.error('Error replying to review', err);
       toast.error('Lỗi khi gửi phản hồi');
     }
   };
@@ -577,7 +556,7 @@ export default function ProductDetail() {
         setReviews((prev) => prev.concat(items));
         setReviewsPage(next);
       } catch (e) {
-        console.error('Error loading more reviews', e);
+        // Error handled silently
       } finally {
         setReviewsLoading(false);
       }
@@ -691,7 +670,6 @@ export default function ProductDetail() {
       fetchReviews(product._id);
       toast.success(t("productDetail.reviewDeleted"));
     } catch (err) {
-      console.error('Error deleting review', err);
       toast.error(t("productDetail.deleteReviewError"));
     }
   };
@@ -714,7 +692,6 @@ export default function ProductDetail() {
       fetchReviews(product._id);
       toast.success(t("productDetail.reviewUpdated"));
     } catch (err) {
-      console.error('Error saving review edit', err);
       toast.error('Lỗi khi lưu chỉnh sửa');
     }
   };
@@ -725,7 +702,6 @@ export default function ProductDetail() {
       fetchReviews(product._id);
       toast.success('Phản hồi đã được xóa');
     } catch (err) {
-      console.error('Error deleting response', err);
       toast.error('Lỗi khi xóa phản hồi');
     }
   };
@@ -746,7 +722,6 @@ export default function ProductDetail() {
       fetchReviews(product._id);
       toast.success('Phản hồi đã được cập nhật');
     } catch (err) {
-      console.error('Error saving response edit', err);
       toast.error('Lỗi khi lưu chỉnh sửa phản hồi');
     }
   };
@@ -788,22 +763,16 @@ export default function ProductDetail() {
       const response = await productService.getById(id);
       const productData = response.data?.data?.product || response.data?.product || response.data;
       setProduct(productData);
-      console.log('Product loaded:', productData);
-      console.log('Product pricing:', productData?.pricing);
-      console.log('Daily rate:', productData?.pricing?.dailyRate);
 
       // Track category click for recommendation (only if user is logged in)
       if (user && productData?.category?._id) {
         try {
           await recommendationService.trackCategoryClick(productData.category._id);
-          console.log('Category click tracked for recommendation:', productData.category._id);
         } catch (trackError) {
           // Silent fail - don't affect user experience if tracking fails
-          console.error('Failed to track category click:', trackError);
         }
       }
     } catch (error) {
-      console.error('Error fetching product:', error);
       setError('Không thể tải thông tin sản phẩm');
     } finally {
       setLoading(false);
@@ -813,15 +782,8 @@ export default function ProductDetail() {
   // Load order data when rating from completed order
   const loadShipperInfoFromOrders = async () => {
     try {
-      console.log('🔍 Loading shipper info from completed orders...');
-      console.log('📦 My completed orders:', myCompletedOrders);
-      console.log('📦 Current product ID:', product._id);
-      
       // Try to find shipper info from any completed order that contains this product
       for (const masterOrder of myCompletedOrders) {
-        console.log('🔍 Checking master order:', masterOrder._id);
-        const subOrders = Array.isArray(masterOrder.subOrders) ? masterOrder.subOrders : [];
-        console.log('   SubOrders count:', subOrders.length);
         
         for (const subOrder of subOrders) {
           const subOrderData = typeof subOrder === 'object' ? subOrder : {};
@@ -835,12 +797,10 @@ export default function ProductDetail() {
           });
           
           if (hasCurrentProduct) {
-            console.log('✅ Found subOrder with current product!');
             // Found a subOrder with this product, now get full order details with shipper info
             try {
               const response = await rentalOrderService.getOrderDetail(masterOrder._id);
               const orderData = response.masterOrder || response.data?.masterOrder || response;
-              console.log('📋 Order detail response:', orderData);
               
               if (orderData?.subOrders && orderData.subOrders.length > 0) {
                 // Find the subOrder that contains this product
@@ -852,77 +812,51 @@ export default function ProductDetail() {
                     return String(productId) === String(product._id);
                   });
                   
-                  console.log('   SubOrder has product:', hasProduct);
-                  console.log('   SubOrder shipments:', fullSubOrder.shipments);
-                  
                   if (hasProduct && fullSubOrder.shipments && fullSubOrder.shipments.length > 0) {
-                    console.log('   Shipments found:', fullSubOrder.shipments.length);
-                    for (const shipment of fullSubOrder.shipments) {
-                      console.log('   Shipment type:', shipment.type, 'Shipper:', shipment.shipper);
-                    }
-                    
                     const deliveryShipment = fullSubOrder.shipments.find(s => s.type === 'DELIVERY');
-                    console.log('   Delivery shipment:', deliveryShipment);
                     
                     if (deliveryShipment?.shipper) {
                       setShipperInfo(deliveryShipment.shipper);
-                      console.log('✅ Shipper info loaded from completed order:', deliveryShipment.shipper);
                       return; // Found shipper, exit
-                    } else {
-                      console.warn('⚠️ Delivery shipment found but no shipper populated');
                     }
                   }
                 }
               }
             } catch (err) {
-              console.error('Error loading order detail:', err);
               continue; // Try next order
             }
           }
         }
       }
-      console.log('⚠️ No shipper found in completed orders');
     } catch (error) {
-      console.error('❌ Error loading shipper info:', error);
+      // Error handled silently
     }
   };
 
   const loadOrderData = async (orderId) => {
     try {
       const response = await rentalOrderService.getOrderDetail(orderId);
-      console.log('API Response:', response);
       
       // Extract masterOrder from response - API returns { masterOrder, message, ... }
       const orderData = response.masterOrder || response.data?.masterOrder || response;
-      console.log('Order data:', orderData);
       
       setCurrentOrder(orderData);
       
       // Extract shipper info from the first suborder's shipments
       if (orderData?.subOrders && orderData.subOrders.length > 0) {
         const subOrder = orderData.subOrders[0];
-        console.log('First suborder:', subOrder);
-        console.log('Shipments:', subOrder.shipments);
         
         // Get shipper from shipments array
         if (subOrder.shipments && subOrder.shipments.length > 0) {
           const deliveryShipment = subOrder.shipments.find(s => s.type === 'DELIVERY');
-          console.log('Delivery shipment:', deliveryShipment);
           
           if (deliveryShipment?.shipper) {
             setShipperInfo(deliveryShipment.shipper);
-            console.log('✅ Shipper info loaded:', deliveryShipment.shipper);
-          } else {
-            console.log('⚠️ No shipper found in delivery shipment');
           }
-        } else {
-          console.log('⚠️ No shipments found in suborder');
         }
-      } else {
-        console.log('⚠️ No suborders found in order');
       }
     } catch (error) {
-      console.error('❌ Error loading order data:', error);
+      // Error handled silently
     }
   };
 
@@ -941,7 +875,7 @@ export default function ProductDetail() {
         setOwnerHotProducts(filtered);
       }
     } catch (error) {
-      console.error('Error fetching owner hot products:', error);
+      // Error handled silently
     } finally {
       setLoadingCarousels(false);
     }
@@ -969,7 +903,7 @@ export default function ProductDetail() {
         setRelatedProducts(filtered);
       }
     } catch (error) {
-      console.error('Error fetching related products:', error);
+      // Error handled silently
     } finally {
       setLoadingCarousels(false);
     }
@@ -1039,7 +973,6 @@ export default function ProductDetail() {
         setAvailableQuantity(0);
       }
     } catch (error) {
-      console.error('Error checking availability:', error);
       setAvailableQuantity(0);
     } finally {
       setCheckingAvailability(false);
@@ -1133,7 +1066,6 @@ export default function ProductDetail() {
         // Real-time check passed
       }
     } catch (error) {
-      console.error('Error checking real-time availability:', error);
       alert('Không thể kiểm tra tình trạng sản phẩm. Vui lòng thử lại sau.');
       return;
     }
@@ -1183,7 +1115,6 @@ export default function ProductDetail() {
         currentUser = await refreshUser();
       }
     } catch (error) {
-      console.error('Failed to refresh user data:', error);
       // Continue with cached user data
     }
 
@@ -1250,7 +1181,6 @@ export default function ProductDetail() {
       );
       navigate(`/chat/${conversationResponse.data._id}`);
     } catch (error) {
-      console.error('Error initiating chat:', error);
       navigate('/chat');
     }
   };
@@ -1803,7 +1733,6 @@ export default function ProductDetail() {
                                         : photo.url || photo.path || photo.secure_url || photo.imageUrl;
                                       
                                       if (!photoUrl) {
-                                        console.warn('Invalid photo object:', photo);
                                         return null;
                                       }
 
@@ -1820,7 +1749,6 @@ export default function ProductDetail() {
                                             alt={`Review photo ${photoIndex + 1}`}
                                             className="w-full h-full object-cover"
                                             onError={(e) => {
-                                              console.warn('Failed to load photo:', photoUrl);
                                               e.target.src = '/images/image-placeholder.png';
                                             }}
                                           />
@@ -2296,7 +2224,6 @@ export default function ProductDetail() {
         onClose={() => setShowReportModal(false)}
         product={product}
         onReportSuccess={() => {
-          console.log('Report submitted successfully');
         }}
       />
 

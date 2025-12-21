@@ -6,7 +6,7 @@ import { useAuth } from './useAuth';
 import { DisputeContext } from '../context/DisputeContext';
 
 // Get server URL from environment or default
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://api.pira.asia';
 
 // ============== SINGLETON SOCKET MANAGER ==============
 // Keeps one persistent socket connection for all dispute hooks
@@ -23,7 +23,6 @@ const getOrCreateSocket = (userId) => {
 
   // If socket exists but for different user, disconnect
   if (globalSocket && globalUserId !== userId) {
-    console.log('🔌 Dispute socket: User changed, reconnecting...');
     globalSocket.disconnect();
     globalSocket = null;
     globalUserId = null;
@@ -41,16 +40,13 @@ const getOrCreateSocket = (userId) => {
     });
 
     globalSocket.on('connect', () => {
-      console.log('🔌 Dispute socket connected, registering user:', userId);
       globalSocket.emit('dispute:register', userId);
     });
 
     globalSocket.on('disconnect', (reason) => {
-      console.log('🔌 Dispute socket disconnected:', reason);
     });
 
     globalSocket.on('connect_error', (error) => {
-      console.error('🔌 Dispute socket connection error:', error.message);
     });
 
     // Setup event forwarding - these events will be forwarded to all registered listeners
@@ -69,7 +65,6 @@ const getOrCreateSocket = (userId) => {
 
     events.forEach((eventName) => {
       globalSocket.on(eventName, (data) => {
-        console.log(`🔌 Dispute socket received event: ${eventName}`, data);
         const listeners = eventListeners.get(eventName);
         if (listeners) {
           listeners.forEach((callback) => callback(data));
@@ -140,7 +135,6 @@ const useDisputeSocket = (callbacks = {}) => {
   }, [addNewDisputeRealtime]);
 
   const handleDisputeStatusChanged = useCallback((data) => {
-    console.log('🔌 [useDisputeSocket] handleDisputeStatusChanged called with:', data);
     
     // Update state realtime
     if (updateDisputeStatusRealtime && data.disputeId) {
@@ -155,7 +149,6 @@ const useDisputeSocket = (callbacks = {}) => {
     
     // Call custom callback if provided
     if (callbacksRef.current.onDisputeStatusChanged) {
-      console.log('🔌 [useDisputeSocket] Calling custom onDisputeStatusChanged callback');
       callbacksRef.current.onDisputeStatusChanged(data);
     }
   }, [updateDisputeStatusRealtime, currentDispute, loadDisputeDetail]);
@@ -264,7 +257,6 @@ const useDisputeSocket = (callbacks = {}) => {
   }, [updateDisputeStatusRealtime, currentDispute, loadDisputeDetail]);
 
   const handleDisputeCompleted = useCallback((data) => {
-    console.log('🔌 [useDisputeSocket] handleDisputeCompleted called with:', data);
     
     // Update state realtime
     if (updateDisputeStatusRealtime && data.disputeId) {
@@ -279,7 +271,6 @@ const useDisputeSocket = (callbacks = {}) => {
     
     // Call custom callback if provided
     if (callbacksRef.current.onDisputeCompleted) {
-      console.log('🔌 [useDisputeSocket] Calling custom onDisputeCompleted callback');
       callbacksRef.current.onDisputeCompleted(data);
     }
   }, [updateDisputeStatusRealtime, currentDispute, loadDisputeDetail]);

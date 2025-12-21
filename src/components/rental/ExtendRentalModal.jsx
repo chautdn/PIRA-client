@@ -32,13 +32,11 @@ const ExtendRentalModal = ({
   // Fetch order detail if needed
   useEffect(() => {
     if (isOpen && masterOrder && !masterOrder.subOrders) {
-      console.log('📥 Fetching order detail...');
       api.get(`/rental-orders/${masterOrder._id}`)
         .then(res => {
           setLocalOrder(res.data.data);
-          console.log('✅ Order detail fetched:', res.data.data);
         })
-        .catch(err => console.error('❌ Failed to fetch order:', err));
+        .catch(err => {});
     }
   }, [isOpen, masterOrder]);
 
@@ -48,7 +46,6 @@ const ExtendRentalModal = ({
       products.forEach(product => {
         // If product already has data from populate, use it directly
         if (product.product && typeof product.product === 'object' && product.product._id) {
-          console.log('📦 Product already populated:', product.product);
           setEnrichedProducts(prev => ({
             ...prev,
             [product._id]: product.product
@@ -56,18 +53,15 @@ const ExtendRentalModal = ({
         } else if (product.product && typeof product.product === 'string') {
           // If product is just an ID string, fetch it
           const productId = product.product;
-          console.log(`🔍 Fetching product with ID: ${productId}`);
           api.get(`/products/${productId}`)
             .then(res => {
               const fetchedProduct = res.data?.data || res.data?.metadata || res.data;
-              console.log(`✅ Fetched product ${productId}:`, fetchedProduct);
               setEnrichedProducts(prev => ({
                 ...prev,
                 [product._id]: fetchedProduct
               }));
             })
             .catch(err => {
-              console.warn(`⚠️ Failed to fetch product ${productId}:`, err.message);
             });
         }
       });
@@ -90,33 +84,26 @@ const ExtendRentalModal = ({
   const getProductImage = (productDetail) => {
     if (!productDetail) return null;
     
-    console.log('🖼️ Getting image from:', productDetail);
-    
     // Try images array first (from populated data)
     if (productDetail.images && Array.isArray(productDetail.images) && productDetail.images.length > 0) {
       const firstImage = productDetail.images[0];
-      console.log('✅ Using image from images array:', firstImage);
       return typeof firstImage === 'string' ? firstImage : firstImage?.url;
     }
     
     // Try thumbnail
     if (productDetail.thumbnail) {
-      console.log('✅ Using thumbnail:', productDetail.thumbnail);
       return productDetail.thumbnail;
     }
     
     // Try single image field
     if (productDetail.image) {
-      console.log('✅ Using image field:', productDetail.image);
       return productDetail.image;
     }
     
     if (productDetail.mainImage) {
-      console.log('✅ Using mainImage:', productDetail.mainImage);
       return productDetail.mainImage;
     }
     
-    console.log('❌ No image found in product detail');
     return null;
   };
 
@@ -126,17 +113,14 @@ const ExtendRentalModal = ({
     
     // Try title first (from Product model)
     if (productDetail.title) {
-      console.log('✅ Using title:', productDetail.title);
       return productDetail.title;
     }
     
     // Try name (fallback)
     if (productDetail.name) {
-      console.log('✅ Using name:', productDetail.name);
       return productDetail.name;
     }
     
-    console.log('❌ No name/title found');
     return 'Sản phẩm (chưa tải tên)';
   };
   const handleSelectAll = (checked) => {
@@ -212,23 +196,11 @@ const ExtendRentalModal = ({
     const dailyPrice = product.rentalRate || 0;
     
     if (!dailyPrice || dailyPrice <= 0) {
-      console.warn('⚠️ Missing rentalRate for product:', {
-        productId: product._id,
-        productName: product.product?.title || product.product?.name || 'Unknown',
-        rentalRate: product.rentalRate
-      });
       return 0;
     }
     
     const fee = Math.ceil(dailyPrice * extensionDays);
     
-    console.log('💰 Fee calculation:', {
-      productId: product._id,
-      productName: product.product?.title || product.product?.name || 'Unknown',
-      rentalRate: dailyPrice,
-      extensionDays,
-      fee
-    });
     return fee;
   };
 
@@ -276,29 +248,15 @@ const ExtendRentalModal = ({
         dailyRentalPrice: item.dailyPrice
       }));
 
-      console.log('📤 Sending extension request:', {
-        subOrderId: subOrder._id,
-        productCount: selectedProductsPayload.length,
-        products: selectedProductsPayload.map(p => ({
-          productId: p.productId,
-          extensionDays: p.extensionDays,
-          extensionFee: p.extensionFee,
-          dailyRentalPrice: p.dailyRentalPrice
-        })),
-        totalFee: selectedProductsPayload.reduce((sum, p) => sum + p.extensionFee, 0)
-      });
-
       const response = await api.post('/extensions/request', {
         subOrderId: subOrder._id,
         selectedProducts: selectedProductsPayload
       });
 
-      console.log('✅ Extension request response:', response);
       toast.success(t('extendRentalModal.successMessage'));
       onClose();
       onSuccess?.();
     } catch (error) {
-      console.error('❌ Error sending extension request:', error);
       toast.error(error.response?.data?.message || t('extendRentalModal.errorMessage'));
     } finally {
       setLoading(false);
@@ -404,8 +362,6 @@ const ExtendRentalModal = ({
                           const enrichedData = enrichedProducts[product._id];
                           const productDetail = enrichedData || product.product;
                           
-                          console.log('🔍 Rendering product:', { product, productDetail, enrichedData });
-                          
                           const productName = getProductName(productDetail);
                           const productImage = getProductImage(productDetail);
                           const productSku = productDetail?.sku || productDetail?.code;
@@ -439,7 +395,6 @@ const ExtendRentalModal = ({
                                     alt={productName}
                                     className="w-20 h-20 object-cover rounded-lg flex-shrink-0 border border-gray-200"
                                     onError={(e) => {
-                                      console.error('❌ Image failed to load:', productImage);
                                       e.target.style.display = 'none';
                                     }}
                                   />

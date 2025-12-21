@@ -22,9 +22,6 @@ const PaymentSuccess = () => {
         try {
           const response = await api.get(`/payment/verify/${orderCode}`);
           const paymentResult = response.data?.metadata || response.data?.data;
-
-          console.log("🔍 Payment verification result:", paymentResult);
-
           // ✅ If payment is successful
           if (
             paymentResult?.transaction?.status === "success" ||

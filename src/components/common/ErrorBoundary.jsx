@@ -32,7 +32,6 @@ class ErrorBoundary extends React.Component {
 
     // If it's a React internal error and we haven't retried too many times, auto-recover
     if (isReactInternalError && this.state.errorCount < 3) {
-      console.log("Attempting automatic recovery from React internal error...");
       setTimeout(() => {
         this.setState({ hasError: false, error: null, errorInfo: null });
       }, 100);

@@ -7,15 +7,9 @@ class RentalOrderService {
   // Bước 1: Tạo đơn thuê từ giỏ hàng
   async createDraftOrder(orderData) {
     try {
-      console.log(
-        "📤 Sending order data to backend:",
-        JSON.stringify(orderData, null, 2)
-      );
       const response = await api.post("/rental-orders/create-draft", orderData);
-      console.log("✅ Backend response:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Backend error:", error.response?.data || error.message);
       throw new Error(
         error.response?.data?.message || "Không thể tạo đơn thuê"
       );
@@ -25,18 +19,9 @@ class RentalOrderService {
   // Bước 1b: Tạo đơn thuê với thanh toán (renter pays upfront)
   async createPaidOrder(orderData) {
     try {
-      console.log(
-        "📤 Sending paid order data to backend:",
-        JSON.stringify(orderData, null, 2)
-      );
       const response = await api.post("/rental-orders/create-paid", orderData);
-      console.log("✅ Backend response for paid order:", response.data);
       return response.data;
     } catch (error) {
-      console.error(
-        "❌ Backend error for paid order:",
-        error.response?.data || error.message
-      );
       throw new Error(
         error.response?.data?.message || "Không thể tạo đơn thuê với thanh toán"
       );
@@ -241,7 +226,6 @@ class RentalOrderService {
       const response = await api.get("/rental-orders/owner-active-rentals", {
         params,
       });
-      console.log("✅ Owner active rentals response:", response.data);
       return response.data;
     } catch (error) {
       throw new Error(
@@ -254,15 +238,9 @@ class RentalOrderService {
   // Calculate deposit for current cart
   async calculateDeposit() {
     try {
-      console.log("📤 Calculating deposit from cart...");
       const response = await api.get("/rental-orders/calculate-deposit");
-      console.log("✅ Deposit calculation response:", response.data);
       return response.data;
     } catch (error) {
-      console.error(
-        "❌ Deposit calculation error:",
-        error.response?.data || error.message
-      );
       throw new Error(
         error.response?.data?.message || "Không thể tính toán tiền cọc"
       );
@@ -272,11 +250,6 @@ class RentalOrderService {
   // Get product availability calendar
   async getProductAvailabilityCalendar(productId, startDate, endDate) {
     try {
-      console.log(
-        `📤 Getting availability calendar for product ${productId}...`
-      );
-      console.log(`📅 Date range: ${startDate} to ${endDate}`);
-
       const response = await api.get(
         `/rental-orders/products/${productId}/availability-calendar`,
         {
@@ -284,21 +257,8 @@ class RentalOrderService {
         }
       );
 
-      console.log("✅ Availability calendar response:", response.data);
-      console.log("🔍 Response structure check:", {
-        status: response.data.status,
-        hasData: !!response.data.data,
-        hasMetadata: !!response.data.data?.metadata,
-        hasCalendar: !!response.data.data?.metadata?.calendar,
-        calendarLength: response.data.data?.metadata?.calendar?.length,
-      });
-
       return response.data;
     } catch (error) {
-      console.error(
-        "❌ Availability calendar error:",
-        error.response?.data || error.message
-      );
       throw new Error(
         error.response?.data?.message || "Không thể lấy lịch availability"
       );
@@ -316,21 +276,12 @@ class RentalOrderService {
    */
   async partialConfirmSubOrder(subOrderId, confirmedProductIds) {
     try {
-      console.log("📤 Partial confirm SubOrder:", {
-        subOrderId,
-        confirmedProductIds,
-      });
       const response = await api.post(
         `/rental-orders/suborders/${subOrderId}/partial-confirm`,
         { confirmedProductIds }
       );
-      console.log("✅ Partial confirm response:", response.data);
       return response.data;
     } catch (error) {
-      console.error(
-        "❌ Partial confirm error:",
-        error.response?.data || error.message
-      );
       throw new Error(
         error.response?.data?.message || "Không thể xác nhận đơn hàng"
       );
@@ -593,15 +544,12 @@ class RentalOrderService {
    */
   async renterCancelPartialOrder(subOrderId, reason) {
     try {
-      console.log("📤 Renter cancelling partial order:", subOrderId);
       const response = await api.post(
         `/rental-orders/suborders/${subOrderId}/renter-cancel-partial`,
         { reason }
       );
-      console.log("✅ Partial order cancelled:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Error cancelling partial order:", error);
       throw new Error(
         error.response?.data?.message || "Không thể hủy đơn hàng"
       );
@@ -614,14 +562,11 @@ class RentalOrderService {
    */
   async renterAcceptPartialOrder(subOrderId) {
     try {
-      console.log("📤 Renter accepting partial order:", subOrderId);
       const response = await api.post(
         `/rental-orders/suborders/${subOrderId}/renter-accept-partial`
       );
-      console.log("✅ Partial order accepted:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Error accepting partial order:", error);
       throw new Error(
         error.response?.data?.message || "Không thể chấp nhận đơn hàng"
       );
@@ -635,15 +580,12 @@ class RentalOrderService {
    */
   async ownerCancelPartialOrder(subOrderId, reason) {
     try {
-      console.log("📤 Owner cancelling partial order:", subOrderId);
       const response = await api.post(
         `/rental-orders/suborders/${subOrderId}/owner-cancel-partial`,
         { reason }
       );
-      console.log("✅ Owner cancelled partial order:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Error owner cancelling partial order:", error);
       throw new Error(
         error.response?.data?.message || "Không thể hủy đơn hàng"
       );
@@ -657,15 +599,12 @@ class RentalOrderService {
    */
   async ownerRejectAllProducts(subOrderId, reason) {
     try {
-      console.log("📤 Owner rejecting all products:", subOrderId);
       const response = await api.post(
         `/rental-orders/suborders/${subOrderId}/owner-reject-all`,
         { reason }
       );
-      console.log("✅ Owner rejected all products:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Error owner rejecting all products:", error);
       throw new Error(
         error.response?.data?.message || "Không thể từ chối đơn hàng"
       );
@@ -679,15 +618,12 @@ class RentalOrderService {
    */
   async renterCancelPendingOrder(subOrderId, reason) {
     try {
-      console.log("📤 Renter cancelling pending order:", subOrderId);
       const response = await api.post(
         `/rental-orders/suborders/${subOrderId}/renter-cancel-pending`,
         { reason }
       );
-      console.log("✅ Renter cancelled pending order:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Error renter cancelling pending order:", error);
       throw new Error(
         error.response?.data?.message || "Không thể hủy đơn hàng"
       );

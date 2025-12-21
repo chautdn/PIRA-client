@@ -32,7 +32,6 @@ const AdminOrderDetail = () => {
       }
       
       const orderData = await adminService.getOrderById(orderId);
-      console.log('Fetched order data:', orderData);
       
       if (orderData) {
         setOrder(orderData);

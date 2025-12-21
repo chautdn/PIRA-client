@@ -66,14 +66,8 @@ export default function ShipmentsPage() {
         const data = resp.data || resp;
         const shipmentsData = Array.isArray(data) ? data : (data.data || data);
         
-        // Debug: Check products data
-        console.log('Shipments loaded:', shipmentsData.length);
+   
         if (shipmentsData.length > 0 && shipmentsData[0].subOrder) {
-          console.log('First shipment subOrder:', {
-            hasProducts: !!shipmentsData[0].subOrder.products,
-            productsLength: shipmentsData[0].subOrder.products?.length,
-            firstProduct: shipmentsData[0].subOrder.products?.[0]
-          });
         }
         
         setShipments(shipmentsData);
@@ -89,7 +83,6 @@ export default function ShipmentsPage() {
         }
         setProofs(proofsMap);
       } catch (err) {
-        console.error('Failed to load shipments', err.message || err);
       } finally {
         setLoading(false);
       }
@@ -102,7 +95,6 @@ export default function ShipmentsPage() {
     if (!socket || !connected) return;
 
     const handleShipmentCreated = (data) => {
-      console.log('📦 [Shipments] Shipment created event received:', data);
       
       // Show toast notification immediately
       const typeLabel = data.shipment.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Trả hàng';
@@ -131,7 +123,6 @@ export default function ShipmentsPage() {
           }
           setProofs(proofsMap);
         } catch (err) {
-          console.error('Failed to reload shipments after socket event:', err.message);
         }
       };
       
@@ -139,7 +130,6 @@ export default function ShipmentsPage() {
     };
 
     const handleNotification = (data) => {
-      console.log('🔔 [Shipments] Notification received:', data);
       
       // If it's a shipment notification, show toast and refresh
       if (data.notification?.type === 'SHIPMENT') {
@@ -154,12 +144,9 @@ export default function ShipmentsPage() {
     socket.on('shipment:created', handleShipmentCreated);
     socket.on('notification:new', handleNotification);
 
-    console.log('✅ [Shipments] Socket listeners registered for shipment:created and notification:new');
-
     return () => {
       socket.off('shipment:created', handleShipmentCreated);
       socket.off('notification:new', handleNotification);
-      console.log('🔌 [Shipments] Socket listeners removed');
     };
   }, [socket, connected, proofs]);
 
@@ -329,7 +316,6 @@ export default function ShipmentsPage() {
       const data = resp.data || resp;
       setShipments(Array.isArray(data) ? data : (data.data || data));
     } catch (err) {
-      console.error('Accept failed', err.message || err);
       alert(err.message || 'Accept failed');
     }
   };
@@ -411,7 +397,6 @@ export default function ShipmentsPage() {
       setUploadModalShipment(null);
       setUploadAction(null);
     } catch (err) {
-      console.error('Upload failed', err.message || err);
       alert(err.message || 'Upload failed');
     }
   };
@@ -451,7 +436,6 @@ export default function ShipmentsPage() {
       const data = resp.data || resp;
       setShipments(Array.isArray(data) ? data : (data.data || data));
     } catch (err) {
-      console.error('Failed to refresh shipments', err);
     }
   };
 

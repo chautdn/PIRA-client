@@ -72,7 +72,7 @@ const RentalOrdersPage = () => {
         response.data?.requests || response.metadata?.requests || [];
       setEarlyReturnRequests(requests);
     } catch (error) {
-      console.error("Failed to load early return requests:", error);
+      // Error handled silently
     }
   };
 
@@ -221,7 +221,6 @@ const RentalOrdersPage = () => {
       loadEarlyReturnRequests();
     } catch (error) {
       toast.dismiss();
-      console.error("Renter confirm failed", error);
       toast.error(
         error.response?.data?.message ||
           error.message ||

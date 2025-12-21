@@ -12,9 +12,6 @@ export const kycService = {
       if (backImage) {
         formData.append("backImage", backImage);
       }
-
-      console.log("📤 Uploading CCCD images...");
-
       const response = await api.post("/kyc/upload-cccd", formData, {
         headers: {
           "Content-Type": "multipart/form-data",

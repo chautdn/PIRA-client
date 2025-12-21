@@ -38,7 +38,6 @@ const BankManagement = () => {
     try {
       setLoading(true);
       const response = await adminService.getAllBankAccounts(filters);
-      console.log('Bank Accounts Response:', response);
 
       if (response) {
         setBankAccounts(response.bankAccounts || []);

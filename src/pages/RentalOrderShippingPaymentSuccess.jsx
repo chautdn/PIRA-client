@@ -73,7 +73,6 @@ const RentalOrderShippingPaymentSuccess = () => {
         setResult({ status: "paid" });
         setLoading(false);
       } catch (createError) {
-        console.error("Failed to create request:", createError);
         setError("Không thể tạo yêu cầu. Vui lòng liên hệ hỗ trợ.");
         toast.error(
           createError.response?.data?.message ||

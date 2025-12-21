@@ -132,7 +132,6 @@ class VietMapService {
       if (window.vietmapgl) {
         // VietMap GL JS doesn't use accessToken in the same way
         // API key is passed in style URL instead
-        console.log("VietMap GL JS initialized successfully");
         return true;
       } else {
         console.warn("VietMap GL JS not loaded yet");
@@ -167,7 +166,6 @@ class VietMapService {
       script.src =
         "https://unpkg.com/@vietmap/vietmap-gl-js@6.0.0/dist/vietmap-gl.js";
       script.onload = () => {
-        console.log("VietMap GL JS loaded successfully");
         resolve();
       };
       script.onerror = reject;

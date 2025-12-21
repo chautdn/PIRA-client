@@ -86,7 +86,6 @@ const RentalOrderDetailPage = () => {
       // Reload order detail
       loadOrderDetail(id);
     } catch (error) {
-      console.error("Error creating dispute:", error);
       toast.error(error.response?.data?.message || t("rentalOrderDetail.createDisputeFailed"));
     }
   };
@@ -123,7 +122,6 @@ const RentalOrderDetailPage = () => {
   // Load order detail first
   useEffect(() => {
     if (id) {
-      console.log("📥 Loading order detail for ID:", id);
       loadOrderDetail(id);
     }
   }, [id]);
@@ -156,7 +154,6 @@ const RentalOrderDetailPage = () => {
 
   // Handle renter decision
   const handleRenterDecision = async (decision, result) => {
-    console.log('Renter decision:', decision, result);
     setShowPartialDecisionModal(false);
     setPartialDecisionSubOrder(null);
     
@@ -188,22 +185,14 @@ const RentalOrderDetailPage = () => {
         response?.data?.requests ||
         [];
 
-      console.log("[RentalOrderDetail] Response structure:", response);
-      console.log("[RentalOrderDetail] Extracted requests:", requests);
-
       // Filter requests for this specific order's subOrders
       const orderSubOrderIds =
         currentOrder.subOrders?.map((sub) => sub._id) || [];
       const filteredRequests = requests.filter((req) =>
         orderSubOrderIds.includes(req.subOrder?._id || req.subOrder)
       );
-      console.log(
-        "[RentalOrderDetail] Early return requests loaded:",
-        filteredRequests
-      );
       setEarlyReturnRequests(filteredRequests);
     } catch (error) {
-      console.error("Failed to fetch early return requests:", error);
       setEarlyReturnRequests([]); // Set to empty array on error
     }
   };
@@ -238,8 +227,6 @@ const RentalOrderDetailPage = () => {
 
       if (payment === "success") {
         try {
-          console.log("🔄 Verifying payment return:", { id, orderCode });
-
           const response = await api.post(
             `/rental-orders/${id}/verify-payment`,
             {
@@ -262,8 +249,6 @@ const RentalOrderDetailPage = () => {
             }, 1000);
           }
         } catch (error) {
-          console.error("❌ Payment verification failed:", error);
-
           // Only show error if it's not already verified
           if (!error.response?.data?.message?.includes("đã được thanh toán")) {
             toast.error(
@@ -300,11 +285,6 @@ const RentalOrderDetailPage = () => {
   }
 
   if (isLoadingOrderDetail || (!currentOrder && id)) {
-    console.log("⏳ Loading state:", {
-      isLoadingOrderDetail,
-      id,
-      hasCurrentOrder: !!currentOrder,
-    });
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center">
@@ -316,13 +296,6 @@ const RentalOrderDetailPage = () => {
   }
 
   if (!currentOrder) {
-    console.error("❌ No current order found:", {
-      id,
-      isLoadingOrderDetail,
-      currentOrder,
-      payment,
-      orderCode,
-    });
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
@@ -342,12 +315,6 @@ const RentalOrderDetailPage = () => {
       </div>
     );
   }
-
-  console.log("✅ Rendering order detail:", {
-    orderId: currentOrder._id,
-    status: currentOrder.status,
-    paymentStatus: currentOrder.paymentStatus,
-  });
 
   const getStatusColor = (status) => {
     const colors = {
@@ -425,7 +392,6 @@ const RentalOrderDetailPage = () => {
       // Reload order details
       await loadOrderDetail(id);
     } catch (error) {
-      console.error("Error handling owner action:", error);
       alert(t("rentalOrderDetail.actionError"));
     }
   };
@@ -438,8 +404,6 @@ const RentalOrderDetailPage = () => {
         subOrderId
       );
 
-      console.log("✅ Renter confirmation response:", response);
-
       toast.dismiss();
       toast.success(t("rentalOrderDetail.confirmReceivedSuccess"));
 
@@ -449,7 +413,6 @@ const RentalOrderDetailPage = () => {
       await loadOrderDetail(id);
     } catch (error) {
       toast.dismiss();
-      console.error("Renter confirm failed", error);
       toast.error(
         error.response?.data?.message ||
           error.message ||
@@ -482,7 +445,6 @@ const RentalOrderDetailPage = () => {
       // Reload order
       await loadOrderDetail(currentOrder._id);
     } catch (error) {
-      console.error('Error canceling pending order:', error);
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi hủy đơn hàng');
     } finally {
       setLoading(false);
@@ -1306,23 +1268,8 @@ const RentalOrderDetailPage = () => {
                                             String(currentSubOrderId)) &&
                                         req.status !== "CANCELLED";
 
-                                      console.log("[Button Check]", {
-                                        reqSubOrderId,
-                                        currentSubOrderId,
-                                        reqStatus: req.status,
-                                        match,
-                                        requestNumber: req.requestNumber,
-                                      });
-
                                       return match;
                                     });
-
-                                  console.log("[Early Return Check]", {
-                                    subOrderId: subOrder._id,
-                                    hasRequest: hasEarlyReturnRequest,
-                                    totalRequests: earlyReturnRequests.length,
-                                    requests: earlyReturnRequests,
-                                  });
 
                                   return hasEarlyReturnRequest ? (
                                     <div className="w-full px-4 py-2 bg-orange-50 border-2 border-orange-200 text-orange-700 rounded-lg text-sm font-medium flex items-center justify-center space-x-2 mb-2">
@@ -1600,10 +1547,6 @@ const RentalOrderDetailPage = () => {
                                         await loadOrderDetail(id);
                                         await fetchEarlyReturnRequests();
                                       } catch (error) {
-                                        console.error(
-                                          "Delete early return request failed:",
-                                          error
-                                        );
                                         toast.error(
                                           error.response?.data?.message ||
                                             "Xóa yêu cầu thất bại"

@@ -337,7 +337,6 @@ const MapSelector = ({
       }
 
       // fallback: không tìm được -> dùng địa chỉ cụ thể
-      console.log('⚠️ No data found, using simple fallback');
       const fallbackAddress = `Vị trí gần (${lat.toFixed(6)}, ${lon.toFixed(6)}), Thành phố Đà Nẵng`;
       const fallbackSel = {
         lat,
@@ -351,7 +350,6 @@ const MapSelector = ({
       };
       setSelected(fallbackSel);
       setSearchQuery(fallbackSel.fullAddress);
-      console.log('🏠 Using fallback address:', fallbackAddress);
       return fallbackSel;
     } catch (err) {
       console.error("Reverse geocode error:", err);

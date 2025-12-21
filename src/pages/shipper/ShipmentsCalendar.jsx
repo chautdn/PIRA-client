@@ -43,9 +43,7 @@ export default function ShipmentsCalendar() {
     if (!socket || !connected) return;
 
     const handleShipmentCreated = (data) => {
-      console.log('📦 [ShipmentsCalendar] Shipment created event received:', data);
-      
-      // Show toast notification
+          // Show toast notification
       const typeLabel = data.shipment?.type === 'DELIVERY' ? '📦 Giao hàng' : '🔄 Trả hàng';
       const toast = require('react-hot-toast').default;
       toast.success(`✅ ${typeLabel} mới: ${data.shipment?.shipmentId || ''}`);
@@ -54,8 +52,6 @@ export default function ShipmentsCalendar() {
     };
 
     const handleNotification = (data) => {
-      console.log('🔔 [ShipmentsCalendar] Notification received:', data);
-      
       // If it's a shipment notification, show toast and refresh
       if (data.notification?.type === 'SHIPMENT') {
         const toast = require('react-hot-toast').default;
@@ -68,13 +64,9 @@ export default function ShipmentsCalendar() {
 
     socket.on('shipment:created', handleShipmentCreated);
     socket.on('notification:new', handleNotification);
-    
-    console.log('✅ [ShipmentsCalendar] Socket listeners registered');
-
     return () => {
       socket.off('shipment:created', handleShipmentCreated);
       socket.off('notification:new', handleNotification);
-      console.log('🔌 [ShipmentsCalendar] Socket listeners removed');
     };
   }, [socket, connected]);
 

@@ -35,7 +35,6 @@ const AdminShipmentManagement = () => {
 
       // Fetch shippers list with stats
       const shippersRes = await adminService.getAllShippers?.();
-      console.log('📦 Shippers response:', shippersRes);
       
       // Handle different response structures
       let shipperList = [];

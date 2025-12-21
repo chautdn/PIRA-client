@@ -125,8 +125,6 @@ const CreateDisputeModal = ({
         submitData.repairCost = parseFloat(formData.repairCost);
       }
 
-      console.log('[CreateDisputeModal] Submitting dispute data:', submitData);
-
       await onSubmit(submitData);
       onClose();
       setFormData({

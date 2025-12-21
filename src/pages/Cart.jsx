@@ -107,7 +107,6 @@
           }
         });
       } catch (error) {
-        console.error(t('cart.errorUpdateRentalTime'), error);
         alert(t('cart.cannotUpdateRentalTime'));
       }
     };
@@ -167,7 +166,6 @@
       }
       
     } catch (error) {
-      console.error(t('cart.errorUpdateRentalTime'), error);
       alert(t('cart.cannotUpdateRentalTime'));
     }
   };  // Get minimum start date based on current time
@@ -268,14 +266,12 @@
 
     // Check availability for cart items (works for both selected and all items)
     const checkCartAvailability = async (itemsToCheck) => {
-      console.log('🔍 Checking availability for cart items before checkout...');
       const unavailableItems = [];
       
       for (const item of itemsToCheck) {
         try {
           // Safety check for rental dates
           if (!item.rental?.startDate || !item.rental?.endDate) {
-            console.error(`Invalid rental dates for ${item.product?.title}:`, item.rental);
             unavailableItems.push({
               productName: item.product?.title || 'Unknown Product',
               error: true,
@@ -358,7 +354,6 @@
             }
           }
         } catch (error) {
-          console.error(`Error checking availability for ${item.product.title}:`, error);
           unavailableItems.push({
             productName: item.product.title,
             error: true
@@ -380,7 +375,6 @@
             currentUser = await refreshUser();
           }
         } catch (error) {
-          console.error('Failed to refresh user data:', error);
           // Continue with cached user data
         }
 
@@ -402,7 +396,6 @@
         return;
       }
       
-      console.log('✅ Selected cart items availability check passed');
       navigate('/rental-orders/create', { 
         state: { 
           selectedItems: selectedCartItems,
@@ -422,7 +415,6 @@
             currentUser = await refreshUser();
           }
         } catch (error) {
-          console.error('Failed to refresh user data:', error);
           // Continue with cached user data
         }
 
@@ -443,7 +435,6 @@
         return;
       }
       
-      console.log('✅ All cart items availability check passed');
       navigate('/rental-orders/create', { 
         state: { 
           selectedItems: cart,

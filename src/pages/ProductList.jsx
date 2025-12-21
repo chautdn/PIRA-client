@@ -305,7 +305,6 @@ export default function ProductList() {
         setParentCategories(res.data);
       }
     } catch (error) {
-      console.error("Failed to load parent categories:", error);
       setParentCategories([
         { _id: "cameras", name: "Máy ảnh & Quay phim" },
         { _id: "camping", name: "Thiết bị cắm trại" },
@@ -323,7 +322,6 @@ export default function ProductList() {
         setSubCategories(res.data);
       }
     } catch (error) {
-      console.error("Failed to load subcategories:", error);
       setSubCategories([]);
     }
   };
@@ -371,7 +369,6 @@ export default function ProductList() {
         );
       }
     } catch (e) {
-      console.error("Error loading products:", e);
       setError("Không tải được danh sách sản phẩm");
       setProducts([]);
     } finally {
@@ -388,7 +385,7 @@ export default function ProductList() {
         setTrendingProducts(data.products || []);
       }
     } catch (error) {
-      console.error('Error loading trending products:', error);
+      // Error handled silently
     } finally {
       setCarouselsLoading(false);
     }
@@ -403,7 +400,7 @@ export default function ProductList() {
         setRecommendedProducts(data.products || []);
       }
     } catch (error) {
-      console.error('Error loading recommended products:', error);
+      // Error handled silently
     } finally {
       setCarouselsLoading(false);
     }

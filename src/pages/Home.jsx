@@ -75,8 +75,6 @@ export default function Home() {
           order: "desc",
         });
 
-        console.log("[Home] Raw response:", response);
-
         // Get all products from different possible response structures
         let allProducts = [];
         if (response.data?.data?.products) {
@@ -93,22 +91,9 @@ export default function Home() {
           allProducts = response.products;
         }
 
-        console.log("[Home] All products count:", allProducts.length);
-        console.log("[Home] Sample product:", allProducts[0]);
-        console.log(
-          "[Home] Promoted products:",
-          allProducts.filter((p) => p.isPromoted)
-        );
-
         const promotedProducts = allProducts
           .filter((p) => p.isPromoted && p.promotionTier)
           .sort((a, b) => a.promotionTier - b.promotionTier); // Lower tier number = higher priority
-
-        console.log(
-          "[Home] Filtered promoted products count:",
-          promotedProducts.length
-        );
-        console.log("[Home] Promoted products data:", promotedProducts);
 
         // If no promoted products, fall back to showing all products
         const productsToShow =
@@ -118,7 +103,6 @@ export default function Home() {
 
         setFeaturedProducts(productsToShow);
       } catch (err) {
-        console.error("[Home] Error fetching featured products:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -642,15 +626,9 @@ export default function Home() {
               {/* Navigation Buttons - Always visible if there are products */}
               <button
                 onClick={() => {
-                  console.log("[Carousel] Left button clicked");
                   if (carouselRef.current) {
                     const { scrollLeft, scrollWidth, clientWidth } =
                       carouselRef.current;
-                    console.log("[Carousel] Current scroll:", {
-                      scrollLeft,
-                      scrollWidth,
-                      clientWidth,
-                    });
                     const cardWidth = 320 + 24; // width + gap
                     carouselRef.current.scrollBy({
                       left: -cardWidth,
@@ -671,15 +649,9 @@ export default function Home() {
 
               <button
                 onClick={() => {
-                  console.log("[Carousel] Right button clicked");
                   if (carouselRef.current) {
                     const { scrollLeft, scrollWidth, clientWidth } =
                       carouselRef.current;
-                    console.log("[Carousel] Current scroll:", {
-                      scrollLeft,
-                      scrollWidth,
-                      clientWidth,
-                    });
                     const cardWidth = 320 + 24; // width + gap
                     carouselRef.current.scrollBy({
                       left: cardWidth,

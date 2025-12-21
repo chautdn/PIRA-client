@@ -74,18 +74,12 @@ export const useProductForm = () => {
         const response = await categoryApi.getCategories();
         // Handle both response.data and direct array
         const data = Array.isArray(response) ? response : response.data || [];
-        console.log("📦 Fetched categories:", data);
         setCategories(data);
 
         const map = {};
         data.forEach((cat) => {
           // Normalize subcategories key (handle both 'subcategories' and 'subCategories')
           const subCategories = cat.subCategories || cat.subcategories || [];
-          console.log(`📁 Category ${cat.name}:`, {
-            id: cat._id,
-            subCategories,
-            subCategoryCount: subCategories.length,
-          });
 
           // Create a clean object with camelCase subCategories
           const { subcategories, ...restCat } = cat; // Remove lowercase version
@@ -94,18 +88,10 @@ export const useProductForm = () => {
             subCategories, // Add camelCase version
           };
 
-          console.log(`✅ Normalized ${cat.name}:`, {
-            hasSubCategories: !!normalizedCat.subCategories,
-            hasSubcategories: !!normalizedCat.subcategories,
-            subCategoriesLength: normalizedCat.subCategories?.length,
-          });
-
           map[cat._id] = normalizedCat;
         });
         setCategoryMap(map);
-        console.log("🗺️ Category map:", map);
       } catch (error) {
-        console.error("Error fetching categories:", error);
         toast.error("Không thể tải danh mục");
       }
     };
@@ -124,14 +110,12 @@ export const useProductForm = () => {
     if (savedDraft && returningFromProfile) {
       try {
         const draft = JSON.parse(savedDraft);
-        console.log("📝 Restored draft from localStorage:", draft);
         setFormData(draft);
         toast.success("✅ Đã khôi phục bản nháp của bạn!");
 
         // Clear the draft after restoring
         localStorage.removeItem(DRAFT_KEY);
       } catch (error) {
-        console.error("Error loading draft:", error);
         localStorage.removeItem(DRAFT_KEY);
       }
     } else if (user?.address) {
@@ -148,7 +132,6 @@ export const useProductForm = () => {
           city: user.address.city || "Đà Nẵng",
         },
       }));
-      console.log("📍 Populated user address:", user.address);
     }
   }, [user, location.state]);
 
@@ -156,10 +139,8 @@ export const useProductForm = () => {
   const saveDraft = () => {
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
-      console.log("💾 Saved draft to localStorage");
       return true;
     } catch (error) {
-      console.error("Error saving draft:", error);
       return false;
     }
   };
@@ -167,7 +148,6 @@ export const useProductForm = () => {
   // Function to clear draft
   const clearDraft = () => {
     localStorage.removeItem(DRAFT_KEY);
-    console.log("🗑️ Cleared draft from localStorage");
   };
 
   const handleInputChange = (e) => {
@@ -175,14 +155,11 @@ export const useProductForm = () => {
 
     // Special handling for location object (from MapSelector)
     if (name === "location" && typeof value === "object") {
-      console.log("🔄 handleInputChange received location object:", value);
       setFormData((prev) => {
-        console.log("🔄 Previous formData.location:", prev.location);
         const newFormData = {
           ...prev,
           location: value,
         };
-        console.log("🔄 New formData.location:", newFormData.location);
         return newFormData;
       });
 
@@ -284,7 +261,9 @@ export const useProductForm = () => {
         if (!formData.images || formData.images.length === 0) {
           newErrors.images = "Vui lòng thêm ít nhất 3 hình ảnh";
         } else if (formData.images.length < 3) {
-          newErrors.images = `Cần thêm ${3 - formData.images.length} hình ảnh nữa (tối thiểu 3 hình ảnh)`;
+          newErrors.images = `Cần thêm ${
+            3 - formData.images.length
+          } hình ảnh nữa (tối thiểu 3 hình ảnh)`;
         }
         break;
 
@@ -409,7 +388,10 @@ export const useProductForm = () => {
       }
 
       // Add pricing fields (trim whitespace)
-      formDataToSend.append("pricing.dailyRate", String(formData.pricing.dailyRate).trim());
+      formDataToSend.append(
+        "pricing.dailyRate",
+        String(formData.pricing.dailyRate).trim()
+      );
       formDataToSend.append(
         "pricing.deposit.amount",
         String(formData.pricing.deposit.amount).trim()
@@ -456,7 +438,6 @@ export const useProductForm = () => {
             await refreshUser();
           }
         } catch (error) {
-          console.warn("Could not refresh user role:", error);
           // Non-critical error, continue
         }
 
@@ -544,7 +525,6 @@ export const useProductForm = () => {
               }
             }
           } catch (error) {
-            console.error("Promotion creation error:", error);
             toast.error(
               `⚠️ Sản phẩm đã tạo nhưng quảng cáo thất bại: ${
                 error.message || "Lỗi không xác định"
@@ -571,8 +551,6 @@ export const useProductForm = () => {
         }
       }
     } catch (error) {
-      console.error("❌ Error creating product:", error);
-
       // Handle KYC/Bank Account requirement errors
       if (error.kycRequired) {
         const requirements = error.missingRequirements || {};

@@ -42,7 +42,6 @@ const Withdrawals = () => {
     if (!socket || !user) return;
 
     const handleWithdrawalUpdated = (data) => {
-      console.log("💰 Withdrawal updated:", data);
       // Refresh withdrawals list when any withdrawal is updated
       fetchWithdrawals();
     };
@@ -71,16 +70,14 @@ const Withdrawals = () => {
   const fetchBankAccount = async () => {
     try {
       const response = await userService.getBankAccount();
-      console.log("📊 Bank account response:", response.data);
       // Response structure: { status, message, data: { bankAccount: {...} } }
       const account =
         response.data?.data?.bankAccount || response.data?.bankAccount;
-      console.log("🏦 Bank account:", account);
       setBankAccount(account);
     } catch (error) {
       // No bank account yet, which is fine
       if (error.response?.status !== 404) {
-        console.error("Error fetching bank account:", error);
+        // Error handled silently
       }
       setBankAccount(null);
     } finally {
@@ -92,12 +89,10 @@ const Withdrawals = () => {
     try {
       setLoadingWithdrawals(true);
       const response = await withdrawalService.getMyWithdrawals();
-      console.log("💰 Withdrawals response:", response.data);
       const withdrawalData =
         response.data?.metadata?.withdrawals || response.data?.data || [];
       setWithdrawals(withdrawalData);
     } catch (error) {
-      console.error("Error fetching withdrawals:", error);
       toast.error(t('withdrawals.error'));
     } finally {
       setLoadingWithdrawals(false);
@@ -183,7 +178,6 @@ const Withdrawals = () => {
       fetchWithdrawals();
       await refreshUser?.();
     } catch (error) {
-      console.error("Error canceling withdrawal:", error);
       toast.error(error.response?.data?.message || t('withdrawals.error'));
     }
   };

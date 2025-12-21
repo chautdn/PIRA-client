@@ -90,8 +90,6 @@ const EarlyReturnRequestModal = ({
   }, [isOpen, defaultAddress, formData.useOriginalAddress]);
 
   const handleAddressSelect = (locationData) => {
-    console.log("Address selected:", locationData);
-
     setFormData((prev) => ({
       ...prev,
       returnAddress: {
@@ -132,7 +130,6 @@ const EarlyReturnRequestModal = ({
         newAddress: formData.returnAddress,
       });
 
-      console.log("Fee calculation result:", response.metadata);
       setFeeCalculationResult(response.metadata);
 
       if (response.metadata.requiresPayment) {
@@ -152,7 +149,6 @@ const EarlyReturnRequestModal = ({
       // Always go to review step for user confirmation
       setCurrentStep(2);
     } catch (error) {
-      console.error("Fee calculation error:", error);
       toast.error(error.response?.data?.message || "Không thể tính phí ship");
     } finally {
       setCalculatingFee(false);
@@ -203,27 +199,13 @@ const EarlyReturnRequestModal = ({
         };
       }
 
-      console.log(
-        "[CreateRequest] Sending payload:",
-        JSON.stringify(requestPayload, null, 2)
-      );
-
       const createResponse = await earlyReturnApi.create(requestPayload);
 
       toast.success(t('earlyReturnRequest.successMessage'));
       onSuccess && onSuccess();
       onClose();
     } catch (error) {
-      console.error("Create early return error:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      console.error(
-        "Full error:",
-        JSON.stringify(error.response?.data, null, 2)
-      );
-
       if (error.response?.data?.errors) {
-        console.error("Validation errors:", error.response.data.errors);
       }
 
       toast.error(
@@ -303,7 +285,6 @@ const EarlyReturnRequestModal = ({
         }, 2000);
       }
     } catch (error) {
-      console.error("Payment error:", error);
       toast.error(
         error.response?.data?.message || t('earlyReturnRequest.paymentError')
       );

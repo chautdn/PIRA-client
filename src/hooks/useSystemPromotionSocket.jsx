@@ -23,9 +23,6 @@ export const useSystemPromotionSocket = (onPromotionUpdate) => {
       const serverUrl = apiUrl.replace(/\/api$/, "");
       const token = localStorage.getItem("token");
 
-      console.log("[Socket] 🔌 Connecting to:", serverUrl);
-      console.log("[Socket] Token present:", !!token);
-
       socket = io(serverUrl, {
         auth: token ? { token } : {},
         transports: ["websocket", "polling"],
@@ -35,23 +32,17 @@ export const useSystemPromotionSocket = (onPromotionUpdate) => {
       });
 
       socket.on("connect", () => {
-        console.log("[Socket] ✅ Connected to server for system promotions");
-        console.log("[Socket] Socket ID:", socket.id);
       });
 
       socket.on("disconnect", (reason) => {
-        console.log("[Socket] ⚠️ Disconnected from server. Reason:", reason);
       });
 
       socket.on("connect_error", (error) => {
-        console.error("[Socket] ❌ Connection error:", error.message);
-        console.error("[Socket] Attempted URL:", serverUrl);
       });
     }
 
     // System promotion event handlers
     const handlePromotionCreated = (data) => {
-      console.log("[Socket] System promotion created:", data);
 
       const { promotion } = data;
 
@@ -122,7 +113,6 @@ export const useSystemPromotionSocket = (onPromotionUpdate) => {
     };
 
     const handlePromotionUpdated = (data) => {
-      console.log("[Socket] System promotion updated:", data);
 
       if (onPromotionUpdateRef.current) {
         onPromotionUpdateRef.current(data.promotion);
@@ -130,7 +120,6 @@ export const useSystemPromotionSocket = (onPromotionUpdate) => {
     };
 
     const handlePromotionEnded = (data) => {
-      console.log("[Socket] System promotion ended:", data);
 
       toast.info(`Khuyến mãi đã kết thúc`, {
         duration: 4000,
