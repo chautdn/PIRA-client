@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 const recommendationService = {
   /**
@@ -6,12 +6,12 @@ const recommendationService = {
    */
   trackCategoryClick: async (categoryId) => {
     try {
-      const response = await api.post('/recommendations/track-click', {
-        categoryId
+      const response = await api.post("/recommendations/track-click", {
+        categoryId,
       });
       return response.data;
     } catch (error) {
-      console.error('Error tracking category click:', error);
+      console.error("Error tracking category click:", error);
       throw error;
     }
   },
@@ -21,21 +21,24 @@ const recommendationService = {
    */
   getProductsByOwner: async (ownerId, params = {}) => {
     try {
-      const response = await api.get(`/recommendations/owner/${ownerId}/products`, {
-        params: {
-          page: params.page || 1,
-          limit: params.limit || 12,
-          search: params.search || '',
-          category: params.category || '',
-          sort: params.sort || 'createdAt',
-          order: params.order || 'desc',
-          hotOnly: params.hotOnly || false,
-          recommendedOnly: params.recommendedOnly || false
+      const response = await api.get(
+        `/recommendations/owner/${ownerId}/products`,
+        {
+          params: {
+            page: params.page || 1,
+            limit: params.limit || 12,
+            search: params.search || "",
+            category: params.category || "",
+            sort: params.sort || "createdAt",
+            order: params.order || "desc",
+            hotOnly: params.hotOnly || false,
+            recommendedOnly: params.recommendedOnly || false,
+          },
         }
-      });
+      );
       return response.data;
     } catch (error) {
-      console.error('Error fetching owner products:', error);
+      console.error("Error fetching owner products:", error);
       throw error;
     }
   },
@@ -45,15 +48,15 @@ const recommendationService = {
    */
   getHotProducts: async (params = {}) => {
     try {
-      const response = await api.get('/recommendations/hot', {
+      const response = await api.get("/recommendations/hot", {
         params: {
           page: params.page || 1,
-          limit: params.limit || 12
-        }
+          limit: params.limit || 12,
+        },
       });
       return response.data;
     } catch (error) {
-      console.error('Error fetching hot products:', error);
+      console.error("Error fetching hot products:", error);
       throw error;
     }
   },
@@ -63,18 +66,38 @@ const recommendationService = {
    */
   getRecommendedProducts: async (params = {}) => {
     try {
-      const response = await api.get('/recommendations/for-you', {
+      const response = await api.get("/recommendations/for-you", {
         params: {
           page: params.page || 1,
-          limit: params.limit || 12
-        }
+          limit: params.limit || 12,
+        },
       });
       return response.data;
     } catch (error) {
-      console.error('Error fetching recommended products:', error);
+      console.error("Error fetching recommended products:", error);
       throw error;
     }
-  }
+  },
+
+  /**
+   * Get top rated and most rented products (randomized)
+   */
+  getTopRatedAndMostRented: async (params = {}) => {
+    try {
+      const response = await api.get("/recommendations/top-rated-most-rented", {
+        params: {
+          limit: params.limit || 12,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error fetching top rated and most rented products:",
+        error
+      );
+      throw error;
+    }
+  },
 };
 
 export default recommendationService;

@@ -341,10 +341,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
   // Check if shipment can be accepted based on scheduled date
   const canAcceptShipment = () => {
-    // 🔧 TESTING MODE: Temporarily disable date validation
-    return true; // DISABLED FOR TESTING - Comment this line to re-enable validation
-    
-    /* COMMENTED FOR TESTING
     if (!shipment) return false;
     
     let scheduledDate = null;
@@ -368,7 +364,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     today.setHours(0, 0, 0, 0);
     
     return today >= scheduledDate;
-    */
   };
 
   // Get scheduled date string for display
@@ -530,13 +525,39 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                   
                   {/* Products */}
                   {shipment?.subOrder?.products && shipment.subOrder.products.length > 0 && (() => {
-                    // Filter by productStatus = CONFIRMED only
-                    const productsToShow = shipment.subOrder.products.filter(item => {
-                      const isConfirmed = item.productStatus === 'CONFIRMED';
-                      return isConfirmed;
+                    // Log all products with their status
+                    shipment.subOrder.products.forEach((item, index) => {
+                      console.log(`\nProduct ${index}:`, {
+                        title: item.product?.title,
+                        productStatus: item.productStatus,
+                        _id: item._id,
+                        productId: item.product?._id
+                      });
+                    });
+                    
+                    // Filter: Show product for this specific shipment
+                    // Use productIndex if available, otherwise use productId
+                    const productsToShow = shipment.subOrder.products.filter((item, index) => {
+                      // Method 1: Match by productIndex (most accurate)
+                      if (shipment.productIndex !== undefined && shipment.productIndex !== null) {
+                        const matchByIndex = index === shipment.productIndex;
+                        return matchByIndex;
+                      }
+                      
+                      // Method 2: Match by productId (fallback)
+                      if (shipment.productId) {
+                        const matchById = String(item.product?._id) === String(shipment.productId);
+                        return matchById;
+                      }
+                      
+                      // Method 3: Fallback - show products with shipping-related status
+                      const shippingStatuses = ['CONFIRMED', 'SHIPPER_CONFIRMED', 'IN_TRANSIT', 'DELIVERED', 'RETURNING', 'RETURNED'];
+                      const matchByStatus = shippingStatuses.includes(item.productStatus);
+                      return matchByStatus;
                     });
                     
                     if (productsToShow.length === 0) {
+
                       return null;
                     }
                     

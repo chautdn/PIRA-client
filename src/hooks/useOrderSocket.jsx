@@ -226,9 +226,6 @@ const useOrderSocket = (callbacks = {}) => {
     }, [updateOrderRealtime]),
 
     onExtensionRequest: useCallback((data) => {
-      const customCallback = callbacksRef.current?.onExtensionRequest;
-      
-      // Update state: Mark order has extension request
       if (data.orderId) {
         updateOrderRealtime(data.orderId, {
           hasExtensionRequest: true
@@ -248,6 +245,34 @@ const useOrderSocket = (callbacks = {}) => {
       
       if (customCallback) customCallback(data);
     }, [updateOrderRealtime]),
+
+    onExtensionApproved: useCallback((data) => {
+      console.log('✅ [useOrderSocket] Extension approved:', data);
+      toast.success(
+        <div className="flex items-start gap-2">
+          <icons.FaCheckCircle className="text-green-500 mt-1" />
+          <div>
+            <strong>Gia hạn thành công!</strong><br />
+            Yêu cầu gia hạn đã được chấp nhận
+          </div>
+        </div>,
+        { duration: 6000 }
+      );
+    }, []),
+
+    onExtensionRejected: useCallback((data) => {
+      console.log('❌ [useOrderSocket] Extension rejected:', data);
+      toast.error(
+        <div className="flex items-start gap-2">
+          <icons.FaTimesCircle className="text-red-500 mt-1" />
+          <div>
+            <strong>Gia hạn bị từ chối!</strong><br />
+            {data.rejectionReason || 'Yêu cầu gia hạn bị từ chối'}
+          </div>
+        </div>,
+        { duration: 6000 }
+      );
+    }, []),
   };
 
   // Initialize socket connection
@@ -277,14 +302,17 @@ const useOrderSocket = (callbacks = {}) => {
     socket.on('connect_error', (error) => {});
 
     // Register event listeners
-    socket.on('order:new', defaultCallbacks.onOrderCreated);
-    socket.on('order:statusChanged', defaultCallbacks.onOrderStatusChanged);
-    socket.on('contract:signatureReceived', defaultCallbacks.onContractSigned);
-    socket.on('contract:fullyExecuted', defaultCallbacks.onContractCompleted);
-    socket.on('payment:notification', defaultCallbacks.onPaymentReceived);
-    socket.on('shipment:statusChanged', defaultCallbacks.onShipmentUpdate);
-    socket.on('earlyReturn:newRequest', defaultCallbacks.onEarlyReturnRequest);
-    socket.on('extension:newRequest', defaultCallbacks.onExtensionRequest);
+    socket.on('order:new', finalCallbacks.onOrderCreated);
+    socket.on('order:statusChanged', finalCallbacks.onOrderStatusChanged);
+    socket.on('contract:signatureReceived', finalCallbacks.onContractSigned);
+    socket.on('contract:fullyExecuted', finalCallbacks.onContractCompleted);
+    socket.on('payment:notification', finalCallbacks.onPaymentReceived);
+    socket.on('shipment:statusChanged', finalCallbacks.onShipmentUpdate);
+    socket.on('earlyReturn:newRequest', finalCallbacks.onEarlyReturnRequest);
+    socket.on('extension:newRequest', finalCallbacks.onExtensionRequest);
+    socket.on('extension-request', finalCallbacks.onExtensionRequest); // Also listen to this event
+    socket.on('extension-approved', finalCallbacks.onExtensionApproved);
+    socket.on('extension-rejected', finalCallbacks.onExtensionRejected);
 
     socketRef.current = socket;
     return socket;
@@ -304,6 +332,9 @@ const useOrderSocket = (callbacks = {}) => {
         socket.off('shipment:statusChanged');
         socket.off('earlyReturn:newRequest');
         socket.off('extension:newRequest');
+        socket.off('extension-request');
+        socket.off('extension-approved');
+        socket.off('extension-rejected');
         socket.disconnect();
         socketRef.current = null;
       }

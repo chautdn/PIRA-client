@@ -6,7 +6,8 @@ import { useWishlist } from "../../context/WishlistContext";
 import { useAuth } from "../../hooks/useAuth";
 
 const ProductCard = ({ product }) => {
-  const { wishlistIds, isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const { wishlistIds, isInWishlist, addToWishlist, removeFromWishlist } =
+    useWishlist();
   const { user } = useAuth();
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
 
@@ -141,7 +142,7 @@ const ProductCard = ({ product }) => {
 
         {/* Condition & Rating */}
         <div className="flex items-center justify-between text-sm">
-          {product.condition && (
+          {/* {product.condition && (
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${
                 product.condition === "NEW"
@@ -153,7 +154,7 @@ const ProductCard = ({ product }) => {
             >
               {product.condition.replace("_", " ")}
             </span>
-          )}
+          )} */}
 
           {product.metrics?.averageRating > 0 && (
             <div className="flex items-center gap-1">

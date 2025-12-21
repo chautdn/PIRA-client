@@ -33,9 +33,9 @@ export default function VerifyEmail() {
         setStatus('success');
         setMessage(response.data?.message || 'Email verified successfully!');
         
-        // Redirect to dashboard after 3 seconds
+        // Redirect to home after 3 seconds
         setTimeout(() => {
-          navigate(ROUTES.DASHBOARD);
+          navigate(ROUTES.HOME);
         }, 3000);
       } catch (error) {
         setStatus('error');
@@ -95,17 +95,17 @@ export default function VerifyEmail() {
                 <p className="text-sm text-green-700 mb-2">
                   🎉 Welcome to our platform!
                 </p>
-                <p className="text-xs text-green-600">Redirecting to dashboard in 3 seconds...</p>
+                <p className="text-xs text-green-600">Redirecting to home page in 3 seconds...</p>
               </div>
               
               <Link
-                to={ROUTES.DASHBOARD}
+                to={ROUTES.HOME}
                 className="inline-flex items-center bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-xl font-medium hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transform hover:scale-105 transition-all duration-200 shadow-lg"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                 </svg>
-                Go to Dashboard
+                Go to Home
               </Link>
             </div>
           )}

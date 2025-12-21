@@ -197,6 +197,15 @@ const UserDropdown = () => {
             </Link>
 
             <Link
+              to="/disputes"
+              className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              <FiAlertTriangle className="mr-3 text-lg text-yellow-500" />
+              {t("userDropdown.disputes")}
+            </Link>
+
+            <Link
               to={ROUTES.MY_REPORTS}
               className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors"
               onClick={() => setIsOpen(false)}

@@ -21,7 +21,6 @@ import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
 import OwnerProductsPage from "./pages/OwnerProductsPage";
 import Cart from "./pages/Cart";
-import Dashboard from "./pages/Dashboard";
 import Profile from "./components/auth/Profile";
 import Chat from "./pages/Chat";
 import ChatContainer from "./components/chat/ChatContainer";
@@ -111,6 +110,9 @@ import AdminDisputeDetail from "./pages/admin/AdminDisputeDetail";
 // Shipment management page
 import AdminShipmentManagement from "./pages/admin/AdminShipmentManagement";
 import AdminShipperDetail from "./pages/admin/AdminShipperDetail";
+
+// 404 Not Found
+import NotFound from "./pages/NotFound";
 
 // Component to handle scroll to top on route change
 function ScrollToTop() {
@@ -228,7 +230,7 @@ export default function App() {
                     <Route
                       path={ROUTES.OWNER_PRODUCTS}
                       element={
-                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RoleProtectedRoute allowedRoles={["OWNER"]}>
                           <OwnerProducts />
                         </RoleProtectedRoute>
                       }
@@ -244,7 +246,7 @@ export default function App() {
                     <Route
                       path="/owner/products/edit/:productId"
                       element={
-                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RoleProtectedRoute allowedRoles={["OWNER"]}>
                           <OwnerProductEdit />
                         </RoleProtectedRoute>
                       }
@@ -252,7 +254,7 @@ export default function App() {
                     <Route
                       path="/owner/promotion-success"
                       element={
-                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RoleProtectedRoute allowedRoles={["OWNER"]}>
                           <PromotionSuccess />
                         </RoleProtectedRoute>
                       }
@@ -260,7 +262,7 @@ export default function App() {
                     <Route
                       path="/owner/rental-requests"
                       element={
-                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RoleProtectedRoute allowedRoles={["OWNER"]}>
                           <OwnerRentalRequests />
                         </RoleProtectedRoute>
                       }
@@ -268,7 +270,7 @@ export default function App() {
                     <Route
                       path="/owner/rental-requests/:subOrderId"
                       element={
-                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RoleProtectedRoute allowedRoles={["OWNER"]}>
                           <OwnerRentalRequestDetail />
                         </RoleProtectedRoute>
                       }
@@ -276,7 +278,7 @@ export default function App() {
                     <Route
                       path={ROUTES.OWNER_ACTIVE_RENTALS}
                       element={
-                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RoleProtectedRoute allowedRoles={["OWNER"]}>
                           <ActiveRentals />
                         </RoleProtectedRoute>
                       }
@@ -284,7 +286,7 @@ export default function App() {
                     <Route
                       path={ROUTES.OWNER_STATISTICS}
                       element={
-                        <RoleProtectedRoute allowedRoles={["OWNER", "RENTER"]}>
+                        <RoleProtectedRoute allowedRoles={["OWNER"]}>
                           <OwnerStatistics />
                         </RoleProtectedRoute>
                       }
@@ -544,6 +546,9 @@ export default function App() {
                       <Route path="settings" element={<AdminSettings />} />
                       <Route path="profile" element={<Profile />} />
                     </Route>
+
+                    {/* 404 Not Found - must be last */}
+                    <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
                 <ConditionalFooter />

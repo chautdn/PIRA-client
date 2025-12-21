@@ -349,7 +349,9 @@ const ExtendRentalModal = ({
                     {/* Products List */}
                     <div className="space-y-3">
                       {products && products.length > 0 ? (
-                        products.map((product) => {
+                        products
+                          .filter((product) => product.productStatus === 'ACTIVE')
+                          .map((product) => {
                           const isValid = isValidProduct(product);
                           const isSelected = selectedProducts[product._id]?.selected;
                           const newEndDate = selectedProducts[product._id]?.newEndDate;

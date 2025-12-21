@@ -14,7 +14,7 @@ import useChat from "../../hooks/useChat";
 import { ROUTES } from "../../utils/constants";
 import icons from "../../utils/icons";
 
-const { TbWorld, IoBarChart, BsCart4, FaRegBell, IoIosHeart, LuBoxes, LuPackageSearch, FaSearchengin, IoChatboxEllipsesOutline,LuPackagePlus, FaBalanceScale } = icons;
+const { TbWorld, IoBarChart, BsCart4, FaRegBell, IoIosHeart, LuBoxes, LuPackageSearch, FaSearchengin, IoChatboxEllipsesOutline, LuPackagePlus } = icons;
 
 // Owner Menu Dropdown Component
 const OwnerMenuDropdown = ({ user }) => {
@@ -56,12 +56,6 @@ const OwnerMenuDropdown = ({ user }) => {
       label: t("owner.rentalRequests"),
       description: t("owner.rentalRequestsDesc"),
       route: "/owner/rental-requests",
-    },
-    {
-      icon: <FaBalanceScale />,
-      label: t("owner.disputes"),
-      description: t("owner.disputesDesc"),
-      route: "/disputes",
     },
     {
       icon: <IoBarChart />,
@@ -315,9 +309,20 @@ const Navigation = () => {
                   </Link>
                 )}
 
-                {/* Owner Menu Dropdown - Show for authenticated users who can become owners */}
-                {user && (user.role === "OWNER" || user.role === "RENTER") && (
+                {/* Owner Menu Dropdown - Show only for OWNER role */}
+                {user && user.role === "OWNER" && (
                   <OwnerMenuDropdown user={user} />
+                )}
+                
+                {/* Create Product Button - Show only for RENTER role */}
+                {user && user.role === "RENTER" && (
+                  <Link
+                    to={ROUTES.OWNER_CREATE_PRODUCT}
+                    className="flex items-center gap-2 px-4 py-2.5 text-gray-700 hover:text-primary-700 hover:bg-primary-50 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                  >
+                    <LuPackagePlus className="text-xl" />
+                    <span>{t("owner.newProduct")}</span>
+                  </Link>
                 )}
               </div>
             </div>
