@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Upload, X, Video, AlertCircle, CheckCircle } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { useI18n } from '../../../../hooks/useI18n';
+import React, { useState } from "react";
+import { Upload, X, Video, AlertCircle, CheckCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { useI18n } from "../../../../hooks/useI18n";
 
 const VideoUploadStep = ({ formData, handleInputChange, errors }) => {
   const { t } = useI18n();
@@ -11,67 +11,73 @@ const VideoUploadStep = ({ formData, handleInputChange, errors }) => {
 
   const handleVideoSelect = (e) => {
     const files = Array.from(e.target.files);
-    
+
     // Validate file count
     if (files.length > 5) {
-      toast.error(t('productForm.videoUpload.maxVideosError'));
+      toast.error(t("productForm.videoUpload.maxVideosError"));
       return;
     }
 
     // Validate file size (100MB max per video)
     const maxSize = 100 * 1024 * 1024;
-    const oversizedFiles = files.filter(f => f.size > maxSize);
-    
+    const oversizedFiles = files.filter((f) => f.size > maxSize);
+
     if (oversizedFiles.length > 0) {
-      toast.error(`${t('productForm.videoUpload.oversizedError')}: ${oversizedFiles.map(f => f.name).join(', ')}`);
+      toast.error(
+        `${t("productForm.videoUpload.oversizedError")}: ${oversizedFiles
+          .map((f) => f.name)
+          .join(", ")}`
+      );
       return;
     }
 
     // Validate file type
-    const invalidFiles = files.filter(f => !f.type.startsWith('video/'));
+    const invalidFiles = files.filter((f) => !f.type.startsWith("video/"));
     if (invalidFiles.length > 0) {
-      toast.error(t('productForm.videoUpload.invalidTypeError'));
+      toast.error(t("productForm.videoUpload.invalidTypeError"));
       return;
     }
 
     // Create preview URLs
-    const previews = files.map(file => ({
+    const previews = files.map((file) => ({
       file,
       url: URL.createObjectURL(file),
       name: file.name,
-      size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+      size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
     }));
 
     setPreviewVideos(previews);
     handleInputChange({
       target: {
-        name: 'videos',
-        value: files
-      }
+        name: "videos",
+        value: files,
+      },
     });
   };
 
   const removeVideo = (index) => {
     const newPreviews = previewVideos.filter((_, i) => i !== index);
     setPreviewVideos(newPreviews);
-    
+
     // Revoke object URL to free memory
     URL.revokeObjectURL(previewVideos[index].url);
 
     handleInputChange({
       target: {
-        name: 'videos',
-        value: newPreviews.map(p => p.file)
-      }
+        name: "videos",
+        value: newPreviews.map((p) => p.file),
+      },
     });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">{t('productForm.videoUpload.title')}</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          {t("productForm.videoUpload.title")}
+        </h3>
         <p className="text-sm text-gray-600 mb-4">
-          {t('productForm.videoUpload.description')}
+          {t("productForm.videoUpload.description")}
         </p>
       </div>
 
@@ -95,10 +101,10 @@ const VideoUploadStep = ({ formData, handleInputChange, errors }) => {
           </div>
           <div>
             <p className="text-lg font-medium text-gray-700">
-              {t('productForm.videoUpload.clickToUpload')}
+              {t("productForm.videoUpload.clickToUpload")}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              {t('productForm.videoUpload.fileFormats')}
+              {t("productForm.videoUpload.fileFormats")}
             </p>
           </div>
         </label>
@@ -114,7 +120,10 @@ const VideoUploadStep = ({ formData, handleInputChange, errors }) => {
       {/* Video Previews */}
       {previewVideos.length > 0 && (
         <div className="space-y-4">
-          <h4 className="font-medium text-gray-700">{t('productForm.videoUpload.selectedVideos')} ({previewVideos.length}/5)</h4>
+          <h4 className="font-medium text-gray-700">
+            {t("productForm.videoUpload.selectedVideos")} (
+            {previewVideos.length}/5)
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {previewVideos.map((preview, index) => (
               <div
@@ -153,15 +162,15 @@ const VideoUploadStep = ({ formData, handleInputChange, errors }) => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
           <Video className="w-4 h-4" />
-          {t('productForm.videoUpload.guidelinesTitle')}
+          {t("productForm.videoUpload.guidelinesTitle")}
         </h4>
         <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-          <li>{t('productForm.videoUpload.guideline1')}</li>
-          <li>{t('productForm.videoUpload.guideline2')}</li>
-          <li>{t('productForm.videoUpload.guideline3')}</li>
-          <li>{t('productForm.videoUpload.guideline4')}</li>
-          <li>{t('productForm.videoUpload.guideline5')}</li>
-          <li>{t('productForm.videoUpload.guideline6')}</li>
+          <li>{t("productForm.videoUpload.guideline1")}</li>
+          <li>{t("productForm.videoUpload.guideline2")}</li>
+          <li>{t("productForm.videoUpload.guideline3")}</li>
+          <li>{t("productForm.videoUpload.guideline4")}</li>
+          <li>{t("productForm.videoUpload.guideline5")}</li>
+          <li>{t("productForm.videoUpload.guideline6")}</li>
         </ul>
       </div>
 
@@ -169,17 +178,17 @@ const VideoUploadStep = ({ formData, handleInputChange, errors }) => {
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <h4 className="font-medium text-yellow-900 mb-2 flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
-          {t('productForm.videoUpload.moderationTitle')}
+          {t("productForm.videoUpload.moderationTitle")}
         </h4>
         <p className="text-sm text-yellow-800">
-          {t('productForm.videoUpload.moderationDesc')}
+          {t("productForm.videoUpload.moderationDesc")}
         </p>
         <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside mt-2">
-          <li>{t('productForm.videoUpload.moderationCheck1')}</li>
-          <li>{t('productForm.videoUpload.moderationCheck2')}</li>
+          <li>{t("productForm.videoUpload.moderationCheck1")}</li>
+          <li>{t("productForm.videoUpload.moderationCheck2")}</li>
         </ul>
         <p className="text-sm text-yellow-800 mt-2">
-          {t('productForm.videoUpload.moderationWarning')}
+          {t("productForm.videoUpload.moderationWarning")}
         </p>
       </div>
     </div>

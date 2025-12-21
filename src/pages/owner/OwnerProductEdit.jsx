@@ -38,6 +38,9 @@ export default function OwnerProductEdit() {
   const [newImages, setNewImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]); // Track images to delete
+  const [newVideos, setNewVideos] = useState([]);
+  const [videoPreviews, setVideoPreviews] = useState([]);
+  const [videosToDelete, setVideosToDelete] = useState([]); // Track videos to delete
   const [quantityValidation, setQuantityValidation] = useState(null);
   const [imageValidationError, setImageValidationError] = useState(null);
   const [modalState, setModalState] = useState({
@@ -58,8 +61,9 @@ export default function OwnerProductEdit() {
     return () => {
       // Revoke all object URLs to prevent memory leaks
       imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
+      videoPreviews.forEach((preview) => URL.revokeObjectURL(preview));
     };
-  }, [imagePreviews]);
+  }, [imagePreviews, videoPreviews]);
 
   const loadProduct = async () => {
     try {
@@ -201,6 +205,83 @@ export default function OwnerProductEdit() {
     });
   };
 
+  const handleVideoSelect = (e) => {
+    const files = Array.from(e.target.files);
+
+    // Validate file count
+    const currentExisting = product?.videos?.length || 0;
+    const currentMarkedForDelete = videosToDelete.length;
+    const currentNew = newVideos.length;
+    const totalAfterAdd =
+      currentExisting - currentMarkedForDelete + currentNew + files.length;
+
+    if (totalAfterAdd > 5) {
+      setModalState({
+        isOpen: true,
+        type: "error",
+        message: `Tối đa 5 video. Hiện có ${
+          currentExisting - currentMarkedForDelete
+        } video cũ + ${currentNew} video mới. Bạn chỉ có thể thêm tối đa ${
+          5 - (currentExisting - currentMarkedForDelete + currentNew)
+        } video nữa.`,
+      });
+      return;
+    }
+
+    // Validate file size (100MB max per video)
+    const maxSize = 100 * 1024 * 1024;
+    const oversizedFiles = files.filter((f) => f.size > maxSize);
+
+    if (oversizedFiles.length > 0) {
+      setModalState({
+        isOpen: true,
+        type: "error",
+        message: `Một số video vượt quá giới hạn 100MB: ${oversizedFiles
+          .map((f) => f.name)
+          .join(", ")}`,
+      });
+      return;
+    }
+
+    // Validate file type
+    const invalidFiles = files.filter((f) => !f.type.startsWith("video/"));
+    if (invalidFiles.length > 0) {
+      setModalState({
+        isOpen: true,
+        type: "error",
+        message: "Chỉ cho phép tệp video",
+      });
+      return;
+    }
+
+    setNewVideos((prev) => [...prev, ...files]);
+
+    // Create previews
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setVideoPreviews((prev) => [...prev, ...previews]);
+  };
+
+  const removeNewVideo = (index) => {
+    setNewVideos((prev) => prev.filter((_, i) => i !== index));
+    URL.revokeObjectURL(videoPreviews[index]);
+    setVideoPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingVideo = (videoId) => {
+    setModalState({
+      isOpen: true,
+      type: "deleteVideo",
+      videoId: videoId,
+      message: "Bạn có chắc chắn muốn xóa video này không?",
+    });
+  };
+
+  const confirmDeleteVideo = () => {
+    // Stage the video for deletion
+    setVideosToDelete((prev) => [...prev, modalState.videoId]);
+    setModalState({ isOpen: false, type: null, videoId: null });
+  };
+
   const confirmDeleteImage = () => {
     // Stage the image for deletion (don't delete from backend yet)
     setImagesToDelete((prev) => [...prev, modalState.imageId]);
@@ -260,7 +341,21 @@ export default function OwnerProductEdit() {
           await ownerProductApi.deleteImage(productId, imageId);
         } catch (err) {
           console.error("Error deleting image:", err);
-          setError(`Không thể xóa hình ảnh: ${err.message}`);
+          const errorMsg = err?.message || "Không thể xóa hình ảnh";
+          setError(`${errorMsg}`);
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Step 1.5: Delete videos marked for deletion
+      for (const videoId of videosToDelete) {
+        try {
+          await ownerProductApi.deleteVideo(productId, videoId);
+        } catch (err) {
+          console.error("Error deleting video:", err);
+          const errorMsg = err?.message || "Không thể xóa video";
+          setError(`${errorMsg}`);
           setSaving(false);
           return;
         }
@@ -284,10 +379,44 @@ export default function OwnerProductEdit() {
         updateData.append("images", image);
       });
 
+      // Add new videos if any (these will be validated by backend AI)
+      newVideos.forEach((video) => {
+        updateData.append("videos", video);
+      });
+
+      // Debug logging
+      console.log('📤 Submitting form data:');
+      console.log('  - Title:', formData.title);
+      console.log('  - Description:', formData.description);
+      console.log('  - Quantity:', formData.quantity);
+      console.log('  - New Images:', newImages.length);
+      console.log('  - New Videos:', newVideos.length);
+      console.log('  - Images to delete:', imagesToDelete.length);
+      console.log('  - Videos to delete:', videosToDelete.length);
+
       const res = await ownerProductApi.updateProductSafeFields(
         productId,
         updateData
       );
+      
+      // Step 3: Update pricing if allowed and changed
+      let pricingUpdateSuccess = true;
+      if (canEditPricing && (parseFloat(pricingData.dailyRate) !== product?.pricing?.dailyRate || 
+          parseFloat(pricingData.depositAmount) !== product?.pricing?.deposit?.amount)) {
+        try {
+          const pricingUpdate = {
+            dailyRate: parseFloat(pricingData.dailyRate),
+            depositAmount: parseFloat(pricingData.depositAmount),
+          };
+          await ownerProductApi.updatePricing(productId, pricingUpdate);
+        } catch (pricingErr) {
+          console.error("Error updating pricing:", pricingErr);
+          // Don't fail the entire operation if pricing update fails
+          const pricingErrorMsg = pricingErr?.message || "Không thể cập nhật giá";
+          pricingUpdateSuccess = false;
+          setError(`Giá chưa được cập nhật: ${pricingErrorMsg}`);
+        }
+      }
 
       if (res.success) {
         // Clear all staged changes after successful upload
@@ -295,18 +424,37 @@ export default function OwnerProductEdit() {
         imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
         setImagePreviews([]);
         setImagesToDelete([]);
+        setNewVideos([]);
+        videoPreviews.forEach((preview) => URL.revokeObjectURL(preview));
+        setVideoPreviews([]);
+        setVideosToDelete([]);
 
         // Reload product data to reflect changes
         await loadProduct();
+        await checkPricingEditPermission();
 
-        setModalState({
-          isOpen: true,
-          type: "success",
-          message: "Cập nhật sản phẩm thành công!",
-        });
+        if (pricingUpdateSuccess) {
+          setModalState({
+            isOpen: true,
+            type: "success",
+            message: "Cập nhật sản phẩm và giá thành công!",
+          });
+        } else {
+          setModalState({
+            isOpen: true,
+            type: "success",
+            message: "Cập nhật sản phẩm thành công!",
+          });
+        }
       }
     } catch (err) {
       console.error("Error updating product:", err);
+
+      // Helper function to get error message
+      const getErrorMessage = (error) => {
+        if (typeof error === 'string') return error;
+        return error?.message || error?.error?.message || "Không thể cập nhật sản phẩm";
+      };
 
       // Handle image validation errors from backend AI
       if (
@@ -315,12 +463,12 @@ export default function OwnerProductEdit() {
         err.errorType === "CATEGORY_MISMATCH"
       ) {
         setImageValidationError(
-          err.details?.reason || err.message || "Hình ảnh không hợp lệ"
+          err.details?.reason || getErrorMessage(err) || "Hình ảnh không hợp lệ"
         );
         setModalState({
           isOpen: true,
           type: "imageValidationError",
-          message: err.details?.reason || err.message,
+          message: err.details?.reason || getErrorMessage(err),
           details: err.details,
         });
       } else if (err.errorType === "QUANTITY_CONFLICT") {
@@ -330,7 +478,13 @@ export default function OwnerProductEdit() {
           quantityConflict: err.validationDetails,
         });
       } else {
-        setError(err.message || "Không thể cập nhật sản phẩm");
+        const errorMessage = getErrorMessage(err);
+        setError(errorMessage);
+        setModalState({
+          isOpen: true,
+          type: "error",
+          message: errorMessage,
+        });
       }
     } finally {
       setSaving(false);
@@ -362,7 +516,13 @@ export default function OwnerProductEdit() {
       }
     } catch (err) {
       console.error("Error updating pricing:", err);
-      setError(err.message || "Không thể cập nhật giá");
+      const errorMessage = err?.message || err?.error?.message || "Không thể cập nhật giá";
+      setError(errorMessage);
+      setModalState({
+        isOpen: true,
+        type: "error",
+        message: errorMessage,
+      });
     } finally {
       setSaving(false);
     }
@@ -748,10 +908,195 @@ export default function OwnerProductEdit() {
             </div>
           </div>
 
+          {/* Videos Section */}
+          {product?.videos && product.videos.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Video Hiện Tại{" "}
+                {videosToDelete.length > 0 && (
+                  <span className="ml-2 text-orange-600 text-xs">
+                    ({videosToDelete.length} video sẽ bị xóa khi lưu)
+                  </span>
+                )}
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {product.videos.map((video) => {
+                  const isMarkedForDeletion = videosToDelete.includes(
+                    video._id
+                  );
+                  return (
+                    <div
+                      key={video._id}
+                      className={`relative group ${
+                        isMarkedForDeletion ? "opacity-50" : ""
+                      }`}
+                    >
+                      <video
+                        src={video.url}
+                        className={`w-full h-32 object-cover rounded-lg ${
+                          isMarkedForDeletion ? "grayscale" : ""
+                        }`}
+                        controls
+                      />
+                      {isMarkedForDeletion ? (
+                        <>
+                          <div className="absolute inset-0 bg-red-500 bg-opacity-30 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold text-sm bg-red-600 px-2 py-1 rounded">
+                              Sẽ xóa
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setVideosToDelete((prev) =>
+                                prev.filter((id) => id !== video._id)
+                              )
+                            }
+                            className="absolute top-2 right-2 bg-blue-600 text-white p-1.5 rounded-full hover:bg-blue-700"
+                            title="Hủy xóa video"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                              />
+                            </svg>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => removeExistingVideo(video._id)}
+                          className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                          title="Xóa video"
+                        >
+                          <FiX size={16} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* New Videos */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Thêm Video Mới (Tùy chọn)
+              {(() => {
+                const remaining =
+                  (product?.videos?.length || 0) -
+                  videosToDelete.length +
+                  newVideos.length;
+                return remaining > 0 ? (
+                  <span className="ml-2 text-green-600 text-xs font-semibold">
+                    (Tổng: {remaining}/5 video)
+                  </span>
+                ) : null;
+              })()}
+            </label>
+
+            {/* Info box about video requirements */}
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex gap-2">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-yellow-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-yellow-800 mb-1">
+                    Video sẽ được kiểm tra tự động bởi AI
+                  </h4>
+                  <ul className="text-xs text-yellow-700 space-y-1">
+                    <li>
+                      • Tối đa: <strong>5 video</strong>
+                    </li>
+                    <li>
+                      • Dung lượng tối đa: <strong>100MB mỗi video</strong>
+                    </li>
+                    <li>• AI sẽ kiểm tra nội dung phù hợp & đúng danh mục</li>
+                    <li>• Video không phù hợp sẽ bị từ chối</li>
+                    <li>• Video mới chỉ được lưu khi bấm "Lưu Thay đổi"</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {videoPreviews.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                {videoPreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <video
+                      src={preview}
+                      className="w-full h-32 object-cover rounded-lg"
+                      controls
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeNewVideo(index)}
+                      className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                    >
+                      <FiX size={16} />
+                    </button>
+                    <div className="absolute bottom-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                      Mới
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-500 transition-colors">
+              <input
+                type="file"
+                accept="video/*"
+                multiple
+                onChange={handleVideoSelect}
+                className="hidden"
+                id="video-upload"
+              />
+              <label
+                htmlFor="video-upload"
+                className="cursor-pointer flex flex-col items-center"
+              >
+                <svg
+                  className="w-12 h-12 text-gray-400 mb-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">
+                  Nhấp để tải lên video
+                </span>
+                <span className="text-xs text-gray-500 mt-1">
+                  MP4, WebM, MOV tối đa 100MB (Tối đa 5 video)
+                </span>
+              </label>
+            </div>
+          </div>
+
           {/* Read-only Info */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Thông tin Sản phẩm (Chỉ đọc)
+              Thông tin Sản phẩm
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
@@ -760,141 +1105,120 @@ export default function OwnerProductEdit() {
                   {product?.category?.name}
                 </span>
               </div>
-              <div>
+              {/* <div>
                 <span className="text-gray-600">Tình trạng:</span>
                 <span className="ml-2 font-medium">{product?.condition}</span>
-              </div>
+              </div> */}
             </div>
           </div>
 
           {/* Pricing Section - Editable if allowed */}
-          {canEditPricing ? (
-            <div className="bg-green-50 rounded-lg p-6 border-2 border-green-200">
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-lg font-semibold text-green-900">
-                  💰 Cập Nhật Giá
-                </h3>
+          <div className={canEditPricing ? "bg-green-50 rounded-lg p-6 border-2 border-green-200" : "bg-gray-50 rounded-lg p-4 border border-gray-200"}>
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-sm font-medium text-gray-700">
+                💰 Giá Cả
+              </h3>
+              {checkingPricing ? (
+                <span className="text-xs bg-gray-400 text-white px-2 py-1 rounded-full">
+                  Đang kiểm tra...
+                </span>
+              ) : canEditPricing ? (
                 <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full">
                   Có thể chỉnh sửa
                 </span>
-              </div>
-              <p className="text-sm text-green-700 mb-4">
-                Sản phẩm không có yêu cầu thuê đang chờ xử lý hoặc đang được
-                thuê. Bạn có thể cập nhật giá.
-              </p>
-
-              <form onSubmit={handlePricingSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giá thuê / ngày <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="dailyRate"
-                      value={pricingData.dailyRate}
-                      onChange={handlePricingChange}
-                      required
-                      min="0"
-                      step="1000"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="Nhập giá thuê mỗi ngày"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Đặt cọc <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="depositAmount"
-                      value={pricingData.depositAmount}
-                      onChange={handlePricingChange}
-                      required
-                      min="0"
-                      step="1000"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="Số tiền đặt cọc"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    {saving ? "Đang cập nhật..." : "💾 Cập Nhật Giá"}
-                  </button>
-                </div>
-              </form>
+              ) : (
+                <span className="text-xs bg-orange-600 text-white px-2 py-1 rounded-full">
+                  Không thể chỉnh sửa
+                </span>
+              )}
             </div>
-          ) : (
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-sm font-medium text-gray-700">
-                  Thông tin Giá (Chỉ đọc)
-                </h3>
-                {checkingPricing ? (
-                  <span className="text-xs bg-gray-400 text-white px-2 py-1 rounded-full">
-                    Đang kiểm tra...
-                  </span>
-                ) : (
-                  <span className="text-xs bg-orange-600 text-white px-2 py-1 rounded-full">
-                    Không thể chỉnh sửa
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-orange-600 mb-3 bg-orange-50 p-2 rounded">
-                ⚠️ Không thể chỉnh sửa giá vì sản phẩm có yêu cầu thuê đang chờ
-                xử lý hoặc đang được thuê
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Giá thuê / ngày:</span>
-                  <span className="ml-2 font-medium">
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(product?.pricing?.dailyRate || 0)}
-                  </span>
+
+            {canEditPricing ? (
+              <>
+                <p className="text-sm text-green-700 mb-4">
+                  Sản phẩm không có yêu cầu thuê đang chờ xử lý hoặc đang được
+                  thuê. Bạn có thể cập nhật giá.
+                </p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Giá thuê / ngày <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="dailyRate"
+                        value={pricingData.dailyRate ? new Intl.NumberFormat('vi-VN').format(parseFloat(pricingData.dailyRate) || 0) : ''}
+                        onChange={(e) => {
+                          // Remove non-numeric characters
+                          const numericValue = e.target.value.replace(/[^\d]/g, '');
+                          handlePricingChange({
+                            target: {
+                              name: 'dailyRate',
+                              value: numericValue
+                            }
+                          });
+                        }}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Nhập giá thuê mỗi ngày"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Đặt cọc <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="depositAmount"
+                        value={pricingData.depositAmount ? new Intl.NumberFormat('vi-VN').format(parseFloat(pricingData.depositAmount) || 0) : ''}
+                        onChange={(e) => {
+                          // Remove non-numeric characters
+                          const numericValue = e.target.value.replace(/[^\d]/g, '');
+                          handlePricingChange({
+                            target: {
+                              name: 'depositAmount',
+                              value: numericValue
+                            }
+                          });
+                        }}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Số tiền đặt cọc"
+                      />
+                    </div>
+                  </div>
                 </div>
-                {product?.pricing?.weeklyRate && (
+              </>
+            ) : (
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-xs text-orange-600 mb-3">
+                  ⚠️ Không thể chỉnh sửa giá vì sản phẩm có yêu cầu thuê đang chờ xử lý hoặc đang được thuê
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Giá thuê / tuần:</span>
+                    <span className="text-gray-600">Giá thuê / ngày:</span>
                     <span className="ml-2 font-medium">
                       {new Intl.NumberFormat("vi-VN", {
                         style: "currency",
                         currency: "VND",
-                      }).format(product?.pricing?.weeklyRate)}
+                      }).format(product?.pricing?.dailyRate || 0)}
                     </span>
                   </div>
-                )}
-                {product?.pricing?.monthlyRate && (
                   <div>
-                    <span className="text-gray-600">Giá thuê / tháng:</span>
+                    <span className="text-gray-600">Đặt cọc:</span>
                     <span className="ml-2 font-medium">
                       {new Intl.NumberFormat("vi-VN", {
                         style: "currency",
                         currency: "VND",
-                      }).format(product?.pricing?.monthlyRate)}
+                      }).format(product?.pricing?.deposit?.amount || 0)}
                     </span>
                   </div>
-                )}
-                <div>
-                  <span className="text-gray-600">Đặt cọc:</span>
-                  <span className="ml-2 font-medium">
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(product?.pricing?.deposit?.amount || 0)}
-                  </span>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-4">
@@ -902,17 +1226,20 @@ export default function OwnerProductEdit() {
               type="submit"
               disabled={
                 saving ||
-                (product?.images?.length || 0) -
-                  imagesToDelete.length +
-                  newImages.length <
-                  3
+                // Only check minimum images if user is actively changing images
+                (imagesToDelete.length > 0 || newImages.length > 0) &&
+                  ((product?.images?.length || 0) -
+                    imagesToDelete.length +
+                    newImages.length <
+                    3)
               }
               className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
               title={
-                (product?.images?.length || 0) -
-                  imagesToDelete.length +
-                  newImages.length <
-                3
+                (imagesToDelete.length > 0 || newImages.length > 0) &&
+                  ((product?.images?.length || 0) -
+                    imagesToDelete.length +
+                    newImages.length <
+                    3)
                   ? "Cần ít nhất 3 hình ảnh"
                   : ""
               }
@@ -1171,6 +1498,8 @@ export default function OwnerProductEdit() {
           onConfirm={() => {
             if (modalState.type === "deleteImage") {
               confirmDeleteImage();
+            } else if (modalState.type === "deleteVideo") {
+              confirmDeleteVideo();
             } else if (modalState.type === "success") {
               navigate("/owner/products");
             } else {
@@ -1178,6 +1507,7 @@ export default function OwnerProductEdit() {
                 isOpen: false,
                 type: null,
                 imageId: null,
+                videoId: null,
                 message: null,
                 quantityConflict: null,
                 details: null,
@@ -1188,6 +1518,8 @@ export default function OwnerProductEdit() {
           title={
             modalState.type === "deleteImage"
               ? "Xóa Hình ảnh"
+              : modalState.type === "deleteVideo"
+              ? "Xóa Video"
               : modalState.type === "success"
               ? "Thành công"
               : modalState.type === "error"
@@ -1200,7 +1532,12 @@ export default function OwnerProductEdit() {
               ? "Bạn có chắc chắn muốn xóa hình ảnh này không?"
               : "")
           }
-          confirmText={modalState.type === "deleteImage" ? "Xóa" : "Đóng"}
+          confirmText={
+            modalState.type === "deleteImage" ||
+            modalState.type === "deleteVideo"
+              ? "Xóa"
+              : "Đóng"
+          }
           cancelText={
             modalState.type === "success" || modalState.type === "error"
               ? null
