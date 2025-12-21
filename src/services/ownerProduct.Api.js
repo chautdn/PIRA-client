@@ -8,7 +8,10 @@ export const ownerProductApi = {
       return response.data;
     } catch (error) {
       console.error("Error in getOwnerProducts:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Failed to load products";
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to load products";
       throw new Error(errorMessage);
     }
   },
@@ -96,6 +99,39 @@ export const ownerProductApi = {
     try {
       const response = await api.delete(
         `/owner-products/${productId}/images/${imageId}`
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // POST /api/owner/products/:id/upload-videos - Upload videos
+  uploadVideos: async (id, videos) => {
+    try {
+      const formData = new FormData();
+      videos.forEach((video) => {
+        formData.append("videos", video);
+      });
+
+      const response = await api.post(
+        `/owner-products/${id}/upload-videos`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // DELETE /api/owner/products/:id/videos/:videoId - Delete specific video
+  deleteVideo: async (productId, videoId) => {
+    try {
+      const response = await api.delete(
+        `/owner-products/${productId}/videos/${videoId}`
       );
       return response.data;
     } catch (error) {

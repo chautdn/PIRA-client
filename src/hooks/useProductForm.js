@@ -22,6 +22,7 @@ const INITIAL_FORM_DATA = {
     },
   },
   images: [],
+  videos: [],
   location: {
     address: {
       streetAddress: "",
@@ -48,7 +49,7 @@ const INITIAL_FORM_DATA = {
   agreedToTerms: false,
 };
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 const DRAFT_KEY = "pira_product_draft";
 
@@ -62,6 +63,7 @@ export const useProductForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isValidatingMedia, setIsValidatingMedia] = useState(false);
 
   // Categories state
   const [categories, setCategories] = useState([]);
@@ -284,11 +286,17 @@ export const useProductForm = () => {
         if (!formData.images || formData.images.length === 0) {
           newErrors.images = "Vui lòng thêm ít nhất 3 hình ảnh";
         } else if (formData.images.length < 3) {
-          newErrors.images = `Cần thêm ${3 - formData.images.length} hình ảnh nữa (tối thiểu 3 hình ảnh)`;
+          newErrors.images = `Cần thêm ${
+            3 - formData.images.length
+          } hình ảnh nữa (tối thiểu 3 hình ảnh)`;
         }
         break;
 
-      case 4: // Pricing
+      case 4: // Videos (optional, no validation required)
+        // Videos are optional, so no validation errors
+        break;
+
+      case 5: // Pricing
         if (
           !formData.pricing?.dailyRate ||
           parseFloat(formData.pricing.dailyRate) <= 0
@@ -303,7 +311,7 @@ export const useProductForm = () => {
         }
         break;
 
-      case 5: // Location
+      case 6: // Location
         // More flexible location validation - require either address OR coordinates
         const hasAddress = formData.location?.address?.streetAddress?.trim();
         const hasCoordinates =
@@ -315,7 +323,7 @@ export const useProductForm = () => {
         }
         break;
 
-      case 6: // Promotion Step
+      case 7: // Promotion Step
         if (!formData.agreedToTerms) {
           newErrors.agreedToTerms =
             "Bạn phải đồng ý với điều khoản và điều kiện để tạo sản phẩm";
@@ -409,7 +417,10 @@ export const useProductForm = () => {
       }
 
       // Add pricing fields (trim whitespace)
-      formDataToSend.append("pricing.dailyRate", String(formData.pricing.dailyRate).trim());
+      formDataToSend.append(
+        "pricing.dailyRate",
+        String(formData.pricing.dailyRate).trim()
+      );
       formDataToSend.append(
         "pricing.deposit.amount",
         String(formData.pricing.deposit.amount).trim()
@@ -440,7 +451,21 @@ export const useProductForm = () => {
         });
       }
 
+      // Add videos (assuming formData.videos is an array of file objects)
+      if (formData.videos && formData.videos.length > 0) {
+        formData.videos.forEach((video) => {
+          // Videos are already File objects from VideoUploadStep
+          formDataToSend.append("videos", video);
+        });
+      }
+
+      // Show AI validation loading overlay
+      setIsValidatingMedia(true);
+
       const response = await ownerProductApi.createOwnerProduct(formDataToSend);
+      
+      // Dismiss loading
+      setIsValidatingMedia(false);
 
       if (response.success) {
         const createdProduct = response.data;
@@ -468,6 +493,23 @@ export const useProductForm = () => {
             toast.success("✅ Tất cả hình ảnh đã qua xác thực AI!");
           } else {
             toast("ℹ️ Hình ảnh được xác thực với độ tin cậy khác nhau", {
+              icon: "ℹ️",
+              style: {
+                background: "#3B82F6",
+                color: "#fff",
+              },
+            });
+          }
+        }
+
+        // Show video validation results if available
+        if (response.videoValidation) {
+          const { summary } = response.videoValidation;
+
+          if (summary.allVideosRelevant) {
+            toast.success("🎬 Tất cả video đã qua kiểm duyệt AI!");
+          } else {
+            toast("ℹ️ Video được kiểm duyệt với độ tin cậy khác nhau", {
               icon: "ℹ️",
               style: {
                 background: "#3B82F6",
@@ -595,115 +637,37 @@ export const useProductForm = () => {
         }
       }
 
+      // Dismiss loading if error occurs
+      setIsValidatingMedia(false);
+      
       // Handle AI validation errors
-      if (error.errorType === "NSFW_VIOLATION") {
+      if (error.errorType === "EXPLICIT_CONTENT" || error.errorType === "NSFW_VIOLATION") {
+        const hasVideos = formData.videos && formData.videos.length > 0;
+        const mediaType = hasVideos ? "video" : "hình ảnh";
+        const reason = error.details?.reason || `Phát hiện nội dung không phù hợp trong ${mediaType}`;
+        
         toast.error(
-          "🔞 Hình ảnh bị từ chối: Phát hiện nội dung không phù hợp",
-          {
-            duration: 6000,
-          }
+          `🔞 ${reason}\n\n💡 Vui lòng chỉ tải lên ${mediaType} phù hợp với gia đình`,
+          { duration: 8000 }
         );
-
-        if (error.errorBreakdown?.details) {
-          const nsfwImages = error.errorBreakdown.details
-            .filter((e) => e.type === "NSFW_VIOLATION")
-            .map((e) => e.fileName);
-
-          if (nsfwImages.length > 0) {
-            setTimeout(() => {
-              toast.error(
-                `Nội dung không phù hợp được tìm thấy trong:\n• ${nsfwImages.join(
-                  "\n• "
-                )}`,
-                {
-                  duration: 8000,
-                }
-              );
-            }, 1000);
-          }
-        }
-
-        setTimeout(() => {
-          toast("💡 Mẹo: Vui lòng chỉ tải lên hình ảnh phù hợp với gia đình", {
-            duration: 5000,
-            icon: "💡",
-          });
-        }, 2000);
       } else if (error.errorType === "CATEGORY_MISMATCH") {
-        toast.error("📂 Hình ảnh không khớp với danh mục", {
-          duration: 6000,
-        });
-
-        if (error.errorBreakdown?.details) {
-          const mismatchImages = error.errorBreakdown.details
-            .filter((e) => e.type === "CATEGORY_MISMATCH")
-            .map((e) => e.fileName);
-
-          if (mismatchImages.length > 0) {
-            setTimeout(() => {
-              toast.error(
-                `Không khớp danh mục:\n• ${mismatchImages.join("\n• ")}`,
-                {
-                  duration: 8000,
-                }
-              );
-            }, 1000);
-          }
-        }
-
-        setTimeout(() => {
-          toast("💡 Mẹo: Tải lên hình ảnh liên quan đến danh mục đã chọn", {
-            duration: 6000,
-            icon: "💡",
-          });
-        }, 2000);
+        const hasVideos = formData.videos && formData.videos.length > 0;
+        const mediaType = hasVideos ? "video" : "hình ảnh";
+        const reason = error.details?.reason || `${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)} không khớp với danh mục đã chọn`;
+        const suggestion = error.details?.suggestion || `Tải lên ${mediaType} liên quan đến danh mục của bạn`;
+        
+        toast.error(
+          `📂 ${reason}\n\n💡 ${suggestion}`,
+          { duration: 8000 }
+        );
       } else if (error.errorType === "MIXED_VALIDATION_ERROR") {
         const breakdown = error.errorBreakdown;
-        toast.error(
-          `⚠️ Phát hiện nhiều vấn đề: ${breakdown.total} hình ảnh không đạt xác thực`,
-          {
-            duration: 6000,
-          }
-        );
-
-        if (breakdown.nsfw > 0) {
-          setTimeout(() => {
-            const nsfwImages = breakdown.details
-              .filter((e) => e.type === "NSFW_VIOLATION")
-              .map((e) => e.fileName);
-            toast.error(
-              `🔞 Nội dung không phù hợp (${
-                breakdown.nsfw
-              }):\n• ${nsfwImages.join("\n• ")}`,
-              {
-                duration: 8000,
-              }
-            );
-          }, 1000);
-        }
-
-        if (breakdown.category > 0) {
-          setTimeout(() => {
-            const categoryImages = breakdown.details
-              .filter((e) => e.type === "CATEGORY_MISMATCH")
-              .map((e) => e.fileName);
-            toast.error(
-              `📂 Không khớp danh mục (${
-                breakdown.category
-              }):\n• ${categoryImages.join("\n• ")}`,
-              {
-                duration: 8000,
-              }
-            );
-          }, 2000);
-        }
-
-        setTimeout(() => {
-          toast("💡 Vui lòng sửa tất cả vấn đề trước khi tải lên", {
-            duration: 5000,
-            icon: "💡",
-          });
-        }, 3000);
+        let message = `⚠️ Phát hiện ${breakdown.total} vấn đề:`;
+        if (breakdown.nsfw > 0) message += `\n🔞 ${breakdown.nsfw} nội dung không phù hợp`;
+        if (breakdown.category > 0) message += `\n📂 ${breakdown.category} không khớp danh mục`;
+        message += `\n\n💡 Vui lòng sửa tất cả trước khi tải lên`;
+        
+        toast.error(message, { duration: 8000 });
       } else {
         // Generic error handling
         const errorMessage =
@@ -737,6 +701,7 @@ export const useProductForm = () => {
     currentStep,
     errors,
     isSubmitting,
+    isValidatingMedia,
 
     // Categories
     categories,

@@ -6,6 +6,7 @@ import StepIndicator from "./steps/StepIndicator";
 import BasicInfoStep from "./steps/BasicInfoStep";
 import CategoryStep from "./steps/CategoryStep";
 import ImagesStep from "./steps/ImagesStep";
+import VideoUploadStep from "./steps/VideoUploadStep";
 import PricingStep from "./steps/PricingStep";
 import LocationStep from "./steps/LocationStep";
 import PromotionStep from "./steps/PromotionStep";
@@ -24,6 +25,7 @@ const CreateForm = () => {
     currentStep,
     errors,
     isSubmitting,
+    isValidatingMedia,
     categories,
     categoryMap,
     walletBalance,
@@ -70,7 +72,7 @@ const CreateForm = () => {
 
       case 4:
         return (
-          <PricingStep
+          <VideoUploadStep
             formData={formData}
             errors={errors}
             handleInputChange={handleInputChange}
@@ -78,6 +80,15 @@ const CreateForm = () => {
         );
 
       case 5:
+        return (
+          <PricingStep
+            formData={formData}
+            errors={errors}
+            handleInputChange={handleInputChange}
+          />
+        );
+
+      case 6:
         return (
           <LocationStep
             formData={formData}
@@ -87,7 +98,7 @@ const CreateForm = () => {
           />
         );
 
-      case 6:
+      case 7:
         return (
           <PromotionStep
             formData={formData}
@@ -114,11 +125,9 @@ const CreateForm = () => {
         {/* Header */}
         <motion.div className="text-center mb-8" {...fadeInUp}>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('productForm.pageTitle')}
+            {t("productForm.pageTitle")}
           </h1>
-          <p className="text-gray-600">
-            {t('productForm.pageSubtitle')}
-          </p>
+          <p className="text-gray-600">{t("productForm.pageSubtitle")}</p>
         </motion.div>
 
         {/* Step Indicator */}
@@ -143,6 +152,35 @@ const CreateForm = () => {
           onSubmit={handleSubmit}
         />
       </div>
+
+      {/* AI Validation Loading Overlay */}
+      {isValidatingMedia && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl"
+          >
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-blue-200 rounded-full"></div>
+                <div className="w-20 h-20 border-4 border-blue-600 rounded-full border-t-transparent animate-spin absolute top-0"></div>
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              🤖 AI đang kiểm tra nội dung
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Đang phân tích hình ảnh và video của bạn...
+            </p>
+            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+              <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce"></span>
+              <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+              <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 };
