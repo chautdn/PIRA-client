@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispute } from '../../context/DisputeContext';
+import useDisputeSocket from '../../hooks/useDisputeSocket';
 import DisputeHeader from './DisputeHeader';
 import DisputeParties from './DisputeParties';
 import DisputeEvidence from './DisputeEvidence';
@@ -17,6 +18,66 @@ const DisputeDetail = () => {
   const { disputeId } = useParams();
   const { currentDispute, isLoading, loadDisputeDetail } = useDispute();
   const { user } = useAuth();
+  
+  // Initialize socket for realtime updates with custom callbacks
+  const { isConnected } = useDisputeSocket({
+    onResponseReceived: (data) => {
+      // Reload khi nhận phản hồi từ respondent
+      if (disputeId && (data.disputeId === disputeId || currentDispute?._id === data.disputeId)) {
+        console.log('📡 [Socket] Response received, reloading...');
+        loadDisputeDetail(disputeId);
+      }
+    },
+    onDisputeStatusChanged: (data) => {
+      // Reload khi status thay đổi
+      if (disputeId && (data.disputeId === disputeId || currentDispute?._id === data.disputeId)) {
+        console.log('📡 [Socket] Status changed, reloading...');
+        loadDisputeDetail(disputeId);
+      }
+    },
+    onNegotiationUpdate: (data) => {
+      // Reload khi có update negotiation
+      if (disputeId && (data.disputeId === disputeId || currentDispute?._id === data.disputeId)) {
+        console.log('📡 [Socket] Negotiation update, reloading...');
+        loadDisputeDetail(disputeId);
+      }
+    },
+    onNegotiationResult: (data) => {
+      // Reload khi có kết quả negotiation
+      if (disputeId && (data.disputeId === disputeId || currentDispute?._id === data.disputeId)) {
+        console.log('📡 [Socket] Negotiation result, reloading...');
+        loadDisputeDetail(disputeId);
+      }
+    },
+    onNewEvidence: (data) => {
+      // Reload khi có bằng chứng mới
+      if (disputeId && (data.disputeId === disputeId || currentDispute?._id === data.disputeId)) {
+        console.log('📡 [Socket] New evidence, reloading...');
+        loadDisputeDetail(disputeId);
+      }
+    },
+    onAdminDecision: (data) => {
+      // Reload khi admin ra quyết định
+      if (disputeId && (data.disputeId === disputeId || currentDispute?._id === data.disputeId)) {
+        console.log('📡 [Socket] Admin decision, reloading...');
+        loadDisputeDetail(disputeId);
+      }
+    },
+    onDisputeCompleted: (data) => {
+      // Reload khi dispute hoàn thành
+      if (disputeId && (data.disputeId === disputeId || currentDispute?._id === data.disputeId)) {
+        console.log('📡 [Socket] Dispute completed, reloading...');
+        loadDisputeDetail(disputeId);
+      }
+    },
+    onDisputeEscalated: (data) => {
+      // Reload khi dispute được escalate
+      if (disputeId && (data.disputeId === disputeId || currentDispute?._id === data.disputeId)) {
+        console.log('📡 [Socket] Dispute escalated, reloading...');
+        loadDisputeDetail(disputeId);
+      }
+    }
+  });
 
   useEffect(() => {
     if (disputeId) {

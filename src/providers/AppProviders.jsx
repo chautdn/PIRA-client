@@ -6,6 +6,7 @@ import { WalletProvider } from "../context/WalletContext";
 import { CartProvider } from "../context/CartContext";
 import { NotificationProvider } from "../context/NotificationContext";
 import { DisputeProvider } from "../context/DisputeContext";
+import DisputeSocketInitializer from "../components/common/DisputeSocketInitializer";
 
 // Create a client with proper configuration for chat
 const queryClient = new QueryClient({
@@ -31,6 +32,8 @@ const AppProviders = ({ children }) => {
           <CartProvider>
             <NotificationProvider>
               <DisputeProvider>
+              {/* Initialize dispute socket at app level */}
+              <DisputeSocketInitializer />
               {children}
               {/* Toast notifications */}
               <Toaster

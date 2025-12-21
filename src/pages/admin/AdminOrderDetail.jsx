@@ -312,7 +312,7 @@ const AdminOrderDetail = () => {
                             {item.product?.images?.[0] && (
                               <div className="flex-shrink-0">
                                 <img
-                                  src={item.product.images[0]}
+                                  src={item.product.images[0].url}
                                   alt={item.product.title}
                                   className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                                 />
@@ -359,7 +359,7 @@ const AdminOrderDetail = () => {
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Tổng tiền thuê:</span>
                           <span className="font-semibold text-gray-900">
-                            {formatCurrency(subOrder.totalRentalAmount || 0)}
+                            {formatCurrency(subOrder.pricing.subtotalDeposit + subOrder.pricing.subtotalRental || 0)}
                           </span>
                         </div>
                         {subOrder.totalDepositAmount > 0 && (

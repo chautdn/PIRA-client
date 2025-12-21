@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDispute } from '../../context/DisputeContext';
 import { toast } from 'react-hot-toast';
+import { getDisputeTypeText } from '../../utils/disputeHelpers';
 
 const OwnerFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
   const { submitOwnerFinalDecision } = useDispute();
@@ -70,7 +71,7 @@ const OwnerFinalDecisionModal = ({ isOpen, onClose, dispute }) => {
               }
             </p>
             <p className="text-sm text-blue-900 mt-1">
-              <strong>Vấn đề:</strong> {dispute.type}
+              <strong>Vấn đề:</strong> {getDisputeTypeText(dispute.type)}
             </p>
           </div>
 

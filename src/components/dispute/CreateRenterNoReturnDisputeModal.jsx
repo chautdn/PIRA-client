@@ -201,13 +201,21 @@ const CreateRenterNoReturnDisputeModal = ({
               <div>
                 <p className="text-gray-600">Trạng thái SubOrder:</p>
                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                  {subOrder.status}
+                  {subOrder.status === 'RETURN_OVERDUE' ? 'Quá hạn trả' 
+                    : subOrder.status === 'IN_RETURN' ? 'Đang trả hàng'
+                    : subOrder.status === 'ACTIVE' ? 'Đang thuê'
+                    : subOrder.status === 'COMPLETED' ? 'Hoàn thành'
+                    : subOrder.status}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600">Trạng thái sản phẩm:</p>
                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                  {product.productStatus}
+                  {product.productStatus === 'NOT_RETURNED' ? 'Chưa trả'
+                    : product.productStatus === 'RETURNED' ? 'Đã trả'
+                    : product.productStatus === 'RENTING' ? 'Đang thuê'
+                    : product.productStatus === 'RETURN_PENDING' ? 'Chờ trả'
+                    : product.productStatus}
                 </span>
               </div>
             </div>

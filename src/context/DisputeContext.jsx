@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import disputeApi from '../services/dispute.Api';
 import { toast } from 'react-hot-toast';
 
-const DisputeContext = createContext();
+// Export context để có thể sử dụng trong các hooks khác
+export const DisputeContext = createContext();
 
 export const useDispute = () => {
   const context = useContext(DisputeContext);
@@ -17,6 +18,57 @@ export const DisputeProvider = ({ children }) => {
   const [currentDispute, setCurrentDispute] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statistics, setStatistics] = useState(null);
+
+  // ===== REALTIME UPDATE FUNCTIONS =====
+  
+  /**
+   * Update dispute trong danh sách khi nhận được socket event
+   */
+  const updateDisputeRealtime = useCallback((disputeId, updates) => {
+    setDisputes(prev => prev.map(d => 
+      (d._id === disputeId || d.disputeId === disputeId) 
+        ? { ...d, ...updates, updatedAt: new Date() }
+        : d
+    ));
+    
+    // Cập nhật currentDispute nếu đang xem dispute này
+    setCurrentDispute(prev => {
+      if (prev && (prev._id === disputeId || prev.disputeId === disputeId)) {
+        return { ...prev, ...updates, updatedAt: new Date() };
+      }
+      return prev;
+    });
+  }, []);
+
+  /**
+   * Thêm dispute mới vào danh sách (khi bạn là respondent)
+   */
+  const addNewDisputeRealtime = useCallback((dispute) => {
+    setDisputes(prev => {
+      // Kiểm tra duplicate
+      const exists = prev.some(d => d._id === dispute._id || d.disputeId === dispute.disputeId);
+      if (exists) return prev;
+      return [dispute, ...prev];
+    });
+  }, []);
+
+  /**
+   * Cập nhật status của dispute
+   */
+  const updateDisputeStatusRealtime = useCallback((disputeId, newStatus) => {
+    setDisputes(prev => prev.map(d => 
+      (d._id === disputeId || d.disputeId === disputeId) 
+        ? { ...d, status: newStatus, updatedAt: new Date() }
+        : d
+    ));
+    
+    setCurrentDispute(prev => {
+      if (prev && (prev._id === disputeId || prev.disputeId === disputeId)) {
+        return { ...prev, status: newStatus, updatedAt: new Date() };
+      }
+      return prev;
+    });
+  }, []);
 
   // Load disputes của user
   const loadMyDisputes = useCallback(async (filters = {}) => {
@@ -423,6 +475,11 @@ export const DisputeProvider = ({ children }) => {
     isLoading,
     statistics,
     setCurrentDispute,
+    
+    // Realtime update functions
+    updateDisputeRealtime,
+    addNewDisputeRealtime,
+    updateDisputeStatusRealtime,
     
     // User actions
     loadMyDisputes,

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispute } from '../../context/DisputeContext';
 import { useAuth } from '../../hooks/useAuth';
+import useDisputeSocket from '../../hooks/useDisputeSocket';
 import disputeApi from '../../services/dispute.Api';
 import { 
   ChevronLeft, Package, Truck, Calendar, User, FileText, 
@@ -23,11 +24,149 @@ import NegotiationRoom from '../../components/dispute/NegotiationRoom';
 import ThirdPartySection from '../../components/dispute/ThirdPartySection';
 import AdminProcessPayment from '../../components/dispute/AdminProcessPayment';
 
+// Map dispute type codes to Vietnamese text
+const disputeTypeMap = {
+  'PRODUCT_NOT_AS_DESCRIBED': 'Không đúng mô tả',
+  'MISSING_ITEMS': 'Thiếu hàng',
+  'DAMAGED_BY_SHIPPER': 'Shipper làm hỏng',
+  'DELIVERY_FAILED_RENTER': 'Renter không nhận hàng',
+  'PRODUCT_DEFECT': 'Sản phẩm lỗi',
+  'DAMAGED_ON_RETURN': 'Hư hỏng khi trả',
+  'LATE_RETURN': 'Trả hàng trễ',
+  'RETURN_FAILED_OWNER': 'Owner không nhận hàng',
+  'RENTER_NO_RETURN': 'Renter không trả hàng',
+  'OTHER': 'Khác'
+};
+
+// Helper function to convert timeline action to Vietnamese text
+const getTimelineActionText = (action) => {
+  const actionMap = {
+    // Dispute lifecycle
+    'DISPUTE_CREATED': 'Tạo khiếu nại',
+    'CREATED': 'Tạo khiếu nại',
+    
+    // Respondent actions
+    'RESPONDENT_ACCEPTED': 'Bên bị khiếu nại chấp nhận',
+    'RESPONDENT_REJECTED': 'Bên bị khiếu nại từ chối',
+    'RESPONDENT_RESPONSE': 'Bên bị khiếu nại phản hồi',
+    
+    // Negotiation
+    'NEGOTIATION_STARTED': 'Bắt đầu thương lượng',
+    'NEGOTIATION_MESSAGE': 'Tin nhắn thương lượng',
+    'NEGOTIATION_OFFER': 'Đề xuất thương lượng',
+    'NEGOTIATION_COUNTER_OFFER': 'Đề xuất phản hồi',
+    'NEGOTIATION_OFFER_ACCEPTED': 'Chấp nhận đề xuất',
+    'NEGOTIATION_OFFER_REJECTED': 'Từ chối đề xuất',
+    'NEGOTIATION_AGREED': 'Thương lượng thành công',
+    'NEGOTIATION_FAILED': 'Thương lượng thất bại',
+    
+    // Escalation
+    'ESCALATED_TO_ADMIN': 'Chuyển cho Admin xử lý',
+    'ESCALATED_TO_THIRD_PARTY': 'Chuyển cho bên thứ 3',
+    'USER_ESCALATED_TO_THIRD_PARTY': 'Người dùng chuyển lên bên thứ 3',
+    'AUTO_ESCALATED_TO_THIRD_PARTY': 'Tự động chuyển lên bên thứ 3',
+    
+    // Third party
+    'THIRD_PARTY_EVIDENCE_UPLOADED': 'Upload bằng chứng bên thứ 3',
+    'THIRD_PARTY_REVIEW': 'Bên thứ 3 đang xem xét',
+    
+    // Admin actions
+    'ADMIN_REVIEW': 'Admin đang xem xét',
+    'ADMIN_DECISION': 'Admin đưa ra quyết định',
+    'ADMIN_DECISION_MADE': 'Admin đã quyết định',
+    'ADMIN_FINAL_DECISION': 'Admin quyết định cuối cùng',
+    'ADMIN_SHARED_PARTY_INFO': 'Admin chia sẻ thông tin các bên',
+    'ADMIN_ASSIGNED': 'Admin được giao xử lý',
+    
+    // Resolution
+    'RESOLVED': 'Đã giải quyết',
+    'RESOLVED_POLICE_HANDOVER': 'Chuyển công an xử lý',
+    'CLOSED': 'Đã đóng',
+    'CANCELLED': 'Đã hủy',
+    
+    // Evidence
+    'EVIDENCE_UPLOADED': 'Upload bằng chứng',
+    'EVIDENCE_ADDED': 'Thêm bằng chứng mới',
+    
+    // Renter specific
+    'RENTER_RESCHEDULE_PROPOSED': 'Renter đề xuất đổi lịch',
+    'RENTER_RESCHEDULE_APPROVED': 'Duyệt đề xuất đổi lịch',
+    'RENTER_RESCHEDULE_REJECTED': 'Từ chối đề xuất đổi lịch',
+    
+    // Payment
+    'PAYMENT_PROCESSED': 'Đã xử lý thanh toán',
+    'REFUND_PROCESSED': 'Đã xử lý hoàn tiền',
+    'COMPENSATION_PAID': 'Đã chi trả bồi thường',
+  };
+  
+  return actionMap[action] || action;
+};
+
+// Helper function to format timeline details with translated dispute types
+const formatTimelineDetails = (details) => {
+  if (!details) return '';
+  
+  let formattedDetails = details;
+  
+  // Replace dispute type codes with Vietnamese text
+  Object.entries(disputeTypeMap).forEach(([code, text]) => {
+    formattedDetails = formattedDetails.replace(new RegExp(code, 'g'), text);
+  });
+  
+  return formattedDetails;
+};
+
 const AdminDisputeDetail = () => {
   const { disputeId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentDispute, isLoading, loadDisputeDetail } = useDispute();
+  
+  // Initialize socket for realtime updates with custom callbacks
+  const { isConnected } = useDisputeSocket({
+    onNewEvidence: (data) => {
+      // Reload dispute detail when new evidence is uploaded
+      const dataDisputeId = data.disputeId?.toString();
+      const dataDisputeNumber = data.disputeNumber?.toString();
+      const currentId = currentDispute?._id?.toString();
+      
+      console.log('📡 [Socket] onNewEvidence received:', { dataDisputeId, dataDisputeNumber, disputeId, currentId });
+      
+      if (disputeId && (dataDisputeId === disputeId || dataDisputeNumber === disputeId || currentId === dataDisputeId)) {
+        console.log('📡 [Socket] New evidence matched, reloading dispute detail...');
+        loadDisputeDetail(disputeId);
+        toast.info('Có bằng chứng mới được upload!', { duration: 4000 });
+      }
+    },
+    onDisputeStatusChanged: (data) => {
+      // Reload dispute detail when status changes
+      const dataDisputeId = data.disputeId?.toString();
+      const dataDisputeNumber = data.disputeNumber?.toString();
+      const currentId = currentDispute?._id?.toString();
+      
+      console.log('📡 [Socket] onDisputeStatusChanged received:', { dataDisputeId, dataDisputeNumber, disputeId, currentId, status: data.status });
+      
+      if (disputeId && (dataDisputeId === disputeId || dataDisputeNumber === disputeId || currentId === dataDisputeId)) {
+        console.log('📡 [Socket] Status changed matched, reloading dispute detail...');
+        loadDisputeDetail(disputeId);
+      }
+    },
+    onDisputeCompleted: (data) => {
+      // Reload dispute detail when dispute is completed
+      const dataDisputeId = data.disputeId?.toString();
+      const dataDisputeNumber = data.disputeNumber?.toString();
+      const currentId = currentDispute?._id?.toString();
+      
+      console.log('📡 [Socket] onDisputeCompleted received:', { dataDisputeId, dataDisputeNumber, disputeId, currentId });
+      
+      if (disputeId && (dataDisputeId === disputeId || dataDisputeNumber === disputeId || currentId === dataDisputeId)) {
+        console.log('📡 [Socket] Dispute completed matched, reloading dispute detail...');
+        loadDisputeDetail(disputeId);
+        toast.success('Khiếu nại đã được giải quyết!', { duration: 4000 });
+      }
+    }
+  });
+  
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showFinalProcessModal, setShowFinalProcessModal] = useState(false);
   const [showOwnerDisputeFinalModal, setShowOwnerDisputeFinalModal] = useState(false);
@@ -566,7 +705,10 @@ const AdminDisputeDetail = () => {
                             {dispute.subOrder.contract.status === 'SIGNED' ? 'Đã ký'
                               : dispute.subOrder.contract.status === 'ACTIVE' ? 'Đang hiệu lực'
                               : dispute.subOrder.contract.status === 'COMPLETED' ? 'Hoàn thành'
-                              : dispute.subOrder.contract.status}
+                              : dispute.subOrder.contract.status === 'CANCELLED' ? 'Đã hủy'
+                              : dispute.subOrder.contract.status === 'EXPIRED' ? 'Hết hạn'
+                              : dispute.subOrder.contract.status === 'PENDING' ? 'Chờ xử lý'
+                              : 'Khác'}
                           </span>
                         </p>
                         {dispute.subOrder.contract.terms && (
@@ -744,8 +886,8 @@ const AdminDisputeDetail = () => {
                         )}
                       </div>
                       <div className="flex-1 pb-3">
-                        <p className="text-sm font-medium text-gray-900">{event.action}</p>
-                        <p className="text-sm text-gray-500 mt-0.5">{event.details}</p>
+                        <p className="text-sm font-medium text-gray-900">{getTimelineActionText(event.action)}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{formatTimelineDetails(event.details)}</p>
                         <p className="text-xs text-gray-400 mt-1">{formatDate(event.timestamp)}</p>
                       </div>
                     </div>
@@ -821,7 +963,7 @@ const AdminDisputeDetail = () => {
             
             <p className="text-sm text-gray-600 mb-4">
               Bạn đang từ chối bằng chứng do không hợp lệ hoặc có dấu hiệu giả mạo. 
-              Dispute sẽ quay lại trạng thái <span className="font-semibold">THIRD_PARTY_ESCALATED</span> 
+              Dispute sẽ quay lại trạng thái <span className="font-semibold">Chuyển bên thứ 3</span> 
               {' '}và 2 bên sẽ được yêu cầu upload lại.
             </p>
 
@@ -861,7 +1003,7 @@ const AdminDisputeDetail = () => {
                     await disputeApi.adminRejectThirdPartyEvidence(disputeId, {
                       reason: rejectReason
                     });
-                    toast.success('Đã từ chối bằng chứng. Dispute quay lại trạng thái THIRD_PARTY_ESCALATED');
+                    toast.success('Đã từ chối bằng chứng. Dispute quay lại trạng thái Chuyển bên thứ 3');
                     setShowRejectEvidenceModal(false);
                     setRejectReason('');
                     loadDisputeDetail(disputeId);
