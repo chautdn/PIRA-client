@@ -22,6 +22,7 @@ import {
   BiLoaderAlt,
   BiClipboard,
   BiTrendingUp,
+  BiVideo,
 } from "react-icons/bi";
 
 import {
@@ -317,6 +318,9 @@ const icons = {
   BiCreditCard,
   HiCreditCard,
   BsCart4,
+
+  // Media
+  BiVideo,
 
   // Extra
   FiTruck,

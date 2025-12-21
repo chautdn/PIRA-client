@@ -3,18 +3,19 @@ import { motion } from "framer-motion";
 import icons from "../../../../utils/icons";
 import { useI18n } from "../../../../hooks/useI18n";
 
-const StepIndicator = ({ currentStep, totalSteps = 6, onStepClick }) => {
+const StepIndicator = ({ currentStep, totalSteps = 7, onStepClick }) => {
   const { t } = useI18n();
-  
+
   const STEP_LABELS = [
     { number: 1, labelKey: "stepBasic", icon: icons.BiInfoCircle },
     { number: 2, labelKey: "stepCategory", icon: icons.BiCategory },
     { number: 3, labelKey: "stepImages", icon: icons.BiImage },
-    { number: 4, labelKey: "stepPricing", icon: icons.BiMoney },
-    { number: 5, labelKey: "stepLocation", icon: icons.BiMapPin },
-    { number: 6, labelKey: "stepPromotion", icon: icons.BiCrown },
+    { number: 4, labelKey: "stepVideos", icon: icons.BiVideo },
+    { number: 5, labelKey: "stepPricing", icon: icons.BiMoney },
+    { number: 6, labelKey: "stepLocation", icon: icons.BiMapPin },
+    { number: 7, labelKey: "stepPromotion", icon: icons.BiCrown },
   ];
-  
+
   return (
     <div className="mb-8">
       {/* Progress Bar */}
@@ -83,7 +84,8 @@ const StepIndicator = ({ currentStep, totalSteps = 6, onStepClick }) => {
       {/* Step Counter */}
       <div className="text-center">
         <p className="text-sm text-gray-600">
-          {t('productForm.stepLabel')} {currentStep} {t('productForm.of')} {totalSteps}
+          {t("productForm.stepLabel")} {currentStep} {t("productForm.of")}{" "}
+          {totalSteps}
         </p>
       </div>
     </div>

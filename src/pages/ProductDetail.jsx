@@ -59,6 +59,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedMedia, setSelectedMedia] = useState({ type: 'image', index: 0 }); // 'image' or 'video'
   const [activeTab, setActiveTab] = useState('description');
   const [quantity, setQuantity] = useState(1);
   const [deliveryDate, setDeliveryDate] = useState('');
@@ -1313,65 +1314,132 @@ export default function ProductDetail() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6 }}
             >
-              {/* Main Image with Swipe Support */}
+              {/* Main Media Display (Image or Video) */}
               <div className="relative h-96 lg:h-[600px] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 group">
                 <AnimatePresence mode="wait">
-                  <motion.div
-                    key={selectedImage}
-                    className="w-full h-full cursor-pointer"
-                    initial={{ opacity: 0, x: 100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -100 }}
-                    transition={{ duration: 0.4, ease: "easeInOut" }}
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.2}
-                    onDragEnd={(e, { offset, velocity }) => {
-                      const swipe = Math.abs(offset.x) * velocity.x;
-                      if (swipe > 10000) {
-                        setSelectedImage(prev => prev > 0 ? prev - 1 : product.images.length - 1);
-                      } else if (swipe < -10000) {
-                        setSelectedImage(prev => prev < product.images.length - 1 ? prev + 1 : 0);
-                      }
-                    }}
-                    onClick={() => {
-                      setLightboxIndex(selectedImage);
-                      setIsLightboxOpen(true);
-                    }}
-                  >
-                    <motion.img
-                      src={product.images?.[selectedImage]?.url || '/images/camera.png'}
-                      alt={product.title}
-                      className="w-full h-full object-contain cursor-zoom-in"
-                      whileHover={{ scale: 1.05 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </motion.div>
+                  {selectedMedia.type === 'image' ? (
+                    <motion.div
+                      key={`image-${selectedMedia.index}`}
+                      className="w-full h-full cursor-pointer"
+                      initial={{ opacity: 0, x: 100 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -100 }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.2}
+                      onDragEnd={(e, { offset, velocity }) => {
+                        const swipe = Math.abs(offset.x) * velocity.x;
+                        const totalMedia = (product.images?.length || 0) + (product.videos?.length || 0);
+                        if (swipe > 10000) {
+                          // Previous media
+                          const currentGlobalIndex = selectedMedia.index;
+                          const newIndex = currentGlobalIndex > 0 ? currentGlobalIndex - 1 : totalMedia - 1;
+                          if (newIndex < product.images?.length) {
+                            setSelectedMedia({ type: 'image', index: newIndex });
+                          } else {
+                            setSelectedMedia({ type: 'video', index: newIndex - (product.images?.length || 0) });
+                          }
+                        } else if (swipe < -10000) {
+                          // Next media
+                          const currentGlobalIndex = selectedMedia.index;
+                          const newIndex = currentGlobalIndex < totalMedia - 1 ? currentGlobalIndex + 1 : 0;
+                          if (newIndex < product.images?.length) {
+                            setSelectedMedia({ type: 'image', index: newIndex });
+                          } else {
+                            setSelectedMedia({ type: 'video', index: newIndex - (product.images?.length || 0) });
+                          }
+                        }
+                      }}
+                      onClick={() => {
+                        setLightboxIndex(selectedMedia.index);
+                        setIsLightboxOpen(true);
+                      }}
+                    >
+                      <motion.img
+                        src={product.images?.[selectedMedia.index]?.url || '/images/camera.png'}
+                        alt={product.title}
+                        className="w-full h-full object-contain cursor-zoom-in"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key={`video-${selectedMedia.index}`}
+                      className="w-full h-full"
+                      initial={{ opacity: 0, x: 100 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -100 }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                    >
+                      <video
+                        src={product.videos?.[selectedMedia.index]?.url}
+                        className="w-full h-full object-contain"
+                        controls
+                        controlsList="nodownload"
+                        playsInline
+                        preload="metadata"
+                      >
+                        <source src={product.videos?.[selectedMedia.index]?.url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
 
-                {/* Click to Zoom Hint */}
-                <motion.div
-                  className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 0.8, x: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                  </svg>
-                  {t('productDetail.clickToZoom')}
-                </motion.div>
+                {/* Media Type Badge */}
+                {selectedMedia.type === 'video' && (
+                  <motion.div 
+                    className="absolute top-4 left-4 bg-red-500/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                    </svg>
+                    VIDEO
+                  </motion.div>
+                )}
+
+                {/* Click to Zoom Hint (Images only) */}
+                {selectedMedia.type === 'image' && (
+                  <motion.div
+                    className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 0.8, x: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                    </svg>
+                    {t('productDetail.clickToZoom')}
+                  </motion.div>
+                )}
 
                 {/* Gradient Overlays for Better Button Visibility */}
                 <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-black/20 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-black/20 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                {/* Navigation Buttons - Only show on hover */}
-                {product.images && product.images.length > 1 && (
+                {/* Navigation Buttons */}
+                {((product.images?.length || 0) + (product.videos?.length || 0)) > 1 && (
                   <>
                     <motion.button
-                      onClick={() => setSelectedImage(prev => prev > 0 ? prev - 1 : product.images.length - 1)}
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-gray-800 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition-all opacity-0 group-hover:opacity-100"
+                      onClick={() => {
+                        const totalMedia = (product.images?.length || 0) + (product.videos?.length || 0);
+                        const imageCount = product.images?.length || 0;
+                        const currentGlobalIndex = selectedMedia.type === 'image' 
+                          ? selectedMedia.index 
+                          : imageCount + selectedMedia.index;
+                        const newGlobalIndex = currentGlobalIndex > 0 ? currentGlobalIndex - 1 : totalMedia - 1;
+                        
+                        if (newGlobalIndex < imageCount) {
+                          setSelectedMedia({ type: 'image', index: newGlobalIndex });
+                        } else {
+                          setSelectedMedia({ type: 'video', index: newGlobalIndex - imageCount });
+                        }
+                      }}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-gray-800 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition-all opacity-0 group-hover:opacity-100 z-10"
                       whileHover={{ scale: 1.15, x: -4 }}
                       whileTap={{ scale: 0.9 }}
                     >
@@ -1380,8 +1448,21 @@ export default function ProductDetail() {
                       </svg>
                     </motion.button>
                     <motion.button
-                      onClick={() => setSelectedImage(prev => prev < product.images.length - 1 ? prev + 1 : 0)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-gray-800 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition-all opacity-0 group-hover:opacity-100"
+                      onClick={() => {
+                        const totalMedia = (product.images?.length || 0) + (product.videos?.length || 0);
+                        const imageCount = product.images?.length || 0;
+                        const currentGlobalIndex = selectedMedia.type === 'image' 
+                          ? selectedMedia.index 
+                          : imageCount + selectedMedia.index;
+                        const newGlobalIndex = currentGlobalIndex < totalMedia - 1 ? currentGlobalIndex + 1 : 0;
+                        
+                        if (newGlobalIndex < imageCount) {
+                          setSelectedMedia({ type: 'image', index: newGlobalIndex });
+                        } else {
+                          setSelectedMedia({ type: 'video', index: newGlobalIndex - imageCount });
+                        }
+                      }}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-gray-800 w-12 h-12 rounded-full flex items-center justify-center shadow-2xl transition-all opacity-0 group-hover:opacity-100 z-10"
                       whileHover={{ scale: 1.15, x: 4 }}
                       whileTap={{ scale: 0.9 }}
                     >
@@ -1392,78 +1473,144 @@ export default function ProductDetail() {
                   </>
                 )}
 
-                {/* Image Counter Badge */}
-                {product.images && product.images.length > 1 && (
+                {/* Media Counter Badge */}
+                {((product.images?.length || 0) + (product.videos?.length || 0)) > 1 && (
                   <motion.div 
                     className="absolute top-4 right-4 bg-black/80 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <span className="text-green-400">{selectedImage + 1}</span>
+                    <span className="text-green-400">
+                      {selectedMedia.type === 'image' ? selectedMedia.index + 1 : (product.images?.length || 0) + selectedMedia.index + 1}
+                    </span>
                     <span className="mx-1">/</span>
-                    <span>{product.images.length}</span>
+                    <span>{(product.images?.length || 0) + (product.videos?.length || 0)}</span>
                   </motion.div>
                 )}
 
                 {/* Swipe Indicator */}
-                {product.images && product.images.length > 1 && (
+                {((product.images?.length || 0) + (product.videos?.length || 0)) > 1 && (
                   <motion.div
                     className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 0.6, y: 0 }}
                     transition={{ delay: 0.5 }}
                   >
-                    {product.images.map((_, index) => (
-                      <motion.div
-                        key={index}
-                        className={`h-1.5 rounded-full transition-all ${
-                          index === selectedImage 
-                            ? 'w-8 bg-white' 
-                            : 'w-1.5 bg-white/50'
-                        }`}
-                        whileHover={{ scale: 1.2 }}
-                        onClick={() => setSelectedImage(index)}
-                      />
-                    ))}
+                    {[...Array((product.images?.length || 0) + (product.videos?.length || 0))].map((_, index) => {
+                      const imageCount = product.images?.length || 0;
+                      const currentGlobalIndex = selectedMedia.type === 'image' 
+                        ? selectedMedia.index 
+                        : imageCount + selectedMedia.index;
+                      return (
+                        <motion.div
+                          key={index}
+                          className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                            index === currentGlobalIndex
+                              ? 'w-8 bg-white' 
+                              : 'w-1.5 bg-white/50'
+                          }`}
+                          whileHover={{ scale: 1.2 }}
+                          onClick={() => {
+                            if (index < imageCount) {
+                              setSelectedMedia({ type: 'image', index });
+                            } else {
+                              setSelectedMedia({ type: 'video', index: index - imageCount });
+                            }
+                          }}
+                        />
+                      );
+                    })}
                   </motion.div>
                 )}
               </div>
 
-              {/* Thumbnail Gallery with Smooth Scroll */}
-              {product.images && product.images.length > 1 && (
+              {/* Media Thumbnail Gallery */}
+              {((product.images?.length || 0) + (product.videos?.length || 0)) > 1 && (
                 <div className="p-6 bg-gradient-to-r from-gray-50 via-white to-gray-50">
                   <div className="relative">
                     <div className="flex gap-4 overflow-x-auto pb-3 scroll-smooth snap-x snap-mandatory scrollbar-hide">
-                      {product.images.map((image, index) => (
-                        <motion.button
-                          key={index}
-                          onClick={() => setSelectedImage(index)}
-                          className={`relative flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden transition-all snap-center ${
-                            index === selectedImage
-                              ? 'ring-4 ring-green-500 ring-offset-2 shadow-xl'
-                              : 'ring-2 ring-gray-200 hover:ring-gray-300 shadow-md'
-                          }`}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: index * 0.05 }}
-                          whileHover={{ scale: 1.1, y: -4 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <img
-                            src={image.url}
-                            alt={`${product.title} ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          {index === selectedImage && (
-                            <motion.div
-                              className="absolute inset-0 bg-green-500/20 border-2 border-green-500"
-                              layoutId="activeImageBorder"
-                              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      {/* Image Thumbnails */}
+                      {product.images?.map((image, index) => {
+                        const isSelected = selectedMedia.type === 'image' && selectedMedia.index === index;
+                        return (
+                          <motion.button
+                            key={`img-${index}`}
+                            onClick={() => setSelectedMedia({ type: 'image', index })}
+                            className={`relative flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden transition-all snap-center ${
+                              isSelected
+                                ? 'ring-4 ring-green-500 ring-offset-2 shadow-xl'
+                                : 'ring-2 ring-gray-200 hover:ring-gray-300 shadow-md'
+                            }`}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.05 }}
+                            whileHover={{ scale: 1.1, y: -4 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <img
+                              src={image.url}
+                              alt={`${product.title} ${index + 1}`}
+                              className="w-full h-full object-cover"
                             />
-                          )}
-                        </motion.button>
-                      ))}
+                            {isSelected && (
+                              <motion.div
+                                className="absolute inset-0 bg-green-500/20 border-2 border-green-500"
+                                layoutId="activeMediaBorder"
+                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                              />
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                      
+                      {/* Video Thumbnails */}
+                      {product.videos?.map((video, index) => {
+                        const isSelected = selectedMedia.type === 'video' && selectedMedia.index === index;
+                        return (
+                          <motion.button
+                            key={`vid-${index}`}
+                            onClick={() => setSelectedMedia({ type: 'video', index })}
+                            className={`relative flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden transition-all snap-center ${
+                              isSelected
+                                ? 'ring-4 ring-red-500 ring-offset-2 shadow-xl'
+                                : 'ring-2 ring-gray-200 hover:ring-gray-300 shadow-md'
+                            }`}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: ((product.images?.length || 0) + index) * 0.05 }}
+                            whileHover={{ scale: 1.1, y: -4 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {video.thumbnail ? (
+                              <img
+                                src={video.thumbnail}
+                                alt={`Video ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                </svg>
+                              </div>
+                            )}
+                            {/* Play Icon Overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                              </svg>
+                            </div>
+                            {isSelected && (
+                              <motion.div
+                                className="absolute inset-0 bg-red-500/20 border-2 border-red-500"
+                                layoutId="activeMediaBorder"
+                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                              />
+                            )}
+                          </motion.button>
+                        );
+                      })}
                     </div>
                     
                     {/* Scroll Indicators */}
