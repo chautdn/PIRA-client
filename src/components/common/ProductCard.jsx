@@ -5,7 +5,7 @@ import promotionService from "../../services/promotion";
 import { useWishlist } from "../../context/WishlistContext";
 import { useAuth } from "../../hooks/useAuth";
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, hideWishlist = false }) => {
   const { wishlistIds, isInWishlist, addToWishlist, removeFromWishlist } =
     useWishlist();
   const { user } = useAuth();
@@ -92,21 +92,23 @@ const ProductCard = ({ product }) => {
         />
 
         {/* Wishlist Button */}
-        <button
-          onClick={handleWishlistToggle}
-          disabled={isAddingToWishlist}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 disabled:opacity-50"
-          title={inWishlist ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
-        >
-          <Heart
-            size={20}
-            className={`transition-all duration-200 ${
-              inWishlist
-                ? "fill-red-500 text-red-500"
-                : "text-gray-600 hover:text-red-500"
-            }`}
-          />
-        </button>
+        {!hideWishlist && (
+          <button
+            onClick={handleWishlistToggle}
+            disabled={isAddingToWishlist}
+            className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 disabled:opacity-50"
+            title={inWishlist ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
+          >
+            <Heart
+              size={20}
+              className={`transition-all duration-200 ${
+                inWishlist
+                  ? "fill-red-500 text-red-500"
+                  : "text-gray-600 hover:text-red-500"
+              }`}
+            />
+          </button>
+        )}
 
         {/* View Count Overlay */}
         {product.metrics?.viewCount > 0 && (

@@ -423,7 +423,7 @@ export default function OwnerProductsPage() {
                     transition={{ duration: 0.4, delay: index * 0.05 }}
                     whileHover={{ y: -5, scale: 1.02 }}
                   >
-                    <ProductCard product={product} />
+                    <ProductCard product={product} hideWishlist={true} />
                   </motion.div>
                 ))}
               </div>
