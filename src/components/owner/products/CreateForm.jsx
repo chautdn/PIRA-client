@@ -175,8 +175,14 @@ const CreateForm = () => {
             </p>
             <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
               <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce"></span>
-              <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-              <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+              <span
+                className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                style={{ animationDelay: "0.2s" }}
+              ></span>
+              <span
+                className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                style={{ animationDelay: "0.4s" }}
+              ></span>
             </div>
           </motion.div>
         </div>

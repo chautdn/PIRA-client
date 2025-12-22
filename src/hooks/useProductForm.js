@@ -440,7 +440,7 @@ export const useProductForm = () => {
       setIsValidatingMedia(true);
 
       const response = await ownerProductApi.createOwnerProduct(formDataToSend);
-      
+
       // Dismiss loading
       setIsValidatingMedia(false);
 
@@ -612,13 +612,18 @@ export const useProductForm = () => {
 
       // Dismiss loading if error occurs
       setIsValidatingMedia(false);
-      
+
       // Handle AI validation errors
-      if (error.errorType === "EXPLICIT_CONTENT" || error.errorType === "NSFW_VIOLATION") {
+      if (
+        error.errorType === "EXPLICIT_CONTENT" ||
+        error.errorType === "NSFW_VIOLATION"
+      ) {
         const hasVideos = formData.videos && formData.videos.length > 0;
         const mediaType = hasVideos ? "video" : "hình ảnh";
-        const reason = error.details?.reason || `Phát hiện nội dung không phù hợp trong ${mediaType}`;
-        
+        const reason =
+          error.details?.reason ||
+          `Phát hiện nội dung không phù hợp trong ${mediaType}`;
+
         toast.error(
           `🔞 ${reason}\n\n💡 Vui lòng chỉ tải lên ${mediaType} phù hợp với gia đình`,
           { duration: 8000 }
@@ -626,20 +631,25 @@ export const useProductForm = () => {
       } else if (error.errorType === "CATEGORY_MISMATCH") {
         const hasVideos = formData.videos && formData.videos.length > 0;
         const mediaType = hasVideos ? "video" : "hình ảnh";
-        const reason = error.details?.reason || `${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)} không khớp với danh mục đã chọn`;
-        const suggestion = error.details?.suggestion || `Tải lên ${mediaType} liên quan đến danh mục của bạn`;
-        
-        toast.error(
-          `📂 ${reason}\n\n💡 ${suggestion}`,
-          { duration: 8000 }
-        );
+        const reason =
+          error.details?.reason ||
+          `${
+            mediaType.charAt(0).toUpperCase() + mediaType.slice(1)
+          } không khớp với danh mục đã chọn`;
+        const suggestion =
+          error.details?.suggestion ||
+          `Tải lên ${mediaType} liên quan đến danh mục của bạn`;
+
+        toast.error(`📂 ${reason}\n\n💡 ${suggestion}`, { duration: 8000 });
       } else if (error.errorType === "MIXED_VALIDATION_ERROR") {
         const breakdown = error.errorBreakdown;
         let message = `⚠️ Phát hiện ${breakdown.total} vấn đề:`;
-        if (breakdown.nsfw > 0) message += `\n🔞 ${breakdown.nsfw} nội dung không phù hợp`;
-        if (breakdown.category > 0) message += `\n📂 ${breakdown.category} không khớp danh mục`;
+        if (breakdown.nsfw > 0)
+          message += `\n🔞 ${breakdown.nsfw} nội dung không phù hợp`;
+        if (breakdown.category > 0)
+          message += `\n📂 ${breakdown.category} không khớp danh mục`;
         message += `\n\n💡 Vui lòng sửa tất cả trước khi tải lên`;
-        
+
         toast.error(message, { duration: 8000 });
       } else {
         // Generic error handling

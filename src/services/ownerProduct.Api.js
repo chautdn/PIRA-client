@@ -1,5 +1,14 @@
 import api from "./api";
 
+// Helper function to extract error message
+const getErrorMessage = (error) => {
+  if (typeof error === 'string') return error;
+  return error?.response?.data?.message || 
+         error?.response?.data?.error?.message ||
+         error?.message || 
+         'An error occurred';
+};
+
 export const ownerProductApi = {
   // GET /api/owner/products - Get all products for the owner with pagination
   getOwnerProducts: async (params) => {
@@ -8,10 +17,7 @@ export const ownerProductApi = {
       return response.data;
     } catch (error) {
       console.error("Error in getOwnerProducts:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to load products";
+      const errorMessage = getErrorMessage(error);
       throw new Error(errorMessage);
     }
   },
@@ -24,7 +30,8 @@ export const ownerProductApi = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -34,7 +41,8 @@ export const ownerProductApi = {
       const response = await api.get(`/owner-products/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -46,7 +54,8 @@ export const ownerProductApi = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -56,7 +65,8 @@ export const ownerProductApi = {
       const response = await api.delete(`/owner-products/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -69,7 +79,8 @@ export const ownerProductApi = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -90,7 +101,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -102,7 +114,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -123,7 +136,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -135,7 +149,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -147,7 +162,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -157,7 +173,8 @@ export const ownerProductApi = {
       const response = await api.put(`/owner-products/${productId}/hide`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -167,7 +184,8 @@ export const ownerProductApi = {
       const response = await api.put(`/owner-products/${productId}/unhide`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -179,7 +197,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -195,7 +214,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -209,7 +229,8 @@ export const ownerProductApi = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -221,7 +242,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -234,7 +256,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -247,7 +270,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -259,7 +283,8 @@ export const ownerProductApi = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -271,7 +296,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -283,7 +309,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -296,7 +323,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -308,7 +336,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -321,7 +350,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -334,7 +364,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 
@@ -347,7 +378,8 @@ export const ownerProductApi = {
       );
       return response.data;
     } catch (error) {
-      throw error.response?.data || error.message;
+      const errorData = error.response?.data || error;
+      throw typeof errorData === 'string' ? new Error(errorData) : errorData;
     }
   },
 };
