@@ -488,43 +488,6 @@ const AdminProductDetail = () => {
               </div>
             </div>
           </div>
-
-          {/* Location */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <FiMapPin className="text-red-600" />
-              Địa điểm
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">Địa chỉ</label>
-                <p className="text-gray-900">
-                  {product.location?.address?.streetAddress}, {product.location?.address?.ward},<br/>
-                  {product.location?.address?.district}, {product.location?.address?.city}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600">Tùy chọn giao hàng</label>
-                <div className="space-y-1">
-                  <p className="text-sm">
-                    <span className={product.location?.deliveryOptions?.pickup ? 'text-green-600' : 'text-red-600'}>
-                      {product.location?.deliveryOptions?.pickup ? '✅' : '❌'} Tự đến lấy
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className={product.location?.deliveryOptions?.delivery ? 'text-green-600' : 'text-red-600'}>
-                      {product.location?.deliveryOptions?.delivery ? '✅' : '❌'} Giao hàng
-                    </span>
-                  </p>
-                  {product.location?.deliveryOptions?.deliveryFee > 0 && (
-                    <p className="text-sm text-gray-600">
-                      Phí giao hàng: {product.location.deliveryOptions.deliveryFee.toLocaleString('vi-VN')} VND
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
           {/* Side Panel - Enhanced Sidebar */}
