@@ -350,8 +350,17 @@ export default function ProductList() {
     try {
       setLoading(true);
       const apiFilters = { ...filters };
-      if (apiFilters.minPrice) apiFilters.priceMin = apiFilters.minPrice;
-      if (apiFilters.maxPrice) apiFilters.priceMax = apiFilters.maxPrice;
+      // Only send price filters when user has adjusted them
+      if (apiFilters.minPrice && apiFilters.minPrice > 0) {
+        apiFilters.priceMin = apiFilters.minPrice;
+      }
+      if (
+        apiFilters.maxPrice &&
+        apiFilters.maxPrice !== 10000000 &&
+        apiFilters.maxPrice > 0
+      ) {
+        apiFilters.priceMax = apiFilters.maxPrice;
+      }
       delete apiFilters.minPrice;
       delete apiFilters.maxPrice;
 
