@@ -1156,16 +1156,22 @@ export default function ProductDetail() {
     
     if (result.success) {
       if (result.warning) {
-        alert(`${t("productDetail.addedToCart")}\n\n${result.warning}`);
+        toast.success(
+          <div>
+            <div className="font-bold">{t("productDetail.addedToCart")}</div>
+            <div className="text-sm mt-1">{result.warning}</div>
+          </div>,
+          { duration: 4000 }
+        );
       } else {
-        alert(t("productDetail.addedToCart"));
+        toast.success(t("productDetail.addedToCart"), { duration: 3000 });
       }
     } else {
       if (result.requireLogin) {
-        alert(result.error);
+        toast.error(result.error);
         navigate('/auth/login', { state: { from: `/products/${id}` } });
       } else {
-        alert(` ${result.error || t("productDetail.addCartError")}`);
+        toast.error(result.error || t("productDetail.addCartError"));
       }
     }
   };
@@ -1227,11 +1233,11 @@ export default function ProductDetail() {
         // Navigate to cart page without opening drawer
         navigate('/cart');
       } else {
-        alert(` ${result.error || t("productDetail.addCartError")}`);
+        toast.error(result.error || t("productDetail.addCartError"));
       }
     } catch (error) {
       const errorMsg = error.message || t("productDetail.addCartError");
-      alert(`${errorMsg}`);
+      toast.error(errorMsg);
     }
   };
 

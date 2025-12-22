@@ -607,6 +607,7 @@
     "ownerConfirmed": "✓ Confirmed",
     "ownerRejected": "✗ Rejected",
     "contractSigned": "✓ Contract signed",
+    "pendingRenterDecision": "⏳ Awaiting Renter Decision",
     "confirmedProductsTitle": "Confirmed Products",
     "rejectedProductsTitle": "Rejected Products",
     "pendingProductsTitle": "Pending Confirmation",

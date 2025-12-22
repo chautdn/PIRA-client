@@ -49,7 +49,9 @@ export default function ManageShipmentModal({ isOpen, onClose, subOrder, masterO
         return;
       }
 
-      const res = await ShipmentService.createDeliveryAndReturnShipments(masterOrderId, selectedShipperId);
+      // Pass null for auto-select, or specific shipper ID
+      const shipperIdToSend = selectedShipperId === 'auto' ? null : selectedShipperId;
+      const res = await ShipmentService.createDeliveryAndReturnShipments(masterOrderId, shipperIdToSend);
       
       if (res.status === 'success') {
         toast.success(`✅ Đã tạo ${res.data?.count || 0} shipment (${res.data?.pairs || 0} cặp giao/trả)`);
@@ -96,6 +98,7 @@ export default function ManageShipmentModal({ isOpen, onClose, subOrder, masterO
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-- Chọn shipper --</option>
+                  <option value="auto">🤖 Tự động chọn (shipper có ít đơn nhất)</option>
                   {shippers.map((shipper, idx) => {
                     const displayName = 
                       shipper?.name || 
