@@ -527,7 +527,7 @@ export default function OwnerProducts() {
                   )}
                 </div>
 
-                <ProductCard product={product} isOwnerView={true} />
+                <ProductCard product={product} isOwnerView={true} hideWishlist={true} />
 
                 {/* Overlay for hidden products */}
                 {product.status === "OWNER_HIDDEN" && (

@@ -12,7 +12,6 @@ const AdminShipmentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRegion, setFilterRegion] = useState('');
   const [stats, setStats] = useState({
     totalShippers: 0,
     totalShipments: 0,
@@ -26,7 +25,7 @@ const AdminShipmentManagement = () => {
 
   useEffect(() => {
     filterShippers();
-  }, [searchQuery, filterRegion, shippers]);
+  }, [searchQuery, shippers]);
 
   const loadShipmentData = async () => {
     try {
@@ -84,12 +83,6 @@ const AdminShipmentManagement = () => {
           includesIgnoreDiacritics(s.profile?.firstName, searchQuery) ||
           includesIgnoreDiacritics(s.email, searchQuery) ||
           includesIgnoreDiacritics(s.phone, searchQuery)
-      );
-    }
-
-    if (filterRegion) {
-      result = result.filter(s => 
-        includesIgnoreDiacritics(s.address?.district, filterRegion)
       );
     }
 
@@ -165,27 +158,15 @@ const AdminShipmentManagement = () => {
           {/* Filters */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">🔍 Tìm kiếm & Lọc</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm theo tên/email/SĐT</label>
-                <input
-                  type="text"
-                  placeholder="Nhập tên, email hoặc số điện thoại..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Lọc theo khu vực</label>
-                <input
-                  type="text"
-                  placeholder="Nhập quận/huyện..."
-                  value={filterRegion}
-                  onChange={(e) => setFilterRegion(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm theo tên/email/SĐT</label>
+              <input
+                type="text"
+                placeholder="Nhập tên, email hoặc số điện thoại..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
 
@@ -201,7 +182,6 @@ const AdminShipmentManagement = () => {
                 <thead className="bg-gray-100 border-b">
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Shipper</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Khu vực</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Tổng đơn</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Hoàn thành</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Thất bại</th>
@@ -232,11 +212,6 @@ const AdminShipmentManagement = () => {
                                 <p className="text-sm text-gray-600">{shipper.email}</p>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                              📍 {shipper.address?.district || 'N/A'}
-                            </span>
                           </td>
                           <td className="px-6 py-4 font-semibold text-gray-900">{shipper.totalShipments || 0}</td>
                           <td className="px-6 py-4">
@@ -285,7 +260,7 @@ const AdminShipmentManagement = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
+                      <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                         Không tìm thấy shipper
                       </td>
                     </tr>

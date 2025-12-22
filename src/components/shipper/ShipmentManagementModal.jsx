@@ -186,7 +186,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     setConfirmAction({
       type: 'cannotPickup',
       title: 'Không thể nhận hàng từ chủ?',
-      message: 'Shipment sẽ bị hủy, owner sẽ bị trừ 20 điểm creditScore, và người thuê sẽ được hoàn lại tiền (không hoàn phí ship).',
+      message: '',
       confirmText: 'Xác nhận',
       cancelText: 'Hủy'
     });
@@ -227,7 +227,6 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     setConfirmAction({
       type: 'cannotContactRenter',
       title: 'Không liên lạc được với người thuê?',
-      message: 'Shipment sẽ bị ghi nhận là trả hàng thất bại, chủ hàng sẽ mở tranh chấp để giải quyết.',
       confirmText: 'Xác nhận',
       cancelText: 'Hủy'
     });
@@ -439,7 +438,7 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   const handleRejectShipment = async () => {
     if (!canAcceptShipment()) {
       const dateStr = getScheduledDateString();
-      toast.error(`⏰ Chưa đến ngày giao hàng! Bạn chỉ có thể từ chối đơn từ 00:00 ngày ${dateStr}`);
+      toast.error(` Chưa đến ngày giao hàng! Bạn chỉ có thể từ chối đơn từ 00:00 ngày ${dateStr}`);
       return;
     }
 
