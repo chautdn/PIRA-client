@@ -12,6 +12,11 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
   const [cannotPickupLoading, setCannotPickupLoading] = useState(false);
   const [cannotContactRenterLoading, setCannotContactRenterLoading] = useState(false);
   const [acceptShipmentLoading, setAcceptShipmentLoading] = useState(false);
+  const [rejectShipmentLoading, setRejectShipmentLoading] = useState(false);
+  
+  // State for shipper rejection modal
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReasonInput, setRejectReasonInput] = useState('');
   
   const [pickupImages, setPickupImages] = useState([]);
   const [deliveryImages, setDeliveryImages] = useState([]);
@@ -63,6 +68,11 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
   const handlePickupImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
+    const newTotal = pickupImages.length + files.length;
+    if (newTotal > 10) {
+      toast.error(`Tối đa 10 ảnh/video. Bạn đang có ${pickupImages.length} và chọn thêm ${files.length} file (tổng ${newTotal}).`);
+      return;
+    }
     // Chỉ thêm vào list để preview, chưa upload
     setPickupImages(prev => [...prev, ...files]);
   };
@@ -71,6 +81,10 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     try {
       if (pickupImages.length < 3) {
         toast.error('Vui lòng tải lên ít nhất 3 ảnh/video pickup');
+        return;
+      }
+      if (pickupImages.length > 10) {
+        toast.error(`Tối đa 10 ảnh/video. Bạn đã chọn ${pickupImages.length} file.`);
         return;
       }
 
@@ -112,6 +126,11 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
 
   const handleDeliveryImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
+    const newTotal = deliveryImages.length + files.length;
+    if (newTotal > 10) {
+      toast.error(`Tối đa 10 ảnh/video. Bạn đang có ${deliveryImages.length} và chọn thêm ${files.length} file (tổng ${newTotal}).`);
+      return;
+    }
     // Chỉ thêm vào list để preview, chưa upload
     setDeliveryImages(prev => [...prev, ...files]);
   };
@@ -120,6 +139,10 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     try {
       if (deliveryImages.length < 3) {
         toast.error('Vui lòng tải lên ít nhất 3 ảnh/video delivery');
+        return;
+      }
+      if (deliveryImages.length > 10) {
+        toast.error(`Tối đa 10 ảnh/video. Bạn đã chọn ${deliveryImages.length} file.`);
         return;
       }
 
@@ -413,6 +436,40 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
     }
   };
 
+  const handleRejectShipment = async () => {
+    if (!canAcceptShipment()) {
+      const dateStr = getScheduledDateString();
+      toast.error(`⏰ Chưa đến ngày giao hàng! Bạn chỉ có thể từ chối đơn từ 00:00 ngày ${dateStr}`);
+      return;
+    }
+
+    // Show reject modal instead of prompt
+    setShowRejectModal(true);
+  };
+
+  const handleConfirmReject = async () => {
+    try {
+      setRejectShipmentLoading(true);
+      
+      await ShipmentService.rejectShipment(shipment._id, rejectReasonInput || 'Không phù hợp lịch trình');
+      
+      toast.success('✅ Đã từ chối đơn. Đơn sẽ được gán cho shipper khác');
+      
+      // Close modals and refresh
+      setShowRejectModal(false);
+      setRejectReasonInput('');
+      setTimeout(() => {
+        onClose?.();
+        onSuccess?.();
+      }, 1000);
+    } catch (err) {
+      const errorMsg = err.message || 'Lỗi khi từ chối đơn hàng';
+      toast.error(errorMsg);
+    } finally {
+      setRejectShipmentLoading(false);
+    }
+  };
+
   // Check if pickup already uploaded (status is IN_TRANSIT or DELIVERED)
   // Allow functionality even for CANCELLED, DELIVERY_FAILED, FAILED to document the shipment
   const pickupUploaded = ['IN_TRANSIT', 'DELIVERED'].includes(currentStatus);
@@ -606,34 +663,54 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                     </span>
                   </div>
                   
-                  {/* Accept Button for PENDING shipments */}
+                  {/* Accept & Reject Buttons for PENDING shipments */}
                   {currentStatus === 'PENDING' && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       {canAcceptShipment() ? (
-                        <button
-                          onClick={handleAcceptShipment}
-                          disabled={acceptShipmentLoading}
-                          className="w-full px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:from-green-700 active:to-emerald-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 touch-manipulation"
-                        >
-                          {acceptShipmentLoading ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              <span>Đang xử lý...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 size={16} />
-                              <span>Nhận đơn</span>
-                            </>
-                          )}
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleAcceptShipment}
+                            disabled={acceptShipmentLoading || rejectShipmentLoading}
+                            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 active:from-green-700 active:to-emerald-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 touch-manipulation"
+                          >
+                            {acceptShipmentLoading ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span>Đang xử lý...</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 size={16} />
+                                <span>Nhận đơn</span>
+                              </>
+                            )}
+                          </button>
+                          
+                          <button
+                            onClick={handleRejectShipment}
+                            disabled={acceptShipmentLoading || rejectShipmentLoading}
+                            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 active:from-red-700 active:to-rose-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2 touch-manipulation"
+                          >
+                            {rejectShipmentLoading ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span>Đang xử lý...</span>
+                              </>
+                            ) : (
+                              <>
+                                <X size={16} />
+                                <span>Từ chối</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       ) : (
                         <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 text-center">
                           <p className="text-yellow-800 font-semibold text-xs sm:text-sm mb-1">
                             ⏰ Chưa đến ngày giao hàng
                           </p>
                           <p className="text-yellow-700 text-[10px] xs:text-xs">
-                            Bạn có thể nhận đơn từ 00:00 ngày <strong>{getScheduledDateString()}</strong>
+                            Bạn có thể nhận/từ chối đơn từ 00:00 ngày <strong>{getScheduledDateString()}</strong>
                           </p>
                         </div>
                       )}
@@ -1226,6 +1303,87 @@ export default function ShipmentManagementModal({ shipment, isOpen, onClose, onS
                           </>
                         ) : (
                           confirmAction.confirmText
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Reject Confirmation Modal */}
+            <AnimatePresence>
+              {showRejectModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
+                  onClick={() => !rejectShipmentLoading && setShowRejectModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+                  >
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-red-500 to-rose-500 px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                          <X className="text-white" size={28} />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Xác nhận từ chối đơn</h3>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="px-6 py-5">
+                      <p className="text-gray-700 mb-4">
+                        Bạn có chắc muốn từ chối đơn hàng này? Đơn sẽ được tự động gán lại cho shipper khác trong khu vực.
+                      </p>
+                      
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Lý do từ chối (tùy chọn):
+                      </label>
+                      <textarea
+                        value={rejectReasonInput}
+                        onChange={(e) => setRejectReasonInput(e.target.value)}
+                        placeholder="Ví dụ: Lịch trình không phù hợp, xa quá..."
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:outline-none resize-none"
+                        rows="3"
+                        disabled={rejectShipmentLoading}
+                      />
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-6 py-4 bg-gray-50 flex gap-3">
+                      <button
+                        onClick={() => {
+                          setShowRejectModal(false);
+                          setRejectReasonInput('');
+                        }}
+                        disabled={rejectShipmentLoading}
+                        className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        onClick={handleConfirmReject}
+                        disabled={rejectShipmentLoading}
+                        className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold hover:from-red-600 hover:to-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {rejectShipmentLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          <>
+                            <X size={16} />
+                            Xác nhận từ chối
+                          </>
                         )}
                       </button>
                     </div>

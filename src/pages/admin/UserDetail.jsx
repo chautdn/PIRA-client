@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { adminService } from '../../services/admin';
 import { useI18n } from '../../hooks/useI18n';
 import { translateCategory } from '../../utils/categoryTranslation';
+import { getStatusText } from '../../utils/orderHelpers';
 
 const UserDetail = () => {
   const { userId } = useParams();
@@ -909,7 +910,7 @@ const UserDetail = () => {
                                       subOrder.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
                                       'bg-gray-100 text-gray-800'
                                     }`}>
-                                      {subOrder.status}
+                                      {getStatusText(subOrder.status)}
                                     </span>
                                   </td>
                                 </tr>

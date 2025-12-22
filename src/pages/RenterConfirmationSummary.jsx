@@ -339,6 +339,8 @@ const RenterConfirmationSummary = () => {
                         ? 'bg-red-100 text-red-700'
                         : subOrder.status === 'CONTRACT_SIGNED'
                         ? 'bg-green-100 text-green-700'
+                        : subOrder.status === 'PENDING_RENTER_DECISION'
+                        ? 'bg-yellow-100 text-yellow-700'
                         : 'bg-gray-100 text-gray-700'
               
                     }`}>
@@ -347,7 +349,8 @@ const RenterConfirmationSummary = () => {
                       {subOrder.status === 'OWNER_CONFIRMED' && t('renterConfirmationSummary.ownerConfirmed')}
                       {subOrder.status === 'OWNER_REJECTED' && t('renterConfirmationSummary.ownerRejected')}
                       {subOrder.status === 'CONTRACT_SIGNED' && t('renterConfirmationSummary.contractSigned')}
-                      {!['READY_FOR_CONTRACT', 'PARTIALLY_CONFIRMED', 'OWNER_CONFIRMED', 'OWNER_REJECTED','CONTRACT_SIGNED'].includes(subOrder.status) && subOrder.status}
+                      {subOrder.status === 'PENDING_RENTER_DECISION' && t('renterConfirmationSummary.pendingRenterDecision')}
+                      {!['READY_FOR_CONTRACT', 'PARTIALLY_CONFIRMED', 'OWNER_CONFIRMED', 'OWNER_REJECTED','CONTRACT_SIGNED', 'PENDING_RENTER_DECISION'].includes(subOrder.status) && subOrder.status}
                     </div>
                   </div>
                 </div>

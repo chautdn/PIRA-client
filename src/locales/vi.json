@@ -607,6 +607,7 @@
     "ownerConfirmed": "✓ Đã xác nhận",
     "ownerRejected": "✗ Đã từ chối",
     "contractSigned": "✓ Hợp đồng đã ký",
+    "pendingRenterDecision": "⏳ Chờ quyết định người thuê",
     "confirmedProductsTitle": "Sản phẩm đã xác nhận",
     "rejectedProductsTitle": "Sản phẩm đã hủy",
     "pendingProductsTitle": "Đang chờ xác nhận",

@@ -314,7 +314,7 @@ const OwnerRentalRequestDetail = () => {
     const style = config[status] || config.DRAFT;
     return (
       <span className={`px-3 py-1 rounded-full text-sm font-semibold ${style.bg} ${style.text}`}>
-        {t(`subOrderStatuses.${status}`)}
+        {style.label}
       </span>
     );
   };

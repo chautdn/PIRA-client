@@ -343,12 +343,34 @@ export default function ShipmentsPage() {
     }
   };
 
+  const handleReject = async (s) => {
+    if (!canAcceptShipment(s)) {
+      toast.error('⏰ Chưa đến ngày giao hàng! Bạn chỉ có thể từ chối đơn từ 00:00 ngày ' + formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate)));
+      return;
+    }
+
+    const reason = prompt('Lý do từ chối đơn (tùy chọn):');
+    if (reason === null) return; // User cancelled
+
+    try {
+      await ShipmentService.rejectShipment(s._id, reason || 'Không phù hợp lịch trình');
+      toast.success('✅ Đã từ chối đơn. Đơn sẽ được gán cho shipper khác');
+      // refresh
+      const resp = await ShipmentService.listMyShipments();
+      const data = resp.data || resp;
+      setShipments(Array.isArray(data) ? data : (data.data || data));
+    } catch (err) {
+      console.error('Reject failed', err.message || err);
+      toast.error(err.message || 'Không thể từ chối đơn');
+    }
+  };
+
   // Get files directly from input and show preview modal
   const promptForFilesWithPreview = (shipment, action) => {
     return new Promise((resolve, reject) => {
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*';
+      input.accept = 'image/*,video/*';
       input.multiple = true;
       input.onchange = (e) => {
         const files = Array.from(e.target.files || []);
@@ -369,7 +391,7 @@ export default function ShipmentsPage() {
   const addMoreFiles = () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/*,video/*';
     input.multiple = true;
     input.onchange = (e) => {
       const files = Array.from(e.target.files || []);
@@ -389,7 +411,17 @@ export default function ShipmentsPage() {
   const confirmUpload = async () => {
     try {
       if (!selectedFilesForUpload || !uploadModalShipment) {
-        alert('No files selected');
+        alert('Chưa chọn file nào');
+        return;
+      }
+
+      // Validate min 3, max 10 files
+      if (selectedFilesForUpload.length < 3) {
+        alert(`Cần tối thiểu 3 ảnh/video. Bạn đã chọn ${selectedFilesForUpload.length} file.`);
+        return;
+      }
+      if (selectedFilesForUpload.length > 10) {
+        alert(`Tối đa 10 ảnh/video. Bạn đã chọn ${selectedFilesForUpload.length} file. Vui lòng bỏ bớt.`);
         return;
       }
 
@@ -817,26 +849,50 @@ export default function ShipmentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           {s.status === 'PENDING' && (
-                            <div className="relative group">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAccept(s);
-                                }}
-                                disabled={!canAcceptShipment(s)}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap ${
-                                  canAcceptShipment(s)
-                                    ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
-                                }`}
-                              >
-                                {canAcceptShipment(s) ? '✓ Nhận đơn' : '🔒 Chưa đến ngày'}
-                              </button>
-                              {!canAcceptShipment(s) && (
-                                <div className="hidden group-hover:block absolute z-10 top-full mt-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
-                                  ⏰ Chỉ nhận đơn từ 00:00 ngày {formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate))}
-                                </div>
-                              )}
+                            <div className="flex gap-2 justify-center">
+                              <div className="relative group">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAccept(s);
+                                  }}
+                                  disabled={!canAcceptShipment(s)}
+                                  className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap ${
+                                    canAcceptShipment(s)
+                                      ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
+                                      : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                                  }`}
+                                >
+                                  {canAcceptShipment(s) ? '✓ Nhận đơn' : '🔒 Chưa đến ngày'}
+                                </button>
+                                {!canAcceptShipment(s) && (
+                                  <div className="hidden group-hover:block absolute z-10 top-full mt-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
+                                    ⏰ Chỉ nhận đơn từ 00:00 ngày {formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate))}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="relative group">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReject(s);
+                                  }}
+                                  disabled={!canAcceptShipment(s)}
+                                  className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm whitespace-nowrap ${
+                                    canAcceptShipment(s)
+                                      ? 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+                                      : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                                  }`}
+                                >
+                                  {canAcceptShipment(s) ? '✗ Từ chối' : '🔒 Chưa đến ngày'}
+                                </button>
+                                {!canAcceptShipment(s) && (
+                                  <div className="hidden group-hover:block absolute z-10 top-full mt-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap">
+                                    ⏰ Chỉ từ chối từ 00:00 ngày {formatDateVN(s.scheduledAt || (s.type === 'DELIVERY' ? s.subOrder?.rentalPeriod?.startDate : s.subOrder?.rentalPeriod?.endDate))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
 
@@ -1140,22 +1196,33 @@ export default function ShipmentsPage() {
                       <span>Ảnh Pickup ({proofs[proofModalShipment._id].imagesBeforeDelivery.length})</span>
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                      {proofs[proofModalShipment._id].imagesBeforeDelivery.map((img, idx) => (
-                        <div 
-                          key={`before-${idx}`}
-                          className="relative group cursor-pointer touch-manipulation"
-                          onClick={() => openLightbox(proofs[proofModalShipment._id].imagesBeforeDelivery, idx)}
-                        >
-                          <img
-                            src={img}
-                            alt={`pickup-${idx}`}
-                            className="w-full h-40 sm:h-48 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-blue-400"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-xl flex items-center justify-center">
-                            <span className="text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity">🔍</span>
+                      {proofs[proofModalShipment._id].imagesBeforeDelivery.map((mediaUrl, idx) => {
+                        const isVideo = mediaUrl.includes('/video/') || mediaUrl.match(/\.(mp4|webm|ogg)$/i);
+                        return (
+                          <div 
+                            key={`before-${idx}`}
+                            className="relative group cursor-pointer touch-manipulation"
+                            onClick={() => openLightbox(proofs[proofModalShipment._id].imagesBeforeDelivery, idx)}
+                          >
+                            {isVideo ? (
+                              <video
+                                src={mediaUrl}
+                                className="w-full h-40 sm:h-48 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-blue-400"
+                                controls
+                              />
+                            ) : (
+                              <img
+                                src={mediaUrl}
+                                alt={`pickup-${idx}`}
+                                className="w-full h-40 sm:h-48 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-blue-400"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-xl flex items-center justify-center pointer-events-none">
+                              <span className="text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity">{isVideo ? '▶️' : '🔍'}</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -1168,22 +1235,33 @@ export default function ShipmentsPage() {
                       <span>Ảnh Delivered ({proofs[proofModalShipment._id].imagesAfterDelivery.length})</span>
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                      {proofs[proofModalShipment._id].imagesAfterDelivery.map((img, idx) => (
-                        <div 
-                          key={`after-${idx}`}
-                          className="relative group cursor-pointer touch-manipulation"
-                          onClick={() => openLightbox(proofs[proofModalShipment._id].imagesAfterDelivery, idx)}
-                        >
-                          <img
-                            src={img}
-                            alt={`delivered-${idx}`}
-                            className="w-full h-40 sm:h-48 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-green-400"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-xl flex items-center justify-center">
-                            <span className="text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity">🔍</span>
+                      {proofs[proofModalShipment._id].imagesAfterDelivery.map((mediaUrl, idx) => {
+                        const isVideo = mediaUrl.includes('/video/') || mediaUrl.match(/\.(mp4|webm|ogg)$/i);
+                        return (
+                          <div 
+                            key={`after-${idx}`}
+                            className="relative group cursor-pointer touch-manipulation"
+                            onClick={() => openLightbox(proofs[proofModalShipment._id].imagesAfterDelivery, idx)}
+                          >
+                            {isVideo ? (
+                              <video
+                                src={mediaUrl}
+                                className="w-full h-40 sm:h-48 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-green-400"
+                                controls
+                              />
+                            ) : (
+                              <img
+                                src={mediaUrl}
+                                alt={`delivered-${idx}`}
+                                className="w-full h-40 sm:h-48 object-cover rounded-xl shadow-md group-hover:shadow-xl transition-all border-2 border-transparent group-hover:border-green-400"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all rounded-xl flex items-center justify-center pointer-events-none">
+                              <span className="text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity">{isVideo ? '▶️' : '🔍'}</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -1289,15 +1367,33 @@ export default function ShipmentsPage() {
             </motion.button>
 
             <div className="relative w-full max-w-5xl max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-              <motion.img
-                key={lightboxIndex}
-                src={lightboxImages[lightboxIndex]}
-                alt={`img-${lightboxIndex}`}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-              />
+              {(() => {
+                const currentMedia = lightboxImages[lightboxIndex];
+                const isVideo = currentMedia.includes('/video/') || currentMedia.match(/\.(mp4|webm|ogg)$/i);
+                
+                return isVideo ? (
+                  <motion.video
+                    key={lightboxIndex}
+                    src={currentMedia}
+                    className="max-w-full max-h-[80vh] rounded-lg shadow-2xl"
+                    controls
+                    autoPlay
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                  />
+                ) : (
+                  <motion.img
+                    key={lightboxIndex}
+                    src={currentMedia}
+                    alt={`img-${lightboxIndex}`}
+                    className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                  />
+                );
+              })()}
 
               {/* Prev / Next */}
               {lightboxImages.length > 1 && (
@@ -1320,11 +1416,18 @@ export default function ShipmentsPage() {
               {/* Thumbnails */}
               {lightboxImages.length > 1 && (
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 overflow-x-auto px-2">
-                  {lightboxImages.map((img, idx) => (
-                    <button key={idx} onClick={() => setLightboxIndex(idx)} className={`w-20 h-20 rounded overflow-hidden ${idx === lightboxIndex ? 'ring-4 ring-white' : 'ring-2 ring-white/30'}`}>
-                      <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
+                  {lightboxImages.map((mediaUrl, idx) => {
+                    const isVideo = mediaUrl.includes('/video/') || mediaUrl.match(/\.(mp4|webm|ogg)$/i);
+                    return (
+                      <button key={idx} onClick={() => setLightboxIndex(idx)} className={`w-20 h-20 rounded overflow-hidden ${idx === lightboxIndex ? 'ring-4 ring-white' : 'ring-2 ring-white/30'}`}>
+                        {isVideo ? (
+                          <video src={mediaUrl} className="w-full h-full object-cover" />
+                        ) : (
+                          <img src={mediaUrl} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

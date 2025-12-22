@@ -462,19 +462,31 @@ const AdminShipperDetail = () => {
                       <span className="bg-blue-100 px-3 py-1 rounded-full">📦 Trước Giao Hàng ({selectedImages.before.length})</span>
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {selectedImages.before.map((img, idx) => (
-                        <div key={idx} className="relative group">
-                          <img 
-                            src={img} 
-                            alt={`Before ${idx + 1}`}
-                            className="w-full h-64 object-cover rounded-lg border-4 border-blue-200 hover:border-blue-400 transition-colors cursor-pointer"
-                            onClick={() => window.open(img, '_blank')}
-                          />
-                          <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-sm font-semibold">
-                            #{idx + 1}
+                      {selectedImages.before.map((mediaUrl, idx) => {
+                        const isVideo = mediaUrl.includes('/video/') || mediaUrl.match(/\.(mp4|webm|ogg)$/i);
+                        return (
+                          <div key={idx} className="relative group">
+                            {isVideo ? (
+                              <video 
+                                src={mediaUrl} 
+                                className="w-full h-64 object-cover rounded-lg border-4 border-blue-200 hover:border-blue-400 transition-colors cursor-pointer"
+                                onClick={() => window.open(mediaUrl, '_blank')}
+                                controls
+                              />
+                            ) : (
+                              <img 
+                                src={mediaUrl} 
+                                alt={`Before ${idx + 1}`}
+                                className="w-full h-64 object-cover rounded-lg border-4 border-blue-200 hover:border-blue-400 transition-colors cursor-pointer"
+                                onClick={() => window.open(mediaUrl, '_blank')}
+                              />
+                            )}
+                            <div className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-sm font-semibold">
+                              #{idx + 1}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -486,19 +498,31 @@ const AdminShipperDetail = () => {
                       <span className="bg-green-100 px-3 py-1 rounded-full">✅ Sau Giao Hàng ({selectedImages.after.length})</span>
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {selectedImages.after.map((img, idx) => (
-                        <div key={idx} className="relative group">
-                          <img 
-                            src={img} 
-                            alt={`After ${idx + 1}`}
-                            className="w-full h-64 object-cover rounded-lg border-4 border-green-200 hover:border-green-400 transition-colors cursor-pointer"
-                            onClick={() => window.open(img, '_blank')}
-                          />
-                          <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-sm font-semibold">
-                            #{idx + 1}
+                      {selectedImages.after.map((mediaUrl, idx) => {
+                        const isVideo = mediaUrl.includes('/video/') || mediaUrl.match(/\.(mp4|webm|ogg)$/i);
+                        return (
+                          <div key={idx} className="relative group">
+                            {isVideo ? (
+                              <video 
+                                src={mediaUrl} 
+                                className="w-full h-64 object-cover rounded-lg border-4 border-green-200 hover:border-green-400 transition-colors cursor-pointer"
+                                onClick={() => window.open(mediaUrl, '_blank')}
+                                controls
+                              />
+                            ) : (
+                              <img 
+                                src={mediaUrl} 
+                                alt={`After ${idx + 1}`}
+                                className="w-full h-64 object-cover rounded-lg border-4 border-green-200 hover:border-green-400 transition-colors cursor-pointer"
+                                onClick={() => window.open(mediaUrl, '_blank')}
+                              />
+                            )}
+                            <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-sm font-semibold">
+                              #{idx + 1}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

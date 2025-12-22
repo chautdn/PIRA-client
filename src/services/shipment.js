@@ -39,6 +39,15 @@ const ShipmentService = {
     }
   },
 
+  async rejectShipment(shipmentId, reason) {
+    try {
+      const response = await api.post(`/shipments/${shipmentId}/reject`, { reason });
+      return response.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || err.message || 'Không thể từ chối shipment');
+    }
+  },
+
   async pickupShipment(shipmentId, data = {}) {
     try {
       const response = await api.post(`/shipments/${shipmentId}/pickup`, data);
