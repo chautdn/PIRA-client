@@ -33,6 +33,7 @@ import {
   RotateCcw,
   Plus,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { IoStarSharp } from "react-icons/io5";
 
@@ -67,6 +68,7 @@ const RentalOrderDetailPage = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [extensionRequests, setExtensionRequests] = useState([]);
+  const [selectedAction, setSelectedAction] = useState('');
 
   // Initialize WebSocket with callbacks to reload extension requests
   const { isConnected } = useOrderSocket({
@@ -530,6 +532,148 @@ const RentalOrderDetailPage = () => {
     sub => sub.status === 'PENDING_RENTER_DECISION'
   );
 
+  // Build available actions based on order status and user role
+  const getAvailableActions = () => {
+    const actions = [];
+
+    // Cancel Pending Order for Renter
+    if (isRenter && currentOrder.status === "PENDING_CONFIRMATION") {
+      actions.push({
+        value: 'cancel_pending',
+        label: 'Hủy đơn hàng',
+        icon: XCircle,
+        color: 'text-red-600'
+      });
+    }
+
+    // Confirmation Details
+    if (currentOrder.status === "CONFIRMED" ||
+        currentOrder.status === "PARTIALLY_CANCELLED" ||
+        currentOrder.status === "CONTRACT_SIGNED" ||
+        currentOrder.status === "READY_FOR_CONTRACT" ||
+        currentOrder.status === "ACTIVE" ||
+        currentOrder.status === "COMPLETED" ||
+        currentOrder.status === "CANCELLED" ||
+        currentOrder.status === "OWNER_CONFIRMED" ||
+        currentOrder.status === "PARTIALLY_CONFIRMED" ||
+        currentOrder.status === "DELIVERED" ||
+        hasReadyForContractSubOrder) {
+      actions.push({
+        value: 'confirmation_details',
+        label: t("rentalOrderDetail.confirmationDetails"),
+        icon: FileText,
+        color: 'text-blue-600'
+      });
+    }
+
+    // Sign Contract
+    if (hasReadyForContractSubOrder && isRenter) {
+      actions.push({
+        value: 'sign_contract',
+        label: t("rentalOrderDetail.signContract"),
+        icon: FileText,
+        color: 'text-green-600'
+      });
+    }
+
+    // Active order actions for renter
+    if (isRenter && currentOrder.status === "ACTIVE") {
+      actions.push(
+        {
+          value: 'extend_rental',
+          label: t("rentalOrderDetail.extend"),
+          icon: Plus,
+          color: 'text-green-600'
+        },
+        {
+          value: 'early_return',
+          label: t("rentalOrderDetail.earlyReturn"),
+          icon: RotateCcw,
+          color: 'text-orange-600'
+        },
+        {
+          value: 'manage_shipment',
+          label: t("rentalOrderDetail.manageShipment"),
+          icon: Package,
+          color: 'text-purple-600'
+        }
+      );
+    }
+
+    // Manage shipment for renter (contract signed)
+    if (isRenter && currentOrder.status === "CONTRACT_SIGNED") {
+      actions.push({
+        value: 'manage_shipment',
+        label: t("rentalOrderDetail.manageShipment"),
+        icon: Package,
+        color: 'text-blue-600'
+      });
+    }
+
+    // Manage shipment for owner (contract signed)
+    if (isOwner && currentOrder.status === "CONTRACT_SIGNED") {
+      actions.push({
+        value: 'manage_shipment',
+        label: t("rentalOrderDetail.manageShipment"),
+        icon: FileText,
+        color: 'text-indigo-600'
+      });
+    }
+
+    // Rating for completed orders
+    if (isRenter && currentOrder.status === "COMPLETED") {
+      actions.push({
+        value: 'rate_order',
+        label: t("rentalOrderDetail.rate"),
+        icon: IoStarSharp,
+        color: 'text-amber-600'
+      });
+    }
+
+    return actions;
+  };
+
+  // Handle action selection
+  const handleActionSelect = (actionValue) => {
+    switch (actionValue) {
+      case 'cancel_pending':
+        setShowCancelPendingModal(true);
+        break;
+      case 'confirmation_details':
+        navigate(`/rental-orders/${currentOrder._id}/confirmation-summary`);
+        break;
+      case 'sign_contract':
+        const readySubOrder = currentOrder?.subOrders?.find(
+          (sub) => sub.status === 'READY_FOR_CONTRACT'
+        );
+        if (readySubOrder?.contract) {
+          navigate(`/rental-orders/contracts?contractId=${readySubOrder.contract}`);
+        } else {
+          navigate("/rental-orders/contracts");
+        }
+        break;
+      case 'extend_rental':
+        setShowExtendRentalModal(true);
+        break;
+      case 'early_return':
+        setShowEarlyReturnModal(true);
+        break;
+      case 'manage_shipment':
+        setShowShipmentModal(true);
+        break;
+      case 'rate_order':
+        const firstProduct = currentOrder.subOrders?.[0]?.products?.[0];
+        const productId = firstProduct?.product?._id;
+        if (productId) {
+          navigate(`/product/${productId}?activeTab=reviews&fromOrder=${currentOrder._id}`);
+        }
+        break;
+      default:
+        break;
+    }
+    setSelectedAction(''); // Reset selection
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
@@ -591,7 +735,7 @@ const RentalOrderDetailPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-3">
             <span
               className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(
                 currentOrder.status
@@ -600,123 +744,23 @@ const RentalOrderDetailPage = () => {
               {getStatusText(currentOrder.status)}
             </span>
 
-            {/* Cancel Pending Order Button for Renter */}
-            {isRenter && currentOrder.status === "PENDING_CONFIRMATION" && (
-              <button
-                onClick={() => setShowCancelPendingModal(true)}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 flex items-center space-x-2"
-              >
-                <XCircle className="w-5 h-5" />
-                <span>Hủy đơn hàng</span>
-              </button>
-            )}
-
-            {/* ✅ MODIFIED: Hiển thị "Chi tiết xác nhận" khi có SubOrder OWNER_CONFIRMED (không cần tất cả) */}
-            {(currentOrder.status === "CONFIRMED" ||
-              currentOrder.status === "PARTIALLY_CANCELLED" ||
-              currentOrder.status === "CONTRACT_SIGNED" ||
-              currentOrder.status === "READY_FOR_CONTRACT" ||
-              hasReadyForContractSubOrder) && (
-              <button
-                onClick={() =>
-                  navigate(
-                    `/rental-orders/${currentOrder._id}/confirmation-summary`
-                  )
-                }
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 flex items-center space-x-2"
-              >
-                <FileText className="w-5 h-5" />
-                <span>{t("rentalOrderDetail.confirmationDetails")}</span>
-              </button>
-            )}
-
-            {/* ✅ MODIFIED: Kiểm tra nếu có SubOrder READY_FOR_CONTRACT (thay vì chỉ MasterOrder status) */}
-            {hasReadyForContractSubOrder && isRenter && (
-              <button
-                onClick={() => {
-                  // Tìm SubOrder READY_FOR_CONTRACT đầu tiên để lấy contractId
-                  const readySubOrder = currentOrder?.subOrders?.find(
-                    (sub) => sub.status === 'READY_FOR_CONTRACT'
-                  );
-                  if (readySubOrder?.contract) {
-                    navigate(`/rental-orders/contracts?contractId=${readySubOrder.contract}`);
-                  } else {
-                    navigate("/rental-orders/contracts");
-                  }
-                }}
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
-              >
-                <FileText className="w-5 h-5" />
-                <span>{t("rentalOrderDetail.signContract")}</span>
-              </button>
-            )}
-
-            {isRenter &&
-              currentOrder.status === "ACTIVE" && (
-                <>
-                  <button
-                    onClick={() => setShowExtendRentalModal(true)}
-                    className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2"
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span>{t("rentalOrderDetail.extend")}</span>
-                  </button>
-                  <button
-                    onClick={() => setShowEarlyReturnModal(true)}
-                    className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 flex items-center space-x-2"
-                  >
-                    <RotateCcw className="w-5 h-5" />
-                    <span>{t("rentalOrderDetail.earlyReturn")}</span>
-                  </button>
-                  <button
-                    onClick={() => setShowShipmentModal(true)}
-                    className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 flex items-center space-x-2"
-                  >
-                    <Package className="w-5 h-5" />
-                    <span>{t("rentalOrderDetail.manageShipment")}</span>
-                  </button>
-                </>
-              )}
-
-            {/* Renter: manage shipment button */}
-            {isRenter &&
-              currentOrder.status === "CONTRACT_SIGNED" && (
-                <button
-                  onClick={() => setShowShipmentModal(true)}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+            {/* Actions Dropdown */}
+            {getAvailableActions().length > 0 && (
+              <div className="relative">
+                <select
+                  value={selectedAction}
+                  onChange={(e) => handleActionSelect(e.target.value)}
+                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer min-w-[200px]"
                 >
-                  <Package className="w-5 h-5" />
-                  <span>{t("rentalOrderDetail.manageShipment")}</span>
-                </button>
-              )}
-
-            {/* Owner: manage shipment button visible after contract signed */}
-            {isOwner && currentOrder.status === "CONTRACT_SIGNED" && (
-              <button
-                onClick={() => setShowShipmentModal(true)}
-                className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
-              >
-                <FileText className="w-5 h-5" />
-                <span>{t("rentalOrderDetail.manageShipment")}</span>
-              </button>
-            )}
-
-            {/* Rating button - shown when order is completed */}
-            {isRenter && currentOrder.status === "COMPLETED" && (
-              <button
-                onClick={() => {
-                  // Navigate to first product detail with order info
-                  const firstProduct = currentOrder.subOrders?.[0]?.products?.[0];
-                  const productId = firstProduct?.product?._id;
-                  if (productId) {
-                    navigate(`/product/${productId}?activeTab=reviews&fromOrder=${currentOrder._id}`);
-                  }
-                }}
-                className="bg-amber-500 text-white px-6 py-2 rounded-lg hover:bg-amber-600 flex items-center space-x-2"
-              >
-                <IoStarSharp className="w-5 h-5" />
-                <span>{t("rentalOrderDetail.rate")}</span>
-              </button>
+                  <option value="">-- Chọn hành động --</option>
+                  {getAvailableActions().map((action) => (
+                    <option key={action.value} value={action.value}>
+                      {action.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+              </div>
             )}
           </div>
         </div>
