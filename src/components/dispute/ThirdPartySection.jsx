@@ -5,6 +5,54 @@ import { formatDate } from '../../utils/disputeHelpers';
 import AdminThirdPartyFinalDecisionModal from './AdminThirdPartyFinalDecisionModal';
 import AdminOwnerDisputeFinalModal from './AdminOwnerDisputeFinalModal';
 
+// Helper function để kiểm tra URL là video hay ảnh
+const isVideoUrl = (url) => {
+  if (!url) return false;
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+  const lowerUrl = url.toLowerCase();
+  
+  // Kiểm tra extension
+  if (videoExtensions.some(ext => lowerUrl.includes(ext))) return true;
+  
+  // Kiểm tra Cloudinary video URL (resource_type=video hoặc /video/)
+  if (lowerUrl.includes('/video/') || lowerUrl.includes('resource_type=video')) return true;
+  
+  return false;
+};
+
+// Component để render media (ảnh hoặc video)
+const MediaItem = ({ src, alt, index }) => {
+  if (isVideoUrl(src)) {
+    return (
+      <video
+        key={index}
+        src={src}
+        alt={alt}
+        className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+        onClick={() => window.open(src, '_blank')}
+        muted
+        playsInline
+        preload="metadata"
+        onMouseEnter={(e) => e.target.play()}
+        onMouseLeave={(e) => {
+          e.target.pause();
+          e.target.currentTime = 0;
+        }}
+      />
+    );
+  }
+  
+  return (
+    <img
+      key={index}
+      src={src}
+      alt={alt}
+      className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
+      onClick={() => window.open(src, '_blank')}
+    />
+  );
+};
+
 const ThirdPartySection = ({ dispute, isAdmin = false }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -152,12 +200,11 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                       {sharedData.shipperEvidence.deliveryPhase.pickupFromOwner?.images?.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                           {sharedData.shipperEvidence.deliveryPhase.pickupFromOwner.images.map((img, idx) => (
-                            <img
+                            <MediaItem
                               key={idx}
                               src={img}
                               alt={`Pickup from owner ${idx + 1}`}
-                              className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
-                              onClick={() => window.open(img, '_blank')}
+                              index={idx}
                             />
                           ))}
                         </div>
@@ -179,12 +226,11 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                       {sharedData.shipperEvidence.deliveryPhase.deliveryToRenter?.images?.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                           {sharedData.shipperEvidence.deliveryPhase.deliveryToRenter.images.map((img, idx) => (
-                            <img
+                            <MediaItem
                               key={idx}
                               src={img}
                               alt={`Delivery to renter ${idx + 1}`}
-                              className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
-                              onClick={() => window.open(img, '_blank')}
+                              index={idx}
                             />
                           ))}
                         </div>
@@ -216,12 +262,11 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                       {sharedData.shipperEvidence.returnPhase.pickupFromRenter?.images?.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                           {sharedData.shipperEvidence.returnPhase.pickupFromRenter.images.map((img, idx) => (
-                            <img
+                            <MediaItem
                               key={idx}
                               src={img}
                               alt={`Pickup from renter ${idx + 1}`}
-                              className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
-                              onClick={() => window.open(img, '_blank')}
+                              index={idx}
                             />
                           ))}
                         </div>
@@ -243,12 +288,11 @@ const ThirdPartySection = ({ dispute, isAdmin = false }) => {
                       {sharedData.shipperEvidence.returnPhase.deliveryToOwner?.images?.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                           {sharedData.shipperEvidence.returnPhase.deliveryToOwner.images.map((img, idx) => (
-                            <img
+                            <MediaItem
                               key={idx}
                               src={img}
                               alt={`Delivery to owner ${idx + 1}`}
-                              className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80"
-                              onClick={() => window.open(img, '_blank')}
+                              index={idx}
                             />
                           ))}
                         </div>
