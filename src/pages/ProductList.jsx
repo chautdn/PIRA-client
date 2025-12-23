@@ -556,14 +556,14 @@ export default function ProductList() {
                       />
                     ),
                   },
-                  {
-                    title: t("productList.district"),
-                    content: <DistrictFilter selected={filters.district} onSelect={(val) => updateFilters({ district: val })} t={t} />,
-                  },
-                  {
-                    title: t("productList.condition"),
-                    content: <ConditionFilter selected={filters.condition} onSelect={(val) => updateFilters({ condition: val })} t={t} />,
-                  },
+                  // {
+                  //   title: t("productList.district"),
+                  //   content: <DistrictFilter selected={filters.district} onSelect={(val) => updateFilters({ district: val })} t={t} />,
+                  // },
+                  // {
+                  //   title: t("productList.condition"),
+                  //   content: <ConditionFilter selected={filters.condition} onSelect={(val) => updateFilters({ condition: val })} t={t} />,
+                  // },
                 ].map((section, i) => (
                   <Accordion key={i} title={section.title} defaultOpen={i === 0}>
                     {section.content}
